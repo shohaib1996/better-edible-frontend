@@ -103,7 +103,7 @@
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #4eaf6a, #76c893);
   --gradient-dark: linear-gradient(135deg, #0c0c0c, #1e1e1e);
-  
+
 }
 
 .dark {

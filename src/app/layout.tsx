@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins, Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/src/components/ThemeProvider/theme-provider";
+import { ReduxProvider } from "@/src/components/ReduxProvider/ReduxProvider";
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -46,8 +47,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster position="top-right" richColors />
+          <ReduxProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </ReduxProvider>
         </ThemeProvider>
       </body>
     </html>
