@@ -9,7 +9,7 @@ import { useCheckInRepMutation, useCheckOutRepMutation, useGetAllRepsQuery } fro
 import { IRep } from "@/src/types";
 
 const TimeClock = () => {
-  const { data, isLoading, refetch } = useGetAllRepsQuery({});
+  const { data, isLoading, refetch } = useGetAllRepsQuery({}, { refetchOnMountOrArgChange: true });
   const [checkin, { isLoading: checkinLoading }] = useCheckInRepMutation();
   const [checkout, { isLoading: checkoutLoading }] = useCheckOutRepMutation();
   const reps: IRep[] = data?.data || [];
