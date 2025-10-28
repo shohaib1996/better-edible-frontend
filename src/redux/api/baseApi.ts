@@ -3,9 +3,11 @@ import { tagTypes } from "../tagTypes/tagTypes";
 
 export const baseApi = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api" }), // Replace with your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "https://better-edibles-backend.vercel.app/api" }), // Replace with your API base URL
   tagTypes: Object.values(tagTypes),
   endpoints: (builder) => ({}),
 });
 
 export const {} = baseApi;
+
+// http://localhost:5000/api

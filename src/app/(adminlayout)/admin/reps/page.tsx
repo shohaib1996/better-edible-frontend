@@ -16,6 +16,8 @@ import {
 import { EntityModal } from "@/src/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/src/redux/api/RepLogin/repAuthApi";
+import { Clock } from "lucide-react";
+import Link from "next/link";
 
 export default function RepsPage() {
   const { data, isLoading, refetch } = useGetAllRepsQuery({});
@@ -139,6 +141,11 @@ export default function RepsPage() {
       header: "Actions",
       render: (rep) => (
         <div className="flex gap-2">
+          <Link href={`/admin/reps/${rep._id}`}>
+            <Button size="sm" variant="outline" className="cursor-pointer">
+              <Clock className="size-4 mr-1" />
+            </Button>
+          </Link>
           <Button
             size="sm"
             variant="outline"
