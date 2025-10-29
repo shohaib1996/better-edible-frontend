@@ -14,13 +14,14 @@ import { Button } from "@/src/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 
-interface Field {
+export interface Field {
   name: string;
   label: string;
   type?: "text" | "email" | "password" | "select";
   placeholder?: string;
   options?: { label: string; value: string }[];
 }
+
 
 interface EntityModalProps<T> {
   open: boolean;
@@ -57,7 +58,7 @@ export function EntityModal<T>({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-tight">
             {title}
