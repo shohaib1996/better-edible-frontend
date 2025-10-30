@@ -1,7 +1,6 @@
 import { tagTypes } from "../../tagTypes/tagTypes";
 import { baseApi } from "../baseApi";
 
-
 export const storesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllStores: builder.query({
@@ -10,6 +9,10 @@ export const storesApi = baseApi.injectEndpoints({
         if (args?.page) params.append("page", args.page.toString());
         if (args?.limit) params.append("limit", args.limit.toString());
         if (args?.search) params.append("search", args.search);
+        if (args?.repId) params.append("repId", args.repId);
+        if (args?.paymentStatus)
+          params.append("paymentStatus", args.paymentStatus);
+        if (args?.isDue) params.append("isDue", args.isDue.toString());
 
         return {
           url: `/stores?${params.toString()}`,
@@ -18,6 +21,7 @@ export const storesApi = baseApi.injectEndpoints({
       },
       providesTags: [tagTypes.stores],
     }),
+
     getStoreById: builder.query({
       query: (id) => ({
         url: `/stores/${id}`,
@@ -41,10 +45,27 @@ export const storesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.stores],
     }),
+
+    assignStoreToRep: builder.mutation({
+      query: ({ storeIds, repId }) => ({
+        url: `/stores/assign-rep`,
+        method: "POST",
+        body: { storeIds, repId },
+      }),
+      invalidatesTags: [tagTypes.stores],
+    }),
     toggleBlockStore: builder.mutation({
       query: (id) => ({
         url: `/stores/${id}/block`,
         method: "PUT",
+      }),
+      invalidatesTags: [tagTypes.stores],
+    }),
+    toggleBlockStores: builder.mutation({
+      query: ({ storeIds, blocked }) => ({
+        url: "/stores/toggle-block",
+        method: "POST",
+        body: { storeIds, blocked },
       }),
       invalidatesTags: [tagTypes.stores],
     }),
@@ -60,9 +81,11 @@ export const storesApi = baseApi.injectEndpoints({
 
 export const {
   useGetAllStoresQuery,
+  useAssignStoreToRepMutation,
   useGetStoreByIdQuery,
   useCreateStoreMutation,
   useUpdateStoreMutation,
   useToggleBlockStoreMutation,
   useDeleteStoreMutation,
+  useToggleBlockStoresMutation,
 } = storesApi;
