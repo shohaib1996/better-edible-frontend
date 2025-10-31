@@ -37,6 +37,8 @@ import {
 } from "@/src/components/ui/dialog";
 import { toast } from "sonner";
 import { NotesModal } from "@/src/components/Notes/NotesModal";
+import { OrdersModal } from "@/src/components/Orders/OrdersModal";
+import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -51,6 +53,9 @@ const Stores = () => {
   const [editingStore, setEditingStore] = useState<any | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [selectedRep, setSelectedRep] = useState<string>("");
+  const [ordersModalOpen, setOrdersModalOpen] = useState(false);
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<any | null>(null);
 
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(
@@ -470,7 +475,7 @@ const Stores = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -480,6 +485,27 @@ const Stores = () => {
                     }}
                   >
                     🗒️ Notes
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedStoreId(store._id);
+                      setOrdersModalOpen(true);
+                    }}
+                  >
+                    🗒️ Orders
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedStore(store);
+                      setDeliveryModalOpen(true);
+                    }}
+                  >
+                    🚚 Delivery
                   </Button>
 
                   <Button
@@ -577,6 +603,18 @@ const Stores = () => {
         open={notesModalOpen}
         onClose={() => setNotesModalOpen(false)}
         entityId={selectedStoreId}
+      />
+
+      <OrdersModal
+        open={ordersModalOpen}
+        onClose={() => setOrdersModalOpen(false)}
+        storeId={selectedStoreId}
+      />
+
+      <DeliveryModal
+        open={deliveryModalOpen}
+        onClose={() => setDeliveryModalOpen(false)}
+        store={selectedStore}
       />
     </div>
   );
