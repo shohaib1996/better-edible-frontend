@@ -475,7 +475,7 @@ const Stores = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
                   <Button
                     variant="secondary"
                     size="sm"
