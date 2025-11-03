@@ -41,6 +41,7 @@ import {
 import { useDebounced } from "@/src/redux/hooks/hooks";
 import { IOrder, IRep } from "@/src/types";
 import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
+import { toast } from "sonner";
 
 const OrdersPage = () => {
   const [activeTab, setActiveTab] = useState("accepted");
@@ -130,14 +131,17 @@ const OrdersPage = () => {
 
       if (editingOrder?._id) {
         await updateOrder({ id: editingOrder._id, ...orderData }).unwrap();
+        toast.success("Order updated successfully")
       } else {
         await createOrder(orderData).unwrap();
+        toast.success("Order created successfully")
       }
       setModalOpen(false);
       refetch();
     } catch (error) {
       console.error(error);
-      alert("Error saving order");
+      // alert("Error saving order");
+      toast.error("Error saving order")
     }
   };
 
@@ -258,7 +262,9 @@ const OrdersPage = () => {
               <SelectContent>
                 <SelectItem value="all">All Reps</SelectItem>
                 {[
-                  ...new Set(reps?.data?.map((r: IRep) => r.name).filter(Boolean)),
+                  ...new Set(
+                    reps?.data?.map((r: IRep) => r.name).filter(Boolean)
+                  ),
                 ].map((repName) => (
                   <SelectItem key={repName as string} value={repName as string}>
                     {repName as string}
@@ -363,10 +369,11 @@ const OrdersPage = () => {
                         </div>
 
                         <Select
-                          defaultValue={order.status}
-                          onValueChange={(value) =>
-                            handleChangeStatus(order._id, value)
-                          }
+                          value={order.status}
+                          onValueChange={(value) => {
+                            if (value !== order.status)
+                              handleChangeStatus(order._id, value);
+                          }}
                         >
                           <SelectTrigger className="w-[140px] h-9">
                             <SelectValue placeholder="Change status" />

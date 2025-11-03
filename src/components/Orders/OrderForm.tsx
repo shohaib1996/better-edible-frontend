@@ -19,8 +19,7 @@ interface OrderFormProps {
       totalPrice: number;
       discount: number;
       finalTotal: number;
-      discountType: "flat" | "percent";
-      discountValue: number;
+      deliveryDate?: string;
     }
   ) => void;
 }
@@ -32,26 +31,51 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   onChange,
 }) => {
   const { data, isLoading } = useGetAllProductsQuery({});
-  const products = data?.products || [];
+  const products = useMemo(() => data?.products || [], [data]);
 
+  // ─────────────────────────────
+  // STATES
+  // ─────────────────────────────
   const [quantities, setQuantities] = useState<Record<string, any>>({});
-  const [discountType, setDiscountType] = useState(initialDiscountType);
-  const [discountValue, setDiscountValue] = useState(initialDiscountValue);
-
-  useEffect(() => {
-    setDiscountType(initialDiscountType);
-    setDiscountValue(initialDiscountValue);
-  }, [initialDiscountType, initialDiscountValue]);
+  const [discountType, setDiscountType] = useState<"flat" | "percent">(
+    initialDiscountType
+  );
+  const [discountValue, setDiscountValue] = useState<number>(
+    initialDiscountValue
+  );
 
   // ─────────────────────────────
-  // Initialize from edit mode
+  // Initialize Quantities on Edit
   // ─────────────────────────────
   useEffect(() => {
-    if (initialItems && initialItems.length > 0) {
+    if (initialItems && initialItems.length > 0 && products.length > 0) {
       const newQuantities = initialItems.reduce((acc, item) => {
         const productId = item.product;
-        // Use unitLabel for variants, or a default 'qty' key for non-variants
-        const key = item.unitLabel || "qty";
+        const product = products.find((p: any) => p._id === productId);
+        
+        let key = "qty"; // Default key
+
+        if (product) {
+          if (item.unitLabel) {
+            key = item.unitLabel;
+          } else {
+            if (product.variants?.length) {
+              for (const variant of product.variants) {
+                if (item.name.includes(variant.label)) {
+                  key = variant.label;
+                  break;
+                }
+              }
+            } else if (product.hybridBreakdown) {
+              for (const type of ["hybrid", "indica", "sativa"]) {
+                if (item.name.toLowerCase().includes(type)) {
+                  key = type;
+                  break;
+                }
+              }
+            }
+          }
+        }
         
         if (!acc[productId]) {
           acc[productId] = {};
@@ -62,10 +86,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       }, {} as Record<string, any>);
       setQuantities(newQuantities);
     } else {
-      // Clear quantities when starting a new order
       setQuantities({});
     }
-  }, [initialItems]);
+  }, [JSON.stringify(initialItems), products]);
 
   // ─────────────────────────────
   // Group products by productLine
@@ -80,7 +103,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   }, [products]);
 
   // ─────────────────────────────
-  // Handle Input Change
+  // Handle Qty Change
   // ─────────────────────────────
   const handleQtyChange = (productId: string, key: string, value: number) => {
     setQuantities((prev) => ({
@@ -90,7 +113,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   // ─────────────────────────────
-  // Calculate Totals + Discount
+  // Calculate Totals
   // ─────────────────────────────
   const [totals, setTotals] = useState({
     totalCases: 0,
@@ -100,7 +123,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   });
 
   useEffect(() => {
-    if (isLoading) return; // Wait for products to load
+    if (isLoading || !products) return; // Wait for products to load
 
     let totalCases = 0;
     let totalPrice = 0;
@@ -175,16 +198,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
     onChange(items, newTotalsForParent);
     setTotals(newTotalsForRender);
-  }, [isLoading, quantities, discountType, discountValue, onChange]); // Intentionally omitting `products` to prevent infinite loop
+  }, [isLoading, products, quantities, discountType, discountValue, onChange]); // Intentionally omitting `products` to prevent infinite loop
 
   // ─────────────────────────────
   // Helper: Render Price Display
   // ─────────────────────────────
   const renderPrice = (regular?: number, discount?: number) => {
-    if (regular) {
+    if (discount && discount < regular!) {
       return (
-        <div className="text-xs text-gray-600">${regular.toFixed(2)}</div>
+        <div className="text-xs text-gray-600">
+          <span className="line-through text-red-500 mr-1">
+            ${regular?.toFixed(2)}
+          </span>
+          <span className="text-emerald-600 font-medium">
+            ${discount.toFixed(2)}
+          </span>
+        </div>
       );
+    }
+    if (regular) {
+      return <div className="text-xs text-gray-600">${regular.toFixed(2)}</div>;
     }
     return null;
   };
@@ -216,12 +249,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   {product.subProductLine || product.itemName}
                 </div>
 
-                {/* Dynamic variants */}
+                {/* Variants */}
                 {product.variants?.length ? (
                   <>
                     {product.variants.map((variant: any) => (
-                      <div key={variant.label} className="col-span-3 flex flex-col">
-                        <Label className="text-xs text-gray-500 mb-1">{variant.label}</Label>
+                      <div
+                        key={variant.label}
+                        className="col-span-3 flex flex-col"
+                      >
+                        <Label className="text-xs text-gray-500 mb-1">
+                          {variant.label}
+                        </Label>
                         {renderPrice(variant.price, variant.discountPrice)}
                         <Input
                           type="number"
@@ -240,6 +278,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     ))}
                   </>
                 ) : product.hybridBreakdown ? (
+                  // Hybrid Products
                   <>
                     {["hybrid", "indica", "sativa"].map((type) => {
                       const regular = product.prices?.[type]?.price;
@@ -268,6 +307,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     })}
                   </>
                 ) : (
+                  // Default Product
                   <div className="col-span-3 flex flex-col">
                     <Label className="text-xs text-gray-500 mb-1">
                       Quantity
@@ -296,7 +336,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
       <Separator className="my-4" />
 
-      {/* Discount and Summary */}
+      {/* Summary Section */}
       <Card className="p-4 bg-white border">
         <h3 className="font-semibold mb-3">Order Summary</h3>
 
@@ -310,7 +350,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             <span className="font-medium">${totals.totalPrice.toFixed(2)}</span>
           </div>
 
-          {/* Discount */}
+          {/* Discount Controls */}
           <div className="flex gap-3 items-center">
             <select
               value={discountType}
@@ -324,7 +364,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             </select>
             <Input
               type="number"
-              value={discountValue || ""}
+              value={discountValue}
               onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
               placeholder="Enter discount"
               className="w-32 border-emerald-500"
