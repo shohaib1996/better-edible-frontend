@@ -3,22 +3,22 @@ import { tagTypes } from "../../tagTypes/tagTypes";
 
 export const ordersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Get all orders (with filters and pagination)
+    // 🟩 Get all orders (with optional filters & pagination)
     getAllOrders: builder.query({
-      query: ({ status, storeId, repId, page = 1, limit = 20 }) => ({
+      query: ({ status, storeId, repName, search, repId, page = 1, limit = 20 }) => ({
         url: "/orders",
-        params: { status, storeId, repId, page, limit },
+        params: { status, storeId, repName, search, repId, page, limit },
       }),
       providesTags: [tagTypes.orders],
     }),
 
-    // Get order by ID
+    // 🟦 Get single order by ID
     getOrderById: builder.query({
       query: (id) => `/orders/${id}`,
       providesTags: [tagTypes.orders],
     }),
 
-    // Create order
+    // 🟨 Create new order
     createOrder: builder.mutation({
       query: (body) => ({
         url: "/orders",
@@ -28,7 +28,7 @@ export const ordersApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.orders],
     }),
 
-    // Update order
+    // 🟧 Update order (only allowed for draft)
     updateOrder: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/orders/${id}`,
@@ -38,7 +38,7 @@ export const ordersApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.orders],
     }),
 
-    // Change order status
+    // 🟫 Change order status
     changeOrderStatus: builder.mutation({
       query: ({ id, status }) => ({
         url: `/orders/${id}/status`,
@@ -48,12 +48,21 @@ export const ordersApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.orders],
     }),
 
-    // Collect payment
+    // 🟥 Collect payment
     collectPayment: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/orders/${id}/payment`,
         method: "POST",
         body,
+      }),
+      invalidatesTags: [tagTypes.orders],
+    }),
+
+    // ❌ Delete order (optional)
+    deleteOrder: builder.mutation({
+      query: (id) => ({
+        url: `/orders/${id}`,
+        method: "DELETE",
       }),
       invalidatesTags: [tagTypes.orders],
     }),
@@ -67,4 +76,5 @@ export const {
   useUpdateOrderMutation,
   useChangeOrderStatusMutation,
   useCollectPaymentMutation,
+  useDeleteOrderMutation,
 } = ordersApi;

@@ -11,7 +11,13 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
 
 export interface Field {
@@ -20,8 +26,8 @@ export interface Field {
   type?: "text" | "email" | "password" | "select";
   placeholder?: string;
   options?: { label: string; value: string }[];
+  render?: (value: any, onChange: (value: any) => void) => React.ReactNode;
 }
-
 
 interface EntityModalProps<T> {
   open: boolean;
@@ -29,8 +35,9 @@ interface EntityModalProps<T> {
   onSubmit: (values: Partial<T>) => void;
   title: string;
   fields: Field[];
-  initialData?: Partial<T>;
+  initialData?: Partial<T> | null; // Allow null
   isSubmitting?: boolean;
+  children?: React.ReactNode;
 }
 
 export function EntityModal<T>({
@@ -39,14 +46,19 @@ export function EntityModal<T>({
   onSubmit,
   title,
   fields,
-  initialData = {},
+  initialData,
   isSubmitting,
+  children,
 }: EntityModalProps<T>) {
-  const [formData, setFormData] = useState<Record<string, any>>(initialData);
+  // ✅ Always initialize with an object, never null
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
+  // ✅ Sync form data when modal opens or data changes
   useEffect(() => {
-    setFormData(initialData);
-  }, [initialData]);
+    if (open) {
+      setFormData(initialData || {}); // Ensure fallback
+    }
+  }, [open, initialData]);
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -58,7 +70,7 @@ export function EntityModal<T>({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-tight">
             {title}
@@ -70,9 +82,13 @@ export function EntityModal<T>({
             <div key={field.name} className="space-y-1">
               <Label htmlFor={field.name}>{field.label}</Label>
 
-              {field.type === "select" && field.options ? (
+              {field.render ? (
+                field.render(formData?.[field.name], (value) =>
+                  handleChange(field.name, value)
+                )
+              ) : field.type === "select" && field.options ? (
                 <Select
-                  value={formData[field.name] ?? ""}
+                  value={formData?.[field.name] ?? ""}
                   onValueChange={(value) => handleChange(field.name, value)}
                 >
                   <SelectTrigger
@@ -96,7 +112,7 @@ export function EntityModal<T>({
                   id={field.name}
                   type={field.type || "text"}
                   placeholder={field.placeholder || ""}
-                  value={formData[field.name] ?? ""}
+                  value={formData?.[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 />
@@ -104,6 +120,8 @@ export function EntityModal<T>({
             </div>
           ))}
         </div>
+
+        {children}
 
         <DialogFooter className="pt-2">
           <Button variant="outline" onClick={onClose}>

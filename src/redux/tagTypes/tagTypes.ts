@@ -5,5 +5,5 @@ export const tagTypes = {
   notes: "notes",
   orders: "orders",
   deliveries: "deliveries",
-  products: "products"
+  products: "products",
 };
