@@ -19,13 +19,14 @@ import { Calendar } from "@/src/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/src/lib/utils";
 
 interface NewOrdersTabProps {
   orders: any[];
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
   refetch: () => void;
-  onEdit: (order: any) => void; // ✅ ADDED THIS
+  onEdit: (order: any) => void;
 }
 
 export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
@@ -33,7 +34,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   handleChangeStatus,
   updateOrder,
   refetch,
-  onEdit, // ✅ RECEIVE HERE
+  onEdit,
 }) => {
   const newOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
 
@@ -41,8 +42,58 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     return <p className="text-gray-500 mt-4">No new orders found.</p>;
   }
 
+  // ✅ Status-based card styling (added emerald for manifested)
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return "bg-blue-50 border-l-4 border-blue-500";
+      case "accepted":
+        return "bg-yellow-50 border-l-4 border-yellow-500";
+      case "manifested":
+        return "bg-emerald-50 border-l-4 border-emerald-500";
+      case "shipped":
+        return "bg-green-50 border-l-4 border-green-600";
+      case "cancelled":
+        return "bg-red-50 border-l-4 border-red-600";
+      default:
+        return "bg-white border-l-4 border-gray-200";
+    }
+  };
+
+  // ✅ Dropdown color matching status
+  const getStatusDropdownColor = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return "bg-blue-600 hover:bg-blue-700 text-white";
+      case "accepted":
+        return "bg-yellow-600 hover:bg-yellow-700 text-white";
+      case "manifested":
+        return "bg-emerald-600 hover:bg-emerald-700 text-white";
+      default:
+        return "bg-gray-700 hover:bg-gray-800 text-white";
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const colorMap: Record<string, string> = {
+      submitted: "bg-blue-100 text-blue-800",
+      accepted: "bg-yellow-100 text-yellow-800",
+      manifested: "bg-emerald-100 text-emerald-800",
+    };
+    return (
+      <span
+        className={cn(
+          "px-2 py-0.5 rounded-full text-xs font-semibold capitalize",
+          colorMap[status] || "bg-gray-100 text-gray-800"
+        )}
+      >
+        {status}
+      </span>
+    );
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="text-right font-semibold text-emerald-600 pr-2">
         Total Orders Value: ${newOrdersValue.toFixed(2)}
       </div>
@@ -50,34 +101,38 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
       {orders.map((order) => (
         <Card
           key={order._id}
-          className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition bg-white py-0"
+          className={cn(
+            "border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition p-3",
+            getStatusStyle(order.status)
+          )}
         >
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-white">
-            <div>
-              <h2 className="text-lg font-bold text-blue-700 uppercase tracking-wide">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-2 bg-white gap-2">
+            <div className="flex flex-col">
+              <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2">
                 {order.store?.name || "N/A"}
+                {getStatusBadge(order.status)}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-600">
                 {order.store?.address || "No address available"}
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
-              <Button variant="outline" size="sm" className="text-sm">
+            <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
+              <Button variant="outline" size="sm" className="text-xs h-8">
                 Generate Invoice
               </Button>
 
-              {/* ✅ EDIT BUTTON NOW WORKS */}
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => onEdit(order)} // call the passed prop
+                onClick={() => onEdit(order)}
+                className="text-xs h-8"
               >
                 Edit
               </Button>
 
-              <Button variant="outline" size="sm" className="text-sm">
+              <Button variant="outline" size="sm" className="text-xs h-8">
                 Packing List
               </Button>
 
@@ -85,10 +140,15 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                 value={order.status}
                 onValueChange={(value) => handleChangeStatus(order._id, value)}
               >
-                <SelectTrigger className="w-[130px] h-9 bg-blue-700 text-white font-semibold border-none">
+                <SelectTrigger
+                  className={cn(
+                    "w-[120px] h-8 text-xs font-semibold border-none focus:ring-0",
+                    getStatusDropdownColor(order.status)
+                  )}
+                >
                   <SelectValue placeholder="Change status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-sm">
                   {[
                     "submitted",
                     "accepted",
@@ -96,7 +156,20 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     "shipped",
                     "cancelled",
                   ].map((s) => (
-                    <SelectItem key={s} value={s}>
+                    <SelectItem
+                      key={s}
+                      value={s}
+                      className={cn(
+                        "capitalize font-medium",
+                        s === "submitted"
+                          ? "text-blue-700"
+                          : s === "accepted"
+                          ? "text-yellow-700"
+                          : s === "manifested"
+                          ? "text-emerald-700"
+                          : "text-gray-700"
+                      )}
+                    >
                       {s.charAt(0).toUpperCase() + s.slice(1)}
                     </SelectItem>
                   ))}
@@ -106,8 +179,8 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
           </div>
 
           {/* Order Details */}
-          <div className="bg-gray-100 p-4 text-sm gap-y-2">
-            <div className="flex justify-between">
+          <div className="bg-gray-50 p-3 text-xs leading-relaxed rounded-md">
+            <div className="flex justify-between flex-wrap gap-2">
               <div>
                 <p>
                   <span className="font-semibold">Order#:</span>{" "}
@@ -125,9 +198,9 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2 bg-white text-gray-700 font-normal"
+                        className="flex items-center gap-2 bg-white text-gray-700 font-normal h-7 text-xs"
                       >
-                        <CalendarIcon className="h-4 w-4 text-gray-500" />
+                        <CalendarIcon className="h-3.5 w-3.5 text-gray-500" />
                         {order.deliveryDate ? (
                           format(new Date(order.deliveryDate), "MM/dd/yyyy")
                         ) : (
@@ -172,16 +245,16 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     ${order.total.toFixed(2)}
                   </span>
                 </p>
-                <p className="flex items-center gap-2">
-                  <span className="font-semibold">Rep:</span>
-                  <span>{order.rep?.name}</span>
+                <p>
+                  <span className="font-semibold">Rep:</span>{" "}
+                  {order.rep?.name || "N/A"}
                 </p>
               </div>
             </div>
 
             {order.note && (
-              <div className="md:col-span-2 lg:col-span-3">
-                <p className="text-sm text-gray-700">
+              <div className="mt-2">
+                <p className="text-gray-700">
                   <span className="font-semibold">Note:</span> {order.note}
                 </p>
               </div>

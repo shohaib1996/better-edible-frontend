@@ -1,365 +1,267 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import { useGetAllProductsQuery } from "@/src/redux/api/Products/productsApi";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Card } from "@/src/components/ui/card";
-import { Separator } from "@/src/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useGetAllOrdersQuery,
+  useCreateOrderMutation,
+  useUpdateOrderMutation,
+  useChangeOrderStatusMutation,
+} from "@/src/redux/api/orders/orders";
+import {
+  EntityModal,
+  Field,
+} from "@/src/components/ReUsableComponents/EntityModal";
+import { OrderForm } from "@/src/components/Orders/OrderForm";
+import { OrdersHeader } from "@/src/components/Orders/OrderPage/OrdersHeader";
+import { OrdersFilters } from "@/src/components/Orders/OrderPage/OrdersFilters";
+import { OrdersTabs } from "@/src/components/Orders/OrderPage/OrdersTabs";
+import { useDebounced } from "@/src/redux/hooks/hooks";
+import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
+import { StoreSelect } from "@/src/components/Shared/StoreSelect";
+import { RepSelect } from "@/src/components/Shared/RepSelect";
+import { Button } from "@/src/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Calendar } from "@/src/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/src/lib/utils";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { IOrder } from "@/src/types";
 
-interface OrderFormProps {
-  initialItems?: any[];
-  initialDiscountType?: "flat" | "percent";
-  initialDiscountValue?: number;
-  onChange: (
-    items: any[],
-    totals: {
-      totalCases: number;
-      totalPrice: number;
-      discount: number;
-      finalTotal: number;
-      discountType?: "flat" | "percent";
-      discountValue?: number;
-      deliveryDate?: string;
-    }
-  ) => void;
-}
+const OrdersPage = () => {
+  const [activeTab, setActiveTab] = useState("new");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRepName, setSelectedRepName] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
 
-export const OrderForm: React.FC<OrderFormProps> = ({
-  initialItems = [],
-  initialDiscountType = "flat",
-  initialDiscountValue = 0,
-  onChange,
-}) => {
-  const { data, isLoading } = useGetAllProductsQuery({});
-  const products = useMemo(() => data?.products || [], [data]);
-
-  const [quantities, setQuantities] = useState<Record<string, any>>({});
-  const [discountType, setDiscountType] = useState<"flat" | "percent">(
-    initialDiscountType
-  );
-  const [discountValue, setDiscountValue] = useState<number>(
-    initialDiscountValue
-  );
-
-  // Helper: consistent normalized key for variant/label
-  const normKey = (s?: string | null) => (s ? String(s).trim().toLowerCase() : "");
-
-  // Initialize quantities on edit (normalize keys)
-  useEffect(() => {
-    if (initialItems?.length && products.length) {
-      const newQuantities = initialItems.reduce((acc, item) => {
-        const productId = item.product;
-        const product = products.find((p: any) => p._id === productId);
-        if (!product) return acc;
-
-        let key = "qty";
-
-        if (item.unitLabel) {
-          key = normKey(item.unitLabel);
-        } else if (product.productLine === "Cannacrispy") {
-          for (const t of ["hybrid", "indica", "sativa"]) {
-            if (item.name?.toLowerCase()?.includes(t)) {
-              key = t;
-              break;
-            }
-          }
-        }
-
-        if (!acc[productId]) acc[productId] = {};
-        acc[productId][key] = Number(item.qty || 0);
-        return acc;
-      }, {} as Record<string, any>);
-
-      setQuantities(newQuantities);
-    } else {
-      setQuantities({});
-    }
-  }, [JSON.stringify(initialItems), products]);
-
-  // Group products by productLine
-  const groupedProducts = useMemo(() => {
-    const map: Record<string, any[]> = {};
-    for (const p of products) {
-      if (!map[p.productLine]) map[p.productLine] = [];
-      map[p.productLine].push(p);
-    }
-    return map;
-  }, [products]);
-
-  const handleQtyChange = (productId: string, key: string, value: number) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [productId]: { ...prev[productId], [key]: Number(value || 0) },
-    }));
-  };
-
-  const [totals, setTotals] = useState({
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [orderTotals, setOrderTotals] = useState({
     totalCases: 0,
     totalPrice: 0,
-    discountAmount: 0,
+    discount: 0,
     finalTotal: 0,
+    discountType: "flat" as "flat" | "percent",
+    discountValue: 0,
+    note: "",
   });
 
-  // Price picker function same priority as backend
-  const pickPrice = (product: any, typeOrLabel?: string | null) => {
-    const norm = normKey(typeOrLabel ?? "");
-    // variants
-    if (product.variants?.length) {
-      const v = product.variants.find(
-        (x: any) => norm && x.label && x.label.trim().toLowerCase() === norm
-      );
-      if (v) return { unitPrice: Number(v.price ?? 0), discountPrice: Number(v.discountPrice ?? 0) };
+  const debouncedSearch = useDebounced({ searchQuery: searchTerm, delay: 400 });
+  const { data: reps } = useGetAllRepsQuery({});
+  const { data, isLoading, refetch } = useGetAllOrdersQuery({
+    search: debouncedSearch || undefined,
+    repName: selectedRepName || undefined,
+  });
+  const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
+  const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
+  const [changeStatus] = useChangeOrderStatusMutation();
+
+  const orders: IOrder[] = data?.orders || [];
+
+  // ─────────────── GROUP ORDERS ───────────────
+  const grouped = useMemo(() => {
+    const newOrders = orders.filter(
+      (o) => o.status !== "shipped" && o.status !== "cancelled"
+    );
+    const shippedOrders = orders.filter(
+      (o) => o.status === "shipped" || o.status === "cancelled"
+    );
+    return { newOrders, shippedOrders };
+  }, [orders]);
+
+  // ─────────────── HANDLERS ───────────────
+  const onOrderFormChange = useCallback((items: any[], totals: any) => {
+    setOrderItems(items);
+    setOrderTotals((prev) => ({ ...prev, ...totals }));
+  }, []);
+
+  const handleCreateOrUpdate = async (values: any) => {
+    try {
+      const orderData = {
+        ...values,
+        items: orderItems,
+        subtotal: orderTotals.totalPrice,
+        discountType: orderTotals.discountType,
+        discountValue: orderTotals.discountValue,
+        total: orderTotals.finalTotal,
+        note: orderTotals.note || values.note,
+      };
+
+      if (editingOrder?._id) {
+        await updateOrder({ id: editingOrder._id, ...orderData }).unwrap();
+        toast.success("Order updated successfully");
+      } else {
+        await createOrder(orderData).unwrap();
+        toast.success("Order created successfully");
+      }
+      setModalOpen(false);
+      refetch();
+    } catch {
+      toast.error("Error saving order");
     }
-    // product.prices[type]
-    if (product.prices && norm && product.prices[norm]) {
-      const p = product.prices[norm];
-      return { unitPrice: Number(p.price ?? 0), discountPrice: Number(p.discountPrice ?? p.price ?? 0) };
-    }
-    // hybridBreakdown
-    if (product.hybridBreakdown && norm && product.hybridBreakdown[norm] != null) {
-      return { unitPrice: Number(product.hybridBreakdown[norm] ?? 0), discountPrice: Number(product.discountPrice ?? 0) };
-    }
-    // fallback product-level
-    return { unitPrice: Number(product.price ?? 0), discountPrice: Number(product.discountPrice ?? product.price ?? 0) };
   };
 
-  // Calculate totals
-  useEffect(() => {
-    if (isLoading || !products) return;
-
-    let totalCases = 0;
-    let totalPrice = 0;
-    const items: any[] = [];
-
-    for (const [productId, val] of Object.entries(quantities)) {
-      const product = products.find((p: any) => p._id === productId);
-      if (!product) continue;
-
-      let productTotal = 0;
-
-      // BLISS (variants)
-      if (product.variants?.length && product.productLine === "BLISS Cannabis Syrup") {
-        for (const variant of product.variants) {
-          const k = normKey(variant.label);
-          const qty = Number(val[k] || 0);
-          if (qty > 0) {
-            const { unitPrice, discountPrice } = pickPrice(product, variant.label);
-            const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-            items.push({ product: productId, qty, unitLabel: variant.label });
-            totalCases += qty;
-            productTotal += qty * effective;
-          }
-        }
-      }
-      // Cannacrispy (hybridBreakdown)
-      else if (product.productLine === "Cannacrispy") {
-        for (const type of ["hybrid", "indica", "sativa"]) {
-          const qty = Number(val[type] || 0);
-          if (qty > 0) {
-            const { unitPrice, discountPrice } = pickPrice(product, type);
-            const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-            items.push({ product: productId, qty, unitLabel: type });
-            totalCases += qty;
-            productTotal += qty * effective;
-          }
-        }
-      }
-      // Default simple products
-      else {
-        const qty = Number(val.qty || 0);
-        if (qty > 0) {
-          const { unitPrice, discountPrice } = pickPrice(product, null);
-          const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-          items.push({ product: productId, qty });
-          totalCases += qty;
-          productTotal += qty * effective;
-        }
-      }
-
-      totalPrice += productTotal;
+  const handleChangeStatus = async (id: string, status: string) => {
+    try {
+      await changeStatus({ id, status }).unwrap();
+      refetch();
+      toast.success(`Order marked as ${status}`);
+    } catch {
+      toast.error("Error updating status");
     }
+  };
 
-    // discount logic
-    let discountAmount = 0;
-    if (discountType === "flat") discountAmount = Number(discountValue || 0);
-    else discountAmount = (totalPrice * Number(discountValue || 0)) / 100;
+  // ✅ Fixed Edit Handler
+  const openEdit = useCallback((order: any) => {
+    console.log(order);
+    const initialData = {
+      _id: order._id,
+      storeId: order.store?._id || "",
+      repId: order.rep?._id || "",
+      deliveryDate: order.deliveryDate
+        ? format(new Date(order.deliveryDate), "yyyy-MM-dd")
+        : "",
+      note: order.note || "",
+      discountType: "flat", // assuming backend doesn't send type, use default
+      discountValue: order.discount || 0,
+      subtotal: order.subtotal || 0,
+      total: order.total || 0,
 
-    const finalTotal = Number(Math.max(totalPrice - discountAmount, 0).toFixed(2));
-    const roundedTotalPrice = Number(totalPrice.toFixed(2));
-
-    const newTotals = {
-      totalCases,
-      totalPrice: roundedTotalPrice,
-      discountAmount: Number(discountAmount.toFixed(2)),
-      finalTotal,
+      // ✅ Map backend "items" to match what OrderForm expects
+      items: order.items?.map((item: any) => ({
+        product: item.product?._id || item.product, // not productId
+        name: item.name || "",
+        unitLabel: item.unitLabel || "",
+        qty: item.qty || 0,
+        discountPrice: item.discountPrice || item.unitPrice || 0,
+      })),
     };
 
-    setTotals(newTotals);
-    onChange(items, {
-      totalCases,
-      totalPrice: roundedTotalPrice,
-      discount: Number(discountAmount.toFixed(2)),
-      finalTotal,
-      discountType,
-      discountValue,
+    // ✅ Set all edit states
+    setEditingOrder(initialData);
+    setOrderItems(initialData.items);
+
+    setOrderTotals({
+      totalCases: initialData.items.reduce(
+        (sum: number, i: any) => sum + (i.caseQuantity || 0),
+        0
+      ),
+      totalPrice: initialData.subtotal || 0,
+      discount: initialData.discountValue || 0,
+      finalTotal: initialData.total || 0,
+      discountType: initialData.discountType === "flat" ? "flat" : "percent",
+      discountValue: initialData.discountValue,
+      note: initialData.note,
     });
-  }, [isLoading, products, quantities, discountType, discountValue, onChange]);
 
-  const renderPrice = (regular?: number, discount?: number) => {
-    if (discount && discount < (regular ?? 0)) {
-      return (
-        <div className="text-xs text-gray-600">
-          <span className="line-through text-red-500 mr-1">
-            ${Number(regular ?? 0).toFixed(2)}
-          </span>
-          <span className="text-emerald-600 font-medium">
-            ${Number(discount).toFixed(2)}
-          </span>
-        </div>
-      );
-    }
-    if (regular != null) {
-      return <div className="text-xs text-gray-600">${Number(regular).toFixed(2)}</div>;
-    }
-    return null;
-  };
+    setModalOpen(true);
+  }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
+  // ─────────────── FORM FIELDS ───────────────
+  const orderFields: Field[] = [
+    {
+      name: "storeId",
+      label: "Store",
+      render: (value, onChange) => (
+        <StoreSelect value={value} onChange={onChange} />
+      ),
+    },
+    {
+      name: "repId",
+      label: "Rep",
+      render: (value, onChange) => (
+        <RepSelect value={value} onChange={onChange} />
+      ),
+    },
+    {
+      name: "deliveryDate",
+      label: "Delivery Date",
+      render: (value, onChange) => (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !value && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {value ? (
+                format(new Date(value), "PPP")
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={value ? new Date(value) : undefined}
+              onSelect={(date) =>
+                onChange(date ? format(date, "yyyy-MM-dd") : "")
+              }
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedProducts).map(([line, items]) => (
-        <Card key={line} className="p-4 bg-gray-50">
-          <h2 className="font-semibold text-lg mb-3">{line}</h2>
-          <div className="space-y-3">
-            {items.map((product: any) => (
-              <div
-                key={product._id}
-                className="grid grid-cols-12 items-center gap-3 bg-white p-3 rounded border"
-              >
-                <div className="col-span-3 font-medium text-sm">
-                  {product.subProductLine || product.itemName}
-                </div>
+    <div className="p-6 space-y-6">
+      <OrdersHeader
+        onNewOrder={() => {
+          setEditingOrder(null);
+          setModalOpen(true);
+        }}
+      />
 
-                {/* BLISS */}
-                {product.variants?.length && product.productLine === "BLISS Cannabis Syrup" ? (
-                  <>
-                    {product.variants.map((variant: any) => {
-                      const key = normKey(variant.label);
-                      return (
-                        <div key={variant.label} className="col-span-3 flex flex-col">
-                          <Label className="text-xs text-gray-500 mb-1">{variant.label}</Label>
-                          {renderPrice(variant.price, variant.discountPrice)}
-                          <Input
-                            type="number"
-                            min="0"
-                            className="h-8 border-emerald-500"
-                            value={quantities[product._id]?.[key] ?? ""}
-                            onChange={(e) =>
-                              handleQtyChange(product._id, key, parseFloat(e.target.value || "0") || 0)
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </>
-                ) : product.productLine === "Cannacrispy" ? (
-                  <>
-                    {["hybrid", "indica", "sativa"].map((type) => {
-                      const { unitPrice, discountPrice } = pickPrice(product, type);
-                      const regular = unitPrice;
-                      const discount = discountPrice && discountPrice > 0 ? discountPrice : null;
-                      return (
-                        <div key={type} className="col-span-3 flex flex-col">
-                          <Label className="text-xs text-gray-500 mb-1 capitalize">{type}</Label>
-                          {renderPrice(regular, discount ?? undefined)}
-                          <Input
-                            type="number"
-                            min="0"
-                            className="h-8 border-emerald-500"
-                            value={quantities[product._id]?.[type] ?? ""}
-                            onChange={(e) =>
-                              handleQtyChange(product._id, type, parseFloat(e.target.value || "0") || 0)
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <div className="col-span-3 flex flex-col">
-                    <Label className="text-xs text-gray-500 mb-1">Quantity</Label>
-                    {renderPrice(product.price, product.discountPrice)}
-                    <Input
-                      type="number"
-                      min="0"
-                      className="h-8 border-emerald-500"
-                      value={quantities[product._id]?.qty ?? ""}
-                      onChange={(e) =>
-                        handleQtyChange(product._id, "qty", parseFloat(e.target.value || "0") || 0)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      ))}
+      <OrdersFilters
+        reps={reps}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedRepName={selectedRepName}
+        setSelectedRepName={setSelectedRepName}
+      />
 
-      <Separator className="my-4" />
+      <OrdersTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        grouped={grouped}
+        handleChangeStatus={handleChangeStatus}
+        updateOrder={updateOrder}
+        isLoading={isLoading}
+        refetch={refetch}
+        onEdit={openEdit} // ✅ Pass down edit handler
+      />
 
-      {/* Summary */}
-      <Card className="p-4 bg-white border">
-        <h3 className="font-semibold mb-3">Order Summary</h3>
-
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span>Total Cases:</span>
-            <span className="font-medium">{totals.totalCases}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Subtotal:</span>
-            <span className="font-medium">${totals.totalPrice.toFixed(2)}</span>
-          </div>
-
-          <div className="flex gap-3 items-center">
-            <select
-              value={discountType}
-              onChange={(e) => setDiscountType(e.target.value as "flat" | "percent")}
-              className="border rounded-md px-2 py-1 text-sm"
-            >
-              <option value="flat">Flat ($)</option>
-              <option value="percent">Percent (%)</option>
-            </select>
-            <Input
-              type="number"
-              value={discountValue}
-              onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-              placeholder="Enter discount"
-              className="w-32 border-emerald-500"
-            />
-          </div>
-
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Discount:</span>
-            <span>- ${totals.discountAmount.toFixed(2)}</span>
-          </div>
-
-          <div className="flex justify-between font-semibold text-emerald-700">
-            <span>Final Total:</span>
-            <span>${totals.finalTotal.toFixed(2)}</span>
-          </div>
-        </div>
-      </Card>
+      <EntityModal
+        key={editingOrder?._id || "new"} // ✅ Forces fresh modal on change
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleCreateOrUpdate}
+        title={editingOrder?._id ? "Edit Order" : "Create Order"}
+        fields={orderFields}
+        initialData={editingOrder}
+        isSubmitting={creating || updating}
+      >
+        <OrderForm
+          initialItems={editingOrder?.items || []}
+          initialDiscountType={editingOrder?.discountType || "flat"}
+          initialDiscountValue={
+            editingOrder?.discountValue ?? editingOrder?.discount
+          }
+          onChange={onOrderFormChange}
+        />
+      </EntityModal>
     </div>
   );
 };
+
+export default OrdersPage;
