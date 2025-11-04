@@ -16,9 +16,9 @@ interface OrderFormProps {
     items: any[],
     totals: {
       totalCases: number;
-      totalPrice: number;  // subtotal before discount
-      discount: number;    // numeric discount amount
-      finalTotal: number;  // total after discount
+      totalPrice: number;
+      discount: number;
+      finalTotal: number;
       discountType?: "flat" | "percent";
       discountValue?: number;
       deliveryDate?: string;
@@ -43,11 +43,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     initialDiscountValue
   );
 
-  // Helper: normalize keys (labels/variants) -> lowercase no surrounding spaces
-  const normKey = (s?: string | null) =>
-    s ? String(s).trim().toLowerCase() : "";
+  // Helper: consistent normalized key for variant/label
+  const normKey = (s?: string | null) => (s ? String(s).trim().toLowerCase() : "");
 
-  // Initialize quantities when editing an existing order
+  // Initialize quantities on edit (normalize keys)
   useEffect(() => {
     if (initialItems?.length && products.length) {
       const newQuantities = initialItems.reduce((acc, item) => {
@@ -58,10 +57,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         let key = "qty";
 
         if (item.unitLabel) {
-          // Use unitLabel directly (normalized) — works for BLISS and Cannacrispy
           key = normKey(item.unitLabel);
         } else if (product.productLine === "Cannacrispy") {
-          // Fall back to detect type from name (legacy items)
           for (const t of ["hybrid", "indica", "sativa"]) {
             if (item.name?.toLowerCase()?.includes(t)) {
               key = t;
@@ -81,7 +78,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     }
   }, [JSON.stringify(initialItems), products]);
 
-  // Group products by productLine for display
+  // Group products by productLine
   const groupedProducts = useMemo(() => {
     const map: Record<string, any[]> = {};
     for (const p of products) {
@@ -105,57 +102,30 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     finalTotal: 0,
   });
 
-  /**
-   * pickPrice — mirrors backend priority:
-   * 1) variant label match (case-insensitive)
-   * 2) product.prices[type] (e.g., prices.hybrid)
-   * 3) product.hybridBreakdown[type]
-   * 4) fallback to product-level price/discountPrice
-   */
+  // Price picker function same priority as backend
   const pickPrice = (product: any, typeOrLabel?: string | null) => {
     const norm = normKey(typeOrLabel ?? "");
-
-    // 1) variants by label
+    // variants
     if (product.variants?.length) {
       const v = product.variants.find(
         (x: any) => norm && x.label && x.label.trim().toLowerCase() === norm
       );
-      if (v)
-        return {
-          unitPrice: Number(v.price ?? 0),
-          discountPrice: Number(v.discountPrice ?? 0),
-        };
+      if (v) return { unitPrice: Number(v.price ?? 0), discountPrice: Number(v.discountPrice ?? 0) };
     }
-
-    // 2) product.prices[type]
+    // product.prices[type]
     if (product.prices && norm && product.prices[norm]) {
       const p = product.prices[norm];
-      return {
-        unitPrice: Number(p.price ?? 0),
-        discountPrice: Number(p.discountPrice ?? p.price ?? 0),
-      };
+      return { unitPrice: Number(p.price ?? 0), discountPrice: Number(p.discountPrice ?? p.price ?? 0) };
     }
-
-    // 3) hybridBreakdown
-    if (
-      product.hybridBreakdown &&
-      norm &&
-      product.hybridBreakdown[norm] != null
-    ) {
-      return {
-        unitPrice: Number(product.hybridBreakdown[norm] ?? 0),
-        discountPrice: Number(product.discountPrice ?? 0),
-      };
+    // hybridBreakdown
+    if (product.hybridBreakdown && norm && product.hybridBreakdown[norm] != null) {
+      return { unitPrice: Number(product.hybridBreakdown[norm] ?? 0), discountPrice: Number(product.discountPrice ?? 0) };
     }
-
-    // 4) fallback product-level
-    return {
-      unitPrice: Number(product.price ?? 0),
-      discountPrice: Number(product.discountPrice ?? product.price ?? 0),
-    };
+    // fallback product-level
+    return { unitPrice: Number(product.price ?? 0), discountPrice: Number(product.discountPrice ?? product.price ?? 0) };
   };
 
-  // Calculate totals + build items array for parent
+  // Calculate totals
   useEffect(() => {
     if (isLoading || !products) return;
 
@@ -169,52 +139,39 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
       let productTotal = 0;
 
-      // 1) BLISS — driven by variants
-      if (
-        product.variants?.length &&
-        product.productLine === "BLISS Cannabis Syrup"
-      ) {
+      // BLISS (variants)
+      if (product.variants?.length && product.productLine === "BLISS Cannabis Syrup") {
         for (const variant of product.variants) {
           const k = normKey(variant.label);
-          const qty = Number((val as any)[k] || 0);
+          const qty = Number(val[k] || 0);
           if (qty > 0) {
-            const { unitPrice, discountPrice } = pickPrice(
-              product,
-              variant.label
-            );
-            const effective =
-              discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-            items.push({
-              product: productId,
-              qty,
-              unitLabel: variant.label,
-            });
+            const { unitPrice, discountPrice } = pickPrice(product, variant.label);
+            const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
+            items.push({ product: productId, qty, unitLabel: variant.label });
             totalCases += qty;
             productTotal += qty * effective;
           }
         }
       }
-      // 2) Cannacrispy — hybrid types
+      // Cannacrispy (hybridBreakdown)
       else if (product.productLine === "Cannacrispy") {
         for (const type of ["hybrid", "indica", "sativa"]) {
-          const qty = Number((val as any)[type] || 0);
+          const qty = Number(val[type] || 0);
           if (qty > 0) {
             const { unitPrice, discountPrice } = pickPrice(product, type);
-            const effective =
-              discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
+            const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
             items.push({ product: productId, qty, unitLabel: type });
             totalCases += qty;
             productTotal += qty * effective;
           }
         }
       }
-      // 3) Default products — simple qty
+      // Default simple products
       else {
-        const qty = Number((val as any).qty || 0);
+        const qty = Number(val.qty || 0);
         if (qty > 0) {
           const { unitPrice, discountPrice } = pickPrice(product, null);
-          const effective =
-            discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
+          const effective = discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
           items.push({ product: productId, qty });
           totalCases += qty;
           productTotal += qty * effective;
@@ -224,29 +181,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       totalPrice += productTotal;
     }
 
-    // Discount calculation — we keep both styles:
-    // - Flat: numeric amount
-    // - Percent: based on subtotal
+    // discount logic
     let discountAmount = 0;
     if (discountType === "flat") discountAmount = Number(discountValue || 0);
     else discountAmount = (totalPrice * Number(discountValue || 0)) / 100;
 
-    const roundedSubtotal = Number(totalPrice.toFixed(2));
-    const roundedDiscount = Number(discountAmount.toFixed(2));
-    const finalTotal = Number(Math.max(roundedSubtotal - roundedDiscount, 0).toFixed(2));
+    const finalTotal = Number(Math.max(totalPrice - discountAmount, 0).toFixed(2));
+    const roundedTotalPrice = Number(totalPrice.toFixed(2));
 
-    setTotals({
+    const newTotals = {
       totalCases,
-      totalPrice: roundedSubtotal,
-      discountAmount: roundedDiscount,
+      totalPrice: roundedTotalPrice,
+      discountAmount: Number(discountAmount.toFixed(2)),
       finalTotal,
-    });
+    };
 
-    // Send to parent: numeric `discount` (amount) + type/value for context
+    setTotals(newTotals);
     onChange(items, {
       totalCases,
-      totalPrice: roundedSubtotal,
-      discount: roundedDiscount,   // backend can consume this directly
+      totalPrice: roundedTotalPrice,
+      discount: Number(discountAmount.toFixed(2)),
       finalTotal,
       discountType,
       discountValue,
@@ -267,11 +221,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       );
     }
     if (regular != null) {
-      return (
-        <div className="text-xs text-gray-600">
-          ${Number(regular).toFixed(2)}
-        </div>
-      );
+      return <div className="text-xs text-gray-600">${Number(regular).toFixed(2)}</div>;
     }
     return null;
   };
@@ -299,37 +249,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   {product.subProductLine || product.itemName}
                 </div>
 
-                {/* BLISS Cannabis Syrup */}
-                {product.variants?.length &&
-                product.productLine === "BLISS Cannabis Syrup" ? (
+                {/* BLISS */}
+                {product.variants?.length && product.productLine === "BLISS Cannabis Syrup" ? (
                   <>
                     {product.variants.map((variant: any) => {
                       const key = normKey(variant.label);
                       return (
-                        <div
-                          key={variant.label}
-                          className="col-span-3 flex flex-col"
-                        >
-                          <Label className="text-xs text-gray-500 mb-1">
-                            {variant.label}
-                          </Label>
-                          {renderPrice(
-                            Number(variant.price ?? 0),
-                            variant.discountPrice != null
-                              ? Number(variant.discountPrice)
-                              : undefined
-                          )}
+                        <div key={variant.label} className="col-span-3 flex flex-col">
+                          <Label className="text-xs text-gray-500 mb-1">{variant.label}</Label>
+                          {renderPrice(variant.price, variant.discountPrice)}
                           <Input
                             type="number"
                             min="0"
                             className="h-8 border-emerald-500"
                             value={quantities[product._id]?.[key] ?? ""}
                             onChange={(e) =>
-                              handleQtyChange(
-                                product._id,
-                                key,
-                                parseFloat(e.target.value || "0") || 0
-                              )
+                              handleQtyChange(product._id, key, parseFloat(e.target.value || "0") || 0)
                             }
                           />
                         </div>
@@ -337,35 +272,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     })}
                   </>
                 ) : product.productLine === "Cannacrispy" ? (
-                  // Cannacrispy — show hybrid/indica/sativa
                   <>
                     {["hybrid", "indica", "sativa"].map((type) => {
-                      const { unitPrice, discountPrice } = pickPrice(
-                        product,
-                        type
-                      );
+                      const { unitPrice, discountPrice } = pickPrice(product, type);
                       const regular = unitPrice;
-                      const discount =
-                        discountPrice && discountPrice > 0
-                          ? discountPrice
-                          : undefined;
+                      const discount = discountPrice && discountPrice > 0 ? discountPrice : null;
                       return (
                         <div key={type} className="col-span-3 flex flex-col">
-                          <Label className="text-xs text-gray-500 mb-1 capitalize">
-                            {type}
-                          </Label>
-                          {renderPrice(regular, discount)}
+                          <Label className="text-xs text-gray-500 mb-1 capitalize">{type}</Label>
+                          {renderPrice(regular, discount ?? undefined)}
                           <Input
                             type="number"
                             min="0"
                             className="h-8 border-emerald-500"
                             value={quantities[product._id]?.[type] ?? ""}
                             onChange={(e) =>
-                              handleQtyChange(
-                                product._id,
-                                type,
-                                parseFloat(e.target.value || "0") || 0
-                              )
+                              handleQtyChange(product._id, type, parseFloat(e.target.value || "0") || 0)
                             }
                           />
                         </div>
@@ -373,28 +295,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     })}
                   </>
                 ) : (
-                  // Default — single qty
                   <div className="col-span-3 flex flex-col">
-                    <Label className="text-xs text-gray-500 mb-1">
-                      Quantity
-                    </Label>
-                    {renderPrice(
-                      Number(product.price ?? 0),
-                      product.discountPrice != null
-                        ? Number(product.discountPrice)
-                        : undefined
-                    )}
+                    <Label className="text-xs text-gray-500 mb-1">Quantity</Label>
+                    {renderPrice(product.price, product.discountPrice)}
                     <Input
                       type="number"
                       min="0"
                       className="h-8 border-emerald-500"
                       value={quantities[product._id]?.qty ?? ""}
                       onChange={(e) =>
-                        handleQtyChange(
-                          product._id,
-                          "qty",
-                          parseFloat(e.target.value || "0") || 0
-                        )
+                        handleQtyChange(product._id, "qty", parseFloat(e.target.value || "0") || 0)
                       }
                     />
                   </div>
@@ -416,7 +326,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             <span>Total Cases:</span>
             <span className="font-medium">{totals.totalCases}</span>
           </div>
-
           <div className="flex justify-between text-sm">
             <span>Subtotal:</span>
             <span className="font-medium">${totals.totalPrice.toFixed(2)}</span>
@@ -425,9 +334,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           <div className="flex gap-3 items-center">
             <select
               value={discountType}
-              onChange={(e) =>
-                setDiscountType(e.target.value as "flat" | "percent")
-              }
+              onChange={(e) => setDiscountType(e.target.value as "flat" | "percent")}
               className="border rounded-md px-2 py-1 text-sm"
             >
               <option value="flat">Flat ($)</option>

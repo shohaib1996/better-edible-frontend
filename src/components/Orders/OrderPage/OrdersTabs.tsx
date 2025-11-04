@@ -1,0 +1,67 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { Loader2 } from "lucide-react";
+import { NewOrdersTab } from "./NewOrdersTab";
+import { ShippedOrdersTab } from "./ShippedOrdersTab";
+
+interface OrdersTabsProps {
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+  grouped: {
+    newOrders: any[];
+    shippedOrders: any[];
+  };
+  handleChangeStatus: (id: string, status: string) => void;
+  updateOrder: any;
+  isLoading: boolean;
+  refetch: () => void;
+  onEdit: (order: any) => void; // ✅ NEW
+}
+
+export const OrdersTabs = ({
+  activeTab,
+  setActiveTab,
+  grouped,
+  handleChangeStatus,
+  updateOrder,
+  isLoading,
+  refetch,
+  onEdit, // ✅ added
+}: OrdersTabsProps) => {
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+      </div>
+    );
+
+  return (
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="flex gap-3">
+        <TabsTrigger value="new">New Orders</TabsTrigger>
+        <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
+      </TabsList>
+
+      {/* NEW ORDERS */}
+      <TabsContent value="new">
+        <NewOrdersTab
+          orders={grouped.newOrders}
+          handleChangeStatus={handleChangeStatus}
+          updateOrder={updateOrder}
+          refetch={refetch}
+          onEdit={onEdit} // ✅ pass down
+        />
+      </TabsContent>
+
+      {/* SHIPPED ORDERS */}
+      <TabsContent value="shipped">
+        <ShippedOrdersTab
+          orders={grouped.shippedOrders}
+          handleChangeStatus={handleChangeStatus}
+          updateOrder={updateOrder}
+          refetch={refetch}
+          onEdit={onEdit} // ✅ pass down
+        />
+      </TabsContent>
+    </Tabs>
+  );
+};
