@@ -1,38 +1,55 @@
+// Order.ts
+
+export type ObjectIdString = string;
+
+export type OrderStatus =
+  | "submitted"
+  | "accepted"
+  | "shipped"
+  | "manifested"
+  | "cancelled"
+
+export interface Store {
+  _id: ObjectIdString;
+  name: string;
+  address: string;
+  city: string | null;
+  blocked: boolean;
+}
+
+export interface Rep {
+  // Keep optional so an empty object {} is valid
+  _id?: ObjectIdString;
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface OrderItem {
+  product: ObjectIdString;   // product id
+  name: string;              // product display name
+  unitLabel: string;         // e.g. "300Mg"
+  unitPrice: number;         // price per unit before discount
+  discountPrice: number;     // per-unit discount (0 if none)
+  qty: number;
+  lineTotal: number;         // computed (unitPrice - discountPrice) * qty
+}
+
 export interface IOrder {
-  _id: string;
-  store: {
-    _id: string;
-    name: string;
-    address: string;
-    city: string | null;
-    blocked: boolean;
-  } | null;
-  rep: {
-    _id: string;
-    name: string;
-    repType: "rep" | "admin" | "manager" | string; // extend if needed
-  } | null;
-  items: {
-    product: string;
-    name: string;
-    unitPrice: number;
-    discountPrice?: number;
-    qty: number;
-    lineTotal: number;
-  }[];
-  subtotal: number;
-  discount?: number;
-  total: number;
-  status:
-    | "draft"
-    | "submitted"
-    | "accepted"
-    | "manifested"
-    | "shipped"
-    | "cancelled"
-    | string;
-  note?: string;
-  deliveryDate?: string; // ISO date string
-  createdAt: string; // ISO date string
-  orderNumber: number;
+  _id: ObjectIdString;
+  store: Store;
+  rep?: Rep | null;          // can be {} or null if not assigned
+  items: OrderItem[];
+
+  subtotal: number;          // sum of lineTotal
+  discount?: number;         // order-level discount (optional if not used)
+  total: number;             // subtotal - discount (if any)
+
+  status: OrderStatus;
+
+  deliveryDate?: string | Date; // ISO string or Date
+  createdAt: string | Date;
+
+  orderNumber: number;  
+  note: string     // human-readable sequence
 }

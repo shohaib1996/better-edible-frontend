@@ -7,21 +7,25 @@ import { Label } from "@/src/components/ui/label";
 import { Card } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
 import { Loader2 } from "lucide-react";
+import { Textarea } from "@/src/components/ui/textarea";
+import { Checkbox } from "../ui/checkbox";
+import { cn } from "@/src/lib/utils";
 
 interface OrderFormProps {
   initialItems?: any[];
   initialDiscountType?: "flat" | "percent";
   initialDiscountValue?: number;
+  initialNote?: string;
   onChange: (
     items: any[],
     totals: {
       totalCases: number;
-      totalPrice: number;  // subtotal before discount
-      discount: number;    // numeric discount amount
-      finalTotal: number;  // total after discount
+      totalPrice: number; // subtotal before discount
+      discount: number; // numeric discount amount
+      finalTotal: number; // total after discount
       discountType?: "flat" | "percent";
       discountValue?: number;
-      deliveryDate?: string;
+      note?: string;
     }
   ) => void;
 }
@@ -30,6 +34,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   initialItems = [],
   initialDiscountType = "flat",
   initialDiscountValue = 0,
+  initialNote = "",
   onChange,
 }) => {
   const { data, isLoading } = useGetAllProductsQuery({});
@@ -39,9 +44,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [discountType, setDiscountType] = useState<"flat" | "percent">(
     initialDiscountType
   );
-  const [discountValue, setDiscountValue] = useState<number>(
-    initialDiscountValue
-  );
+  const [discountValue, setDiscountValue] =
+    useState<number>(initialDiscountValue);
+  const [note, setNote] = useState<string>(initialNote);
+  const [discountChecked, setDisountChecked] = useState(false)
 
   // Helper: normalize keys (labels/variants) -> lowercase no surrounding spaces
   const normKey = (s?: string | null) =>
@@ -80,6 +86,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       setQuantities({});
     }
   }, [JSON.stringify(initialItems), products]);
+
+  useEffect(() => {
+    setDiscountType(initialDiscountType);
+  }, [initialDiscountType]);
+
+  useEffect(() => {
+    setDiscountValue(initialDiscountValue);
+  }, [initialDiscountValue]);
+
+  useEffect(() => {
+    setNote(initialNote);
+  }, [initialNote]);
 
   // Group products by productLine for display
   const groupedProducts = useMemo(() => {
@@ -233,7 +251,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
     const roundedSubtotal = Number(totalPrice.toFixed(2));
     const roundedDiscount = Number(discountAmount.toFixed(2));
-    const finalTotal = Number(Math.max(roundedSubtotal - roundedDiscount, 0).toFixed(2));
+    const finalTotal = Number(
+      Math.max(roundedSubtotal - roundedDiscount, 0).toFixed(2)
+    );
 
     setTotals({
       totalCases,
@@ -246,12 +266,21 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     onChange(items, {
       totalCases,
       totalPrice: roundedSubtotal,
-      discount: roundedDiscount,   // backend can consume this directly
+      discount: roundedDiscount, // backend can consume this directly
       finalTotal,
       discountType,
       discountValue,
+      note,
     });
-  }, [isLoading, products, quantities, discountType, discountValue, onChange]);
+  }, [
+    isLoading,
+    products,
+    quantities,
+    discountType,
+    discountValue,
+    note,
+    onChange,
+  ]);
 
   const renderPrice = (regular?: number, discount?: number) => {
     if (discount && discount < (regular ?? 0)) {
@@ -284,6 +313,31 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     );
   }
 
+  const hasDiscount = (product: any): boolean => {
+    // Case 1: Fifty-One Fifty → directly uses applyDiscount
+    if (product.productLine === "Fifty-One Fifty") {
+      return !!product.applyDiscount;
+    }
+
+    // Case 2: BLISS Cannabis Syrup → check inside variants
+    if (product.productLine === "BLISS Cannabis Syrup") {
+      return product.variants?.some(
+        (v: any) => v.discountPrice && v.discountPrice < v.price
+      );
+    }
+
+    // Case 3: Cannacrispy → check inside prices object
+    if (product.productLine === "Cannacrispy") {
+      const priceValues = Object.values(product.prices || {});
+      return priceValues.some(
+        (p: any) => p.discountPrice && p.discountPrice < p.price
+      );
+    }
+
+    // Default → no discount
+    return false;
+  };
+
   return (
     <div className="space-y-6">
       {Object.entries(groupedProducts).map(([line, items]) => (
@@ -295,8 +349,23 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 key={product._id}
                 className="grid grid-cols-12 items-center gap-3 bg-white p-3 rounded border"
               >
-                <div className="col-span-3 font-medium text-sm">
-                  {product.subProductLine || product.itemName}
+                <div className="col-span-3 font-medium text-sm flex items-center gap-3">
+                  <span
+                    className={cn(
+                      "w-24",
+                      hasDiscount(product)
+                        ? "text-green-600 font-semibold"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {product.subProductLine || product.itemName}
+                  </span>
+
+                  {hasDiscount(product) && (
+                    <span className="mt-1">
+                      <Checkbox className="border border-accent cursor-pointer" onClick={() => setDisountChecked(!discountChecked)} />
+                    </span>
+                  )}
                 </div>
 
                 {/* BLISS Cannabis Syrup */}
@@ -450,6 +519,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           <div className="flex justify-between font-semibold text-emerald-700">
             <span>Final Total:</span>
             <span>${totals.finalTotal.toFixed(2)}</span>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="order-note">Note</Label>
+            <Textarea
+              id="order-note"
+              placeholder="Add any special notes or instructions for this order..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
         </div>
       </Card>

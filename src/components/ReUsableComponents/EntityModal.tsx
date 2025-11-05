@@ -70,7 +70,7 @@ export function EntityModal<T>({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-tight">
             {title}

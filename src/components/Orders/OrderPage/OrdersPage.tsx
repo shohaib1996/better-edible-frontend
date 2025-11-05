@@ -88,7 +88,7 @@ const OrdersPage = () => {
         discountType: orderTotals.discountType,
         discountValue: orderTotals.discountValue,
         total: orderTotals.finalTotal,
-        note: orderTotals.note || values.note,
+        note: orderTotals.note,
       };
 
       if (editingOrder?._id) {
@@ -257,6 +257,7 @@ const OrdersPage = () => {
           initialDiscountValue={
             editingOrder?.discountValue ?? editingOrder?.discount
           }
+          initialNote={editingOrder?.note || ""}
           onChange={onOrderFormChange}
         />
       </EntityModal>
