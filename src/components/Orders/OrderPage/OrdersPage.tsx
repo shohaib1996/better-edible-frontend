@@ -138,6 +138,7 @@ const OrdersPage = () => {
         unitLabel: item.unitLabel || "",
         qty: item.qty || 0,
         discountPrice: item.discountPrice || item.unitPrice || 0,
+        appliedDiscount: item.appliedDiscount, // Pass the appliedDiscount field
       })),
     };
 

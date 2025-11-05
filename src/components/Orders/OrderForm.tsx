@@ -20,9 +20,9 @@ interface OrderFormProps {
     items: any[],
     totals: {
       totalCases: number;
-      totalPrice: number; // subtotal before discount
-      discount: number; // numeric discount amount
-      finalTotal: number; // total after discount
+      totalPrice: number;
+      discount: number;
+      finalTotal: number;
       discountType?: "flat" | "percent";
       discountValue?: number;
       note?: string;
@@ -47,27 +47,29 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [discountValue, setDiscountValue] =
     useState<number>(initialDiscountValue);
   const [note, setNote] = useState<string>(initialNote);
-  const [discountChecked, setDisountChecked] = useState(false)
 
-  // Helper: normalize keys (labels/variants) -> lowercase no surrounding spaces
+  // per-product toggles keyed by productId string
+  const [discountToggles, setDiscountToggles] = useState<Record<string, boolean>>(
+    {}
+  );
+
   const normKey = (s?: string | null) =>
     s ? String(s).trim().toLowerCase() : "";
 
-  // Initialize quantities when editing an existing order
+  // Initialize quantities and discount toggles when editing an existing order
   useEffect(() => {
     if (initialItems?.length && products.length) {
+      // Quantities map
       const newQuantities = initialItems.reduce((acc, item) => {
-        const productId = item.product;
-        const product = products.find((p: any) => p._id === productId);
+        const rawProd = item.product;
+        const productId = String((rawProd && (rawProd._id ?? rawProd)) ?? rawProd);
+        const product = products.find((p: any) => String(p._id) === productId);
         if (!product) return acc;
 
         let key = "qty";
-
         if (item.unitLabel) {
-          // Use unitLabel directly (normalized) — works for BLISS and Cannacrispy
           key = normKey(item.unitLabel);
         } else if (product.productLine === "Cannacrispy") {
-          // Fall back to detect type from name (legacy items)
           for (const t of ["hybrid", "indica", "sativa"]) {
             if (item.name?.toLowerCase()?.includes(t)) {
               key = t;
@@ -82,9 +84,33 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       }, {} as Record<string, any>);
 
       setQuantities(newQuantities);
+
+      // Build toggles: prefer explicit `appliedDiscount` saved on order items
+      const newToggles: Record<string, boolean> = {};
+      for (const it of initialItems) {
+        const pid = String((it.product && (it.product._id ?? it.product)) ?? it.product);
+        // If the backend saved appliedDiscount for that item, honor it.
+        if (typeof it.appliedDiscount === "boolean") {
+          // If any item entry for that product has appliedDiscount true, mark product toggled.
+          newToggles[pid] = newToggles[pid] || Boolean(it.appliedDiscount);
+          continue;
+        }
+        // Fallback inference: if discountPrice exists and lineTotal matches qty * discountPrice, infer applied
+        if (it.discountPrice && Number(it.discountPrice) > 0 && it.qty) {
+          const inferred =
+            Math.abs(Number(it.lineTotal || 0) - Number(it.qty || 0) * Number(it.discountPrice)) < 0.01;
+          newToggles[pid] = newToggles[pid] || inferred;
+        }
+      }
+
+      // Replace toggles with init values (don't merge with stale toggles) so modal shows saved state.
+      setDiscountToggles(newToggles);
     } else {
       setQuantities({});
+      setDiscountToggles({});
     }
+    // intentionally depend on serialized initialItems and products so it runs after products load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(initialItems), products]);
 
   useEffect(() => {
@@ -99,7 +125,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     setNote(initialNote);
   }, [initialNote]);
 
-  // Group products by productLine for display
   const groupedProducts = useMemo(() => {
     const map: Record<string, any[]> = {};
     for (const p of products) {
@@ -110,9 +135,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   }, [products]);
 
   const handleQtyChange = (productId: string, key: string, value: number) => {
+    const pid = String(productId);
     setQuantities((prev) => ({
       ...prev,
-      [productId]: { ...prev[productId], [key]: Number(value || 0) },
+      [pid]: { ...prev[pid], [key]: Number(value || 0) },
     }));
   };
 
@@ -124,37 +150,45 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   });
 
   /**
-   * pickPrice — mirrors backend priority:
-   * 1) variant label match (case-insensitive)
-   * 2) product.prices[type] (e.g., prices.hybrid)
-   * 3) product.hybridBreakdown[type]
-   * 4) fallback to product-level price/discountPrice
+   * pickPrice — priority:
+   * 1) variant label
+   * 2) product.prices[type]
+   * 3) hybridBreakdown
+   * 4) product-level
+   *
+   * IMPORTANT: returns `discountPrice` only when the product's discount toggle is ON.
+   * If discount is not allowed (toggle off) returns `discountPrice: undefined`.
    */
   const pickPrice = (product: any, typeOrLabel?: string | null) => {
     const norm = normKey(typeOrLabel ?? "");
+    const pid = String(product._id);
+    const discountAllowed = !!discountToggles[pid];
 
-    // 1) variants by label
+    // variant
     if (product.variants?.length) {
       const v = product.variants.find(
         (x: any) => norm && x.label && x.label.trim().toLowerCase() === norm
       );
-      if (v)
+      if (v) {
         return {
           unitPrice: Number(v.price ?? 0),
-          discountPrice: Number(v.discountPrice ?? 0),
+          discountPrice:
+            discountAllowed && v.discountPrice != null ? Number(v.discountPrice) : undefined,
         };
+      }
     }
 
-    // 2) product.prices[type]
+    // prices[type]
     if (product.prices && norm && product.prices[norm]) {
       const p = product.prices[norm];
       return {
         unitPrice: Number(p.price ?? 0),
-        discountPrice: Number(p.discountPrice ?? p.price ?? 0),
+        discountPrice:
+          discountAllowed && p.discountPrice != null ? Number(p.discountPrice) : undefined,
       };
     }
 
-    // 3) hybridBreakdown
+    // hybridBreakdown
     if (
       product.hybridBreakdown &&
       norm &&
@@ -162,32 +196,41 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     ) {
       return {
         unitPrice: Number(product.hybridBreakdown[norm] ?? 0),
-        discountPrice: Number(product.discountPrice ?? 0),
+        discountPrice:
+          discountAllowed && product.discountPrice != null
+            ? Number(product.discountPrice)
+            : undefined,
       };
     }
 
-    // 4) fallback product-level
+    // fallback product-level
     return {
       unitPrice: Number(product.price ?? 0),
-      discountPrice: Number(product.discountPrice ?? product.price ?? 0),
+      discountPrice:
+        discountAllowed && product.discountPrice != null
+          ? Number(product.discountPrice)
+          : undefined,
     };
   };
 
-  // Calculate totals + build items array for parent
+  // Build items (with applyDiscount flag) and calculate totals
   useEffect(() => {
     if (isLoading || !products) return;
 
     let totalCases = 0;
     let totalPrice = 0;
-    const items: any[] = [];
+    const itemsForParent: any[] = [];
 
-    for (const [productId, val] of Object.entries(quantities)) {
-      const product = products.find((p: any) => p._id === productId);
+    for (const [rawProductId, val] of Object.entries(quantities)) {
+      const productId = String(rawProductId);
+      const product = products.find((p: any) => String(p._id) === productId);
       if (!product) continue;
+
+      const applyDiscountFlag = !!discountToggles[productId];
 
       let productTotal = 0;
 
-      // 1) BLISS — driven by variants
+      // BLISS (variants)
       if (
         product.variants?.length &&
         product.productLine === "BLISS Cannabis Syrup"
@@ -200,40 +243,48 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               product,
               variant.label
             );
-            const effective =
-              discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-            items.push({
+            const effective = (discountPrice ?? unitPrice) as number;
+            itemsForParent.push({
               product: productId,
               qty,
               unitLabel: variant.label,
+              applyDiscount: applyDiscountFlag,
             });
             totalCases += qty;
             productTotal += qty * effective;
           }
         }
       }
-      // 2) Cannacrispy — hybrid types
+      // Cannacrispy (hybrid/indica/sativa)
       else if (product.productLine === "Cannacrispy") {
         for (const type of ["hybrid", "indica", "sativa"]) {
           const qty = Number((val as any)[type] || 0);
           if (qty > 0) {
             const { unitPrice, discountPrice } = pickPrice(product, type);
-            const effective =
-              discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-            items.push({ product: productId, qty, unitLabel: type });
+            const effective = (discountPrice ?? unitPrice) as number;
+            itemsForParent.push({
+              product: productId,
+              qty,
+              unitLabel: type,
+              applyDiscount: applyDiscountFlag,
+            });
             totalCases += qty;
             productTotal += qty * effective;
           }
         }
       }
-      // 3) Default products — simple qty
+      // Default single-qty products
       else {
         const qty = Number((val as any).qty || 0);
         if (qty > 0) {
           const { unitPrice, discountPrice } = pickPrice(product, null);
-          const effective =
-            discountPrice && discountPrice > 0 ? discountPrice : unitPrice;
-          items.push({ product: productId, qty });
+          const effective = (discountPrice ?? unitPrice) as number;
+          itemsForParent.push({
+            product: productId,
+            qty,
+            unitLabel: null,
+            applyDiscount: applyDiscountFlag,
+          });
           totalCases += qty;
           productTotal += qty * effective;
         }
@@ -242,9 +293,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       totalPrice += productTotal;
     }
 
-    // Discount calculation — we keep both styles:
-    // - Flat: numeric amount
-    // - Percent: based on subtotal
+    // Top-level discount (flat or percent)
     let discountAmount = 0;
     if (discountType === "flat") discountAmount = Number(discountValue || 0);
     else discountAmount = (totalPrice * Number(discountValue || 0)) / 100;
@@ -262,11 +311,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       finalTotal,
     });
 
-    // Send to parent: numeric `discount` (amount) + type/value for context
-    onChange(items, {
+    // send build items + totals to parent (items include applyDiscount flag)
+    onChange(itemsForParent, {
       totalCases,
       totalPrice: roundedSubtotal,
-      discount: roundedDiscount, // backend can consume this directly
+      discount: roundedDiscount,
       finalTotal,
       discountType,
       discountValue,
@@ -280,10 +329,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     discountValue,
     note,
     onChange,
+    discountToggles,
   ]);
 
   const renderPrice = (regular?: number, discount?: number) => {
-    if (discount && discount < (regular ?? 0)) {
+    if (discount != null && discount < (regular ?? 0)) {
       return (
         <div className="text-xs text-gray-600">
           <span className="line-through text-red-500 mr-1">
@@ -296,11 +346,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       );
     }
     if (regular != null) {
-      return (
-        <div className="text-xs text-gray-600">
-          ${Number(regular).toFixed(2)}
-        </div>
-      );
+      return <div className="text-xs text-gray-600">${Number(regular).toFixed(2)}</div>;
     }
     return null;
   };
@@ -314,19 +360,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   }
 
   const hasDiscount = (product: any): boolean => {
-    // Case 1: Fifty-One Fifty → directly uses applyDiscount
     if (product.productLine === "Fifty-One Fifty") {
       return !!product.applyDiscount;
     }
 
-    // Case 2: BLISS Cannabis Syrup → check inside variants
     if (product.productLine === "BLISS Cannabis Syrup") {
       return product.variants?.some(
         (v: any) => v.discountPrice && v.discountPrice < v.price
       );
     }
 
-    // Case 3: Cannacrispy → check inside prices object
     if (product.productLine === "Cannacrispy") {
       const priceValues = Object.values(product.prices || {});
       return priceValues.some(
@@ -334,7 +377,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       );
     }
 
-    // Default → no discount
     return false;
   };
 
@@ -344,142 +386,118 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         <Card key={line} className="p-4 bg-gray-50">
           <h2 className="font-semibold text-lg mb-3">{line}</h2>
           <div className="space-y-3">
-            {items.map((product: any) => (
-              <div
-                key={product._id}
-                className="grid grid-cols-12 items-center gap-3 bg-white p-3 rounded border"
-              >
-                <div className="col-span-3 font-medium text-sm flex items-center gap-3">
-                  <span
-                    className={cn(
-                      "w-24",
-                      hasDiscount(product)
-                        ? "text-green-600 font-semibold"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {product.subProductLine || product.itemName}
-                  </span>
-
-                  {hasDiscount(product) && (
-                    <span className="mt-1">
-                      <Checkbox className="border border-accent cursor-pointer" onClick={() => setDisountChecked(!discountChecked)} />
+            {items.map((product: any) => {
+              const pid = String(product._id);
+              const isChecked = !!discountToggles[pid];
+              return (
+                <div
+                  key={pid}
+                  className="grid grid-cols-12 items-center gap-3 bg-white p-3 rounded border"
+                >
+                  <div className="col-span-3 font-medium text-sm flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "w-24",
+                        hasDiscount(product)
+                          ? "text-green-600 font-semibold"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {product.subProductLine || product.itemName}
                     </span>
+
+                    {hasDiscount(product) && (
+                      <span className="mt-1">
+                        <Checkbox
+                          className="border border-accent cursor-pointer"
+                          checked={isChecked}
+                          onCheckedChange={(checked) =>
+                            setDiscountToggles((prev) => ({
+                              ...prev,
+                              [pid]: !!checked,
+                            }))
+                          }
+                        />
+                      </span>
+                    )}
+                  </div>
+
+                  {/* BLISS (variants) */}
+                  {product.variants?.length && product.productLine === "BLISS Cannabis Syrup" ? (
+                    <>
+                      {product.variants.map((variant: any) => {
+                        const key = normKey(variant.label);
+                        const regular = Number(variant.price ?? 0);
+                        const discount = variant.discountPrice != null ? Number(variant.discountPrice) : undefined;
+                        return (
+                          <div key={variant.label} className="col-span-3 flex flex-col">
+                            <Label className="text-xs text-gray-500 mb-1">{variant.label}</Label>
+                            {renderPrice(regular, isChecked ? discount : undefined)}
+                            <Input
+                              type="number"
+                              min="0"
+                              className="h-8 border-emerald-500"
+                              value={quantities[pid]?.[key] ?? ""}
+                              onChange={(e) =>
+                                handleQtyChange(pid, key, parseFloat(e.target.value || "0") || 0)
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : product.productLine === "Cannacrispy" ? (
+                    <>
+                      {["hybrid", "indica", "sativa"].map((type) => {
+                        const { unitPrice, discountPrice } = pickPrice(product, type);
+                        const regular = unitPrice;
+                        const discount = discountPrice && discountPrice > 0 ? discountPrice : undefined;
+                        return (
+                          <div key={type} className="col-span-3 flex flex-col">
+                            <Label className="text-xs text-gray-500 mb-1 capitalize">{type}</Label>
+                            {renderPrice(regular, isChecked ? discount : undefined)}
+                            <Input
+                              type="number"
+                              min="0"
+                              className="h-8 border-emerald-500"
+                              value={quantities[pid]?.[type] ?? ""}
+                              onChange={(e) =>
+                                handleQtyChange(pid, type, parseFloat(e.target.value || "0") || 0)
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <div className="col-span-3 flex flex-col">
+                      <Label className="text-xs text-gray-500 mb-1">Quantity</Label>
+                      {renderPrice(
+                        Number(product.price ?? 0),
+                        isChecked && product.discountPrice != null ? Number(product.discountPrice) : undefined
+                      )}
+                      <Input
+                        type="number"
+                        min="0"
+                        className="h-8 border-emerald-500"
+                        value={quantities[pid]?.qty ?? ""}
+                        onChange={(e) =>
+                          handleQtyChange(pid, "qty", parseFloat(e.target.value || "0") || 0)
+                        }
+                      />
+                    </div>
                   )}
                 </div>
-
-                {/* BLISS Cannabis Syrup */}
-                {product.variants?.length &&
-                product.productLine === "BLISS Cannabis Syrup" ? (
-                  <>
-                    {product.variants.map((variant: any) => {
-                      const key = normKey(variant.label);
-                      return (
-                        <div
-                          key={variant.label}
-                          className="col-span-3 flex flex-col"
-                        >
-                          <Label className="text-xs text-gray-500 mb-1">
-                            {variant.label}
-                          </Label>
-                          {renderPrice(
-                            Number(variant.price ?? 0),
-                            variant.discountPrice != null
-                              ? Number(variant.discountPrice)
-                              : undefined
-                          )}
-                          <Input
-                            type="number"
-                            min="0"
-                            className="h-8 border-emerald-500"
-                            value={quantities[product._id]?.[key] ?? ""}
-                            onChange={(e) =>
-                              handleQtyChange(
-                                product._id,
-                                key,
-                                parseFloat(e.target.value || "0") || 0
-                              )
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </>
-                ) : product.productLine === "Cannacrispy" ? (
-                  // Cannacrispy — show hybrid/indica/sativa
-                  <>
-                    {["hybrid", "indica", "sativa"].map((type) => {
-                      const { unitPrice, discountPrice } = pickPrice(
-                        product,
-                        type
-                      );
-                      const regular = unitPrice;
-                      const discount =
-                        discountPrice && discountPrice > 0
-                          ? discountPrice
-                          : undefined;
-                      return (
-                        <div key={type} className="col-span-3 flex flex-col">
-                          <Label className="text-xs text-gray-500 mb-1 capitalize">
-                            {type}
-                          </Label>
-                          {renderPrice(regular, discount)}
-                          <Input
-                            type="number"
-                            min="0"
-                            className="h-8 border-emerald-500"
-                            value={quantities[product._id]?.[type] ?? ""}
-                            onChange={(e) =>
-                              handleQtyChange(
-                                product._id,
-                                type,
-                                parseFloat(e.target.value || "0") || 0
-                              )
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </>
-                ) : (
-                  // Default — single qty
-                  <div className="col-span-3 flex flex-col">
-                    <Label className="text-xs text-gray-500 mb-1">
-                      Quantity
-                    </Label>
-                    {renderPrice(
-                      Number(product.price ?? 0),
-                      product.discountPrice != null
-                        ? Number(product.discountPrice)
-                        : undefined
-                    )}
-                    <Input
-                      type="number"
-                      min="0"
-                      className="h-8 border-emerald-500"
-                      value={quantities[product._id]?.qty ?? ""}
-                      onChange={(e) =>
-                        handleQtyChange(
-                          product._id,
-                          "qty",
-                          parseFloat(e.target.value || "0") || 0
-                        )
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       ))}
 
       <Separator className="my-4" />
 
-      {/* Summary */}
       <Card className="p-4 bg-white border">
         <h3 className="font-semibold mb-3">Order Summary</h3>
-
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span>Total Cases:</span>
@@ -494,9 +512,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           <div className="flex gap-3 items-center">
             <select
               value={discountType}
-              onChange={(e) =>
-                setDiscountType(e.target.value as "flat" | "percent")
-              }
+              onChange={(e) => setDiscountType(e.target.value as "flat" | "percent")}
               className="border rounded-md px-2 py-1 text-sm"
             >
               <option value="flat">Flat ($)</option>
