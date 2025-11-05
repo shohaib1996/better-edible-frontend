@@ -38,6 +38,8 @@ const OrdersPage = () => {
   const [selectedRepName, setSelectedRepName] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [startDate, setStartDate] = useState<string | undefined>();
+  const [endDate, setEndDate] = useState<string | undefined>();
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderTotals, setOrderTotals] = useState({
@@ -55,6 +57,9 @@ const OrdersPage = () => {
   const { data, isLoading, refetch } = useGetAllOrdersQuery({
     search: debouncedSearch || undefined,
     repName: selectedRepName || undefined,
+    startDate,
+    endDate,
+    status: activeTab === 'new' ? ['submitted', 'accepted', 'manifested'] : ['shipped', 'cancelled'],
   });
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
   const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
@@ -114,6 +119,11 @@ const OrdersPage = () => {
       toast.error("Error updating status");
     }
   };
+
+  const handleFilter = ({ startDate, endDate }: { startDate?: string; endDate?: string }) => {
+    setStartDate(startDate);
+    setEndDate(endDate);
+  }; // Added comment to force re-evaluation
 
   // ✅ Fixed Edit Handler
   const openEdit = useCallback((order: any) => {
@@ -240,6 +250,8 @@ const OrdersPage = () => {
         isLoading={isLoading}
         refetch={refetch}
         onEdit={openEdit} // ✅ Pass down edit handler
+        onFilter={handleFilter}
+        reps={reps?.data || []}
       />
 
       <EntityModal

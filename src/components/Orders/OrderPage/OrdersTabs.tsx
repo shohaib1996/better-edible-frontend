@@ -13,8 +13,10 @@ interface OrdersTabsProps {
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
   isLoading: boolean;
-  refetch: () => void;
+  refetch: (args?: { startDate?: string; endDate?: string }) => void;
   onEdit: (order: any) => void; // ✅ NEW
+  onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
+  reps: any[];
 }
 
 export const OrdersTabs = ({
@@ -26,6 +28,8 @@ export const OrdersTabs = ({
   isLoading,
   refetch,
   onEdit, // ✅ added
+  onFilter,
+  reps,
 }: OrdersTabsProps) => {
   if (isLoading)
     return (
@@ -58,8 +62,10 @@ export const OrdersTabs = ({
           orders={grouped.shippedOrders}
           handleChangeStatus={handleChangeStatus}
           updateOrder={updateOrder}
-          refetch={refetch}
+          onFilter={onFilter}
           onEdit={onEdit} // ✅ pass down
+          isLoading={isLoading}
+          reps={reps}
         />
       </TabsContent>
     </Tabs>

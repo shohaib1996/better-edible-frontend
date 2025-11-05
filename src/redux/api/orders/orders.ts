@@ -5,9 +5,29 @@ export const ordersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // 🟩 Get all orders (with optional filters & pagination)
     getAllOrders: builder.query({
-      query: ({ status, storeId, repName, search, repId, page = 1, limit = 20 }) => ({
+      query: ({
+        status,
+        storeId,
+        repName,
+        startDate,
+        endDate,
+        search,
+        repId,
+        page = 1,
+        limit = 20,
+      }) => ({
         url: "/orders",
-        params: { status, storeId, repName, search, repId, page, limit },
+        params: {
+          status,
+          storeId,
+          repName,
+          startDate,
+          endDate,
+          search,
+          repId,
+          page,
+          limit,
+        },
       }),
       providesTags: [tagTypes.orders],
     }),

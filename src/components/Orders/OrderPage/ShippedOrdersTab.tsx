@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -11,22 +11,61 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
+import { Calendar } from "@/src/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface ShippedOrdersTabProps {
   orders: any[];
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
-  refetch: () => void;
+  onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
   onEdit: (order: any) => void;
+  isLoading: boolean;
+  reps: any[];
 }
 
 export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   orders,
   handleChangeStatus,
   updateOrder,
-  refetch,
+  onFilter,
   onEdit,
+  isLoading,
+  reps,
 }) => {
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [selectedRepName, setSelectedRepName] = useState<string | undefined>();
+
+  const handleFilter = () => {
+    onFilter({
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
+      repName: selectedRepName,
+    });
+  };
+
+  const handleClear = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setSelectedRepName(undefined);
+    onFilter({});
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
   if (!orders.length)
     return <p className="text-gray-500 mt-4">No shipped orders found.</p>;
 
@@ -78,6 +117,72 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
   return (
     <div className="space-y-3">
+      <div className="flex justify-end items-center gap-2 my-4">
+        {/* <Select
+          value={selectedRepName || "all"}
+          onValueChange={(value) => setSelectedRepName(value === "all" ? undefined : value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by Rep" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Reps</SelectItem>
+            {[...(new Set(reps?.map((r: any) => r.name).filter(Boolean) || []))].map(
+              (repName) => (
+                <SelectItem key={repName as string} value={repName as string}>
+                  {repName as string}
+                </SelectItem>
+              )
+            )}
+          </SelectContent>
+        </Select> */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[280px] justify-start text-left font-normal",
+                !startDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={startDate}
+              onSelect={setStartDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[280px] justify-start text-left font-normal",
+                !endDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={setEndDate}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <Button onClick={handleFilter}>Filter</Button>
+        <Button onClick={handleClear} variant="ghost">Clear</Button>
+      </div>
       {/* ✅ Shipped-only total */}
       <div className="text-right font-semibold text-green-700 pr-1">
         Shipped Orders Value: ${shippedTotal.toFixed(2)}
@@ -125,24 +230,28 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                   <SelectValue placeholder="Change" />
                 </SelectTrigger>
                 <SelectContent className="text-sm">
-                  {["shipped", "cancelled", "manifested", "accepted", "submitted"].map(
-                    (s) => (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className={cn(
-                          "capitalize font-medium",
-                          s === "shipped"
-                            ? "text-green-700"
-                            : s === "cancelled"
-                            ? "text-red-700"
-                            : "text-gray-700"
-                        )}
-                      >
-                        {s}
-                      </SelectItem>
-                    )
-                  )}
+                  {[
+                    "shipped",
+                    "cancelled",
+                    "manifested",
+                    "accepted",
+                    "submitted",
+                  ].map((s) => (
+                    <SelectItem
+                      key={s}
+                      value={s}
+                      className={cn(
+                        "capitalize font-medium",
+                        s === "shipped"
+                          ? "text-green-700"
+                          : s === "cancelled"
+                          ? "text-red-700"
+                          : "text-gray-700"
+                      )}
+                    >
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
