@@ -22,6 +22,13 @@ import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
 import { IOrder } from "@/src/types";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import { generateInvoice } from "@/src/utils/invoiceGenerator";
+import { PackingListDialog } from "./PackingListDialog";
+import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
+
+(pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 interface NewOrdersTabProps {
   orders: IOrder[];
@@ -39,6 +46,9 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   onEdit,
 }) => {
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
+  const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<IOrder | null>(null);
 
   const handleOpenDialog = (order: IOrder) => {
     setSelectedOrder(order);
@@ -135,7 +145,23 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
               </div>
 
               <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
-                <Button variant="outline" size="sm" className="text-xs h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => {
+                    setSelectedOrderForDelivery(order);
+                    setDeliveryModalOpen(true);
+                  }}
+                >
+                  Delivery
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => generateInvoice(order)}
+                >
                   Generate Invoice
                 </Button>
 
@@ -148,7 +174,12 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                   Edit
                 </Button>
 
-                <Button variant="outline" size="sm" className="text-xs h-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setPackingOrder(order)}
+                >
                   Packing List
                 </Button>
 
@@ -282,6 +313,12 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
         ))}
       </div>
       <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />
+      <PackingListDialog order={packingOrder} onClose={() => setPackingOrder(null)} />
+      <DeliveryModal
+        open={deliveryModalOpen}
+        onClose={() => setDeliveryModalOpen(false)}
+        store={selectedOrderForDelivery?.store || null}
+      />
     </>
   );
 };
