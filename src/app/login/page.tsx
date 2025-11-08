@@ -3,8 +3,7 @@
 import { LoginForm } from "@/src/components/pages/Login/LoginForm"
 import Lottie from "lottie-react";
 import loginAnimation from "../../../public/Login.json"
-
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
 export default function LoginPage() {
   return (
@@ -21,7 +20,18 @@ export default function LoginPage() {
       {/* Right side - Login form */}
       <div className="flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
-          <LoginForm />
+          <Tabs defaultValue="admin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="admin">Admin</TabsTrigger>
+              <TabsTrigger value="rep">Representative</TabsTrigger>
+            </TabsList>
+            <TabsContent value="admin">
+              <LoginForm role="admin" />
+            </TabsContent>
+            <TabsContent value="rep">
+              <LoginForm role="rep" />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

@@ -8,9 +8,9 @@ import { Input } from "@/src/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/src/components/ui/form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { useLoginAdminMutation } from "@/src/redux/api/admin/authApi"
+import { useLoginRepMutation } from "@/src/redux/api/RepLogin/repAuthApi"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -19,9 +19,16 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-export function LoginForm() {
+interface LoginFormProps {
+  role: "admin" | "rep"
+}
+
+export function LoginForm({ role }: LoginFormProps) {
   const router = useRouter()
-  const [adminLogin, { isLoading }] = useLoginAdminMutation()
+  const [adminLogin, { isLoading: isAdminLoading }] = useLoginAdminMutation()
+  const [repLogin, { isLoading: isRepLoading }] = useLoginRepMutation()
+
+  const isLoading = isAdminLoading || isRepLoading
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -33,17 +40,20 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginFormValues) {
     try {
-      const result = await adminLogin(values).unwrap()
-      console.log("result", result)
-      // ✅ Store user data in localStorage
-      localStorage.setItem("better-user", JSON.stringify(result?.admin || result))
+      let result
+      if (role === "admin") {
+        result = await adminLogin(values).unwrap()
+        localStorage.setItem("better-user", JSON.stringify(result?.admin || result))
+      } else {
+        result = await repLogin(values).unwrap()
+        localStorage.setItem("better-user", JSON.stringify(result?.rep || result))
+      }
 
-      // ✅ Show success message
       toast.success("Login successful!")
 
-      // ✅ Redirect based on role
-      const role = result?.admin?.role || result?.role
-      if (role === "superadmin") {
+      const userRole = role === "admin" ? (result?.admin?.role || result?.role) : (result?.rep?.role || result?.role)
+      
+      if (userRole === "superadmin") {
         router.push("/admin")
       } else {
         router.push("/rep")
@@ -55,10 +65,10 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="border-0 shadow-lg">
+    <Card className="border-0 shadow-none">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your account to continue</CardDescription>
+        <CardDescription>Sign in to your {role} account to continue</CardDescription>
       </CardHeader>
 
       <CardContent>
