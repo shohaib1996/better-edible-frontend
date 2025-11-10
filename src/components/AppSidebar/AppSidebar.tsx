@@ -24,6 +24,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
+import { useUser } from "@/src/redux/hooks/useAuth";
+import Link from "next/link";
 
 // Admin menu items
 const adminItems = [
@@ -45,14 +47,12 @@ const repItems = [
   { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
-// ✅ Temporary placeholder for your upcoming useAuth hook
-const useAuth = () => {
-  return { user: { role: "rep" } }; // change to "admin" for admin sidebar
-};
-
 export function AppSidebar() {
-  const { user } = useAuth();
-  const menuItems = user?.role === "admin" ? adminItems : repItems;
+  const user = useUser();
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+  const menuItems = user?.role === "superadmin" ? adminItems : repItems;
 
   return (
     <Sidebar className="">
@@ -75,20 +75,20 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className=" text-sm uppercase tracking-wide">
-            {user?.role === "admin" ? "Admin Panel" : "Rep Dashboard"}
+            {user?.role === "superadmin" ? "Admin Panel" : "Rep Dashboard"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a
+                    <Link
                       href={item.url}
                       className="flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-800 hover:text-white transition-colors"
                     >
                       <item.icon className="w-5 h-5 opacity-80" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -9,7 +9,7 @@ export const repApi = baseApi.injectEndpoints({
     }),
     getRepById: builder.query({
       query: (id) => `/reps/${id}`,
-      providesTags: [tagTypes.reps],
+      providesTags: (result, error, id) => [{ type: tagTypes.reps, id }],
     }),
     updateRep: builder.mutation({
       query: ({ id, ...body }) => ({

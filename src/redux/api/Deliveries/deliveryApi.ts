@@ -15,9 +15,25 @@ export const deliveriesApi = baseApi.injectEndpoints({
 
     // 🟨 Get all deliveries (with filters and pagination)
     getAllDeliveries: builder.query({
-      query: ({ status, assignedTo, storeId, page = 1, limit = 20 }) => ({
+      query: ({
+        status,
+        assignedTo,
+        storeName,
+        scheduledAt,
+        storeId,
+        page = 1,
+        limit = 20,
+      }) => ({
         url: "/deliveries",
-        params: { status, assignedTo, storeId, page, limit },
+        params: {
+          status,
+          assignedTo,
+          storeId,
+          scheduledAt,
+          storeName,
+          page,
+          limit,
+        },
       }),
       providesTags: [tagTypes.deliveries],
     }),
