@@ -32,6 +32,7 @@ interface DeliveryListProps {
   orderedDeliveries: Delivery[];
   moveDelivery: (index: number, direction: "up" | "down") => void;
   handleNewOrder: (delivery: Delivery) => void;
+  handleEditDelivery: (delivery: Delivery) => void;
 }
 
 export const DeliveryList = ({
@@ -39,6 +40,7 @@ export const DeliveryList = ({
   orderedDeliveries,
   moveDelivery,
   handleNewOrder,
+  handleEditDelivery,
 }: DeliveryListProps) => {
   if (isLoading) {
     return (
@@ -58,6 +60,7 @@ export const DeliveryList = ({
             index={index}
             moveDelivery={moveDelivery}
             handleNewOrder={handleNewOrder}
+            handleEditDelivery={handleEditDelivery}
             isFirst={index === 0}
             isLast={index === orderedDeliveries.length - 1}
           />

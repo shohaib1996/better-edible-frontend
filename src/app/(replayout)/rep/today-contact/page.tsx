@@ -20,6 +20,7 @@ import { TodayContactControls } from "@/src/components/pages/TodayContact/TodayC
 import { DeliveryList } from "@/src/components/pages/TodayContact/DeliveryList";
 import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
 import { Field } from "@/src/components/ReUsableComponents/EntityModal";
+import { EditDeliveryModal } from "@/src/components/Delivery/EditDeliveryModal";
 import {
   Popover,
   PopoverTrigger,
@@ -66,7 +67,9 @@ const TodayContact = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [editingDelivery, setEditingDelivery] = useState<any>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderTotals, setOrderTotals] = useState({
     totalCases: 0,
@@ -132,6 +135,11 @@ const TodayContact = () => {
     setModalOpen(true);
   };
 
+  const handleEditDelivery = (delivery: Delivery) => {
+    setEditingDelivery(delivery);
+    setEditModalOpen(true);
+  };
+
   const orderFields: Field[] = [
     {
       name: "storeId",
@@ -194,7 +202,7 @@ const TodayContact = () => {
   // 🔹 Convert date to UTC safe string
   const utcDate = new Date(date).toISOString().split("T")[0];
 
-  const { data, isLoading } = useGetAllDeliveriesQuery({
+  const { data, isLoading, refetch } = useGetAllDeliveriesQuery({
     assignedTo: user?.id,
     storeName: debouncedSearch,
     scheduledAt: utcDate,
@@ -318,6 +326,7 @@ const TodayContact = () => {
           orderedDeliveries={orderedDeliveries}
           moveDelivery={moveDelivery}
           handleNewOrder={handleNewOrder}
+          handleEditDelivery={handleEditDelivery}
         />
 
         <OrderModal
@@ -335,6 +344,13 @@ const TodayContact = () => {
           }
           initialNote={editingOrder?.note || ""}
           onOrderFormChange={onOrderFormChange}
+        />
+
+        <EditDeliveryModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          delivery={editingDelivery}
+          refetch={refetch}
         />
       </div>
     </main>

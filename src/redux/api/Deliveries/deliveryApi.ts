@@ -53,6 +53,14 @@ export const deliveriesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.deliveries],
     }),
+    updateDelivery: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/deliveries/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: [tagTypes.deliveries],
+    }),
 
     // 🟥 Delete delivery
     deleteDelivery: builder.mutation({
@@ -71,4 +79,5 @@ export const {
   useGetDeliveryByIdQuery,
   useUpdateDeliveryStatusMutation,
   useDeleteDeliveryMutation,
+  useUpdateDeliveryMutation,
 } = deliveriesApi;

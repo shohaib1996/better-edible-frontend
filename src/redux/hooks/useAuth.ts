@@ -1,11 +1,4 @@
-import { useSelector } from 'react-redux';
-import { RootState } from '../store/store';
-import { useEffect, useState } from 'react';
-
-export const useAuth = () => {
-  const { user, token } = useSelector((state: RootState) => state.auth);
-  return { user, token };
-};
+import { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -13,24 +6,27 @@ interface User {
   loginName: string;
   repType: string;
   territory: string;
-  role?: "superadmin" | "rep"
+  role?: "superadmin" | "rep";
 }
 
-export const useUser = (): User | null => {
-  const [user, setUser] = useState<User | null>(null);
+// ✅ Now returns undefined while still checking
+export const useUser = (): User | null | undefined => {
+  const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('better-user');
-      if (storedUser) {
-        try {
-          const parsedUser: User = JSON.parse(storedUser);
-          setUser(parsedUser)
-        } catch (error) {
-          console.error("Failed to parse user from localStorage", error);
-          setUser(null);
-        }
+    if (typeof window === "undefined") return;
+
+    const storedUser = localStorage.getItem("better-user");
+    if (storedUser) {
+      try {
+        const parsedUser: User = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        setUser(null);
       }
+    } else {
+      setUser(null);
     }
   }, []);
 

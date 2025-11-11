@@ -37,6 +37,7 @@ interface DeliveryItemProps {
   index: number;
   moveDelivery: (index: number, direction: "up" | "down") => void;
   handleNewOrder: (delivery: Delivery) => void;
+  handleEditDelivery: (delivery: Delivery) => void;
   isFirst: boolean;
   isLast: boolean;
 }
@@ -46,6 +47,7 @@ export const DeliveryItem = ({
   index,
   moveDelivery,
   handleNewOrder,
+  handleEditDelivery,
   isFirst,
   isLast,
 }: DeliveryItemProps) => {
@@ -120,6 +122,7 @@ export const DeliveryItem = ({
           variant="outline"
           size="sm"
           onClick={() => handleNewOrder(delivery)}
+          className="cursor-pointer"
         >
           Order
         </Button>
@@ -129,10 +132,16 @@ export const DeliveryItem = ({
         <Button variant="outline" size="sm">
           Dismiss
         </Button>
-        <Button variant="outline" size="sm">
+        <Button className="cursor-pointer" variant="outline" size="sm" onClick={() => handleEditDelivery(delivery)}>
           Edit
         </Button>
-        <Button className="bg-green-700 hover:bg-green-800 text-white flex items-center gap-2 text-sm">
+        <Button className="bg-green-700 hover:bg-green-800 text-white flex items-center gap-2 text-sm cursor-pointer"
+          onClick={() => {
+            const address = delivery.storeId?.address;
+            if (address) {
+              window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
+            }
+          }}>
           <Truck size={16} /> Drive
         </Button>
         <Button className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-2 text-sm">
