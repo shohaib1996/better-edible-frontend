@@ -26,7 +26,11 @@ export interface Field {
   type?: "text" | "email" | "password" | "select";
   placeholder?: string;
   options?: { label: string; value: string }[];
-  render?: (value: any, onChange: (value: any) => void) => React.ReactNode;
+  render?: (
+    value: any,
+    onChange: (value: any) => void,
+    initialData?: any
+  ) => React.ReactNode;
 }
 
 interface EntityModalProps<T> {
@@ -83,8 +87,10 @@ export function EntityModal<T>({
               <Label htmlFor={field.name}>{field.label}</Label>
 
               {field.render ? (
-                field.render(formData?.[field.name], (value) =>
-                  handleChange(field.name, value)
+                field.render(
+                  formData?.[field.name],
+                  (value) => handleChange(field.name, value),
+                  initialData
                 )
               ) : field.type === "select" && field.options ? (
                 <Select

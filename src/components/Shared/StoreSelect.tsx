@@ -15,11 +15,17 @@ import { useGetAllStoresQuery } from "@/src/redux/api/Stores/stores";
 interface StoreSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  initialStore?: { _id: string; name: string };
 }
 
-export const StoreSelect: React.FC<StoreSelectProps> = ({ value, onChange }) => {
+export const StoreSelect: React.FC<StoreSelectProps> = ({
+  value,
+  onChange,
+  initialStore,
+}) => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [stores, setStores] = useState<any[]>([]);
 
   const { data, isLoading, refetch } = useGetAllStoresQuery({
     search,
@@ -27,7 +33,14 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({ value, onChange }) => 
     page: 1,
   });
 
-  const stores = data?.stores || [];
+  useEffect(() => {
+    const fetchedStores = data?.stores || [];
+    if (initialStore && !fetchedStores.some((s: any) => s._id === initialStore._id)) {
+      setStores([initialStore, ...fetchedStores]);
+    } else {
+      setStores(fetchedStores);
+    }
+  }, [data, initialStore]);
 
   // Debounce search
   useEffect(() => {
@@ -39,7 +52,12 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({ value, onChange }) => 
 
   return (
     <div className="space-y-1">
-      <Select value={value ?? ""} onValueChange={onChange} open={open} onOpenChange={setOpen}>
+      <Select
+        value={value ?? ""}
+        onValueChange={onChange}
+        open={open}
+        onOpenChange={setOpen}
+      >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select a store" />
         </SelectTrigger>
@@ -75,7 +93,9 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({ value, onChange }) => 
               </SelectItem>
             ))
           ) : (
-            <div className="text-gray-500 text-sm p-2 text-center">No stores found</div>
+            <div className="text-gray-500 text-sm p-2 text-center">
+              No stores found
+            </div>
           )}
         </SelectContent>
       </Select>
