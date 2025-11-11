@@ -131,6 +131,7 @@ const OrdersPage = () => {
     const initialData = {
       _id: order._id,
       storeId: order.store?._id || "",
+      store: order.store, // Add the full store object here
       repId: order.rep?._id || "",
       deliveryDate: order.deliveryDate
         ? format(new Date(order.deliveryDate), "yyyy-MM-dd")
@@ -177,8 +178,12 @@ const OrdersPage = () => {
     {
       name: "storeId",
       label: "Store",
-      render: (value, onChange) => (
-        <StoreSelect value={value} onChange={onChange} />
+      render: (value, onChange, initialData) => (
+        <StoreSelect
+          value={value}
+          onChange={onChange}
+          initialStore={initialData?.store}
+        />
       ),
     },
     {
