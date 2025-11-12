@@ -21,6 +21,7 @@ import { DeliveryList } from "@/src/components/pages/TodayContact/DeliveryList";
 import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
 import { Field } from "@/src/components/ReUsableComponents/EntityModal";
 import { EditDeliveryModal } from "@/src/components/Delivery/EditDeliveryModal";
+import { Delivery } from "@/src/types";
 import {
   Popover,
   PopoverTrigger,
@@ -30,30 +31,7 @@ import { Calendar } from "@/src/components/ui/calendar";
 import { Button } from "@/src/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 
-// ---------- INTERFACE ----------
-interface Delivery {
-  _id: string;
-  storeId: {
-    _id: string;
-    name: string;
-    address: string;
-    city?: string | null;
-    state?: string | null;
-  };
-  assignedTo: {
-    _id: string;
-    name: string;
-    repType: string;
-  };
-  disposition: string;
-  paymentAction: string;
-  amount: number;
-  scheduledAt: string;
-  notes?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+
 
 // ---------- COMPONENT ----------
 const TodayContact = () => {

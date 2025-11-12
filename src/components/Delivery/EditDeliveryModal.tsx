@@ -53,6 +53,7 @@ export const EditDeliveryModal = ({
     notes: "",
   });
 
+  // ✅ Load delivery data (no double timezone conversion)
   useEffect(() => {
     if (delivery) {
       setFormData({
@@ -60,7 +61,9 @@ export const EditDeliveryModal = ({
         disposition: delivery.disposition || "delivery",
         paymentAction: delivery.paymentAction || "",
         amount: delivery.amount?.toString() || "",
-        scheduledAt: delivery.scheduledAt ? new Date(delivery.scheduledAt) : new Date(),
+        scheduledAt: delivery.scheduledAt
+          ? new Date(delivery.scheduledAt)
+          : new Date(),
         notes: delivery.notes || "",
       });
     }
@@ -70,17 +73,31 @@ export const EditDeliveryModal = ({
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  // ✅ When user selects a date, normalize it to local midnight
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    const localMidnight = new Date(date);
+    localMidnight.setHours(0, 0, 0, 0);
+    handleChange("scheduledAt", localMidnight);
+  };
+
+  // ✅ Always send the correct UTC midnight of the selected day
   const handleSubmit = async () => {
     if (!delivery?._id) return toast.error("Delivery not found");
     if (!formData.assignedTo || !formData.paymentAction)
       return toast.error("Please fill all required fields");
 
     try {
+      // Build UTC midnight version of selected date
+      const d = new Date(formData.scheduledAt);
+      const utcMidnight = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+
       await updateDelivery({
         id: delivery._id,
         data: {
           ...formData,
           amount: Number(formData.amount) || 0,
+          scheduledAt: utcMidnight.toISOString(), // ✅ now exactly same date in UTC
         },
       }).unwrap();
 
@@ -207,7 +224,7 @@ export const EditDeliveryModal = ({
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.scheduledAt
-                    ? format(formData.scheduledAt.toISOString().split("T")[0], "PPP")
+                    ? format(formData.scheduledAt, "PPP")
                     : "Pick a date"}
                 </Button>
               </PopoverTrigger>
@@ -215,7 +232,7 @@ export const EditDeliveryModal = ({
                 <Calendar
                   mode="single"
                   selected={formData.scheduledAt}
-                  onSelect={(date) => handleChange("scheduledAt", date!)}
+                  onSelect={handleDateSelect}
                   initialFocus
                 />
               </PopoverContent>

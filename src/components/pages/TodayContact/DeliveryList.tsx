@@ -1,31 +1,10 @@
+// src/components/pages/TodayContact/DeliveryList.tsx
 "use client";
 
 import { Loader2 } from "lucide-react";
 import { DeliveryItem } from "./DeliveryItem";
+import { Delivery } from "@/src/types";
 
-interface Delivery {
-  _id: string;
-  storeId: {
-    _id: string;
-    name: string;
-    address: string;
-    city?: string | null;
-    state?: string | null;
-  };
-  assignedTo: {
-    _id: string;
-    name: string;
-    repType: string;
-  };
-  disposition: string;
-  paymentAction: string;
-  amount: number;
-  scheduledAt: string;
-  notes?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface DeliveryListProps {
   isLoading: boolean;

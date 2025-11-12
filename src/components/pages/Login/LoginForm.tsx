@@ -19,11 +19,9 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>
 
-interface LoginFormProps {
-  role: "admin" | "rep"
-}
+interface LoginFormProps {}
 
-export function LoginForm({ role }: LoginFormProps) {
+export function LoginForm({}: LoginFormProps) {
   const router = useRouter()
   const [adminLogin, { isLoading: isAdminLoading }] = useLoginAdminMutation()
   const [repLogin, { isLoading: isRepLoading }] = useLoginRepMutation()
@@ -40,27 +38,36 @@ export function LoginForm({ role }: LoginFormProps) {
 
   async function onSubmit(values: LoginFormValues) {
     try {
-      let result
-      if (role === "admin") {
-        result = await adminLogin(values).unwrap()
-        localStorage.setItem("better-user", JSON.stringify(result?.admin || result))
-      } else {
-        result = await repLogin(values).unwrap()
-        localStorage.setItem("better-user", JSON.stringify(result?.rep || result))
-      }
-
-      toast.success("Login successful!")
-
-      const userRole = role === "admin" ? (result?.admin?.role || result?.role) : (result?.rep?.role || result?.role)
-      
-      if (userRole === "superadmin") {
-        router.push("/admin")
-      } else {
-        router.push("/rep")
+      let result;
+      try {
+        // First, try to log in as a rep
+        result = await repLogin(values).unwrap();
+        localStorage.setItem("better-user", JSON.stringify(result?.rep || result));
+        toast.success("Login successful!");
+        router.push("/rep");
+        return;
+      } catch (repError) {
+        // If rep login fails, try to log in as an admin
+        try {
+          result = await adminLogin(values).unwrap();
+          localStorage.setItem("better-user", JSON.stringify(result?.admin || result));
+          toast.success("Login successful!");
+          const userRole = result?.admin?.role || result?.role;
+          if (userRole === "superadmin") {
+            router.push("/admin");
+          } else {
+            router.push("/rep");
+          }
+        } catch (adminError: any) {
+          // If both logins fail, show an error
+          console.error("Login error:", adminError);
+          toast.error(adminError?.data?.message || "Invalid email or password");
+        }
       }
     } catch (error: any) {
-      console.error("Login error:", error)
-      toast.error(error?.data?.message || "Invalid email or password")
+      // This catch block might be redundant now, but we'll keep it for any unexpected errors
+      console.error("Login error:", error);
+      toast.error(error?.data?.message || "An unexpected error occurred.");
     }
   }
 
@@ -68,7 +75,7 @@ export function LoginForm({ role }: LoginFormProps) {
     <Card className="border-0 shadow-none">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-        <CardDescription>Sign in to your {role} account to continue</CardDescription>
+        <CardDescription>Sign in to your account to continue</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -95,9 +102,6 @@ export function LoginForm({ role }: LoginFormProps) {
                 <FormItem>
                   <div className="flex items-center justify-between">
                     <FormLabel>Password</FormLabel>
-                    <a href="#" className="text-sm text-primary hover:underline">
-                      Forgot password?
-                    </a>
                   </div>
                   <FormControl>
                     <Input placeholder="••••••••" type="password" disabled={isLoading} {...field} />
@@ -113,12 +117,7 @@ export function LoginForm({ role }: LoginFormProps) {
           </form>
         </Form>
 
-        <div className="mt-6 text-center text-sm">
-          <span className="text-muted-foreground">Don't have an account? </span>
-          <a href="#" className="text-primary font-medium hover:underline">
-            Sign up
-          </a>
-        </div>
+
       </CardContent>
     </Card>
   )
