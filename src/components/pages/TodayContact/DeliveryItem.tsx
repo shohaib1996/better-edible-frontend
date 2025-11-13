@@ -11,6 +11,7 @@ import { AddNoteModal } from "@/src/components/Notes/AddNoteModal";
 import { NotesModal } from "@/src/components/Notes/NotesModal";
 import { SampleModal } from "@/src/components/Sample/SampleModal";
 import type { Delivery } from "@/src/types";
+import { FollowUpModal } from "../../Followup/FollowUpModal";
 
 interface DeliveryItemProps {
   delivery: Delivery;
@@ -34,6 +35,7 @@ export const DeliveryItem = ({
   const [openSampleModal, setOpenSampleModal] = useState(false);
   const [isAddNoteModalOpen, setAddNoteModalOpen] = useState(false);
   const [isViewNotesModalOpen, setViewNotesModalOpen] = useState(false);
+  const [isFollowupModalOpen, setFollowupModalOpen] = useState(false);
 
   const [deleteDelivery, { isLoading: isDeleting }] =
     useDeleteDeliveryMutation();
@@ -178,8 +180,10 @@ export const DeliveryItem = ({
         >
           <Truck size={16} /> Drive
         </Button>
-
-        <Button className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-2 text-sm">
+        <Button
+          className="bg-blue-700 hover:bg-blue-800 text-white flex items-center gap-2 text-sm"
+          onClick={() => setFollowupModalOpen(true)}
+        >
           Follow Up
         </Button>
       </div>
@@ -215,6 +219,12 @@ export const DeliveryItem = ({
         open={isViewNotesModalOpen}
         onClose={() => setViewNotesModalOpen(false)}
         entityId={delivery.storeId}
+      />
+      <FollowUpModal
+        open={isFollowupModalOpen}
+        onClose={() => setFollowupModalOpen(false)}
+        storeId={delivery.storeId._id}
+        repId={delivery.assignedTo._id}
       />
     </div>
   );

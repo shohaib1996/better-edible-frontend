@@ -8,4 +8,5 @@ export const tagTypes = {
   products: "products",
   samples: "samples",
   contacts: "contacts",
+  followups: "followups",
 };
