@@ -1,9 +1,9 @@
-import { Document, Types } from "mongoose";
+
 
 export interface INote extends Document {
   _id: string,
-  entityId: Types.ObjectId;
-  author: Types.ObjectId;
+  entityId: string;
+  author: string;
   date: Date;
   disposition?: string;
   visitType?: string;
