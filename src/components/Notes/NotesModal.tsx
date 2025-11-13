@@ -130,7 +130,10 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                         <User size={14} />
-                        <span>{note.author?.name || "Unknown Author"}</span>
+                        <span>
+                          {(typeof note.author === "object" && note.author.name) ||
+                            "Unknown Author"}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -210,7 +213,11 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
           open={isAddNoteModalOpen}
           onClose={handleCloseAddNoteModal}
           storeId={entityId?._id ?? ""}
-          repId={selectedNote?.author?._id?.toString() ?? ""}
+          repId={
+            typeof selectedNote?.author === "object"
+              ? selectedNote.author._id.toString()
+              : selectedNote?.author?.toString() ?? ""
+          }
           note={selectedNote}
         />
       )}
