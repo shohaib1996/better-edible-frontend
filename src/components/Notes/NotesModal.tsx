@@ -27,11 +27,11 @@ import { useUser } from "@/src/redux/hooks/useAuth";
 interface NotesModalProps {
   open: boolean;
   onClose: () => void;
-  entityId: {
+  entityId?: {
+    _id: string;
     name: string;
     address: string;
-    _id: string;
-  };
+  } | null;
 }
 
 export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
@@ -49,7 +49,6 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
 
   const notes = data?.notes || [];
   const store = entityId;
-
 
   const handleEdit = (note: INote) => {
     setSelectedNote(note);
@@ -103,9 +102,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
             <div className="bg-gray-50 border rounded-md p-4 mb-4">
               <h2 className="text-xl font-bold">{store.name}</h2>
               <p className="text-md text-gray-600">
-                {store.address
-                  ? `${store.address}`
-                  : "Address not available"}
+                {store.address ? `${store.address}` : "Address not available"}
               </p>
             </div>
           )}
@@ -167,10 +164,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     <div className="flex items-start gap-2">
-                      <ClipboardList
-                        size={16}
-                        className="text-gray-600 mt-1"
-                      />
+                      <ClipboardList size={16} className="text-gray-600 mt-1" />
                       <div>
                         <h4 className="font-semibold">Disposition</h4>
                         <p className="text-sm text-gray-700">
@@ -179,10 +173,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <ClipboardList
-                        size={16}
-                        className="text-gray-600 mt-1"
-                      />
+                      <ClipboardList size={16} className="text-gray-600 mt-1" />
                       <div>
                         <h4 className="font-semibold">Visit Type</h4>
                         <p className="text-sm text-gray-700">
@@ -218,7 +209,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
         <AddNoteModal
           open={isAddNoteModalOpen}
           onClose={handleCloseAddNoteModal}
-          storeId={entityId._id!}
+          storeId={entityId?._id ?? ""}
           repId={selectedNote?.author?._id?.toString() ?? ""}
           note={selectedNote}
         />
@@ -226,4 +217,3 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
     </>
   );
 };
-

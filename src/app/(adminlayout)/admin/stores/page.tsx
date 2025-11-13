@@ -79,6 +79,11 @@ const Stores = () => {
   const allReps: IRep[] = reps?.data || [];
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [selectedStoreData, setSelectedStoreData] = useState<{
+    _id: string;
+    name: string;
+    address: string;
+  } | null>(null);
 
   const [createStore, { isLoading: creating }] = useCreateStoreMutation();
   const [updateStore, { isLoading: updating }] = useUpdateStoreMutation();
@@ -482,6 +487,7 @@ const Stores = () => {
                     onClick={() => {
                       setSelectedStoreId(store._id);
                       setNotesModalOpen(true);
+                      setSelectedStoreData(store);
                     }}
                   >
                     🗒️ Notes
@@ -602,7 +608,7 @@ const Stores = () => {
       <NotesModal
         open={notesModalOpen}
         onClose={() => setNotesModalOpen(false)}
-        entityId={selectedStoreId}
+        entityId={selectedStoreData ?? undefined}
       />
 
       <OrdersModal
