@@ -5,6 +5,10 @@ import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ChevronUp, ChevronDown, Truck, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
+import { useDeleteDeliveryMutation } from "@/src/redux/api/Deliveries/deliveryApi";
+import { AddNoteModal } from "@/src/components/Notes/AddNoteModal";
+import { NotesModal } from "@/src/components/Notes/NotesModal";
 import { SampleModal } from "@/src/components/Sample/SampleModal";
 import type { Delivery } from "@/src/types";
 
@@ -28,6 +32,20 @@ export const DeliveryItem = ({
   isLast,
 }: DeliveryItemProps) => {
   const [openSampleModal, setOpenSampleModal] = useState(false);
+  const [isAddNoteModalOpen, setAddNoteModalOpen] = useState(false);
+  const [isViewNotesModalOpen, setViewNotesModalOpen] = useState(false);
+
+  const [deleteDelivery, { isLoading: isDeleting }] =
+    useDeleteDeliveryMutation();
+
+  const handleDelete = async () => {
+    try {
+      await deleteDelivery(delivery._id).unwrap();
+      toast.success("Delivery dismissed successfully");
+    } catch (error) {
+      toast.error("Failed to delete delivery");
+    }
+  };
 
   const openMaps = () => {
     const address = delivery.storeId?.address;
@@ -62,7 +80,10 @@ export const DeliveryItem = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Store Info */}
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2
+            className="text-lg font-semibold text-gray-900 cursor-pointer hover:underline"
+            onClick={() => setAddNoteModalOpen(true)}
+          >
             {delivery.storeId?.name}
           </h2>
           <p className="text-sm text-gray-600">
@@ -127,9 +148,14 @@ export const DeliveryItem = ({
           Sample
         </Button>
 
-        <Button variant="outline" size="sm">
-          Dismiss
-        </Button>
+        <ConfirmDialog
+          triggerText="Dismiss"
+          title="Are you sure you want to dismiss this delivery?"
+          description="This action cannot be undone. This will permanently delete the delivery."
+          onConfirm={handleDelete}
+          disabled={isDeleting}
+          variant="outline"
+        />
 
         <Button
           variant="outline"
@@ -137,6 +163,13 @@ export const DeliveryItem = ({
           onClick={() => handleEditDelivery(delivery)}
         >
           Edit
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setViewNotesModalOpen(true)}
+        >
+          View Notes
         </Button>
 
         <Button
@@ -162,7 +195,7 @@ export const DeliveryItem = ({
         </span>
       </div>
 
-      {/* Sample Modal */}
+      {/* Modals */}
       <SampleModal
         open={openSampleModal}
         onClose={() => setOpenSampleModal(false)}
@@ -171,6 +204,17 @@ export const DeliveryItem = ({
         storeAddress={delivery.storeId.address}
         repId={delivery.assignedTo._id}
         repName={delivery.assignedTo.name}
+      />
+      <AddNoteModal
+        open={isAddNoteModalOpen}
+        onClose={() => setAddNoteModalOpen(false)}
+        storeId={delivery.storeId._id}
+        repId={delivery.assignedTo._id}
+      />
+      <NotesModal
+        open={isViewNotesModalOpen}
+        onClose={() => setViewNotesModalOpen(false)}
+        entityId={delivery.storeId}
       />
     </div>
   );
