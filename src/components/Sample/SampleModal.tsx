@@ -35,7 +35,7 @@ export const SampleModal = ({
   repName,
 }: SampleModalProps) => {
   const [createSample, { isLoading }] = useCreateSampleMutation();
-  const [selectedRep, setSelectedRep] = useState(repId);
+
 
   const [formData, setFormData] = useState({
     cannacrispy: "",
@@ -56,7 +56,7 @@ export const SampleModal = ({
     try {
       const payload = {
         storeId,
-        repId: selectedRep,
+        repId,
         status: "in progress",
         samples: formData,
       };
@@ -93,13 +93,7 @@ export const SampleModal = ({
           </p>
         </div>
 
-        {/* 👤 Rep Selection */}
-        <div className="mb-4">
-          <Label className="text-sm font-medium text-gray-700">
-            Change Rep (optional)
-          </Label>
-          <RepSelect value={selectedRep} onChange={setSelectedRep} />
-        </div>
+        {/* 👤 Rep Selection - Removed as per user request */}
 
         {/* 🧾 Sample Text Areas */}
         <div className="space-y-4 py-3">

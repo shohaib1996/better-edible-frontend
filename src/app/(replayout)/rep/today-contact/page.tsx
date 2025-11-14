@@ -123,18 +123,21 @@ const TodayContact = () => {
       name: "storeId",
       label: "Store",
       render: (value, onChange, initialData) => (
-        <StoreSelect
-          value={value}
-          onChange={onChange}
-          initialStore={initialData?.store}
-        />
+        <div className="p-2 border rounded-md bg-gray-50">
+          <p className="font-semibold">{initialData?.store?.name}</p>
+          <p className="text-sm text-gray-500">
+            {initialData?.store?.address}
+          </p>
+        </div>
       ),
     },
     {
       name: "repId",
       label: "Rep",
       render: (value, onChange) => (
-        <RepSelect value={value} onChange={onChange} />
+        <div className="p-2 border rounded-md bg-gray-50">
+          <p className="font-semibold">{user?.name}</p>
+        </div>
       ),
     },
     {
