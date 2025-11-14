@@ -18,12 +18,16 @@ export const followupsApi = baseApi.injectEndpoints({
       query: ({
         storeId,
         repId,
+        date,
+        storeName,
         page = 1,
         limit = 20,
       }: {
         storeId?: string;
         repId?: string;
+        date?: string;
         page?: number;
+        storeName?: string;
         limit?: number;
       }) => ({
         url: "/followups",
@@ -31,6 +35,8 @@ export const followupsApi = baseApi.injectEndpoints({
           storeId,
           repId,
           page,
+          date,
+          storeName,
           limit,
         },
       }),

@@ -11,14 +11,17 @@ import {
   User,
   ClipboardList,
   Truck,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,7 +30,23 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/src/components/ui/sidebar";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/src/components/ui/dropdown-menu";
+
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import { Button } from "@/src/components/ui/button";
+
 import { useUser } from "@/src/redux/hooks/useAuth";
+
+
+// ---------------- MENU ITEMS ---------------- //
 
 const adminItems = [
   { title: "Reps List", url: "/admin/reps", icon: Home },
@@ -47,29 +66,30 @@ const repItems = [
   { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
+
+// ---------------- SIDEBAR COMPONENT ---------------- //
+
 export function AppSidebar() {
   const user = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    // ✅ redirect only when user is explicitly null (not undefined)
     if (user === null) {
       router.push("/login");
     }
   }, [user, router]);
 
-  // ⏳ While loading user (undefined), render nothing or skeleton
   if (user === undefined) {
     return <div className="p-4 text-gray-500">Loading...</div>;
   }
 
-  // ❌ If definitely no user, redirect already triggered above
   if (user === null) return null;
 
   const menuItems = user.role === "superadmin" ? adminItems : repItems;
 
   return (
     <Sidebar>
+      {/* ---------------- HEADER ---------------- */}
       <SidebarHeader>
         <div className="flex items-center gap-3 px-4 py-2">
           <Image
@@ -86,11 +106,13 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
+      {/* ---------------- CONTENT ---------------- */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm uppercase tracking-wide">
             {user.role === "superadmin" ? "Admin Panel" : "Rep Dashboard"}
           </SidebarGroupLabel>
+
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -110,6 +132,99 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* ---------------- FOOTER (Profile + Logout) ---------------- */}
+      <SidebarFooter className="p-2">
+        <FooterUserMenu user={user} />
+      </SidebarFooter>
     </Sidebar>
+  );
+}
+
+// ------------------------------------------------------------------------- //
+// ------------------------- FOOTER USER MENU ------------------------------ //
+// ------------------------------------------------------------------------- //
+
+function FooterUserMenu({ user }: { user: any }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 w-full justify-start p-2 h-auto"
+        >
+          <Avatar>
+            <AvatarImage
+              src={user?.avatar || "/placeholder.svg"}
+              alt={user?.name || "User"}
+            />
+            <AvatarFallback>
+              {user?.name ? user?.name.charAt(0)?.toUpperCase() : "U"}
+            </AvatarFallback>
+          </Avatar>
+
+          {/* Expanded Mode Content */}
+          <div className="flex flex-col items-start flex-1 min-w-0">
+            <span className="text-sm font-medium truncate">{user?.name}</span>
+            <span className="text-xs text-muted-foreground truncate">
+              {user?.email}
+            </span>
+          </div>
+
+          <Settings className="w-4 h-4 text-muted-foreground" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+
+        <DropdownMenuItem className="flex flex-col items-start">
+          <span className="font-medium">{user?.name}</span>
+          <span className="text-xs text-muted-foreground">{user?.email}</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link
+            href="/profile"
+            className="flex items-center gap-2"
+            onClick={() => setOpen(false)}
+          >
+            <User className="w-4 h-4" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <div className="flex items-center gap-2 w-full">
+            <Settings className="w-4 h-4" />
+            <span className="flex-1">Theme</span>
+            {/* Add ModeToggle if needed */}
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => {
+            setOpen(false);
+            handleLogout();
+          }}
+          className="flex items-center gap-2 text-red-600 focus:text-red-600"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
