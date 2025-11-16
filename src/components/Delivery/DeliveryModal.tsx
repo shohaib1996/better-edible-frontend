@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,13 +18,18 @@ import {
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
 import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
 import { useCreateDeliveryMutation } from "@/src/redux/api/Deliveries/deliveryApi";
 import { toast } from "sonner";
+import { IRep } from "@/src/types";
 
 interface DeliveryModalProps {
   open: boolean;
@@ -34,9 +39,15 @@ interface DeliveryModalProps {
     name: string;
     address?: string;
   } | null;
+  rep?: Partial<IRep> | null; // <-- FIX
 }
 
-export const DeliveryModal = ({ open, onClose, store }: DeliveryModalProps) => {
+export const DeliveryModal = ({
+  open,
+  onClose,
+  store,
+  rep: repProp,
+}: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
   const reps = repsData?.data || [];
 
@@ -50,6 +61,15 @@ export const DeliveryModal = ({ open, onClose, store }: DeliveryModalProps) => {
     scheduledAt: new Date(),
     notes: "",
   });
+
+  useEffect(() => {
+    if (repProp) {
+      setFormData((prev) => ({
+        ...prev,
+        assignedTo: repProp._id ?? "",
+      }));
+    }
+  }, [repProp]);
 
   const handleChange = (key: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -114,25 +134,33 @@ export const DeliveryModal = ({ open, onClose, store }: DeliveryModalProps) => {
             <label className="text-sm font-medium text-gray-700">
               Delivery Rep
             </label>
-            <Select
-              value={formData.assignedTo}
-              onValueChange={(val) => handleChange("assignedTo", val)}
-            >
-              <SelectTrigger className="w-full border border-gray-300">
-                <SelectValue placeholder="Select Rep" />
-              </SelectTrigger>
-              <SelectContent>
-                {repsLoading ? (
-                  <div className="p-2 text-gray-500 text-center">Loading...</div>
-                ) : (
-                  reps.map((rep: any) => (
-                    <SelectItem key={rep._id} value={rep._id}>
-                      {rep.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+            {repProp ? (
+              <div className="p-2 border rounded-md bg-gray-50">
+                <p className="font-semibold">{repProp.name}</p>
+              </div>
+            ) : (
+              <Select
+                value={formData.assignedTo}
+                onValueChange={(val) => handleChange("assignedTo", val)}
+              >
+                <SelectTrigger className="w-full border border-gray-300">
+                  <SelectValue placeholder="Select Rep" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repsLoading ? (
+                    <div className="p-2 text-gray-500 text-center">
+                      Loading...
+                    </div>
+                  ) : (
+                    reps.map((rep: any) => (
+                      <SelectItem key={rep._id} value={rep._id}>
+                        {rep.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Disposition */}
@@ -158,7 +186,9 @@ export const DeliveryModal = ({ open, onClose, store }: DeliveryModalProps) => {
 
           {/* Amount */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Amount ($)</label>
+            <label className="text-sm font-medium text-gray-700">
+              Amount ($)
+            </label>
             <Input
               type="number"
               placeholder="Enter amount"

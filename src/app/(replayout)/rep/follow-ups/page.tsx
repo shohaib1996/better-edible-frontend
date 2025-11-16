@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useGetAllFollowupsQuery } from "@/src/redux/api/Followups/followupsApi";
 import { useUser } from "@/src/redux/hooks/useAuth";
 import { useDebounced } from "@/src/redux/hooks/hooks";
@@ -9,6 +9,7 @@ import { useCreateOrderMutation } from "@/src/redux/api/orders/orders";
 import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
 import { Field } from "@/src/components/ReUsableComponents/EntityModal";
 import { toast } from "sonner";
+import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
 
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -25,31 +26,42 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
-  Store,
   ShoppingCart,
   Truck,
 } from "lucide-react";
 import { Calendar } from "@/src/components/ui/calendar";
 
-import { format, addDays, startOfDay, endOfDay } from "date-fns";
+import { format, addDays, differenceInCalendarDays } from "date-fns";
 import { cn } from "@/src/lib/utils";
 
-function toLocalStart(date: Date) {
-  return startOfDay(
-    new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-}
+/** Helper: convert a YYYY-MM-DD string (or Date) into a local Date at local midnight
+ *  Returns null if invalid. This avoids timezone shifts when formatting/displaying.
+ */
+function toLocalDate(value?: string | Date | null): Date | null {
+  if (!value) return null;
 
-function toLocalEnd(date: Date) {
-  return endOfDay(
-    new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  );
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  const s = String(value);
+
+  // If already "YYYY-MM-DD"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split("-");
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  }
+
+  // Fallback: try Date parser then convert to local date (safe)
+  const parsed = new Date(s);
+  if (isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
 const FollowUps = () => {
   const user = useUser();
 
-  // Local timezone date
+  // Local timezone date (used for calendar selection)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -66,6 +78,14 @@ const FollowUps = () => {
     discountValue: 0,
     note: "",
   });
+
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [selectedStoreForDelivery, setSelectedStoreForDelivery] = useState<
+    IFollowUp["store"] | null
+  >(null);
+  const [selectedRepForDelivery, setSelectedRepForDelivery] = useState<
+    IFollowUp["rep"] | null
+  >(null);
 
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
 
@@ -99,7 +119,7 @@ const FollowUps = () => {
       storeId: followup.store?._id || "",
       store: followup.store,
       repId: user?.id || "",
-      deliveryDate: new Date().toISOString().split("T")[0],
+      deliveryDate: new Date().toISOString().split("T")[0], // YYYY-MM-DD
       items: [],
       note: "",
       discountType: "flat",
@@ -119,6 +139,12 @@ const FollowUps = () => {
       note: "",
     });
     setModalOpen(true);
+  };
+
+  const handleDelivery = (followup: IFollowUp) => {
+    setSelectedStoreForDelivery(followup.store);
+    setSelectedRepForDelivery(followup.rep);
+    setDeliveryModalOpen(true);
   };
 
   const orderFields: Field[] = [
@@ -155,20 +181,14 @@ const FollowUps = () => {
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {value ? (
-                format(new Date(value), "PPP")
-              ) : (
-                <span>Pick a date</span>
-              )}
+              {value ? format(toLocalDate(value) as Date, "PPP") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
-              selected={value ? new Date(value) : undefined}
-              onSelect={(date) =>
-                onChange(date ? format(date, "yyyy-MM-dd") : "")
-              }
+              selected={value ? toLocalDate(value) || undefined : undefined}
+              onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
               initialFocus
             />
           </PopoverContent>
@@ -179,9 +199,10 @@ const FollowUps = () => {
 
   const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
 
+  // <-- IMPORTANT: send yyyy-MM-dd string to backend (date-only)
   const { data, isLoading } = useGetAllFollowupsQuery({
     repId: user?.id,
-    date: showAll ? undefined : selectedDate.toISOString(),
+    date: showAll ? undefined : format(selectedDate, "yyyy-MM-dd"),
     storeName: debouncedSearch,
   });
 
@@ -216,10 +237,7 @@ const FollowUps = () => {
                 )}
                 disabled={showAll}
               >
-                {selectedDate
-                  ? format(selectedDate, "MMMM dd, yyyy")
-                  : "Pick date"}
-
+                {selectedDate ? format(selectedDate, "MMMM dd, yyyy") : "Pick date"}
                 <CalendarIcon className="w-4 h-4 opacity-70" />
               </Button>
             </PopoverTrigger>
@@ -275,55 +293,72 @@ const FollowUps = () => {
           <p className="text-gray-500 text-sm">No followups found.</p>
         )}
 
-        {followups.map((f) => (
-          <Card key={f._id} className="border-l-4 border-emerald-500 shadow-sm">
-            <CardContent className="p-4 flex flex-col gap-2">
-              {/* TOP ROW */}
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold text-lg">{f.store.name}</h3>
+        {followups.map((f) => {
+          const dateStr = (f as any).followupDate as string | undefined;
+          const local = toLocalDate(dateStr);
 
-                  <p className="text-gray-600 text-sm">
-                    Rep: <span className="font-medium">{f.rep.name}</span>
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    Followup:{" "}
-                    {f.followupDate
-                      ? format(
-                          new Date(f.followupDate.split("T")[0] + "T00:00:00"),
-                          "MMM dd, yyyy"
-                        )
-                      : "No date"}
-                  </p>
-                  <p className="text-gray-700 mt-1">{f.comments}</p>
+          const today = new Date();
+          const delay = local ? Math.max(0, differenceInCalendarDays(today, local)) : 0;
+          const borderColorClass = delay > 0 ? "border-red-500" : "border-emerald-500";
+
+          return (
+            <Card key={f._id} className={`border-l-4 ${borderColorClass} shadow-sm`}>
+              <CardContent className="p-4 flex flex-col gap-2">
+                {/* TOP ROW */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-lg">{f.store.name}</h3>
+                    <p className="text-gray-600 text-sm">{f.store.address}</p>
+
+                    <p className="text-gray-600 text-sm">
+                      Rep: <span className="font-medium">{f.rep.name}</span>
+                    </p>
+
+                    <p className="text-gray-500 text-sm">
+                      Followup: {dateStr && local ? format(local, "MMM dd, yyyy") : "No date"}
+                    </p>
+
+                    {/* Delay Info */}
+                    {delay > 0 && (
+                      <p className="text-red-600 font-semibold text-sm">
+                        Delayed by {delay} day{delay > 1 ? "s" : ""}
+                      </p>
+                    )}
+
+                    <p className="text-gray-700 mt-1">{f.comments}</p>
+                  </div>
+
+                  <Button variant="outline" className="text-xs">
+                    Dismiss
+                  </Button>
                 </div>
 
-                <Button variant="outline" className="text-xs">
-                  Dismiss
-                </Button>
-              </div>
+                {/* ACTION BUTTONS */}
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleDelivery(f)}
+                  >
+                    <Truck className="w-4 h-4 mr-1" /> Delivery
+                  </Button>
 
-              {/* ACTION BUTTONS */}
-              <div className="flex gap-2 mt-2">
-                <Button size="sm" variant="secondary">
-                  <Truck className="w-4 h-4 mr-1" /> Delivery
-                </Button>
+                  <Button size="sm" variant="secondary">
+                    <Mail className="w-4 h-4 mr-1" /> Email
+                  </Button>
 
-                <Button size="sm" variant="secondary">
-                  <Mail className="w-4 h-4 mr-1" /> Email
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleNewOrder(f)}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1" /> Orders
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleNewOrder(f)}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1" /> Orders
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <OrderModal
@@ -341,6 +376,13 @@ const FollowUps = () => {
         }
         initialNote={editingOrder?.note || ""}
         onOrderFormChange={onOrderFormChange}
+      />
+
+      <DeliveryModal
+        open={deliveryModalOpen}
+        onClose={() => setDeliveryModalOpen(false)}
+        store={selectedStoreForDelivery}
+        rep={selectedRepForDelivery}
       />
     </div>
   );

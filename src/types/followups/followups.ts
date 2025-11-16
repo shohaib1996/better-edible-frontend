@@ -6,6 +6,7 @@ export interface IFollowUp {
   store: {
     _id: string;
     name: string;
+    address: string;
   };
   rep: {
     _id: string;
