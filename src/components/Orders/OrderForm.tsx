@@ -573,23 +573,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               <option value="flat">Flat ($)</option>
               <option value="percent">Percent (%)</option>
             </select>
-            {discountType === "flat" ? (
-              <Input
-                type="number"
-                value={discountValue}
-                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-                placeholder="Enter discount"
-                className="w-32 border-emerald-500"
-              />
-            ) : (
-              <Input
-                type="number"
-                value={(totals.totalPrice / discountValue).toFixed(2)}
-                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-                placeholder="Enter discount"
-                className="w-32 border-emerald-500"
-              />
-            )}
+            <Input
+              type="number"
+              value={discountValue}
+              onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+              placeholder="Enter discount"
+              className="w-32 border-emerald-500"
+            />
           </div>
 
           <div className="flex justify-between text-sm text-gray-600">
