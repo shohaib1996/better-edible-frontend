@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -28,13 +28,13 @@ import {
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useCreateFollowupMutation } from "@/src/redux/api/Followups/followupsApi";
+import { useUpdateFollowupMutation } from "@/src/redux/api/Followups/followupsApi";
+import { IFollowUp } from "@/src/types";
 
-interface FollowUpModalProps {
+interface EditFollowUpModalProps {
   open: boolean;
   onClose: () => void;
-  storeId: string;
-  repId: string;
+  followup: IFollowUp | null;
 }
 
 const INTEREST_OPTIONS = [
@@ -45,41 +45,43 @@ const INTEREST_OPTIONS = [
   "Active Customer",
 ];
 
-export const FollowUpModal = ({
+export const EditFollowUpModal = ({
   open,
   onClose,
-  storeId,
-  repId,
-}: FollowUpModalProps) => {
+  followup,
+}: EditFollowUpModalProps) => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [interestLevel, setInterestLevel] = useState("");
   const [comments, setComments] = useState("");
 
-  const [createFollowup, { isLoading }] = useCreateFollowupMutation();
+  const [updateFollowup, { isLoading }] = useUpdateFollowupMutation();
 
-  const resetForm = () => {
-    setDate(undefined);
-    setInterestLevel("");
-    setComments("");
-  };
+  useEffect(() => {
+    if (followup) {
+      setDate(followup.followupDate ? new Date(followup.followupDate) : undefined);
+      setInterestLevel(followup.interestLevel || "");
+      setComments(followup.comments || "");
+    }
+  }, [followup]);
 
   const handleSubmit = async () => {
     if (!date) return toast.error("Please select a follow-up date.");
+    if (!followup) return;
 
     try {
-      await createFollowup({
-        followupDate: date,
-        interestLevel,
-        comments,
-        store: storeId,
-        rep: repId,
+      await updateFollowup({
+        id: followup._id,
+        data: {
+          followupDate: date,
+          interestLevel,
+          comments,
+        },
       }).unwrap();
 
-      toast.success("Follow-up created!");
-      resetForm();
+      toast.success("Follow-up updated!");
       onClose();
     } catch {
-      toast.error("Failed to create follow-up");
+      toast.error("Failed to update follow-up");
     }
   };
 
@@ -87,7 +89,7 @@ export const FollowUpModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Follow-Up</DialogTitle>
+          <DialogTitle>Edit Follow-Up</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-3">
@@ -139,7 +141,7 @@ export const FollowUpModal = ({
           {/* Comments */}
           <div className="flex flex-col space-y-2">
             <Label>Note</Label>
-            <Textarea 
+            <Textarea
               placeholder="Write additional notes..."
               value={comments}
               onChange={(e) => setComments(e.target.value)}
@@ -154,7 +156,7 @@ export const FollowUpModal = ({
 
           <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Save Follow-Up
+            Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>

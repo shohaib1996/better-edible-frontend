@@ -8,26 +8,29 @@ export const OrdersFilters = ({
   setSearchTerm,
   selectedRepName,
   setSelectedRepName,
+  isRepView = false, // Add isRepView prop
 }: any) => (
   <div className="flex flex-wrap gap-3 items-center justify-end mb-3">
-    <Select
-      value={selectedRepName || "all"}
-      onValueChange={(value) => setSelectedRepName(value === "all" ? "" : value)}
-    >
-      <SelectTrigger>
-        <SelectValue placeholder="Filter by Rep" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Reps</SelectItem>
-        {[...(new Set(reps?.data?.map((r: IRep) => r.name).filter(Boolean) || []))].map(
-          (repName) => (
-            <SelectItem key={repName as string} value={repName as string}>
-              {repName as string}
-            </SelectItem>
-          )
-        )}
-      </SelectContent>
-    </Select>
+    {!isRepView && ( // Conditionally render rep filter
+      <Select
+        value={selectedRepName || "all"}
+        onValueChange={(value) => setSelectedRepName(value === "all" ? "" : value)}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Filter by Rep" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Reps</SelectItem>
+          {[...(new Set(reps?.data?.map((r: IRep) => r.name).filter(Boolean) || []))].map(
+            (repName) => (
+              <SelectItem key={repName as string} value={repName as string}>
+                {repName as string}
+              </SelectItem>
+            )
+          )}
+        </SelectContent>
+      </Select>
+    )}
 
     <div className="relative w-64">
       <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />

@@ -6,10 +6,13 @@ import { useUser } from "@/src/redux/hooks/useAuth";
 import { useDebounced } from "@/src/redux/hooks/hooks";
 import { IFollowUp } from "@/src/types";
 import { useCreateOrderMutation } from "@/src/redux/api/orders/orders";
+import { useDeleteFollowupMutation } from "@/src/redux/api/Followups/followupsApi";
 import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
 import { Field } from "@/src/components/ReUsableComponents/EntityModal";
 import { toast } from "sonner";
 import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
+import { EditFollowUpModal } from "@/src/components/Followup/EditFollowUpModal";
+import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
 
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
@@ -26,6 +29,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
+  Repeat,
   ShoppingCart,
   Truck,
 } from "lucide-react";
@@ -87,12 +91,31 @@ const FollowUps = () => {
     IFollowUp["rep"] | null
   >(null);
 
+  const [editFollowupModalOpen, setEditFollowupModalOpen] = useState(false);
+  const [selectedFollowupForEdit, setSelectedFollowupForEdit] =
+    useState<IFollowUp | null>(null);
+
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
+  const [deleteFollowup] = useDeleteFollowupMutation();
 
   const onOrderFormChange = useCallback((items: any[], totals: any) => {
     setOrderItems(items);
     setOrderTotals((prev) => ({ ...prev, ...totals }));
   }, []);
+
+  const handleEditFollowup = (followup: IFollowUp) => {
+    setSelectedFollowupForEdit(followup);
+    setEditFollowupModalOpen(true);
+  };
+
+  const handleDeleteFollowup = async (id: string) => {
+    try {
+      await deleteFollowup(id).unwrap();
+      toast.success("Follow-up dismissed successfully");
+    } catch (error) {
+      toast.error("Failed to dismiss follow-up");
+    }
+  };
 
   const handleCreateOrder = async (values: any) => {
     try {
@@ -302,7 +325,7 @@ const FollowUps = () => {
           const borderColorClass = delay > 0 ? "border-red-500" : "border-emerald-500";
 
           return (
-            <Card key={f._id} className={`border-l-4 ${borderColorClass} shadow-sm`}>
+            <Card key={f._id} className={`border-l-4 ${borderColorClass} shadow-sm py-0`}>
               <CardContent className="p-4 flex flex-col gap-2">
                 {/* TOP ROW */}
                 <div className="flex justify-between items-start">
@@ -328,9 +351,12 @@ const FollowUps = () => {
                     <p className="text-gray-700 mt-1">{f.comments}</p>
                   </div>
 
-                  <Button variant="outline" className="text-xs">
-                    Dismiss
-                  </Button>
+                  <ConfirmDialog
+                    triggerText="Dismiss"
+                    title="Are you sure you want to dismiss this follow-up?"
+                    description="This action cannot be undone."
+                    onConfirm={() => handleDeleteFollowup(f._id)}
+                  />
                 </div>
 
                 {/* ACTION BUTTONS */}
@@ -353,6 +379,13 @@ const FollowUps = () => {
                     onClick={() => handleNewOrder(f)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-1" /> Orders
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleEditFollowup(f)}
+                  >
+                    <Repeat className="w-4 h-4 mr-1" /> Edit Followup
                   </Button>
                 </div>
               </CardContent>
@@ -383,6 +416,12 @@ const FollowUps = () => {
         onClose={() => setDeliveryModalOpen(false)}
         store={selectedStoreForDelivery}
         rep={selectedRepForDelivery}
+      />
+
+      <EditFollowUpModal
+        open={editFollowupModalOpen}
+        onClose={() => setEditFollowupModalOpen(false)}
+        followup={selectedFollowupForEdit}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/ta
 import { Loader2 } from "lucide-react";
 import { NewOrdersTab } from "./NewOrdersTab";
 import { ShippedOrdersTab } from "./ShippedOrdersTab";
+import { IRep } from "@/src/types";
 
 interface OrdersTabsProps {
   activeTab: string;
@@ -17,6 +18,7 @@ interface OrdersTabsProps {
   onEdit: (order: any) => void; // ✅ NEW
   onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
   reps: any[];
+  currentRep?: Partial<IRep> | null
 }
 
 export const OrdersTabs = ({
@@ -30,6 +32,7 @@ export const OrdersTabs = ({
   onEdit, // ✅ added
   onFilter,
   reps,
+  currentRep,
 }: OrdersTabsProps) => {
   if (isLoading)
     return (
@@ -53,6 +56,7 @@ export const OrdersTabs = ({
           updateOrder={updateOrder}
           refetch={refetch}
           onEdit={onEdit} // ✅ pass down
+          currentRep={currentRep}
         />
       </TabsContent>
 

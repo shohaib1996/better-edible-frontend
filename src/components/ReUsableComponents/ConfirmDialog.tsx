@@ -38,7 +38,7 @@ export function ConfirmDialog({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant={variant} size="sm" disabled={disabled}>
+        <Button className="cursor-pointer" variant={variant} size="sm" disabled={disabled}>
           {triggerText}
         </Button>
       </AlertDialogTrigger>
@@ -48,12 +48,12 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="bg-emerald-600 text-white">{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel className="bg-emerald-600 text-white cursor-pointer">{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             className={
               variant === "destructive"
-                ? "bg-destructive text-white hover:bg-destructive/90"
-                : "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-destructive text-white hover:bg-destructive/90 cursor-pointer"
+                : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
             }
             onClick={onConfirm}
           >

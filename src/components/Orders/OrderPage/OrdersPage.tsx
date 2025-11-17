@@ -30,9 +30,9 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IOrder } from "@/src/types";
+import { IOrder, IRep } from "@/src/types";
 
-const OrdersPage = () => {
+const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView?: boolean; currentRepId?: string, currentRep?: Partial<IRep> | null }) => {
   const [activeTab, setActiveTab] = useState("new");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
@@ -56,7 +56,8 @@ const OrdersPage = () => {
   const { data: reps } = useGetAllRepsQuery({});
   const { data, isLoading, refetch } = useGetAllOrdersQuery({
     search: debouncedSearch || undefined,
-    repName: selectedRepName || undefined,
+    repName: isRepView ? undefined : selectedRepName || undefined, // Only use selectedRepName if not rep view
+    repId: isRepView ? currentRepId : undefined, // Filter by currentRepId if rep view
     startDate,
     endDate,
     status: activeTab === 'new' ? ['submitted', 'accepted', 'manifested'] : ['shipped', 'cancelled'],
@@ -233,7 +234,7 @@ const OrdersPage = () => {
     <div className="p-6 space-y-6">
       <OrdersHeader
         onNewOrder={() => {
-          setEditingOrder(null);
+          setEditingOrder({ repId: isRepView ? currentRepId : "" }); // Pre-fill repId if in rep view
           setModalOpen(true);
         }}
       />
@@ -244,6 +245,7 @@ const OrdersPage = () => {
         setSearchTerm={setSearchTerm}
         selectedRepName={selectedRepName}
         setSelectedRepName={setSelectedRepName}
+        isRepView={isRepView} // Pass isRepView to OrdersFilters
       />
 
       <OrdersTabs
@@ -257,6 +259,7 @@ const OrdersPage = () => {
         onEdit={openEdit} // ✅ Pass down edit handler
         onFilter={handleFilter}
         reps={reps?.data || []}
+        currentRep={currentRep}
       />
 
       <EntityModal

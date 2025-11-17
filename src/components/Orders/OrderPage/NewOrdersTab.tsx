@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
-import { IOrder } from "@/src/types";
+import { IOrder, IRep } from "@/src/types";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { generateInvoice } from "@/src/utils/invoiceGenerator";
@@ -36,6 +36,7 @@ interface NewOrdersTabProps {
   updateOrder: any;
   refetch: () => void;
   onEdit: (order: any) => void;
+  currentRep?: Partial<IRep> | null
 }
 
 export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
@@ -44,6 +45,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   updateOrder,
   refetch,
   onEdit,
+  currentRep,
 }) => {
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
@@ -318,6 +320,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
         open={deliveryModalOpen}
         onClose={() => setDeliveryModalOpen(false)}
         store={selectedOrderForDelivery?.store || null}
+        rep={currentRep}
       />
     </>
   );
