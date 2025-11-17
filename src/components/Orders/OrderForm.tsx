@@ -32,26 +32,25 @@ interface OrderFormProps {
 
 export const OrderForm: React.FC<OrderFormProps> = ({
   initialItems = [],
-  initialDiscountType = "flat",
+  initialDiscountType,
   initialDiscountValue = 0,
   initialNote = "",
   onChange,
 }) => {
   const { data, isLoading } = useGetAllProductsQuery({});
   const products = useMemo(() => data?.products || [], [data]);
+  console.log(initialDiscountType);
 
   const [quantities, setQuantities] = useState<Record<string, any>>({});
-  const [discountType, setDiscountType] = useState<"flat" | "percent">(
-    initialDiscountType
-  );
+  const [discountType, setDiscountType] = useState(initialDiscountType);
   const [discountValue, setDiscountValue] =
     useState<number>(initialDiscountValue);
   const [note, setNote] = useState<string>(initialNote);
 
   // per-product toggles keyed by productId string
-  const [discountToggles, setDiscountToggles] = useState<Record<string, boolean>>(
-    {}
-  );
+  const [discountToggles, setDiscountToggles] = useState<
+    Record<string, boolean>
+  >({});
 
   const normKey = (s?: string | null) =>
     s ? String(s).trim().toLowerCase() : "";
@@ -62,7 +61,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       // Quantities map
       const newQuantities = initialItems.reduce((acc, item) => {
         const rawProd = item.product;
-        const productId = String((rawProd && (rawProd._id ?? rawProd)) ?? rawProd);
+        const productId = String(
+          (rawProd && (rawProd._id ?? rawProd)) ?? rawProd
+        );
         const product = products.find((p: any) => String(p._id) === productId);
         if (!product) return acc;
 
@@ -88,7 +89,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       // Build toggles: prefer explicit `appliedDiscount` saved on order items
       const newToggles: Record<string, boolean> = {};
       for (const it of initialItems) {
-        const pid = String((it.product && (it.product._id ?? it.product)) ?? it.product);
+        const pid = String(
+          (it.product && (it.product._id ?? it.product)) ?? it.product
+        );
         // If the backend saved appliedDiscount for that item, honor it.
         if (typeof it.appliedDiscount === "boolean") {
           // If any item entry for that product has appliedDiscount true, mark product toggled.
@@ -98,7 +101,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         // Fallback inference: if discountPrice exists and lineTotal matches qty * discountPrice, infer applied
         if (it.discountPrice && Number(it.discountPrice) > 0 && it.qty) {
           const inferred =
-            Math.abs(Number(it.lineTotal || 0) - Number(it.qty || 0) * Number(it.discountPrice)) < 0.01;
+            Math.abs(
+              Number(it.lineTotal || 0) -
+                Number(it.qty || 0) * Number(it.discountPrice)
+            ) < 0.01;
           newToggles[pid] = newToggles[pid] || inferred;
         }
       }
@@ -173,7 +179,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         return {
           unitPrice: Number(v.price ?? 0),
           discountPrice:
-            discountAllowed && v.discountPrice != null ? Number(v.discountPrice) : undefined,
+            discountAllowed && v.discountPrice != null
+              ? Number(v.discountPrice)
+              : undefined,
         };
       }
     }
@@ -184,7 +192,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       return {
         unitPrice: Number(p.price ?? 0),
         discountPrice:
-          discountAllowed && p.discountPrice != null ? Number(p.discountPrice) : undefined,
+          discountAllowed && p.discountPrice != null
+            ? Number(p.discountPrice)
+            : undefined,
       };
     }
 
@@ -346,7 +356,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       );
     }
     if (regular != null) {
-      return <div className="text-xs text-gray-600">${Number(regular).toFixed(2)}</div>;
+      return (
+        <div className="text-xs text-gray-600">
+          ${Number(regular).toFixed(2)}
+        </div>
+      );
     }
     return null;
   };
@@ -423,23 +437,39 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   </div>
 
                   {/* BLISS (variants) */}
-                  {product.variants?.length && product.productLine === "BLISS Cannabis Syrup" ? (
+                  {product.variants?.length &&
+                  product.productLine === "BLISS Cannabis Syrup" ? (
                     <>
                       {product.variants.map((variant: any) => {
                         const key = normKey(variant.label);
                         const regular = Number(variant.price ?? 0);
-                        const discount = variant.discountPrice != null ? Number(variant.discountPrice) : undefined;
+                        const discount =
+                          variant.discountPrice != null
+                            ? Number(variant.discountPrice)
+                            : undefined;
                         return (
-                          <div key={variant.label} className="col-span-3 flex flex-col">
-                            <Label className="text-xs text-gray-500 mb-1">{variant.label}</Label>
-                            {renderPrice(regular, isChecked ? discount : undefined)}
+                          <div
+                            key={variant.label}
+                            className="col-span-3 flex flex-col"
+                          >
+                            <Label className="text-xs text-gray-500 mb-1">
+                              {variant.label}
+                            </Label>
+                            {renderPrice(
+                              regular,
+                              isChecked ? discount : undefined
+                            )}
                             <Input
                               type="number"
                               min="0"
                               className="h-8 border-emerald-500"
                               value={quantities[pid]?.[key] ?? ""}
                               onChange={(e) =>
-                                handleQtyChange(pid, key, parseFloat(e.target.value || "0") || 0)
+                                handleQtyChange(
+                                  pid,
+                                  key,
+                                  parseFloat(e.target.value || "0") || 0
+                                )
                               }
                             />
                           </div>
@@ -449,20 +479,35 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   ) : product.productLine === "Cannacrispy" ? (
                     <>
                       {["hybrid", "indica", "sativa"].map((type) => {
-                        const { unitPrice, discountPrice } = pickPrice(product, type);
+                        const { unitPrice, discountPrice } = pickPrice(
+                          product,
+                          type
+                        );
                         const regular = unitPrice;
-                        const discount = discountPrice && discountPrice > 0 ? discountPrice : undefined;
+                        const discount =
+                          discountPrice && discountPrice > 0
+                            ? discountPrice
+                            : undefined;
                         return (
                           <div key={type} className="col-span-3 flex flex-col">
-                            <Label className="text-xs text-gray-500 mb-1 capitalize">{type}</Label>
-                            {renderPrice(regular, isChecked ? discount : undefined)}
+                            <Label className="text-xs text-gray-500 mb-1 capitalize">
+                              {type}
+                            </Label>
+                            {renderPrice(
+                              regular,
+                              isChecked ? discount : undefined
+                            )}
                             <Input
                               type="number"
                               min="0"
                               className="h-8 border-emerald-500"
                               value={quantities[pid]?.[type] ?? ""}
                               onChange={(e) =>
-                                handleQtyChange(pid, type, parseFloat(e.target.value || "0") || 0)
+                                handleQtyChange(
+                                  pid,
+                                  type,
+                                  parseFloat(e.target.value || "0") || 0
+                                )
                               }
                             />
                           </div>
@@ -471,10 +516,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     </>
                   ) : (
                     <div className="col-span-3 flex flex-col">
-                      <Label className="text-xs text-gray-500 mb-1">Quantity</Label>
+                      <Label className="text-xs text-gray-500 mb-1">
+                        Quantity
+                      </Label>
                       {renderPrice(
                         Number(product.price ?? 0),
-                        isChecked && product.discountPrice != null ? Number(product.discountPrice) : undefined
+                        isChecked && product.discountPrice != null
+                          ? Number(product.discountPrice)
+                          : undefined
                       )}
                       <Input
                         type="number"
@@ -482,7 +531,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                         className="h-8 border-emerald-500"
                         value={quantities[pid]?.qty ?? ""}
                         onChange={(e) =>
-                          handleQtyChange(pid, "qty", parseFloat(e.target.value || "0") || 0)
+                          handleQtyChange(
+                            pid,
+                            "qty",
+                            parseFloat(e.target.value || "0") || 0
+                          )
                         }
                       />
                     </div>
@@ -512,19 +565,31 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           <div className="flex gap-3 items-center">
             <select
               value={discountType}
-              onChange={(e) => setDiscountType(e.target.value as "flat" | "percent")}
+              onChange={(e) =>
+                setDiscountType(e.target.value as "flat" | "percent")
+              }
               className="border rounded-md px-2 py-1 text-sm"
             >
               <option value="flat">Flat ($)</option>
               <option value="percent">Percent (%)</option>
             </select>
-            <Input
-              type="number"
-              value={discountValue}
-              onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-              placeholder="Enter discount"
-              className="w-32 border-emerald-500"
-            />
+            {discountType === "flat" ? (
+              <Input
+                type="number"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                placeholder="Enter discount"
+                className="w-32 border-emerald-500"
+              />
+            ) : (
+              <Input
+                type="number"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                placeholder="Enter discount"
+                className="w-32 border-emerald-500"
+              />
+            )}
           </div>
 
           <div className="flex justify-between text-sm text-gray-600">

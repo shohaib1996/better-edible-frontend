@@ -128,7 +128,6 @@ const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView
 
   // ✅ Fixed Edit Handler
   const openEdit = useCallback((order: any) => {
-    console.log(order);
     const initialData = {
       _id: order._id,
       storeId: order.store?._id || "",
@@ -138,7 +137,7 @@ const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView
         ? format(new Date(order.deliveryDate), "yyyy-MM-dd")
         : "",
       note: order.note || "",
-      discountType: "flat", // assuming backend doesn't send type, use default
+      discountType: order.discountType, // assuming backend doesn't send type, use default
       discountValue: order.discount || 0,
       subtotal: order.subtotal || 0,
       total: order.total || 0,
