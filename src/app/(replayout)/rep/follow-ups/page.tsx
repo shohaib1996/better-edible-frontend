@@ -385,7 +385,7 @@ const FollowUps = () => {
                     variant="secondary"
                     onClick={() => handleEditFollowup(f)}
                   >
-                    <Repeat className="w-4 h-4 mr-1" /> Edit Followup
+                    <Repeat className="w-4 h-4 mr-1" /> Re Followup
                   </Button>
                 </div>
               </CardContent>
