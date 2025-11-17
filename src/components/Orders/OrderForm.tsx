@@ -584,7 +584,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             ) : (
               <Input
                 type="number"
-                value={discountValue}
+                value={(totals.totalPrice / discountValue).toFixed(2)}
                 onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
                 placeholder="Enter discount"
                 className="w-32 border-emerald-500"
