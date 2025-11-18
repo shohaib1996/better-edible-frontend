@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -39,6 +38,15 @@ export const OrderDetailsDialog = ({
     );
   };
 
+  const fmt = (value: number) => `$${value.toFixed(2)}`;
+
+  const subtotal =
+    order.subtotal ??
+    order.items.reduce((acc, it) => acc + it.qty * it.unitPrice, 0);
+
+  const discount = order.discount ?? 0;
+  const total = order.total ?? subtotal - discount;
+
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl h-[90vh] overflow-y-auto">
@@ -50,6 +58,7 @@ export const OrderDetailsDialog = ({
         </DialogHeader>
 
         <div className="space-y-4 py-3">
+          {/* Store + Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold">Store Details</h3>
@@ -73,45 +82,77 @@ export const OrderDetailsDialog = ({
 
           <Separator />
 
-          <div>
-            <h3 className="font-semibold mb-2">Items</h3>
-            <div className="space-y-2">
-              {order.items.map((item) => (
-                <div
-                  key={item.product}
-                  className="flex justify-between items-center"
-                >
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">{item.unitLabel}</p>
-                  </div>
-                  <div className="text-right">
-                    <p>Qty: {item.qty}</p>
-                    <p className="text-sm text-gray-500">
-                      @ ${item.unitPrice.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          {/* Items Table */}
+          <div className="">
+            <h3 className="font-semibold mb-3">Items</h3>
+            <div className="border">
+              {/* Header */}
+              <div className="hidden sm:grid grid-cols-4 border-b font-medium text-gray-700 text-sm">
+                <div className="py-2 px-2 border-r">Item</div>
+                <div className="py-2 px-2 text-right border-r">Unit Price</div>
+                <div className="py-2 px-2 text-right border-r">Quantity</div>
+                <div className="py-2 px-2 text-right">Total</div>
+              </div>
+
+              {/* Rows */}
+              <div className="mt-1">
+                {order.items.map((item, idx) => {
+                  const lineTotal = item.qty * item.unitPrice;
+                  return (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-1 sm:grid-cols-4 border-b last:border-b-0"
+                    >
+                      {/* Item */}
+                      <div className="py-3 px-2 border-r">
+                        <p className="font-medium">{item.name}</p>
+                        {item.unitLabel && (
+                          <p className="text-sm text-gray-500">
+                            {item.unitLabel}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Price */}
+                      <div className="py-3 px-2 text-right border-r">
+                        {fmt(item.unitPrice)}
+                      </div>
+
+                      {/* Quantity */}
+                      <div className="py-3 px-2 text-right border-r">
+                        {item.qty}
+                      </div>
+
+                      {/* Total */}
+                      <div className="py-3 px-2 text-right">
+                        {fmt(lineTotal)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           <Separator />
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium">Subtotal:</span>
-              <span>${order.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="font-medium">Discount:</span>
-              <span className="text-red-500">
-                -${(order.discount || 0).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total:</span>
-              <span>${order.total.toFixed(2)}</span>
+          {/* Summary aligned right */}
+          <div className="flex justify-end">
+            <div className="w-full sm:w-1/3 space-y-2">
+              <div className="flex justify-between">
+                <span className="font-medium">Subtotal:</span>
+                <span>{fmt(subtotal)}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="font-medium">Discount:</span>
+                <span className="text-red-500">-{fmt(discount)}</span>
+              </div>
+
+              <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                <span>Total:</span>
+                <span>{fmt(total)}</span>
+              </div>
             </div>
           </div>
         </div>

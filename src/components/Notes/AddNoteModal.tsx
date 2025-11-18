@@ -180,7 +180,7 @@ export const AddNoteModal = ({
      ----------------------- */
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{note ? "Edit Note" : "Add a New Note"}</DialogTitle>
 

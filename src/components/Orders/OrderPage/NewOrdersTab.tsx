@@ -36,7 +36,7 @@ interface NewOrdersTabProps {
   updateOrder: any;
   refetch: () => void;
   onEdit: (order: any) => void;
-  currentRep?: Partial<IRep> | null
+  currentRep?: Partial<IRep> | null;
 }
 
 export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
@@ -50,7 +50,8 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
-  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<IOrder | null>(null);
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] =
+    useState<IOrder | null>(null);
 
   const handleOpenDialog = (order: IOrder) => {
     setSelectedOrder(order);
@@ -135,7 +136,11 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenDialog(order)}
-                    className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer hover:underline"
+                    className="
+text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer
+relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-blue-700
+after:transition-all after:duration-300 hover:after:w-full
+"
                   >
                     {order.store?.name || "N/A"}
                   </button>
@@ -315,7 +320,10 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
         ))}
       </div>
       <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />
-      <PackingListDialog order={packingOrder} onClose={() => setPackingOrder(null)} />
+      <PackingListDialog
+        order={packingOrder}
+        onClose={() => setPackingOrder(null)}
+      />
       <DeliveryModal
         open={deliveryModalOpen}
         onClose={() => setDeliveryModalOpen(false)}

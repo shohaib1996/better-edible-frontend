@@ -83,7 +83,7 @@ export const DeliveryItem = ({
         {/* Store Info */}
         <div className="space-y-1">
           <h2
-            className="text-lg font-semibold text-gray-900 cursor-pointer hover:underline"
+            className="text-lg text-black font-bold dark:text-white relative inline-block after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-0.5 after:bg-[#326EA6] after:transition-all after:duration-300 hover:after:w-full cursor-pointer"
             onClick={() => setAddNoteModalOpen(true)}
           >
             {delivery.storeId?.name}
