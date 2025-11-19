@@ -30,7 +30,6 @@ import {
 import { Calendar } from "@/src/components/ui/calendar";
 import { Button } from "@/src/components/ui/button";
 import { CalendarIcon } from "lucide-react";
-import { IDelivery } from "@/better-edibles-backend/src/models/Delivery";
 
 // ---------- COMPONENT ----------
 const EXPIRATION_DAYS = 7;
@@ -234,7 +233,7 @@ const TodayContact = () => {
 
     // Filter out completed deliveries
     const activeDeliveries = deliveries.filter(
-      (delivery: IDelivery) => delivery.status !== "completed"
+      (delivery: Delivery) => delivery.status !== "completed"
     );
 
     const stored = localStorage.getItem(ORDER_STORAGE_KEY);
