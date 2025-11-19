@@ -14,12 +14,12 @@ export interface Delivery {
     // make repType optional so it matches all shapes
     repType?: string;
   };
-  disposition: string;
-  paymentAction: string;
+  disposition: "money_pickup" | "delivery" | "sample_drop" | "other";
+  paymentAction: "collect_payment" | "no_payment" | "may_not_collect";
   amount: number;
   scheduledAt: string;
   notes?: string;
-  status: string;
+  status: "pending" | "assigned" | "completed" | "cancelled" | "in_transit";
   createdAt?: string;
   updatedAt?: string;
 }

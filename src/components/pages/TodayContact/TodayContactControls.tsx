@@ -44,7 +44,7 @@ export const TodayContactControls = ({
 
         {/* Date Picker */}
         <Popover>
-          <PopoverTrigger asChild>
+          <PopoverTrigger asChild className="border-green-500">
             <Button
               variant="outline"
               className="w-44 justify-center font-normal"
@@ -90,7 +90,7 @@ export const TodayContactControls = ({
 
       <Input
         placeholder="Search store..."
-        className="w-60"
+        className="w-60 border-green-500"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />

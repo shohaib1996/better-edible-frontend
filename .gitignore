@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /better-edibles-backend
+/instruction.txt
 /.pnp
 .pnp.*
 .yarn/*

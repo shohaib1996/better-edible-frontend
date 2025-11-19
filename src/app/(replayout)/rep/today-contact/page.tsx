@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useGetAllDeliveriesQuery } from "@/src/redux/api/Deliveries/deliveryApi";
 import { useUser } from "@/src/redux/hooks/useAuth";
 import {
@@ -30,15 +30,19 @@ import {
 import { Calendar } from "@/src/components/ui/calendar";
 import { Button } from "@/src/components/ui/button";
 import { CalendarIcon } from "lucide-react";
-
-
+import { IDelivery } from "@/better-edibles-backend/src/models/Delivery";
 
 // ---------- COMPONENT ----------
+const EXPIRATION_DAYS = 7;
 const TodayContact = () => {
   const user = useUser();
   const { data: repData } = useGetRepByIdQuery(user?.id, {
     skip: !user?.id,
   });
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
+
   const [checkin, { isLoading: checkinLoading }] = useCheckInRepMutation();
   const [checkout, { isLoading: checkoutLoading }] = useCheckOutRepMutation();
   const [password, setPassword] = useState("");
@@ -60,6 +64,28 @@ const TodayContact = () => {
   });
 
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
+
+  const {
+    data: deliveriesData,
+    isLoading,
+    refetch,
+  } = useGetAllDeliveriesQuery(
+    {
+      assignedTo: user?.id,
+      startDate: date,
+      endDate: date,
+      storeName: debouncedSearch,
+      limit: 100,
+    },
+    {
+      skip: !user?.id || !date,
+    }
+  );
+
+  const deliveries = deliveriesData?.deliveries || [];
+  const [orderedDeliveries, setOrderedDeliveries] = useState<Delivery[]>([]);
+  const prevDeliveriesRef = useRef<string>("");
+  const ORDER_STORAGE_KEY = `delivery_order_${user?.id}_${date}`;
 
   const onOrderFormChange = useCallback((items: any[], totals: any) => {
     setOrderItems(items);
@@ -125,9 +151,7 @@ const TodayContact = () => {
       render: (value, onChange, initialData) => (
         <div className="p-2 border rounded-md bg-gray-50">
           <p className="font-semibold">{initialData?.store?.name}</p>
-          <p className="text-sm text-gray-500">
-            {initialData?.store?.address}
-          </p>
+          <p className="text-sm text-gray-500">{initialData?.store?.address}</p>
         </div>
       ),
     },
@@ -176,26 +200,6 @@ const TodayContact = () => {
     },
   ];
 
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
-
-  // 🔹 Convert date to UTC safe string
-  const utcDate = new Date(date).toISOString().split("T")[0];
-
-  const { data, isLoading, refetch } = useGetAllDeliveriesQuery({
-    assignedTo: user?.id,
-    storeName: debouncedSearch,
-    scheduledAt: utcDate,
-  });
-
-  const deliveries: Delivery[] = data?.deliveries || [];
-  const [orderedDeliveries, setOrderedDeliveries] = useState<Delivery[]>([]);
-
-  // 🔹 LocalStorage key per user & date
-  const ORDER_STORAGE_KEY = `delivery_order_${user?.id}_${utcDate}`;
-  const EXPIRATION_DAYS = 3; // ⏰ Auto-delete old records after 3 days
-
   // 🔹 Cleanup old localStorage entries (runs once per mount)
   useEffect(() => {
     const now = Date.now();
@@ -219,21 +223,35 @@ const TodayContact = () => {
 
   // 🔹 Load saved order from localStorage (or default)
   useEffect(() => {
+    const deliveriesStr = JSON.stringify(deliveries);
+
+    // Only update if deliveries actually changed
+    if (prevDeliveriesRef.current === deliveriesStr) {
+      return;
+    }
+
+    prevDeliveriesRef.current = deliveriesStr;
+
+    // Filter out completed deliveries
+    const activeDeliveries = deliveries.filter(
+      (delivery: IDelivery) => delivery.status !== "completed"
+    );
+
     const stored = localStorage.getItem(ORDER_STORAGE_KEY);
     if (stored) {
       try {
         const { order } = JSON.parse(stored);
-        const sorted = [...deliveries].sort(
+        const sorted = [...activeDeliveries].sort(
           (a, b) => order.indexOf(a._id) - order.indexOf(b._id)
         );
         setOrderedDeliveries(sorted);
       } catch {
-        setOrderedDeliveries(deliveries);
+        setOrderedDeliveries(activeDeliveries);
       }
     } else {
-      setOrderedDeliveries(deliveries);
+      setOrderedDeliveries(activeDeliveries);
     }
-  }, [deliveries, utcDate, user?.id]);
+  }, [deliveries, ORDER_STORAGE_KEY]);
 
   // 🔹 Move Up/Down & Save order with timestamp
   const moveDelivery = (index: number, direction: "up" | "down") => {
@@ -294,7 +312,6 @@ const TodayContact = () => {
           checkinLoading={checkinLoading}
           checkoutLoading={checkoutLoading}
         />
-
         <TodayContactControls
           date={date}
           setDate={setDate}

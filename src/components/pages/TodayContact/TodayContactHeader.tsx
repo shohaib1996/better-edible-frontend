@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
+import Link from "next/link";
 
 interface TodayContactHeaderProps {
   repData: any;
@@ -33,38 +34,43 @@ export const TodayContactHeader = ({
 }: TodayContactHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-semibold text-gray-800">
-        Today's Contact
-      </h1>
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogTrigger asChild>
+      <h1 className="text-2xl font-semibold text-gray-800">Today's Contact</h1>
+      <div className="space-x-4">
+        <Link href="/rep/time-logs">
           <Button className="bg-green-700 hover:bg-green-800 text-white">
-            {repData?.checkin ? "Clock Out" : "Clock In"}
+            Time logs
           </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+        </Link>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-green-700 hover:bg-green-800 text-white">
               {repData?.checkin ? "Clock Out" : "Clock In"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Button
-              onClick={handleCheckInOrOut}
-              disabled={checkinLoading || checkoutLoading || !password.trim()}
-              className="w-full"
-            >
-              {checkinLoading || checkoutLoading ? "Submitting..." : "Submit"}
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {repData?.checkin ? "Clock Out" : "Clock In"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button
+                onClick={handleCheckInOrOut}
+                disabled={checkinLoading || checkoutLoading || !password.trim()}
+                className="w-full"
+              >
+                {checkinLoading || checkoutLoading ? "Submitting..." : "Submit"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };

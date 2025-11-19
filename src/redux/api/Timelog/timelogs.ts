@@ -4,7 +4,7 @@ import { tagTypes } from "../../tagTypes/tagTypes";
 export const timelogsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllTimeLogs: builder.query({
-      query: () => `/timelogs}`,
+      query: () => `/timelogs`,
       providesTags: [tagTypes.timelogs],
     }),
     getTimelogsByRepId: builder.query({

@@ -12,6 +12,14 @@ import { NotesModal } from "@/src/components/Notes/NotesModal";
 import { SampleModal } from "@/src/components/Sample/SampleModal";
 import type { Delivery } from "@/src/types";
 import { FollowUpModal } from "../../Followup/FollowUpModal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { useUpdateDeliveryStatusMutation } from "@/src/redux/api/Deliveries/deliveryApi";
 
 interface DeliveryItemProps {
   delivery: Delivery;
@@ -39,6 +47,18 @@ export const DeliveryItem = ({
 
   const [deleteDelivery, { isLoading: isDeleting }] =
     useDeleteDeliveryMutation();
+
+  const [updateStatus, { isLoading: isUpdatingStatus }] =
+    useUpdateDeliveryStatusMutation();
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await updateStatus({ id: delivery._id, status: newStatus }).unwrap();
+      toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -191,12 +211,22 @@ export const DeliveryItem = ({
       {/* Footer */}
       <div className="flex justify-between mt-4 text-xs text-gray-500">
         <span>Assigned to: {delivery.assignedTo?.name || "Unknown rep"}</span>
-        <span>
-          Status:{" "}
-          <span className="capitalize font-medium text-gray-700">
-            {delivery.status.replaceAll("_", " ")}
-          </span>
-        </span>
+        <div className="flex items-center gap-2">
+          <span>Status:</span>
+          <Select
+            value={delivery.status}
+            onValueChange={handleStatusChange}
+            disabled={isUpdatingStatus}
+          >
+            <SelectTrigger className="w-[140px] h-8 border-green-500">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="in_transit">In Transit</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Modals */}
