@@ -11,7 +11,7 @@ import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
 import { Field } from "@/src/components/ReUsableComponents/EntityModal";
 import { toast } from "sonner";
 import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
-import { EditFollowUpModal } from "@/src/components/Followup/EditFollowUpModal";
+import { ManageFollowUpModal } from "@/src/components/Followup/ManageFollowUpModal";
 import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
 
 import { Card, CardContent } from "@/src/components/ui/card";
@@ -204,14 +204,20 @@ const FollowUps = () => {
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {value ? format(toLocalDate(value) as Date, "PPP") : <span>Pick a date</span>}
+              {value ? (
+                format(toLocalDate(value) as Date, "PPP")
+              ) : (
+                <span>Pick a date</span>
+              )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
               selected={value ? toLocalDate(value) || undefined : undefined}
-              onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
+              onSelect={(date) =>
+                onChange(date ? format(date, "yyyy-MM-dd") : "")
+              }
               initialFocus
             />
           </PopoverContent>
@@ -260,7 +266,9 @@ const FollowUps = () => {
                 )}
                 disabled={showAll}
               >
-                {selectedDate ? format(selectedDate, "MMMM dd, yyyy") : "Pick date"}
+                {selectedDate
+                  ? format(selectedDate, "MMMM dd, yyyy")
+                  : "Pick date"}
                 <CalendarIcon className="w-4 h-4 opacity-70" />
               </Button>
             </PopoverTrigger>
@@ -321,11 +329,17 @@ const FollowUps = () => {
           const local = toLocalDate(dateStr);
 
           const today = new Date();
-          const delay = local ? Math.max(0, differenceInCalendarDays(today, local)) : 0;
-          const borderColorClass = delay > 0 ? "border-red-500" : "border-emerald-500";
+          const delay = local
+            ? Math.max(0, differenceInCalendarDays(today, local))
+            : 0;
+          const borderColorClass =
+            delay > 0 ? "border-red-500" : "border-emerald-500";
 
           return (
-            <Card key={f._id} className={`border-l-4 ${borderColorClass} shadow-sm py-0`}>
+            <Card
+              key={f._id}
+              className={`border-l-4 ${borderColorClass} shadow-sm py-0`}
+            >
               <CardContent className="p-4 flex flex-col gap-2">
                 {/* TOP ROW */}
                 <div className="flex justify-between items-start">
@@ -338,7 +352,10 @@ const FollowUps = () => {
                     </p>
 
                     <p className="text-gray-500 text-sm">
-                      Followup: {dateStr && local ? format(local, "MMM dd, yyyy") : "No date"}
+                      Followup:{" "}
+                      {dateStr && local
+                        ? format(local, "MMM dd, yyyy")
+                        : "No date"}
                     </p>
 
                     {/* Delay Info */}
@@ -418,7 +435,7 @@ const FollowUps = () => {
         rep={selectedRepForDelivery}
       />
 
-      <EditFollowUpModal
+      <ManageFollowUpModal
         open={editFollowupModalOpen}
         onClose={() => setEditFollowupModalOpen(false)}
         followup={selectedFollowupForEdit}

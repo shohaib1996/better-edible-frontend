@@ -12,6 +12,7 @@ import {
   ClipboardList,
   Truck,
   LogOut,
+  CalendarSync,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -40,11 +41,14 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/src/components/ui/avatar";
 import { Button } from "@/src/components/ui/button";
 
 import { useUser } from "@/src/redux/hooks/useAuth";
-
 
 // ---------------- MENU ITEMS ---------------- //
 
@@ -53,7 +57,8 @@ const adminItems = [
   { title: "Stores", url: "/admin/stores", icon: Inbox },
   { title: "Products", url: "/admin/products", icon: Calendar },
   { title: "Orders", url: "/admin/orders", icon: Search },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Follow Ups", url: "/admin/follow-ups", icon: CalendarSync },
+  // { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 const repItems = [
@@ -63,9 +68,8 @@ const repItems = [
   { title: "Delivery", url: "/rep/delivery", icon: Truck },
   { title: "Stores", url: "/rep/stores", icon: Briefcase },
   { title: "Sample Lists", url: "/rep/sample-lists", icon: Grid },
-  { title: "Profile", url: "/rep/profile", icon: User },
+  // { title: "Profile", url: "/rep/profile", icon: User },
 ];
-
 
 // ---------------- SIDEBAR COMPONENT ---------------- //
 

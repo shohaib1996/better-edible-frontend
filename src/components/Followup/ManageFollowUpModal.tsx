@@ -28,13 +28,18 @@ import {
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useUpdateFollowupMutation } from "@/src/redux/api/Followups/followupsApi";
+import {
+  useCreateFollowupMutation,
+  useUpdateFollowupMutation,
+} from "@/src/redux/api/Followups/followupsApi";
 import { IFollowUp } from "@/src/types";
 
-interface EditFollowUpModalProps {
+interface ManageFollowUpModalProps {
   open: boolean;
   onClose: () => void;
-  followup: IFollowUp | null;
+  followup?: IFollowUp | null; // If present, we are editing
+  storeId?: string; // Required for creating
+  repId?: string; // Required for creating
 }
 
 const INTEREST_OPTIONS = [
@@ -45,43 +50,77 @@ const INTEREST_OPTIONS = [
   "Active Customer",
 ];
 
-export const EditFollowUpModal = ({
+export const ManageFollowUpModal = ({
   open,
   onClose,
   followup,
-}: EditFollowUpModalProps) => {
+  storeId,
+  repId,
+}: ManageFollowUpModalProps) => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [interestLevel, setInterestLevel] = useState("");
   const [comments, setComments] = useState("");
 
-  const [updateFollowup, { isLoading }] = useUpdateFollowupMutation();
+  const [createFollowup, { isLoading: isCreating }] =
+    useCreateFollowupMutation();
+  const [updateFollowup, { isLoading: isUpdating }] =
+    useUpdateFollowupMutation();
+
+  const isLoading = isCreating || isUpdating;
+  const isEditing = !!followup;
 
   useEffect(() => {
     if (followup) {
-      setDate(followup.followupDate ? new Date(followup.followupDate) : undefined);
+      setDate(
+        followup.followupDate ? new Date(followup.followupDate) : undefined
+      );
       setInterestLevel(followup.interestLevel || "");
       setComments(followup.comments || "");
+    } else {
+      // Reset form when opening in create mode
+      if (open) {
+        setDate(undefined);
+        setInterestLevel("");
+        setComments("");
+      }
     }
-  }, [followup]);
+  }, [followup, open]);
 
   const handleSubmit = async () => {
     if (!date) return toast.error("Please select a follow-up date.");
-    if (!followup) return;
 
     try {
-      await updateFollowup({
-        id: followup._id,
-        data: {
-          followupDate: date,
+      const formattedDate = format(date, "yyyy-MM-dd");
+
+      if (isEditing && followup) {
+        await updateFollowup({
+          id: followup._id,
+          data: {
+            followupDate: formattedDate,
+            interestLevel,
+            comments,
+          },
+        }).unwrap();
+        toast.success("Follow-up updated!");
+      } else {
+        if (!storeId || !repId) {
+          return toast.error("Missing store or rep information.");
+        }
+        await createFollowup({
+          followupDate: formattedDate,
           interestLevel,
           comments,
-        },
-      }).unwrap();
-
-      toast.success("Follow-up updated!");
+          store: storeId,
+          rep: repId,
+        }).unwrap();
+        toast.success("Follow-up created!");
+      }
       onClose();
-    } catch {
-      toast.error("Failed to update follow-up");
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        isEditing ? "Failed to update follow-up" : "Failed to create follow-up"
+      );
     }
   };
 
@@ -89,7 +128,9 @@ export const EditFollowUpModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit Follow-Up</DialogTitle>
+          <DialogTitle>
+            {isEditing ? "Edit Follow-Up" : "Create Follow-Up"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-3">
@@ -156,7 +197,7 @@ export const EditFollowUpModal = ({
 
           <Button onClick={handleSubmit} disabled={isLoading}>
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Save Changes
+            {isEditing ? "Save Changes" : "Save Follow-Up"}
           </Button>
         </DialogFooter>
       </DialogContent>

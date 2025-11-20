@@ -1,16 +1,27 @@
 "use client";
 
 import React from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
 import { Loader2 } from "lucide-react";
 
 interface RepSelectProps {
   value?: string;
   onChange: (value: string) => void;
+  showAllOption?: boolean;
 }
 
-export const RepSelect: React.FC<RepSelectProps> = ({ value, onChange }) => {
+export const RepSelect: React.FC<RepSelectProps> = ({
+  value,
+  onChange,
+  showAllOption,
+}) => {
   const { data, isLoading } = useGetAllRepsQuery({});
   const reps = data?.data || [];
 
@@ -27,6 +38,7 @@ export const RepSelect: React.FC<RepSelectProps> = ({ value, onChange }) => {
             <SelectValue placeholder="Select a rep" />
           </SelectTrigger>
           <SelectContent>
+            {showAllOption && <SelectItem value="all">All Reps</SelectItem>}
             {reps.map((rep: any) => (
               <SelectItem key={rep._id} value={rep._id}>
                 {rep.name}

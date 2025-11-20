@@ -11,7 +11,7 @@ import { AddNoteModal } from "@/src/components/Notes/AddNoteModal";
 import { NotesModal } from "@/src/components/Notes/NotesModal";
 import { SampleModal } from "@/src/components/Sample/SampleModal";
 import type { Delivery } from "@/src/types";
-import { FollowUpModal } from "../../Followup/FollowUpModal";
+import { ManageFollowUpModal } from "../../Followup/ManageFollowUpModal";
 import {
   Select,
   SelectContent,
@@ -250,7 +250,7 @@ export const DeliveryItem = ({
         onClose={() => setViewNotesModalOpen(false)}
         entityId={delivery.storeId}
       />
-      <FollowUpModal
+      <ManageFollowUpModal
         open={isFollowupModalOpen}
         onClose={() => setFollowupModalOpen(false)}
         storeId={delivery.storeId._id}
