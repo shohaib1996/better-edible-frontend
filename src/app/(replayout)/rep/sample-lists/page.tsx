@@ -1,10 +1,174 @@
+"use client";
 
-const SamleList = () => {
+import { useState } from "react";
+import { useUser } from "@/redux/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { format } from "date-fns";
+import {
+  useGetAllSamplesQuery,
+  useUpdateSampleStatusMutation,
+} from "@/redux/api/Samples/samplesApi ";
+import { ISample } from "@/types";
+import { toast } from "sonner";
+
+const SampleList = () => {
+  const user = useUser();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const debouncedSearch = useDebounce(search, 500);
+  const [updateSampleStatus] = useUpdateSampleStatusMutation();
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      await updateSampleStatus({ id, status: newStatus }).unwrap();
+      if (newStatus === "delivered") {
+        toast.success("Sample delivered Successfully");
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+    }
+  };
+
+  const queryParams: any = {
+    repId: user?.id,
+    search: debouncedSearch,
+  };
+
+  if (status !== "all") {
+    queryParams.status = status;
+  }
+
+  const { data, isLoading } = useGetAllSamplesQuery(queryParams, {
+    skip: !user?.id,
+  });
+
   return (
-    <div>
-      This is sample lists page
-    </div>
-  )
-}
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Sample List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <Input
+              placeholder="Search by store name..."
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearch(e.target.value)
+              }
+              className="max-w-sm"
+            />
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-export default SamleList
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Store Name</TableHead>
+                  <TableHead>Samples</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : data?.samples?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center h-24">
+                      No samples found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data?.samples?.map((sample: ISample) => (
+                    <TableRow key={sample._id}>
+                      <TableCell className="font-medium">
+                        {sample.store?.name || "Unknown Store"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {Object.entries(sample.samples || {}).map(
+                            ([key, value]) => (
+                              <span key={key} className="text-sm">
+                                <span className="font-semibold capitalize">
+                                  {key}:
+                                </span>{" "}
+                                {value as string}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={sample.status}
+                          onValueChange={(val) =>
+                            handleStatusChange(sample._id, val)
+                          }
+                        >
+                          <SelectTrigger
+                            className={`w-[140px] h-8 ${
+                              sample.status === "delivered"
+                                ? "bg-green-100 text-green-800 border-green-200"
+                                : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                            }`}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in progress">
+                              In Progress
+                            </SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        {sample.createdAt
+                          ? format(new Date(sample.createdAt), "PPP")
+                          : "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SampleList;
