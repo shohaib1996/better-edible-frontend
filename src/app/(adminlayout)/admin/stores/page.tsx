@@ -1,23 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Card } from "@/src/components/ui/card";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Input } from "@/src/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
+} from "@/components/ui/select";
 import { Loader2, Edit, Plus, PauseCircle, PlayCircle } from "lucide-react";
 import {
   EntityModal,
   Field,
-} from "@/src/components/ReUsableComponents/EntityModal";
-import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
+} from "@/components/ReUsableComponents/EntityModal";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import {
   useAssignStoreToRepMutation,
   useCreateStoreMutation,
@@ -25,20 +25,20 @@ import {
   useGetAllStoresQuery,
   useToggleBlockStoresMutation,
   useUpdateStoreMutation,
-} from "@/src/redux/api/Stores/stores";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
-import { useDebounced } from "@/src/redux/hooks/hooks";
-import { IRep } from "@/src/types";
+} from "@/redux/api/Stores/stores";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { useDebounced } from "@/redux/hooks/hooks";
+import { IRep } from "@/types";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { NotesModal } from "@/src/components/Notes/NotesModal";
-import { OrdersModal } from "@/src/components/Orders/OrdersModal";
-import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
+import { NotesModal } from "@/components/Notes/NotesModal";
+import { OrdersModal } from "@/components/Orders/OrdersModal";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 
 const Stores = () => {
   // 🔍 Search + Filter state

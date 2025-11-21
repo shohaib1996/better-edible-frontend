@@ -5,17 +5,17 @@ import {
   useDeleteRepMutation,
   useGetAllRepsQuery,
   useUpdateRepMutation,
-} from "@/src/redux/api/Rep/repApi";
+} from "@/redux/api/Rep/repApi";
 
-import { IRep } from "@/src/types";
-import { Button } from "@/src/components/ui/button";
+import { IRep } from "@/types";
+import { Button } from "@/components/ui/button";
 import {
   DataTable,
   type Column,
-} from "@/src/components/ReUsableComponents/DataTable";
-import { EntityModal } from "@/src/components/ReUsableComponents/EntityModal";
-import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
-import { useRegisterRepMutation } from "@/src/redux/api/RepLogin/repAuthApi";
+} from "@/components/ReUsableComponents/DataTable";
+import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
+import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
 import { Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -116,7 +116,7 @@ export default function RepsPage() {
           {rep.checkin ? "Checked In" : "Checked Out"}
         </span>
       ),
-    },  
+    },
     { key: "phone", header: "Phone" },
     { key: "repType", header: "Type" },
     {

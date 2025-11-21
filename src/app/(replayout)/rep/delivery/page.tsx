@@ -5,14 +5,14 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
-import { cn } from "@/src/lib/utils";
-import { Button } from "@/src/components/ui/button";
-import { Calendar } from "@/src/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -20,19 +20,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/src/components/ui/table";
-import { Input } from "@/src/components/ui/input";
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { useUser } from "@/src/redux/hooks/useAuth";
-import { useGetAllDeliveriesQuery } from "@/src/redux/api/Deliveries/deliveryApi";
-import { Delivery } from "@/src/types/delivery/delivery";
-import { useDebounced } from "@/src/redux/hooks/hooks";
+} from "@/components/ui/select";
+import { useUser } from "@/redux/hooks/useAuth";
+import { useGetAllDeliveriesQuery } from "@/redux/api/Deliveries/deliveryApi";
+import { Delivery } from "@/types/delivery/delivery";
+import { useDebounced } from "@/redux/hooks/hooks";
 
 export default function DeliveryPage() {
   const user = useUser();

@@ -1,20 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useGetAllFollowupsQuery } from "@/src/redux/api/Followups/followupsApi";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
-import { IFollowUp } from "@/src/types";
-import { IRep } from "@/src/types/reps/reps";
-
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 
 import {
   Calendar as CalendarIcon,
@@ -22,7 +8,26 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
-import { Calendar } from "@/src/components/ui/calendar";
+
+import { format, addDays, differenceInCalendarDays } from "date-fns";
+
+import { Edit } from "lucide-react";
+import { useGetAllFollowupsQuery } from "@/redux/api/Followups/followupsApi";
+import { useDebounced } from "@/redux/hooks/hooks";
+import { RepSelect } from "@/components/Shared/RepSelect";
+import { ManageFollowUpModal } from "@/components/Followup/ManageFollowUpModal";
+import { IFollowUp, IRep } from "@/types";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -30,20 +35,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/src/components/ui/table";
+} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/src/components/ui/tooltip";
-
-import { format, addDays, differenceInCalendarDays } from "date-fns";
-import { cn } from "@/src/lib/utils";
-import { useDebounced } from "@/src/redux/hooks/hooks";
-import { RepSelect } from "@/src/components/Shared/RepSelect";
-import { ManageFollowUpModal } from "@/src/components/Followup/ManageFollowUpModal";
-import { Edit } from "lucide-react";
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 /** Helper: convert a YYYY-MM-DD string (or Date) into a local Date at local midnight
  *  Returns null if invalid. This avoids timezone shifts when formatting/displaying.

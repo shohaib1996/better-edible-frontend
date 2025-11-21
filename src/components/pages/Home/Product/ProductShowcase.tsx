@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Button } from "@/src/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { BorderBeam } from "@/src/components/ui/border-beam";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 const products = [
   {
@@ -31,8 +31,7 @@ const products = [
       "Assorted flavors including Grape, Strawberry, Banana Cream, and Watermelon",
       "Infused with high-quality distillate for consistent potency",
     ],
-    image:
-      "https://i.ytimg.com/vi/ec2jUM5susI/maxresdefault.jpg",
+    image: "https://i.ytimg.com/vi/ec2jUM5susI/maxresdefault.jpg",
     gradient: "from-[#D9CBA3] to-[#A89F91]",
   },
   {
@@ -73,7 +72,7 @@ const flavorNotes = [
 export default function ProductCollection() {
   return (
     <section className="relative w-full bg-background text-foreground py-28 px-6 sm:px-12 md:px-20 overflow-hidden">
- <div className="absolute inset-0 bg-linear-to-r dark:from-[#4EAF6A]/5 dark:via-[#76C893]/10 dark:to-[#4EAF6A]/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-r dark:from-[#4EAF6A]/5 dark:via-[#76C893]/10 dark:to-[#4EAF6A]/5 pointer-events-none" />
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-20">
         <motion.h2

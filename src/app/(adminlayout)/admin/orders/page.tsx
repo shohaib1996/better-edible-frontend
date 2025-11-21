@@ -448,13 +448,12 @@
 // };
 
 // export default OrdersPage;
-import OrdersPage from '@/src/components/Orders/OrderPage/OrdersPage'
-import React from 'react'
+
+import OrdersPage from "@/components/Orders/OrderPage/OrdersPage";
+import React from "react";
 
 const Orders = () => {
-  return (
-    <OrdersPage/>
-  )
-}
+  return <OrdersPage />;
+};
 
-export default Orders
+export default Orders;

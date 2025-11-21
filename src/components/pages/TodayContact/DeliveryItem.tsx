@@ -2,15 +2,15 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/src/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { ChevronUp, ChevronDown, Truck, DollarSign } from "lucide-react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
-import { useDeleteDeliveryMutation } from "@/src/redux/api/Deliveries/deliveryApi";
-import { AddNoteModal } from "@/src/components/Notes/AddNoteModal";
-import { NotesModal } from "@/src/components/Notes/NotesModal";
-import { SampleModal } from "@/src/components/Sample/SampleModal";
-import type { Delivery } from "@/src/types";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
+import { useDeleteDeliveryMutation } from "@/redux/api/Deliveries/deliveryApi";
+import { AddNoteModal } from "@/components/Notes/AddNoteModal";
+import { NotesModal } from "@/components/Notes/NotesModal";
+import { SampleModal } from "@/components/Sample/SampleModal";
+import type { Delivery } from "@/types";
 import { ManageFollowUpModal } from "../../Followup/ManageFollowUpModal";
 import {
   Select,
@@ -18,8 +18,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { useUpdateDeliveryStatusMutation } from "@/src/redux/api/Deliveries/deliveryApi";
+} from "@/components/ui/select";
+import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
 
 interface DeliveryItemProps {
   delivery: Delivery;

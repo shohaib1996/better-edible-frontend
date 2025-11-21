@@ -1,22 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { cn } from "@/src/lib/utils";
-import { Calendar } from "@/src/components/ui/calendar";
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -24,7 +24,11 @@ interface ShippedOrdersTabProps {
   orders: any[];
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
-  onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
+  onFilter: (args: {
+    startDate?: string;
+    endDate?: string;
+    repName?: string;
+  }) => void;
   onEdit: (order: any) => void;
   isLoading: boolean;
   reps: any[];
@@ -146,7 +150,11 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+              {startDate ? (
+                format(startDate, "PPP")
+              ) : (
+                <span>Pick a start date</span>
+              )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
@@ -181,7 +189,9 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           </PopoverContent>
         </Popover>
         <Button onClick={handleFilter}>Filter</Button>
-        <Button onClick={handleClear} variant="ghost">Clear</Button>
+        <Button onClick={handleClear} variant="ghost">
+          Clear
+        </Button>
       </div>
       {/* ✅ Shipped-only total */}
       <div className="text-right font-semibold text-green-700 pr-1">

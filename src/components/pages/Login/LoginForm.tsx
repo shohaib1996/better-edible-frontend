@@ -1,33 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Button } from "@/src/components/ui/button"
-import { Input } from "@/src/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/src/components/ui/form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
-import { useLoginAdminMutation } from "@/src/redux/api/admin/authApi"
-import { useLoginRepMutation } from "@/src/redux/api/RepLogin/repAuthApi"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { Eye, EyeOff } from "lucide-react"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useLoginAdminMutation } from "@/redux/api/admin/authApi";
+import { useLoginRepMutation } from "@/redux/api/RepLogin/repAuthApi";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-})
+});
 
-type LoginFormValues = z.infer<typeof loginSchema>
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const router = useRouter()
-  const [adminLogin, { isLoading: isAdminLoading }] = useLoginAdminMutation()
-  const [repLogin, { isLoading: isRepLoading }] = useLoginRepMutation()
+  const router = useRouter();
+  const [adminLogin, { isLoading: isAdminLoading }] = useLoginAdminMutation();
+  const [repLogin, { isLoading: isRepLoading }] = useLoginRepMutation();
 
-  const isLoading = isAdminLoading || isRepLoading
-  const [showPassword, setShowPassword] = useState(false)
+  const isLoading = isAdminLoading || isRepLoading;
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -35,7 +48,7 @@ export function LoginForm() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(values: LoginFormValues) {
     try {
@@ -44,7 +57,10 @@ export function LoginForm() {
       try {
         // Try Rep login first
         result = await repLogin(values).unwrap();
-        localStorage.setItem("better-user", JSON.stringify(result?.rep || result));
+        localStorage.setItem(
+          "better-user",
+          JSON.stringify(result?.rep || result)
+        );
         toast.success("Login successful!");
         router.push("/rep");
         return;
@@ -52,13 +68,15 @@ export function LoginForm() {
         // If rep fails, try admin
         try {
           result = await adminLogin(values).unwrap();
-          localStorage.setItem("better-user", JSON.stringify(result?.admin || result));
+          localStorage.setItem(
+            "better-user",
+            JSON.stringify(result?.admin || result)
+          );
           toast.success("Login successful!");
 
           const userRole = result?.admin?.role || result?.role;
           if (userRole === "superadmin") router.push("/admin");
           else router.push("/rep");
-
         } catch (adminError: any) {
           toast.error(adminError?.data?.message || "Invalid email or password");
         }
@@ -78,7 +96,6 @@ export function LoginForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
             {/* EMAIL */}
             <FormField
               control={form.control}
@@ -134,12 +151,17 @@ export function LoginForm() {
             />
 
             {/* SUBMIT BUTTON */}
-            <Button type="submit" className="w-full" disabled={isLoading} size="lg">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+              size="lg"
+            >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

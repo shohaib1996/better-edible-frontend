@@ -7,13 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
-import { Textarea } from "@/src/components/ui/textarea";
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { RepSelect } from "../Shared/RepSelect";
-import { useCreateSampleMutation } from "@/src/redux/api/Samples/samplesApi ";
+import { useCreateSampleMutation } from "@/redux/api/Samples/samplesApi ";
 
 interface SampleModalProps {
   open: boolean;
@@ -35,7 +34,6 @@ export const SampleModal = ({
   repName,
 }: SampleModalProps) => {
   const [createSample, { isLoading }] = useCreateSampleMutation();
-
 
   const [formData, setFormData] = useState({
     cannacrispy: "",

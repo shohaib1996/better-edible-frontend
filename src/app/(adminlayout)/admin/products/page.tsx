@@ -6,21 +6,16 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-} from "@/src/redux/api/Products/productsApi";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
+} from "@/redux/api/Products/productsApi";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Loader2, Edit, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   EntityModal,
   Field,
-} from "@/src/components/ReUsableComponents/EntityModal";
-import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
+} from "@/components/ReUsableComponents/EntityModal";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 
 const ProductsPage = () => {
   const { data, isLoading, refetch } = useGetAllProductsQuery({});
@@ -80,19 +75,25 @@ const ProductsPage = () => {
 
       // ✅ Prices & Discounts (new schema)
       if (product.prices) {
-        flatData.hybridUnits = product.prices.hybrid?.price ?? flatData.hybridUnits;
+        flatData.hybridUnits =
+          product.prices.hybrid?.price ?? flatData.hybridUnits;
         flatData.hybridDiscount = product.prices.hybrid?.discountPrice ?? "";
-        flatData.indicaUnits = product.prices.indica?.price ?? flatData.indicaUnits;
+        flatData.indicaUnits =
+          product.prices.indica?.price ?? flatData.indicaUnits;
         flatData.indicaDiscount = product.prices.indica?.discountPrice ?? "";
-        flatData.sativaUnits = product.prices.sativa?.price ?? flatData.sativaUnits;
+        flatData.sativaUnits =
+          product.prices.sativa?.price ?? flatData.sativaUnits;
         flatData.sativaDiscount = product.prices.sativa?.discountPrice ?? "";
       }
 
       // ✅ Backward-compatibility (legacy discounts field)
       if (product.discounts) {
-        flatData.hybridDiscount = product.discounts.hybrid ?? flatData.hybridDiscount;
-        flatData.indicaDiscount = product.discounts.indica ?? flatData.indicaDiscount;
-        flatData.sativaDiscount = product.discounts.sativa ?? flatData.sativaDiscount;
+        flatData.hybridDiscount =
+          product.discounts.hybrid ?? flatData.hybridDiscount;
+        flatData.indicaDiscount =
+          product.discounts.indica ?? flatData.indicaDiscount;
+        flatData.sativaDiscount =
+          product.discounts.sativa ?? flatData.sativaDiscount;
       }
     }
 
@@ -166,16 +167,12 @@ const ProductsPage = () => {
           {
             label: "100Mg",
             price: parseFloat(values.p100),
-            discountPrice: values.dp100
-              ? parseFloat(values.dp100)
-              : undefined,
+            discountPrice: values.dp100 ? parseFloat(values.dp100) : undefined,
           },
           {
             label: "300Mg",
             price: parseFloat(values.p300),
-            discountPrice: values.dp300
-              ? parseFloat(values.dp300)
-              : undefined,
+            discountPrice: values.dp300 ? parseFloat(values.dp300) : undefined,
           },
           {
             label: "1000Mg",
@@ -223,11 +220,27 @@ const ProductsPage = () => {
 
     if (selectedLine === "Fifty-One Fifty") {
       return [
-        { name: "itemName", label: "Item Name", placeholder: "100mg THC + 50mg CBN" },
+        {
+          name: "itemName",
+          label: "Item Name",
+          placeholder: "100mg THC + 50mg CBN",
+        },
         { name: "price", label: "Unit Price", placeholder: "162.5" },
-        { name: "discountPrice", label: "Discounted Price", placeholder: "145" },
-        { name: "priceDescription", label: "Price Description", placeholder: "$3.25/unit. 50 units/case." },
-        { name: "discountDescription", label: "Discount Description", placeholder: "$2.90/unit. 50 units/case." },
+        {
+          name: "discountPrice",
+          label: "Discounted Price",
+          placeholder: "145",
+        },
+        {
+          name: "priceDescription",
+          label: "Price Description",
+          placeholder: "$3.25/unit. 50 units/case.",
+        },
+        {
+          name: "discountDescription",
+          label: "Discount Description",
+          placeholder: "$2.90/unit. 50 units/case.",
+        },
       ];
     }
 
@@ -282,7 +295,9 @@ const ProductsPage = () => {
               <table className="min-w-full border-collapse">
                 <thead>
                   <tr className="text-left text-gray-600 border-b">
-                    <th className="pb-2 px-3 font-medium">Item / Sub-Product</th>
+                    <th className="pb-2 px-3 font-medium">
+                      Item / Sub-Product
+                    </th>
 
                     {line === "Cannacrispy" && (
                       <>
@@ -330,26 +345,44 @@ const ProductsPage = () => {
                       {line === "Cannacrispy" && (
                         <>
                           {/* Hybrid */}
-                          <td>{item.prices?.hybrid?.price ?? item.hybridBreakdown?.hybrid ?? "-"}</td>
+                          <td>
+                            {item.prices?.hybrid?.price ??
+                              item.hybridBreakdown?.hybrid ??
+                              "-"}
+                          </td>
                           <td className="text-emerald-600">
                             {item.prices?.hybrid?.discountPrice
-                              ? `$${item.prices.hybrid.discountPrice.toFixed(2)}`
+                              ? `$${item.prices.hybrid.discountPrice.toFixed(
+                                  2
+                                )}`
                               : "-"}
                           </td>
 
                           {/* Indica */}
-                          <td>{item.prices?.indica?.price ?? item.hybridBreakdown?.indica ?? "-"}</td>
+                          <td>
+                            {item.prices?.indica?.price ??
+                              item.hybridBreakdown?.indica ??
+                              "-"}
+                          </td>
                           <td className="text-emerald-600">
                             {item.prices?.indica?.discountPrice
-                              ? `$${item.prices.indica.discountPrice.toFixed(2)}`
+                              ? `$${item.prices.indica.discountPrice.toFixed(
+                                  2
+                                )}`
                               : "-"}
                           </td>
 
                           {/* Sativa */}
-                          <td>{item.prices?.sativa?.price ?? item.hybridBreakdown?.sativa ?? "-"}</td>
+                          <td>
+                            {item.prices?.sativa?.price ??
+                              item.hybridBreakdown?.sativa ??
+                              "-"}
+                          </td>
                           <td className="text-emerald-600">
                             {item.prices?.sativa?.discountPrice
-                              ? `$${item.prices.sativa.discountPrice.toFixed(2)}`
+                              ? `$${item.prices.sativa.discountPrice.toFixed(
+                                  2
+                                )}`
                               : "-"}
                           </td>
                         </>

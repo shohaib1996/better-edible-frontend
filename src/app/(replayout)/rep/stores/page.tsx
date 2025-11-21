@@ -1,34 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Card } from "@/src/components/ui/card";
-import { Input } from "@/src/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
+} from "@/components/ui/select";
 import { Loader2, Edit, Plus } from "lucide-react";
 import {
   EntityModal,
   Field,
-} from "@/src/components/ReUsableComponents/EntityModal";
+} from "@/components/ReUsableComponents/EntityModal";
 import {
   useCreateStoreMutation,
   useGetAllStoresQuery,
   useUpdateStoreMutation,
-} from "@/src/redux/api/Stores/stores";
-import { useDebounced } from "@/src/redux/hooks/hooks";
-import { IRep, IStore } from "@/src/types";
+} from "@/redux/api/Stores/stores";
+import { useDebounced } from "@/redux/hooks/hooks";
+import { IRep, IStore } from "@/types";
 import { toast } from "sonner";
-import { NotesModal } from "@/src/components/Notes/NotesModal";
-import { OrdersModal } from "@/src/components/Orders/OrdersModal";
-import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
-import { useUser } from "@/src/redux/hooks/useAuth";
-import { AddNoteModal } from "@/src/components/Notes/AddNoteModal";
+import { NotesModal } from "@/components/Notes/NotesModal";
+import { OrdersModal } from "@/components/Orders/OrdersModal";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
+import { useUser } from "@/redux/hooks/useAuth";
+import { AddNoteModal } from "@/components/Notes/AddNoteModal";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -43,13 +43,14 @@ const Stores = () => {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
   const [addNoteModalOpen, setAddNoteModalOpen] = useState(false);
-  const [selectedStoreForNote, setSelectedStoreForNote] = useState<IStore | null>(null);
+  const [selectedStoreForNote, setSelectedStoreForNote] =
+    useState<IStore | null>(null);
 
   const user = useUser();
   const currentRep: Partial<IRep> | null = {
     _id: user?.id,
-    name: user?.name
-  }
+    name: user?.name,
+  };
 
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(

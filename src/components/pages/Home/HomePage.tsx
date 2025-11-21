@@ -1,4 +1,4 @@
-import Testimonials from "@/src/components/Testimonials/Testimonials";
+import Testimonials from "@/components/Testimonials/Testimonials";
 import AboutSection from "./AboutSection/AboutSection";
 import CommitmentSection from "./Commitment/CommitmentSection";
 import HeroSection from "./Hero/HeroSection";

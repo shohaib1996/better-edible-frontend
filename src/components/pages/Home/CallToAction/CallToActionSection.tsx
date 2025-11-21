@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 
 export default function CallToActionSection() {
@@ -30,8 +30,9 @@ export default function CallToActionSection() {
           viewport={{ once: true, amount: 0.3 }}
           className="max-w-2xl mx-auto text-muted-foreground font-body text-lg leading-relaxed"
         >
-          Discover our premium cannabis edibles in select dispensaries across Oregon — 
-          or join our trusted retail network and bring Better Edibles to your customers.
+          Discover our premium cannabis edibles in select dispensaries across
+          Oregon — or join our trusted retail network and bring Better Edibles
+          to your customers.
         </motion.p>
 
         {/* Buttons */}

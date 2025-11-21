@@ -1,5 +1,5 @@
-import { AppSidebar } from "@/src/components/AppSidebar/AppSidebar";
-import { SidebarProvider, SidebarTrigger } from "@/src/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar/AppSidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 
 const RepLayout = async ({ children }: { children: React.ReactNode }) => {

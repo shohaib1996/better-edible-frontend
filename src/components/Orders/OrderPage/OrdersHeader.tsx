@@ -1,4 +1,4 @@
-import { Button } from "@/src/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export const OrdersHeader = ({ onNewOrder }: { onNewOrder: () => void }) => (
   <div className="flex justify-between items-center mb-4">

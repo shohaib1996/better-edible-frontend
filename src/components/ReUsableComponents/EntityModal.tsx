@@ -7,18 +7,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Button } from "@/src/components/ui/button";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { cn } from "@/src/lib/utils";
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export interface Field {
   name: string;

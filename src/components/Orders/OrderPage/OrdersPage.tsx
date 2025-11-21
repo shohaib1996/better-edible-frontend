@@ -6,33 +6,41 @@ import {
   useCreateOrderMutation,
   useUpdateOrderMutation,
   useChangeOrderStatusMutation,
-} from "@/src/redux/api/orders/orders";
+} from "@/redux/api/orders/orders";
 import {
   EntityModal,
   Field,
-} from "@/src/components/ReUsableComponents/EntityModal";
-import { OrderForm } from "@/src/components/Orders/OrderForm";
-import { OrdersHeader } from "@/src/components/Orders/OrderPage/OrdersHeader";
-import { OrdersFilters } from "@/src/components/Orders/OrderPage/OrdersFilters";
-import { OrdersTabs } from "@/src/components/Orders/OrderPage/OrdersTabs";
-import { useDebounced } from "@/src/redux/hooks/hooks";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
-import { StoreSelect } from "@/src/components/Shared/StoreSelect";
-import { RepSelect } from "@/src/components/Shared/RepSelect";
-import { Button } from "@/src/components/ui/button";
+} from "@/components/ReUsableComponents/EntityModal";
+import { OrderForm } from "@/components/Orders/OrderForm";
+import { OrdersHeader } from "@/components/Orders/OrderPage/OrdersHeader";
+import { OrdersFilters } from "@/components/Orders/OrderPage/OrdersFilters";
+import { OrdersTabs } from "@/components/Orders/OrderPage/OrdersTabs";
+import { useDebounced } from "@/redux/hooks/hooks";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { StoreSelect } from "@/components/Shared/StoreSelect";
+import { RepSelect } from "@/components/Shared/RepSelect";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
-import { Calendar } from "@/src/components/ui/calendar";
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IOrder, IRep } from "@/src/types";
+import { IOrder, IRep } from "@/types";
 
-const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView?: boolean; currentRepId?: string, currentRep?: Partial<IRep> | null }) => {
+const OrdersPage = ({
+  isRepView = false,
+  currentRepId,
+  currentRep,
+}: {
+  isRepView?: boolean;
+  currentRepId?: string;
+  currentRep?: Partial<IRep> | null;
+}) => {
   const [activeTab, setActiveTab] = useState("new");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
@@ -60,7 +68,10 @@ const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView
     repId: isRepView ? currentRepId : undefined, // Filter by currentRepId if rep view
     startDate,
     endDate,
-    status: activeTab === 'new' ? ['submitted', 'accepted', 'manifested'] : ['shipped', 'cancelled'],
+    status:
+      activeTab === "new"
+        ? ["submitted", "accepted", "manifested"]
+        : ["shipped", "cancelled"],
   });
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
   const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
@@ -121,7 +132,13 @@ const OrdersPage = ({ isRepView = false, currentRepId, currentRep }: { isRepView
     }
   };
 
-  const handleFilter = ({ startDate, endDate }: { startDate?: string; endDate?: string }) => {
+  const handleFilter = ({
+    startDate,
+    endDate,
+  }: {
+    startDate?: string;
+    endDate?: string;
+  }) => {
     setStartDate(startDate);
     setEndDate(endDate);
   }; // Added comment to force re-evaluation

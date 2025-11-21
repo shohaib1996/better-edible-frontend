@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/src/components/ui/table";
-import { cn } from "@/src/lib/utils";
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 export interface Column<T> {
   key: keyof T | string; // 👈 allow custom columns like "actions"

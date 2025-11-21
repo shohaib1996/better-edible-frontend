@@ -30,7 +30,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/src/components/ui/sidebar";
+} from "@/components/ui/sidebar";
 
 import {
   DropdownMenu,
@@ -39,16 +39,12 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/src/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/src/components/ui/avatar";
-import { Button } from "@/src/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
-import { useUser } from "@/src/redux/hooks/useAuth";
+import { useUser } from "@/redux/hooks/useAuth";
 
 // ---------------- MENU ITEMS ---------------- //
 

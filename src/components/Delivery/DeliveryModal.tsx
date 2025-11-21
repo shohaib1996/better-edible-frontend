@@ -6,30 +6,30 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/src/components/ui/select";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Calendar } from "@/src/components/ui/calendar";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
-import { useCreateDeliveryMutation } from "@/src/redux/api/Deliveries/deliveryApi";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { useCreateDeliveryMutation } from "@/redux/api/Deliveries/deliveryApi";
 import { toast } from "sonner";
-import { IRep } from "@/src/types";
+import { IRep } from "@/types";
 
 interface DeliveryModalProps {
   open: boolean;

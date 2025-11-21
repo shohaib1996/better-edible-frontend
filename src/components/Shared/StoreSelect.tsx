@@ -7,10 +7,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { Input } from "@/src/components/ui/input";
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
-import { useGetAllStoresQuery } from "@/src/redux/api/Stores/stores";
+import { useGetAllStoresQuery } from "@/redux/api/Stores/stores";
 
 interface StoreSelectProps {
   value?: string;
@@ -35,7 +35,10 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
 
   useEffect(() => {
     const fetchedStores = data?.stores || [];
-    if (initialStore && !fetchedStores.some((s: any) => s._id === initialStore._id)) {
+    if (
+      initialStore &&
+      !fetchedStores.some((s: any) => s._id === initialStore._id)
+    ) {
       setStores([initialStore, ...fetchedStores]);
     } else {
       setStores(fetchedStores);

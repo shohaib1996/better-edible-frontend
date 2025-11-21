@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import { LoginForm } from "@/src/components/pages/Login/LoginForm"
+import { LoginForm } from "@/components/pages/Login/LoginForm";
 import Lottie from "lottie-react";
-import loginAnimation from "../../../public/Login.json"
-
+import loginAnimation from "../../../public/Login.json";
 
 export default function LoginPage() {
   return (
@@ -24,5 +23,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

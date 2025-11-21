@@ -3,8 +3,8 @@
 import {
   EntityModal,
   Field,
-} from "@/src/components/ReUsableComponents/EntityModal";
-import { OrderForm } from "@/src/components/Orders/OrderForm";
+} from "@/components/ReUsableComponents/EntityModal";
+import { OrderForm } from "@/components/Orders/OrderForm";
 
 interface OrderModalProps {
   open: boolean;

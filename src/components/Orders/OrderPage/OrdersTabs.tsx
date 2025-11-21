@@ -1,8 +1,8 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { NewOrdersTab } from "./NewOrdersTab";
 import { ShippedOrdersTab } from "./ShippedOrdersTab";
-import { IRep } from "@/src/types";
+import { IRep } from "@/types";
 
 interface OrdersTabsProps {
   activeTab: string;
@@ -16,9 +16,13 @@ interface OrdersTabsProps {
   isLoading: boolean;
   refetch: (args?: { startDate?: string; endDate?: string }) => void;
   onEdit: (order: any) => void; // ✅ NEW
-  onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
+  onFilter: (args: {
+    startDate?: string;
+    endDate?: string;
+    repName?: string;
+  }) => void;
   reps: any[];
-  currentRep?: Partial<IRep> | null
+  currentRep?: Partial<IRep> | null;
 }
 
 export const OrdersTabs = ({

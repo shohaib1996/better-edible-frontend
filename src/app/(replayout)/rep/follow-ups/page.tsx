@@ -1,28 +1,28 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useGetAllFollowupsQuery } from "@/src/redux/api/Followups/followupsApi";
-import { useUser } from "@/src/redux/hooks/useAuth";
-import { useDebounced } from "@/src/redux/hooks/hooks";
-import { IFollowUp } from "@/src/types";
-import { useCreateOrderMutation } from "@/src/redux/api/orders/orders";
-import { useDeleteFollowupMutation } from "@/src/redux/api/Followups/followupsApi";
-import { OrderModal } from "@/src/components/pages/TodayContact/OrderModal";
-import { Field } from "@/src/components/ReUsableComponents/EntityModal";
+import { useGetAllFollowupsQuery } from "@/redux/api/Followups/followupsApi";
+import { useUser } from "@/redux/hooks/useAuth";
+import { useDebounced } from "@/redux/hooks/hooks";
+import { IFollowUp } from "@/types";
+import { useCreateOrderMutation } from "@/redux/api/orders/orders";
+import { useDeleteFollowupMutation } from "@/redux/api/Followups/followupsApi";
+import { OrderModal } from "@/components/pages/TodayContact/OrderModal";
+import { Field } from "@/components/ReUsableComponents/EntityModal";
 import { toast } from "sonner";
-import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
-import { ManageFollowUpModal } from "@/src/components/Followup/ManageFollowUpModal";
-import { ConfirmDialog } from "@/src/components/ReUsableComponents/ConfirmDialog";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
+import { ManageFollowUpModal } from "@/components/Followup/ManageFollowUpModal";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 
-import { Card, CardContent } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Checkbox } from "@/src/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 
 import {
   Calendar as CalendarIcon,
@@ -33,10 +33,10 @@ import {
   ShoppingCart,
   Truck,
 } from "lucide-react";
-import { Calendar } from "@/src/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 
 import { format, addDays, differenceInCalendarDays } from "date-fns";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 
 /** Helper: convert a YYYY-MM-DD string (or Date) into a local Date at local midnight
  *  Returns null if invalid. This avoids timezone shifts when formatting/displaying.

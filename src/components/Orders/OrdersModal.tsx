@@ -6,10 +6,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-import { Badge } from "@/src/components/ui/badge";
-import { useGetAllOrdersQuery } from "@/src/redux/api/orders/orders";
+import { Badge } from "@/components/ui/badge";
+import { useGetAllOrdersQuery } from "@/redux/api/orders/orders";
 
 interface OrdersModalProps {
   open: boolean;
@@ -109,8 +109,7 @@ export const OrdersModal = ({ open, onClose, storeId }: OrdersModalProps) => {
                 {/* 💳 Payment Info */}
                 {order.payment && (
                   <div className="text-xs text-gray-600 mt-1">
-                    <strong>Payment:</strong> {order.payment.method || "—"}{" "}
-                    |{" "}
+                    <strong>Payment:</strong> {order.payment.method || "—"} |{" "}
                     {order.payment.collected
                       ? "✅ Collected"
                       : "⏳ Pending Collection"}

@@ -2,24 +2,19 @@
 
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { useGetTimelogsByRepIdQuery } from "@/src/redux/api/Timelog/timelogs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
-import { Calendar } from "@/src/components/ui/calendar";
+import { useGetTimelogsByRepIdQuery } from "@/redux/api/Timelog/timelogs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { Column, DataTable } from "../../ReUsableComponents/DataTable";
-import { ITimelog } from "@/src/types";
-import { cn } from "@/src/lib/utils";
+import { ITimelog } from "@/types";
+import { cn } from "@/lib/utils";
 
 type TimelogResponse = ITimelog[] | { message?: string } | null | undefined;
 

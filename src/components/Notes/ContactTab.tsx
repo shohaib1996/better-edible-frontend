@@ -5,14 +5,14 @@ import {
   useCreateContactMutation,
   useUpdateContactMutation,
   useDeleteContactMutation,
-} from "@/src/redux/api/Contacts/contactsApi";
+} from "@/redux/api/Contacts/contactsApi";
 import { toast } from "sonner";
 import { Loader2, Pencil, Trash, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "../ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type ContactItem = {
   _id?: string;
@@ -150,9 +150,11 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
       console.error("Contact save error:", err);
       toast.error("Failed to save contact");
     } finally {
-        setContacts((prev) =>
-            prev.map((c, i) => (i === idx ? { ...c, saving: false, editing: false, isNew: false } : c))
-        );
+      setContacts((prev) =>
+        prev.map((c, i) =>
+          i === idx ? { ...c, saving: false, editing: false, isNew: false } : c
+        )
+      );
     }
   };
 
@@ -208,10 +210,7 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
       ) : (
         <div className="space-y-3">
           {contacts.map((c, idx) => (
-            <div
-              key={c._id ?? `new-${idx}`}
-              className="border rounded-md p-3"
-            >
+            <div key={c._id ?? `new-${idx}`} className="border rounded-md p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

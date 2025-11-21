@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useGetAllProductsQuery } from "@/src/redux/api/Products/productsApi";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Card } from "@/src/components/ui/card";
-import { Separator } from "@/src/components/ui/separator";
+import { useGetAllProductsQuery } from "@/redux/api/Products/productsApi";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
-import { Textarea } from "@/src/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "../ui/checkbox";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface OrderFormProps {
   initialItems?: any[];

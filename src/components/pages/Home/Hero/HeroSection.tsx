@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { TypingAnimation } from "@/src/components/ui/typing-animation";
-import { ShinyButton } from "@/src/components/ui/shiny-button";
+import { TypingAnimation } from "@/components/ui/typing-animation";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export default function HeroSection() {
   const [isClient, setIsClient] = useState(false);

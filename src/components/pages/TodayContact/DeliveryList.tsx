@@ -3,8 +3,7 @@
 
 import { Loader2 } from "lucide-react";
 import { DeliveryItem } from "./DeliveryItem";
-import { Delivery } from "@/src/types";
-
+import { Delivery } from "@/types";
 
 interface DeliveryListProps {
   isLoading: boolean;

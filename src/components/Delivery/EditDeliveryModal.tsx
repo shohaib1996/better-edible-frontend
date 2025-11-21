@@ -6,25 +6,29 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/src/components/ui/select";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { toast } from "sonner";
-import { useUpdateDeliveryMutation } from "@/src/redux/api/Deliveries/deliveryApi";
+import { useUpdateDeliveryMutation } from "@/redux/api/Deliveries/deliveryApi";
 
 interface EditDeliveryModalProps {
   open: boolean;
@@ -90,7 +94,9 @@ export const EditDeliveryModal = ({
     try {
       // Build UTC midnight version of selected date
       const d = new Date(formData.scheduledAt);
-      const utcMidnight = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const utcMidnight = new Date(
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+      );
 
       await updateDelivery({
         id: delivery._id,
@@ -145,7 +151,9 @@ export const EditDeliveryModal = ({
               </SelectTrigger>
               <SelectContent>
                 {repsLoading ? (
-                  <div className="p-2 text-gray-500 text-center">Loading...</div>
+                  <div className="p-2 text-gray-500 text-center">
+                    Loading...
+                  </div>
                 ) : (
                   reps.map((rep: any) => (
                     <SelectItem key={rep._id} value={rep._id}>
@@ -180,7 +188,9 @@ export const EditDeliveryModal = ({
 
           {/* Amount */}
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">Amount ($)</label>
+            <label className="text-sm font-medium text-gray-700">
+              Amount ($)
+            </label>
             <Input
               type="number"
               placeholder="Enter amount"

@@ -6,10 +6,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { IOrder } from "@/src/types";
-import { generatePackingList } from "@/src/utils/generatePackingList";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { IOrder } from "@/types";
+import { generatePackingList } from "@/utils/generatePackingList";
 
 interface PackingListDialogProps {
   order: IOrder | null;

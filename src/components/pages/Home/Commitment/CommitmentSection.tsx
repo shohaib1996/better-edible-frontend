@@ -1,6 +1,6 @@
 "use client";
 
-import { BorderBeam } from "@/src/components/ui/border-beam";
+import { BorderBeam } from "@/components/ui/border-beam";
 import { motion } from "framer-motion";
 import { FlaskConical, Leaf, Droplet, WheatOff, Recycle } from "lucide-react";
 
@@ -36,7 +36,7 @@ export default function CommitmentSection() {
   return (
     <section className="relative w-full bg-background text-foreground py-28 px-6 sm:px-12 md:px-20 overflow-hidden">
       {/* Decorative background */}
-       <div className="absolute inset-0 bg-linear-to-r dark:from-[#4EAF6A]/5 dark:via-[#76C893]/10 dark:to-[#4EAF6A]/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-r dark:from-[#4EAF6A]/5 dark:via-[#76C893]/10 dark:to-[#4EAF6A]/5 pointer-events-none" />
 
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-20">

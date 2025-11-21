@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Separator } from "@/src/components/ui/separator";
-import { BorderBeam } from "@/src/components/ui/border-beam";
+import { Separator } from "@/components/ui/separator";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 export default function AboutSection() {
   return (
@@ -149,7 +149,7 @@ export default function AboutSection() {
             <p className="mt-3 text-muted-foreground font-body text-sm leading-relaxed">
               {item.desc}
             </p>
-            <BorderBeam size={150}/>
+            <BorderBeam size={150} />
           </motion.div>
         ))}
       </div>

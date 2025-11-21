@@ -7,8 +7,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
-import { useGetAllRepsQuery } from "@/src/redux/api/Rep/repApi";
+} from "@/components/ui/select";
+import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { Loader2 } from "lucide-react";
 
 interface RepSelectProps {

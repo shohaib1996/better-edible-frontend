@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import React from "react"
-import { motion, type MotionProps } from "motion/react"
+import React from "react";
+import { motion, type MotionProps } from "motion/react";
 
-import { cn } from "@/src/lib/utils"
+import { cn } from "@/lib/utils";
 
 const animationProps: MotionProps = {
   initial: { "--x": "100%", scale: 0.8 },
@@ -24,13 +24,13 @@ const animationProps: MotionProps = {
       mass: 0.5,
     },
   },
-}
+};
 
 interface ShinyButtonProps
   extends Omit<React.HTMLAttributes<HTMLElement>, keyof MotionProps>,
     MotionProps {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }
 
 export const ShinyButton = React.forwardRef<
@@ -67,7 +67,7 @@ export const ShinyButton = React.forwardRef<
         className="absolute inset-0 z-10 block rounded-[inherit] p-px"
       />
     </motion.button>
-  )
-})
+  );
+});
 
-ShinyButton.displayName = "ShinyButton"
+ShinyButton.displayName = "ShinyButton";

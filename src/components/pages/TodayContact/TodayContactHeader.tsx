@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@/src/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/src/components/ui/dialog";
-import { Input } from "@/src/components/ui/input";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
 interface TodayContactHeaderProps {

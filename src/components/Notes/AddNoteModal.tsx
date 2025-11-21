@@ -7,31 +7,31 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
+} from "@/components/ui/select";
 import { useForm, Controller, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   useCreateNoteMutation,
   useUpdateNoteMutation,
-} from "@/src/redux/api/Notes/notes";
-import { useGetAllContactsQuery } from "@/src/redux/api/Contacts/contactsApi";
+} from "@/redux/api/Notes/notes";
+import { useGetAllContactsQuery } from "@/redux/api/Contacts/contactsApi";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { INote } from "@/src/types/note/note";
+import { INote } from "@/types/note/note";
 import { ContactTab } from "./ContactTab";
 
 /* -----------------------
@@ -99,12 +99,7 @@ export const AddNoteModal = ({
   const [activeTab, setActiveTab] = useState<"note" | "contacts">("note");
 
   // react-hook-form for notes
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-  } = useForm<NoteFormData>({
+  const { control, handleSubmit, reset, setValue } = useForm<NoteFormData>({
     resolver: zodResolver(noteSchema) as unknown as Resolver<NoteFormData, any>,
   });
 
@@ -219,7 +214,13 @@ export const AddNoteModal = ({
               <Controller
                 name="disposition"
                 control={control}
-                render={({ field }) => <Input id="disposition" {...field} className="border border-green-500" />}
+                render={({ field }) => (
+                  <Input
+                    id="disposition"
+                    {...field}
+                    className="border border-green-500"
+                  />
+                )}
               />
             </div>
 
@@ -228,7 +229,13 @@ export const AddNoteModal = ({
               <Controller
                 name="visitType"
                 control={control}
-                render={({ field }) => <Input id="visitType" {...field} className="border border-green-500" />}
+                render={({ field }) => (
+                  <Input
+                    id="visitType"
+                    {...field}
+                    className="border border-green-500"
+                  />
+                )}
               />
             </div>
 
@@ -253,7 +260,13 @@ export const AddNoteModal = ({
               <Controller
                 name="content"
                 control={control}
-                render={({ field }) => <Textarea id="content" {...field} className="border border-green-500" />}
+                render={({ field }) => (
+                  <Textarea
+                    id="content"
+                    {...field}
+                    className="border border-green-500"
+                  />
+                )}
               />
             </div>
 
@@ -347,7 +360,13 @@ export const AddNoteModal = ({
                 <Controller
                   name="payment.amount"
                   control={control}
-                  render={({ field }) => <Input id="amount" {...field} className="border border-green-500" />}
+                  render={({ field }) => (
+                    <Input
+                      id="amount"
+                      {...field}
+                      className="border border-green-500"
+                    />
+                  )}
                 />
               </div>
             </div>

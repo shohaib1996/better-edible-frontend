@@ -1,32 +1,32 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card } from "@/src/components/ui/card";
-import { Button } from "@/src/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/src/components/ui/select";
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover";
-import { Calendar } from "@/src/components/ui/calendar";
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@/lib/utils";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
-import { IOrder, IRep } from "@/src/types";
+import { IOrder, IRep } from "@/types";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-import { generateInvoice } from "@/src/utils/invoiceGenerator";
+import { generateInvoice } from "@/utils/invoiceGenerator";
 import { PackingListDialog } from "./PackingListDialog";
-import { DeliveryModal } from "@/src/components/Delivery/DeliveryModal";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 

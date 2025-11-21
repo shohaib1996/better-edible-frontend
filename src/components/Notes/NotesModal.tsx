@@ -8,21 +8,21 @@ import {
   User,
   Pencil,
 } from "lucide-react";
-import { Badge } from "@/src/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog";
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
-import { useGetAllNotesQuery } from "@/src/redux/api/Notes/notes";
+import { useGetAllNotesQuery } from "@/redux/api/Notes/notes";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useState } from "react";
 import { AddNoteModal } from "./AddNoteModal";
-import { INote } from "@/src/types/note/note";
+import { INote } from "@/types/note/note";
 import { Button } from "../ui/button";
-import { useUser } from "@/src/redux/hooks/useAuth";
+import { useUser } from "@/redux/hooks/useAuth";
 
 interface NotesModalProps {
   open: boolean;
@@ -131,7 +131,8 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                       <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                         <User size={14} />
                         <span>
-                          {(typeof note.author === "object" && note.author.name) ||
+                          {(typeof note.author === "object" &&
+                            note.author.name) ||
                             "Unknown Author"}
                         </span>
                       </div>

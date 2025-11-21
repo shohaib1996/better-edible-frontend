@@ -7,23 +7,23 @@ import {
   DialogTitle,
   DialogContent,
   DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import { Calendar } from "@/src/components/ui/calendar";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/src/components/ui/popover";
+} from "@/components/ui/popover";
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
-} from "@/src/components/ui/select";
+} from "@/components/ui/select";
 
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -31,8 +31,8 @@ import { toast } from "sonner";
 import {
   useCreateFollowupMutation,
   useUpdateFollowupMutation,
-} from "@/src/redux/api/Followups/followupsApi";
-import { IFollowUp } from "@/src/types";
+} from "@/redux/api/Followups/followupsApi";
+import { IFollowUp } from "@/types";
 
 interface ManageFollowUpModalProps {
   open: boolean;

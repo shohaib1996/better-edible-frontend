@@ -6,11 +6,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/src/components/ui/dialog";
-import { Button } from "@/src/components/ui/button";
-import { IOrder } from "@/src/types/order/order";
-import { Badge } from "@/src/components/ui/badge";
-import { Separator } from "@/src/components/ui/separator";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { IOrder } from "@/types/order/order";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface OrderDetailsDialogProps {
   order: IOrder | null;

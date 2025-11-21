@@ -1,6 +1,12 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search } from "lucide-react";
-import { IRep } from "@/src/types";
+import { IRep } from "@/types";
 
 export const OrdersFilters = ({
   reps,
@@ -14,20 +20,24 @@ export const OrdersFilters = ({
     {!isRepView && ( // Conditionally render rep filter
       <Select
         value={selectedRepName || "all"}
-        onValueChange={(value) => setSelectedRepName(value === "all" ? "" : value)}
+        onValueChange={(value) =>
+          setSelectedRepName(value === "all" ? "" : value)
+        }
       >
         <SelectTrigger>
           <SelectValue placeholder="Filter by Rep" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Reps</SelectItem>
-          {[...(new Set(reps?.data?.map((r: IRep) => r.name).filter(Boolean) || []))].map(
-            (repName) => (
-              <SelectItem key={repName as string} value={repName as string}>
-                {repName as string}
-              </SelectItem>
-            )
-          )}
+          {[
+            ...new Set(
+              reps?.data?.map((r: IRep) => r.name).filter(Boolean) || []
+            ),
+          ].map((repName) => (
+            <SelectItem key={repName as string} value={repName as string}>
+              {repName as string}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     )}

@@ -1,7 +1,7 @@
 "use client";
 
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
-import { IOrder } from "@/src/types";
+import { IOrder } from "@/types";
 
 let pdfMake: any = null;
 

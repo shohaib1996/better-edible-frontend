@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import { Button } from "@/src/components/ui/button";
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface ConfirmDialogProps {
   triggerText: string;
@@ -38,7 +38,12 @@ export function ConfirmDialog({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button className="cursor-pointer" variant={variant} size="sm" disabled={disabled}>
+        <Button
+          className="cursor-pointer"
+          variant={variant}
+          size="sm"
+          disabled={disabled}
+        >
           {triggerText}
         </Button>
       </AlertDialogTrigger>
@@ -48,7 +53,9 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="bg-emerald-600 text-white cursor-pointer">{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel className="bg-emerald-600 text-white cursor-pointer">
+            {cancelText}
+          </AlertDialogCancel>
           <AlertDialogAction
             className={
               variant === "destructive"
