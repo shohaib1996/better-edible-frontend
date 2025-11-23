@@ -13,6 +13,7 @@ import {
   Truck,
   LogOut,
   CalendarSync,
+  Gift,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -54,7 +55,8 @@ const adminItems = [
   { title: "Products", url: "/admin/products", icon: Calendar },
   { title: "Orders", url: "/admin/orders", icon: Search },
   { title: "Follow Ups", url: "/admin/follow-ups", icon: CalendarSync },
-  // { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Samples List", url: "/admin/samples", icon: Gift },
+  { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
 ];
 
 const repItems = [

@@ -38,6 +38,27 @@ const ProductsPage = () => {
       if (!groups[p.productLine]) groups[p.productLine] = [];
       groups[p.productLine].push(p);
     });
+
+    // Custom sort for Cannacrispy
+    if (groups["Cannacrispy"]) {
+      const cannacrispyOrder = [
+        "Original",
+        "Fruity",
+        "Chocolate",
+        "Cookies & Cream",
+        "Peanut Butter & Chocolate",
+        "Strawberry",
+      ];
+      groups["Cannacrispy"].sort((a, b) => {
+        const indexA = cannacrispyOrder.indexOf(a.subProductLine);
+        const indexB = cannacrispyOrder.indexOf(b.subProductLine);
+        // Items not in the list go to the end
+        const valA = indexA === -1 ? 999 : indexA;
+        const valB = indexB === -1 ? 999 : indexB;
+        return valA - valB;
+      });
+    }
+
     return Object.fromEntries(order.map((key) => [key, groups[key] || []]));
   }, [products]);
 

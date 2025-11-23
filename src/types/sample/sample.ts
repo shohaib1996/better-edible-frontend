@@ -3,7 +3,9 @@ export interface ISample {
   store: {
     name: string;
   };
-  rep: string;
+  rep: {
+    name: string;
+  };
   status: "in progress" | "delivered";
   samples: {
     cannacrispy?: string;
