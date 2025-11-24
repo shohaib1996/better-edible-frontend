@@ -431,13 +431,23 @@ const Stores = () => {
                     <div className="mt-2 space-y-1 text-sm flex">
                       <p className="font-medium text-gray-700">Contacts:</p>
                       {store.contacts.map((c: any, idx: number) => (
-                        <div key={idx} className="pl-2 flex flex-wrap gap-2">
-                          <span>
-                            <strong>{c?.name}</strong>{" "}
-                            {c?.role && <span>({c.role})</span>}
-                          </span>
-                          {c?.email && <span>| {c.email}</span>}
-                          {c?.phone && <span>| {c.phone}</span>}
+                        <div
+                          key={idx}
+                          className="pl-2 flex flex-col gap-1 mb-2"
+                        >
+                          <div className="flex flex-wrap gap-2">
+                            <span>
+                              <strong>{c?.name}</strong>{" "}
+                              {c?.role && <span>({c.role})</span>}
+                            </span>
+                            {c?.email && <span>| {c.email}</span>}
+                            {c?.phone && <span>| {c.phone}</span>}
+                          </div>
+                          {c?.importantToKnow && (
+                            <div className="text-sm text-green-600">
+                              <strong>Important:</strong> {c.importantToKnow}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -20,10 +20,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+import { PhoneInput } from "@/components/ui/phone-input";
+
 export interface Field {
   name: string;
   label: string;
-  type?: "text" | "email" | "password" | "select";
+  type?: "text" | "email" | "password" | "select" | "phone";
   placeholder?: string;
   options?: { label: string; value: string }[];
   render?: (
@@ -113,6 +115,12 @@ export function EntityModal<T>({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : field.type === "phone" ? (
+                <PhoneInput
+                  value={formData?.[field.name] ?? ""}
+                  onChange={(value) => handleChange(field.name, value)}
+                  className="border border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500"
+                />
               ) : (
                 <Input
                   id={field.name}

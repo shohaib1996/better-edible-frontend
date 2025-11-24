@@ -52,7 +52,7 @@ export default function RepsPage() {
         { name: "name", label: "Full Name", type: "text" as const },
         { name: "loginName", label: "Login Name", type: "text" as const },
         { name: "email", label: "Email", type: "email" as const },
-        { name: "phone", label: "Phone", type: "text" as const },
+        { name: "phone", label: "Phone", type: "phone" as const },
         {
           name: "repType",
           label: "Representative Type",
@@ -80,7 +80,7 @@ export default function RepsPage() {
         { name: "loginName", label: "Login Name", type: "text" as const },
         { name: "password", label: "Password", type: "password" as const },
         { name: "email", label: "Email", type: "email" as const },
-        { name: "phone", label: "Phone", type: "text" as const },
+        { name: "phone", label: "Phone", type: "phone" as const },
         {
           name: "repType",
           label: "Representative Type",
@@ -96,6 +96,7 @@ export default function RepsPage() {
 
   const columns: Column<IRep>[] = [
     { key: "name", header: "Name" },
+    // { key: "_id", header: "ID" },
     { key: "territory", header: "Territory" },
     {
       key: "checkin",
