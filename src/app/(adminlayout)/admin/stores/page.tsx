@@ -18,6 +18,7 @@ import {
   Field,
 } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import {
   useAssignStoreToRepMutation,
   useCreateStoreMutation,
@@ -28,7 +29,7 @@ import {
 } from "@/redux/api/Stores/stores";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { useDebounced } from "@/redux/hooks/hooks";
-import { IRep } from "@/types";
+import { IRep, IStore } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,8 @@ import { toast } from "sonner";
 import { NotesModal } from "@/components/Notes/NotesModal";
 import { OrdersModal } from "@/components/Orders/OrdersModal";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
+import { AddNoteModal } from "@/components/Notes/AddNoteModal";
+import { useUser } from "@/redux/hooks/useAuth";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -46,6 +49,10 @@ const Stores = () => {
   const debouncedSearch = useDebounced({ searchQuery, delay: 500 });
   const [selectedRepFilter, setSelectedRepFilter] = useState<string>("");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+
+  // 📄 Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   // 📦 Local state
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,12 +63,17 @@ const Stores = () => {
   const [ordersModalOpen, setOrdersModalOpen] = useState(false);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [addNoteModalOpen, setAddNoteModalOpen] = useState(false);
+  const [selectedStoreForNote, setSelectedStoreForNote] =
+    useState<IStore | null>(null);
+
+  const user = useUser();
 
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(
     {
-      page: 1,
-      limit: 25,
+      page: currentPage,
+      limit: limit,
       search: debouncedSearch || "",
       repId: selectedRepFilter || "",
       paymentStatus:
@@ -94,6 +106,20 @@ const Stores = () => {
     useToggleBlockStoresMutation();
 
   const stores = data?.stores || [];
+  const totalStores = data?.total || 0;
+  const totalPages = Math.ceil(totalStores / limit);
+
+  // Handle pagination changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSelected([]); // Clear selections when changing pages
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when changing limit
+    setSelected([]); // Clear selections
+  };
 
   // ✅ Select store
   const handleSelect = (id: string) => {
@@ -283,7 +309,12 @@ const Stores = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-4">
-        <h2 className="text-2xl font-semibold">Stores</h2>
+        <div>
+          <h2 className="text-2xl font-semibold">Stores</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Total Stores: <span className="font-medium">{totalStores}</span>
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-3 justify-end">
           <Input
@@ -421,7 +452,15 @@ const Stores = () => {
                   onCheckedChange={() => handleSelect(store._id)}
                 />
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{store.name}</h3>
+                  <h3
+                    className="text-lg text-black font-bold dark:text-white relative inline-block after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-0.5 after:bg-[#326EA6] after:transition-all after:duration-300 hover:after:w-full cursor-pointer"
+                    onClick={() => {
+                      setSelectedStoreForNote(store);
+                      setAddNoteModalOpen(true);
+                    }}
+                  >
+                    {store.name}
+                  </h3>
                   <p className="text-sm text-gray-500">
                     {store.address || "No address"}
                   </p>
@@ -561,6 +600,18 @@ const Stores = () => {
         <p className="text-gray-500 text-center mt-8">No stores found.</p>
       )}
 
+      {/* Pagination */}
+      {totalStores > 0 && (
+        <GlobalPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalStores}
+          itemsPerPage={limit}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+        />
+      )}
+
       {/* Add/Edit Modal */}
       <EntityModal
         open={modalOpen}
@@ -632,6 +683,15 @@ const Stores = () => {
         onClose={() => setDeliveryModalOpen(false)}
         store={selectedStore}
       />
+
+      {selectedStoreForNote && user && (
+        <AddNoteModal
+          open={addNoteModalOpen}
+          onClose={() => setAddNoteModalOpen(false)}
+          storeId={selectedStoreForNote._id}
+          repId={user.id}
+        />
+      )}
     </div>
   );
 };
