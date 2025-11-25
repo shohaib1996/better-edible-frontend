@@ -23,6 +23,7 @@ import { AddNoteModal } from "./AddNoteModal";
 import { INote } from "@/types/note/note";
 import { Button } from "../ui/button";
 import { useUser } from "@/redux/hooks/useAuth";
+import { GlobalPagination } from "../ReUsableComponents/GlobalPagination";
 
 interface NotesModalProps {
   open: boolean;
@@ -35,10 +36,21 @@ interface NotesModalProps {
 }
 
 export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
   const { data, isLoading, isFetching } = useGetAllNotesQuery(
-    entityId ? entityId._id : skipToken,
+    entityId
+      ? {
+          entityId: entityId._id.toString(),
+          page: currentPage,
+          limit: limit,
+        }
+      : skipToken,
     { skip: !entityId }
   );
+  console.log(data);
 
   const user = useUser();
 
@@ -48,7 +60,19 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
   );
 
   const notes = data?.notes || [];
+  const totalNotes = data?.total || 0;
+  const totalPages = Math.ceil(totalNotes / limit);
   const store = entityId;
+
+  // Handle pagination changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when changing limit
+  };
 
   const handleEdit = (note: INote) => {
     setSelectedNote(note);
@@ -93,17 +117,26 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>🗒️ Store Notes</DialogTitle>
           </DialogHeader>
 
           {store && (
             <div className="bg-gray-50 border rounded-md p-4 mb-4">
-              <h2 className="text-xl font-bold">{store.name}</h2>
-              <p className="text-md text-gray-600">
-                {store.address ? `${store.address}` : "Address not available"}
-              </p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-bold">{store.name}</h2>
+                  <p className="text-md text-gray-600">
+                    {store.address
+                      ? `${store.address}`
+                      : "Address not available"}
+                  </p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <strong>Total Notes:</strong> {totalNotes}
+                </div>
+              </div>
             </div>
           )}
 
@@ -206,6 +239,18 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Pagination */}
+          {totalNotes > 0 && (
+            <GlobalPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalNotes}
+              itemsPerPage={limit}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+            />
           )}
         </DialogContent>
       </Dialog>

@@ -3,9 +3,23 @@ import { tagTypes } from "../../tagTypes/tagTypes";
 
 export const notesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Get all notes for a store
+    // Get all notes for a store with pagination
     getAllNotes: builder.query({
-      query: (entityId: string) => `/notes?entityId=${entityId}`,
+      query: (args) => {
+        const params = new URLSearchParams();
+
+        // Handle both string (just entityId) and object (with pagination) inputs
+        const isString = typeof args === "string";
+        const entityId = isString ? args : args?.entityId;
+        const page = !isString && args?.page ? args.page : undefined;
+        const limit = !isString && args?.limit ? args.limit : undefined;
+
+        if (entityId) params.append("entityId", entityId);
+        if (page) params.append("page", page.toString());
+        if (limit) params.append("limit", limit.toString());
+
+        return `/notes?${params.toString()}`;
+      },
       providesTags: [tagTypes.notes],
     }),
 
