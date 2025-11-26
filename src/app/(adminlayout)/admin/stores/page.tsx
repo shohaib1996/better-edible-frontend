@@ -466,7 +466,8 @@ const Stores = () => {
                   </p>
 
                   {/* Contact Info */}
-                  {store.contacts?.length > 0 ? (
+                  {Array.isArray(store?.contacts) &&
+                  store.contacts.length > 0 ? (
                     <div className="mt-2 space-y-1 text-sm flex">
                       <p className="font-medium text-gray-700">Contacts:</p>
                       {store.contacts.map((c: any, idx: number) => (
@@ -568,7 +569,11 @@ const Stores = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const contact = store.contacts?.[0] || {};
+                      const contact =
+                        Array.isArray(store.contacts) &&
+                        store.contacts.length > 0
+                          ? store.contacts[0]
+                          : {};
                       setEditingStore({
                         ...store,
                         contactName: contact.name || "",
