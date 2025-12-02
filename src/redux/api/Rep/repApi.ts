@@ -42,6 +42,22 @@ export const repApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.reps],
     }),
+    resetPassword: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/reps/${id}/reset-password`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.reps],
+    }),
+    resetPin: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/reps/${id}/reset-pin`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.reps],
+    }),
   }),
 });
 
@@ -52,4 +68,6 @@ export const {
   useDeleteRepMutation,
   useCheckInRepMutation,
   useCheckOutRepMutation,
+  useResetPasswordMutation,
+  useResetPinMutation,
 } = repApi;

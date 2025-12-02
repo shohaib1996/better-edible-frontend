@@ -69,6 +69,8 @@ const Stores = () => {
 
   const user = useUser();
 
+  console.log(editingStore, "editing store");
+
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(
     {
@@ -131,21 +133,7 @@ const Stores = () => {
   // ✅ Add/Edit submit
   const handleSubmit = async (values: any) => {
     try {
-      const payload = {
-        ...values,
-        contacts: [
-          {
-            name: values.contactName,
-            role: values.contactRole,
-            email: values.contactEmail,
-            phone: values.contactPhone,
-          },
-        ],
-      };
-      delete payload.contactName;
-      delete payload.contactRole;
-      delete payload.contactEmail;
-      delete payload.contactPhone;
+      const payload = { ...values };
 
       if (editingStore) {
         await updateStore({ id: editingStore._id, body: payload });
@@ -243,30 +231,6 @@ const Stores = () => {
       label: "Zip Code",
       type: "text",
       placeholder: "Enter zip code",
-    },
-    {
-      name: "contactName",
-      label: "Contact Name",
-      type: "text",
-      placeholder: "Enter contact name",
-    },
-    {
-      name: "contactRole",
-      label: "Contact Role",
-      type: "text",
-      placeholder: "Enter contact role",
-    },
-    {
-      name: "contactEmail",
-      label: "Contact Email",
-      type: "text",
-      placeholder: "Enter contact email",
-    },
-    {
-      name: "contactPhone",
-      label: "Contact Phone",
-      type: "text",
-      placeholder: "Enter contact phone",
     },
     {
       name: "rep",
@@ -569,17 +533,8 @@ const Stores = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const contact =
-                        Array.isArray(store.contacts) &&
-                        store.contacts.length > 0
-                          ? store.contacts[0]
-                          : {};
                       setEditingStore({
                         ...store,
-                        contactName: contact.name || "",
-                        contactRole: contact.role || "",
-                        contactEmail: contact.email || "",
-                        contactPhone: contact.phone || "",
                         rep: store.rep?._id || store.rep || "",
                       });
                       setModalOpen(true);

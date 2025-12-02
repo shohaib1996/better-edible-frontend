@@ -25,30 +25,30 @@ const TimeClock = () => {
     repId: string;
     action: "checkin" | "checkout";
   } | null>(null);
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
 
   const isSubmitting = checkinLoading || checkoutLoading;
 
   const handleSubmit = async (rep: IRep) => {
     if (!mode) return;
     const { action } = mode;
-    if (isSubmitting || !password.trim()) return;
+    if (isSubmitting || !pin.trim()) return;
 
     try {
       if (action === "checkin") {
-        await checkin({ loginName: rep.loginName, password }).unwrap();
+        await checkin({ loginName: rep.loginName, pin }).unwrap();
         toast.success(`${rep.name} checked in successfully`);
       } else {
-        await checkout({ loginName: rep.loginName, password }).unwrap();
+        await checkout({ loginName: rep.loginName, pin }).unwrap();
         toast.success(`${rep.name} checked out successfully`);
       }
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       const actionName = action === "checkin" ? "in" : "out";
-      toast.error(`Check ${actionName} failed`);
+      toast.error(error?.data?.message || `Check ${actionName} failed`);
     } finally {
       setMode(null);
-      setPassword("");
+      setPin("");
     }
   };
 
@@ -98,16 +98,17 @@ const TimeClock = () => {
                   <div className="space-y-3">
                     <Input
                       type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value)}
+                      placeholder="Enter PIN"
                       disabled={isThisSubmitting}
                       className="w-full"
+                      autoFocus
                     />
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handleSubmit(rep)}
-                        disabled={isThisSubmitting || !password.trim()}
+                        disabled={isThisSubmitting || !pin.trim()}
                         className="flex-1"
                       >
                         {isThisSubmitting ? "Submitting..." : "Submit"}
@@ -116,7 +117,7 @@ const TimeClock = () => {
                         variant="outline"
                         onClick={() => {
                           setMode(null);
-                          setPassword("");
+                          setPin("");
                         }}
                         disabled={isThisSubmitting}
                         className="shrink-0"

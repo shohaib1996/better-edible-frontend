@@ -227,13 +227,13 @@ const FollowUps = () => {
                     <TableRow key={f._id}>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{f.store.name}</span>
+                          <span className="font-medium">{f.store?.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            {f.store.address}
+                            {f.store?.address}
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>{f.rep.name}</TableCell>
+                      <TableCell>{f.rep?.name}</TableCell>
                       <TableCell>
                         {dateStr && local
                           ? format(local, "MMM dd, yyyy")

@@ -197,7 +197,7 @@ function FooterUserMenu({ user }: { user: any }) {
 
         <DropdownMenuItem asChild>
           <Link
-            href="/profile"
+            href="/rep/profile"
             className="flex items-center gap-2"
             onClick={() => setOpen(false)}
           >

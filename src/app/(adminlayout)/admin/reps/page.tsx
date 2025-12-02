@@ -16,7 +16,7 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock } from "lucide-react";
+import { Clock, FileText } from "lucide-react";
 import Link from "next/link";
 
 export default function RepsPage() {
@@ -145,6 +145,11 @@ export default function RepsPage() {
           <Link href={`/admin/reps/${rep._id}`}>
             <Button size="sm" variant="outline" className="cursor-pointer">
               <Clock className="size-4 mr-1" />
+            </Button>
+          </Link>
+          <Link href={`/admin/reps/notes/${rep._id}`}>
+            <Button size="sm" variant="outline" className="cursor-pointer">
+              <FileText className="size-4 mr-1" />
             </Button>
           </Link>
           <Button
