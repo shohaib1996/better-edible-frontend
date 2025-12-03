@@ -16,10 +16,12 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock, FileText } from "lucide-react";
+import { Clock, FileText, LogIn } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function RepsPage() {
+  const router = useRouter();
   const { data, isLoading, refetch } = useGetAllRepsQuery({});
   const [addRep, { isLoading: adding }] = useRegisterRepMutation();
   const [editRep, { isLoading: updating }] = useUpdateRepMutation();
@@ -44,6 +46,32 @@ export default function RepsPage() {
     setOpen(false);
     refetch();
   };
+
+  const handleLoginAsRep = (rep: IRep) => {
+    const adminSession = localStorage.getItem("better-user");
+
+    if (adminSession) {
+      localStorage.setItem("impersonating-admin", adminSession);
+      localStorage.setItem("is-impersonating", "true");
+    }
+
+    const repSession = {
+      id: rep._id,
+      name: rep.name,
+      loginName: rep.loginName,
+      repType: rep.repType,
+      territory: rep.territory,
+      role: "rep",
+    };
+
+    localStorage.setItem("better-user", JSON.stringify(repSession));
+
+    // Avoid router.push because the reload cancels it
+    setTimeout(() => {
+      window.location.href = "/rep/today-contact";
+    }, 30);
+  };
+
   // inside RepsPage()
 
   const isEditing = Boolean(editingRep);
@@ -101,7 +129,7 @@ export default function RepsPage() {
     { key: "territory", header: "Territory" },
     {
       key: "checkin",
-      header: "Check-in",
+      header: "Clock In",
       render: (rep) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -115,7 +143,7 @@ export default function RepsPage() {
               rep.checkin ? "bg-emerald-500" : "bg-gray-400"
             }`}
           ></span>
-          {rep.checkin ? "Checked In" : "Checked Out"}
+          {rep.checkin ? "Clocked In" : "Clocked Out"}
         </span>
       ),
     },
@@ -153,6 +181,15 @@ export default function RepsPage() {
               <FileText className="size-4 mr-1" />
             </Button>
           </Link>
+          <Button
+            size="sm"
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700 h-8"
+            onClick={() => handleLoginAsRep(rep)}
+          >
+            <LogIn className="size-4 mr-1" />
+            Login As
+          </Button>
           <Button
             size="sm"
             variant="outline"

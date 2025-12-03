@@ -73,8 +73,6 @@ const Stores = () => {
 
   const user = useUser();
 
-  console.log(editingStore, "editing store");
-
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(
     {

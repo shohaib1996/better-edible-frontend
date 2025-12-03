@@ -2,6 +2,8 @@ import { AppSidebar } from "@/components/AppSidebar/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
+
 const RepLayout = async ({ children }: { children: React.ReactNode }) => {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
@@ -9,6 +11,7 @@ const RepLayout = async ({ children }: { children: React.ReactNode }) => {
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <main className="flex-1">
+        <ImpersonationBanner />
         <SidebarTrigger />
         {children}
       </main>

@@ -30,6 +30,7 @@ import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { useUser } from "@/redux/hooks/useAuth";
 import { AddNoteModal } from "@/components/Notes/AddNoteModal";
 import { ManageFollowUpModal } from "@/components/Followup/ManageFollowUpModal";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -50,6 +51,10 @@ const Stores = () => {
   const [selectedStoreForFollowup, setSelectedStoreForFollowup] =
     useState<IStore | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [selected, setSelected] = useState<string[]>([]);
+
   const user = useUser();
   const currentRep: Partial<IRep> | null = {
     _id: user?.id,
@@ -59,8 +64,8 @@ const Stores = () => {
   // 📡 API hooks
   const { data, isLoading, refetch } = useGetAllStoresQuery(
     {
-      page: 1,
-      limit: 25,
+      page: currentPage,
+      limit: limit,
       search: debouncedSearch || "",
       repId: user?.id || "",
       paymentStatus:
@@ -69,6 +74,9 @@ const Stores = () => {
     },
     { refetchOnMountOrArgChange: true, skip: !user?.id }
   );
+
+  const totalStores = data?.total || 0;
+  const totalPages = Math.ceil(totalStores / limit);
 
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
@@ -192,6 +200,17 @@ const Stores = () => {
         <Loader2 className="animate-spin h-8 w-8 text-gray-600" />
       </div>
     );
+  // Handle pagination changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSelected([]); // Clear selections when changing pages
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // Reset to first page when changing limit
+    setSelected([]); // Clear selections
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -414,6 +433,18 @@ const Stores = () => {
 
       {stores.length === 0 && (
         <p className="text-gray-500 text-center mt-8">No stores found.</p>
+      )}
+
+      {/* Pagination */}
+      {totalStores > 0 && (
+        <GlobalPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalStores}
+          itemsPerPage={limit}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+        />
       )}
 
       {/* Add/Edit Modal */}

@@ -88,7 +88,7 @@ const TimeClock = () => {
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {rep.checkin ? "Checked In" : "Checked Out"}
+                      {rep.checkin ? "Clocked In" : "Clocked Out"}
                     </span>
                   </div>
                 )}
