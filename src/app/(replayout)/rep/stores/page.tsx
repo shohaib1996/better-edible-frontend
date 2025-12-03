@@ -29,6 +29,7 @@ import { OrdersModal } from "@/components/Orders/OrdersModal";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { useUser } from "@/redux/hooks/useAuth";
 import { AddNoteModal } from "@/components/Notes/AddNoteModal";
+import { ManageFollowUpModal } from "@/components/Followup/ManageFollowUpModal";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -44,6 +45,9 @@ const Stores = () => {
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
   const [addNoteModalOpen, setAddNoteModalOpen] = useState(false);
   const [selectedStoreForNote, setSelectedStoreForNote] =
+    useState<IStore | null>(null);
+  const [followupModalOpen, setFollowupModalOpen] = useState(false);
+  const [selectedStoreForFollowup, setSelectedStoreForFollowup] =
     useState<IStore | null>(null);
 
   const user = useUser();
@@ -372,6 +376,18 @@ const Stores = () => {
                   </Button>
 
                   <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-blue-700 hover:bg-blue-800 text-white"
+                    onClick={() => {
+                      setSelectedStoreForFollowup(store);
+                      setFollowupModalOpen(true);
+                    }}
+                  >
+                    Follow Up
+                  </Button>
+
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
@@ -435,6 +451,15 @@ const Stores = () => {
           open={addNoteModalOpen}
           onClose={() => setAddNoteModalOpen(false)}
           storeId={selectedStoreForNote._id}
+          repId={user.id}
+        />
+      )}
+
+      {selectedStoreForFollowup && user && (
+        <ManageFollowUpModal
+          open={followupModalOpen}
+          onClose={() => setFollowupModalOpen(false)}
+          storeId={selectedStoreForFollowup._id}
           repId={user.id}
         />
       )}

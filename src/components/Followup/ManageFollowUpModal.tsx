@@ -33,13 +33,16 @@ import {
   useUpdateFollowupMutation,
 } from "@/redux/api/Followups/followupsApi";
 import { IFollowUp } from "@/types";
+import { RepSelect } from "@/components/Shared/RepSelect";
+import { useUser } from "@/redux/hooks/useAuth";
 
 interface ManageFollowUpModalProps {
   open: boolean;
   onClose: () => void;
   followup?: IFollowUp | null; // If present, we are editing
   storeId?: string; // Required for creating
-  repId?: string; // Required for creating
+  repId?: string; // Required for creating (used by reps, optional for admins)
+  showRepSelect?: boolean; // If true, show rep assignment dropdown (admin mode)
 }
 
 const INTEREST_OPTIONS = [
@@ -56,10 +59,14 @@ export const ManageFollowUpModal = ({
   followup,
   storeId,
   repId,
+  showRepSelect = false,
 }: ManageFollowUpModalProps) => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [interestLevel, setInterestLevel] = useState("");
   const [comments, setComments] = useState("");
+  const [selectedRepId, setSelectedRepId] = useState<string>("");
+
+  const user = useUser();
 
   const [createFollowup, { isLoading: isCreating }] =
     useCreateFollowupMutation();
@@ -76,42 +83,62 @@ export const ManageFollowUpModal = ({
       );
       setInterestLevel(followup.interestLevel || "");
       setComments(followup.comments || "");
+      // Set selected rep if editing and showRepSelect is true
+      if (showRepSelect && followup.rep?._id) {
+        setSelectedRepId(followup.rep._id);
+      }
     } else {
       // Reset form when opening in create mode
       if (open) {
         setDate(undefined);
         setInterestLevel("");
         setComments("");
+        setSelectedRepId("");
       }
     }
-  }, [followup, open]);
+  }, [followup, open, showRepSelect]);
 
   const handleSubmit = async () => {
     if (!date) return toast.error("Please select a follow-up date.");
+
+    // Validate rep selection when showRepSelect is true
+    if (showRepSelect && !selectedRepId && !isEditing) {
+      return toast.error("Please select a rep to assign this follow-up.");
+    }
 
     try {
       const formattedDate = format(date, "yyyy-MM-dd");
 
       if (isEditing && followup) {
+        const updateData: any = {
+          followupDate: formattedDate,
+          interestLevel,
+          comments,
+        };
+        // If admin is editing and changes rep assignment
+        if (showRepSelect && selectedRepId) {
+          updateData.rep = selectedRepId;
+        }
         await updateFollowup({
           id: followup._id,
-          data: {
-            followupDate: formattedDate,
-            interestLevel,
-            comments,
-          },
+          data: updateData,
         }).unwrap();
         toast.success("Follow-up updated!");
       } else {
-        if (!storeId || !repId) {
-          return toast.error("Missing store or rep information.");
+        if (!storeId) {
+          return toast.error("Missing store information.");
+        }
+        // Determine which rep ID to use
+        const finalRepId = showRepSelect ? selectedRepId : repId;
+        if (!finalRepId) {
+          return toast.error("Missing rep information.");
         }
         await createFollowup({
           followupDate: formattedDate,
           interestLevel,
           comments,
           store: storeId,
-          rep: repId,
+          rep: finalRepId,
         }).unwrap();
         toast.success("Follow-up created!");
       }
@@ -178,6 +205,16 @@ export const ManageFollowUpModal = ({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Assign To (Admin Only) */}
+          {showRepSelect && (
+            <div className="flex flex-col space-y-2">
+              <Label>
+                Assign To <span className="text-red-500">*</span>
+              </Label>
+              <RepSelect value={selectedRepId} onChange={setSelectedRepId} />
+            </div>
+          )}
 
           {/* Comments */}
           <div className="flex flex-col space-y-2">

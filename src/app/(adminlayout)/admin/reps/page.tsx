@@ -29,6 +29,7 @@ export default function RepsPage() {
   const [editingRep, setEditingRep] = useState<IRep | null>(null);
 
   const reps: IRep[] = data?.data || [];
+  console.log(reps);
 
   const handleAdd = async (values: Partial<IRep>) => {
     await addRep(values);
