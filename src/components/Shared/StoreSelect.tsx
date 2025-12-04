@@ -1,16 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ChevronDown, Check } from "lucide-react";
 import { useGetAllStoresQuery } from "@/redux/api/Stores/stores";
+import { cn } from "@/lib/utils";
 
 interface StoreSelectProps {
   value?: string;
@@ -26,9 +20,8 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const isInteractingWithSearch = useRef(false);
 
   const { data, isLoading, refetch } = useGetAllStoresQuery({
     search,
@@ -56,137 +49,127 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
     return () => clearTimeout(delay);
   }, [search, open]);
 
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (event: Event) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [open]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [open]);
+
+  const selectedStore = stores.find((s) => s._id === value);
+
+  const handleStoreSelect = (storeId: string) => {
+    onChange(storeId);
+    setOpen(false);
+    setSearch("");
+  };
+
   return (
-    <div className="space-y-1">
-      <Select
-        value={value ?? ""}
-        onValueChange={onChange}
-        open={open}
-        onOpenChange={(newOpen) => {
-          // Prevent closing if user is interacting with search
-          if (!newOpen && isInteractingWithSearch.current) {
-            return;
-          }
-
-          // On mobile, check if the focus is moving to the search input
-          if (!newOpen) {
-            setTimeout(() => {
-              const activeElement = document.activeElement;
-              const isSearchInput =
-                activeElement?.getAttribute("data-search-input") === "true";
-              if (!isSearchInput) {
-                setOpen(newOpen);
-              }
-            }, 0);
-          } else {
-            setOpen(newOpen);
-          }
-        }}
+    <div className="relative w-full" ref={containerRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "flex h-9 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition-colors",
+          "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500",
+          !selectedStore && "text-gray-500"
+        )}
       >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a store" />
-        </SelectTrigger>
+        <span className="truncate">
+          {selectedStore ? selectedStore.name : "Select a store"}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 opacity-50 transition-transform",
+            open && "rotate-180"
+          )}
+        />
+      </button>
 
-        <SelectContent
-          position="popper"
-          sideOffset={5}
-          className="max-h-[300px]"
-        >
-          {/* Search bar inside dropdown */}
-          <div
-            ref={searchContainerRef}
-            className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
-            onClick={(e) => {
-              e.stopPropagation();
-              isInteractingWithSearch.current = true;
-              setOpen(true); // Explicitly keep dropdown open on Android
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              isInteractingWithSearch.current = true;
-            }}
-            onMouseUp={() => {
-              setTimeout(() => {
-                isInteractingWithSearch.current = false;
-              }, 100);
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              isInteractingWithSearch.current = true;
-            }}
-            onTouchEnd={() => {
-              setTimeout(() => {
-                isInteractingWithSearch.current = false;
-              }, 100);
-            }}
-            onTouchCancel={() => {
-              isInteractingWithSearch.current = false;
-            }}
-            onKeyDown={(e) => e.stopPropagation()}
-            onPointerMove={(e) => e.stopPropagation()}
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              isInteractingWithSearch.current = true;
-            }}
-            onPointerUp={() => {
-              setTimeout(() => {
-                isInteractingWithSearch.current = false;
-              }, 100);
-            }}
-          >
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+          {/* Search Input */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-2">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
               <Input
                 ref={searchInputRef}
-                data-search-input="true"
+                type="text"
                 placeholder="Search stores..."
                 className="pl-8 text-sm h-8"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  isInteractingWithSearch.current = true;
-                }}
-                onFocus={(e) => {
-                  e.stopPropagation();
-                  isInteractingWithSearch.current = true;
-                  // Ensure the dropdown stays open
-                  setOpen(true);
-                }}
-                onBlur={() => {
-                  // Delay clearing the flag to allow other events to process
-                  setTimeout(() => {
-                    isInteractingWithSearch.current = false;
-                  }, 200);
-                }}
-                onKeyDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               />
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center py-4">
-              <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
-            </div>
-          ) : stores.length ? (
-            stores.map((store: any) => (
-              <SelectItem key={store._id} value={store._id}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{store.name}</span>
-                  <span className="text-xs text-gray-500">
-                    {store.city ? `${store.city}, ` : ""}
-                    {store.address || ""}
-                  </span>
-                </div>
-              </SelectItem>
-            ))
-          ) : (
-            <div className="text-gray-500 text-sm p-2 text-center">
-              No stores found
-            </div>
-          )}
-        </SelectContent>
-      </Select>
+          {/* Store List */}
+          <div className="max-h-[300px] overflow-y-auto">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+              </div>
+            ) : stores.length ? (
+              <div className="p-1">
+                {stores.map((store: any) => (
+                  <button
+                    key={store._id}
+                    type="button"
+                    onClick={() => handleStoreSelect(store._id)}
+                    className={cn(
+                      "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors",
+                      "hover:bg-gray-100 focus:bg-gray-100",
+                      value === store._id && "bg-emerald-50"
+                    )}
+                  >
+                    <div className="flex flex-col flex-1 items-start">
+                      <span className="font-medium">{store.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {store.city ? `${store.city}, ` : ""}
+                        {store.address || ""}
+                      </span>
+                    </div>
+                    {value === store._id && (
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500 text-sm p-4 text-center">
+                No stores found
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
