@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   useGetAllOrdersQuery,
   useCreateOrderMutation,
@@ -49,6 +49,10 @@ const OrdersPage = ({
   const [startDate, setStartDate] = useState<string | undefined>();
   const [endDate, setEndDate] = useState<string | undefined>();
 
+  // Pagination state for shipped orders
+  const [shippedPage, setShippedPage] = useState(1);
+  const [shippedLimit, setShippedLimit] = useState(10);
+
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [orderTotals, setOrderTotals] = useState({
     totalCases: 0,
@@ -72,12 +76,16 @@ const OrdersPage = ({
       activeTab === "new"
         ? ["submitted", "accepted", "manifested"]
         : ["shipped", "cancelled"],
+    // Add pagination for shipped orders
+    page: activeTab === "shipped" ? shippedPage : 1,
+    limit: activeTab === "shipped" ? shippedLimit : 999, // Use large limit for new orders
   });
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
   const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
   const [changeStatus] = useChangeOrderStatusMutation();
 
   const orders: IOrder[] = data?.orders || [];
+  const totalOrders = data?.total || 0; // Get total count from API response
 
   // ─────────────── GROUP ORDERS ───────────────
   const grouped = useMemo(() => {
@@ -276,6 +284,11 @@ const OrdersPage = ({
         onFilter={handleFilter}
         reps={reps?.data || []}
         currentRep={currentRep}
+        totalOrders={totalOrders}
+        shippedPage={shippedPage}
+        shippedLimit={shippedLimit}
+        onShippedPageChange={setShippedPage}
+        onShippedLimitChange={setShippedLimit}
       />
 
       <EntityModal

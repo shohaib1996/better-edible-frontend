@@ -23,6 +23,12 @@ interface OrdersTabsProps {
   }) => void;
   reps: any[];
   currentRep?: Partial<IRep> | null;
+  // Pagination props
+  totalOrders?: number;
+  shippedPage?: number;
+  shippedLimit?: number;
+  onShippedPageChange?: (page: number) => void;
+  onShippedLimitChange?: (limit: number) => void;
 }
 
 export const OrdersTabs = ({
@@ -37,6 +43,11 @@ export const OrdersTabs = ({
   onFilter,
   reps,
   currentRep,
+  totalOrders,
+  shippedPage,
+  shippedLimit,
+  onShippedPageChange,
+  onShippedLimitChange,
 }: OrdersTabsProps) => {
   if (isLoading)
     return (
@@ -74,6 +85,11 @@ export const OrdersTabs = ({
           onEdit={onEdit} // ✅ pass down
           isLoading={isLoading}
           reps={reps}
+          totalOrders={totalOrders}
+          currentPage={shippedPage}
+          itemsPerPage={shippedLimit}
+          onPageChange={onShippedPageChange}
+          onLimitChange={onShippedLimitChange}
         />
       </TabsContent>
     </Tabs>

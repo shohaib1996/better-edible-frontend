@@ -66,9 +66,9 @@ export default function RepsPage() {
 
     localStorage.setItem("better-user", JSON.stringify(repSession));
 
-    // Avoid router.push because the reload cancels it
+    // Open in a new tab
     setTimeout(() => {
-      window.location.href = "/rep/today-contact";
+      window.open("/rep/today-contact", "_blank");
     }, 30);
   };
 

@@ -67,7 +67,10 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
 
         <SelectContent>
           {/* Search bar inside dropdown */}
-          <div className="sticky top-0 bg-white z-10 px-2 py-2 border-b">
+          <div
+            className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
               <Input
@@ -75,6 +78,10 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                 className="pl-8 text-sm h-8"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
               />
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 interface ShippedOrdersTabProps {
   orders: any[];
@@ -32,16 +33,24 @@ interface ShippedOrdersTabProps {
   onEdit: (order: any) => void;
   isLoading: boolean;
   reps: any[];
+  totalOrders?: number;
+  currentPage?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
 }
 
 export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   orders,
   handleChangeStatus,
-  updateOrder,
   onFilter,
   onEdit,
   isLoading,
-  reps,
+  totalOrders = 0,
+  currentPage = 1,
+  itemsPerPage = 10,
+  onPageChange,
+  onLimitChange,
 }) => {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -53,6 +62,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
       endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
       repName: selectedRepName,
     });
+    onPageChange?.(1); // Reset to first page when filtering
   };
 
   const handleClear = () => {
@@ -60,9 +70,10 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
     setEndDate(undefined);
     setSelectedRepName(undefined);
     onFilter({});
+    onPageChange?.(1); // Reset to first page when clearing
   };
 
-  if (isLoading) {
+  if (isLoading || !orders.length) {
     return (
       <div className="flex justify-center items-center h-48">
         <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
@@ -78,6 +89,8 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
     (sum, o) => (o?.status === "shipped" ? sum + (Number(o?.total) || 0) : sum),
     0
   );
+
+  const totalPages = Math.ceil(totalOrders / itemsPerPage);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -122,24 +135,6 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex justify-end items-center gap-2 my-4">
-        {/* <Select
-          value={selectedRepName || "all"}
-          onValueChange={(value) => setSelectedRepName(value === "all" ? undefined : value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Rep" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Reps</SelectItem>
-            {[...(new Set(reps?.map((r: any) => r.name).filter(Boolean) || []))].map(
-              (repName) => (
-                <SelectItem key={repName as string} value={repName as string}>
-                  {repName as string}
-                </SelectItem>
-              )
-            )}
-          </SelectContent>
-        </Select> */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -162,7 +157,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
               mode="single"
               selected={startDate}
               onSelect={setStartDate}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -184,7 +179,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
               mode="single"
               selected={endDate}
               onSelect={setEndDate}
-              initialFocus
+              autoFocus
             />
           </PopoverContent>
         </Popover>
@@ -287,6 +282,22 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           </div>
         </Card>
       ))}
+
+      {/* Pagination */}
+      {totalOrders > itemsPerPage && onPageChange && onLimitChange && (
+        <GlobalPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalOrders}
+          itemsPerPage={itemsPerPage}
+          onPageChange={onPageChange}
+          onLimitChange={(limit) => {
+            onLimitChange(limit);
+            onPageChange(1); // Reset to first page when changing limit
+          }}
+          limitOptions={[10, 25, 50, 100]}
+        />
+      )}
     </div>
   );
 };
