@@ -75,6 +75,8 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
             className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
             onKeyDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -84,10 +86,6 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
               />
             </div>
           </div>
