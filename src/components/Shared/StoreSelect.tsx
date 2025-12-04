@@ -65,11 +65,16 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
           <SelectValue placeholder="Select a store" />
         </SelectTrigger>
 
-        <SelectContent>
+        <SelectContent
+          position="popper"
+          sideOffset={5}
+          className="max-h-[300px]"
+        >
           {/* Search bar inside dropdown */}
           <div
             className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
             onKeyDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
           >
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -80,8 +85,20 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-                autoFocus
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                }}
               />
             </div>
           </div>
