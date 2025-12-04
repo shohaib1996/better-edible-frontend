@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Select,
   SelectContent,
@@ -26,6 +26,8 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const isInteractingWithSearch = useRef(false);
 
   const { data, isLoading, refetch } = useGetAllStoresQuery({
     search,
@@ -59,7 +61,13 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
         value={value ?? ""}
         onValueChange={onChange}
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(newOpen) => {
+          // Prevent closing if user is interacting with search
+          if (!newOpen && isInteractingWithSearch.current) {
+            return;
+          }
+          setOpen(newOpen);
+        }}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select a store" />
@@ -72,11 +80,40 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
         >
           {/* Search bar inside dropdown */}
           <div
+            ref={searchContainerRef}
             className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              isInteractingWithSearch.current = true;
+            }}
+            onMouseUp={() => {
+              setTimeout(() => {
+                isInteractingWithSearch.current = false;
+              }, 100);
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              isInteractingWithSearch.current = true;
+            }}
+            onTouchEnd={() => {
+              setTimeout(() => {
+                isInteractingWithSearch.current = false;
+              }, 100);
+            }}
+            onTouchCancel={() => {
+              isInteractingWithSearch.current = false;
+            }}
             onKeyDown={(e) => e.stopPropagation()}
             onPointerMove={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              isInteractingWithSearch.current = true;
+            }}
+            onPointerUp={() => {
+              setTimeout(() => {
+                isInteractingWithSearch.current = false;
+              }, 100);
+            }}
           >
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
