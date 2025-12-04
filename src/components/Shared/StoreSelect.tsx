@@ -27,6 +27,7 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const isInteractingWithSearch = useRef(false);
 
   const { data, isLoading, refetch } = useGetAllStoresQuery({
@@ -66,7 +67,20 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
           if (!newOpen && isInteractingWithSearch.current) {
             return;
           }
-          setOpen(newOpen);
+
+          // On mobile, check if the focus is moving to the search input
+          if (!newOpen) {
+            setTimeout(() => {
+              const activeElement = document.activeElement;
+              const isSearchInput =
+                activeElement?.getAttribute("data-search-input") === "true";
+              if (!isSearchInput) {
+                setOpen(newOpen);
+              }
+            }, 0);
+          } else {
+            setOpen(newOpen);
+          }
         }}
       >
         <SelectTrigger className="w-full">
@@ -82,6 +96,11 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
           <div
             ref={searchContainerRef}
             className="sticky top-0 bg-white z-10 px-2 py-2 border-b"
+            onClick={(e) => {
+              e.stopPropagation();
+              isInteractingWithSearch.current = true;
+              setOpen(true); // Explicitly keep dropdown open on Android
+            }}
             onMouseDown={(e) => {
               e.stopPropagation();
               isInteractingWithSearch.current = true;
@@ -118,10 +137,28 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
               <Input
+                ref={searchInputRef}
+                data-search-input="true"
                 placeholder="Search stores..."
                 className="pl-8 text-sm h-8"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithSearch.current = true;
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithSearch.current = true;
+                  // Ensure the dropdown stays open
+                  setOpen(true);
+                }}
+                onBlur={() => {
+                  // Delay clearing the flag to allow other events to process
+                  setTimeout(() => {
+                    isInteractingWithSearch.current = false;
+                  }, 200);
+                }}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
