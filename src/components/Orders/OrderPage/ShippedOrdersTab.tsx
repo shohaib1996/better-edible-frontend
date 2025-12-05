@@ -193,95 +193,175 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
         Shipped Orders Value: ${shippedTotal.toFixed(2)}
       </div>
 
-      {orders.map((order) => (
-        <Card
-          key={order._id}
-          className={cn(
-            "border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition p-3",
-            getStatusStyle(order.status)
-          )}
-        >
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-            {/* Store Info */}
-            <div className="flex flex-col">
-              <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wide">
-                {order.store?.name || "N/A"}
-              </h2>
-              <p className="text-xs text-gray-600">{order.store?.address}</p>
-              <div className="mt-1">{getStatusBadge(order.status)}</div>
-            </div>
+      {orders.map((order) => {
+        const isSample = (order as any).isSample === true;
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => onEdit(order)}
-              >
-                Edit
-              </Button>
-
-              <Select
-                value={order.status}
-                onValueChange={(value) => handleChangeStatus(order._id, value)}
-              >
-                <SelectTrigger
-                  className={cn(
-                    "w-[120px] h-8 text-xs font-semibold border-none focus:ring-0",
-                    getDropdownStyle(order.status)
+        return (
+          <Card
+            key={order._id}
+            className={cn(
+              "border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition p-3",
+              isSample
+                ? "bg-linear-to-r from-purple-50 to-pink-50 border-l-4 border-l-purple-500 border-purple-200"
+                : getStatusStyle(order.status)
+            )}
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+              {/* Store Info */}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wide">
+                    {order.store?.name || "N/A"}
+                  </h2>
+                  {isSample && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-md">
+                      📦 SAMPLE REQUEST
+                    </span>
                   )}
-                >
-                  <SelectValue placeholder="Change" />
-                </SelectTrigger>
-                <SelectContent className="text-sm">
-                  {[
-                    "shipped",
-                    "cancelled",
-                    "manifested",
-                    "accepted",
-                    "submitted",
-                  ].map((s) => (
-                    <SelectItem
-                      key={s}
-                      value={s}
-                      className={cn(
-                        "capitalize font-medium",
-                        s === "shipped"
-                          ? "text-green-700"
-                          : s === "cancelled"
-                          ? "text-red-700"
-                          : "text-gray-700"
-                      )}
-                    >
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </div>
+                <p className="text-xs text-gray-600">{order.store?.address}</p>
+                <div className="mt-1">{getStatusBadge(order.status)}</div>
+              </div>
 
-          {/* Order Details */}
-          <div className="bg-gray-50 p-3 rounded-md mt-2 text-xs leading-relaxed">
-            <p>
-              <span className="font-semibold">Order#:</span> {order.orderNumber}
-            </p>
-            <p>
-              <span className="font-semibold">Shipped Date:</span>{" "}
-              {new Date(order.deliveryDate).toLocaleDateString()}
-            </p>
-            <p>
-              <span className="font-semibold">Amount:</span> $
-              {(Number(order.total) || 0).toFixed(2)}
-            </p>
-            <p>
-              <span className="font-semibold">Rep:</span>{" "}
-              {order.rep?.name || "N/A"}
-            </p>
-          </div>
-        </Card>
-      ))}
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                {!isSample && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => onEdit(order)}
+                  >
+                    Edit
+                  </Button>
+                )}
+
+                <Select
+                  value={order.status}
+                  onValueChange={(value) =>
+                    handleChangeStatus(order._id, value)
+                  }
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-[120px] h-8 text-xs font-semibold border-none focus:ring-0",
+                      getDropdownStyle(order.status)
+                    )}
+                  >
+                    <SelectValue placeholder="Change" />
+                  </SelectTrigger>
+                  <SelectContent className="text-sm">
+                    {[
+                      "shipped",
+                      "cancelled",
+                      "manifested",
+                      "accepted",
+                      "submitted",
+                    ].map((s) => (
+                      <SelectItem
+                        key={s}
+                        value={s}
+                        className={cn(
+                          "capitalize font-medium",
+                          s === "shipped"
+                            ? "text-green-700"
+                            : s === "cancelled"
+                            ? "text-red-700"
+                            : "text-gray-700"
+                        )}
+                      >
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Order Details */}
+            <div className="bg-gray-50 p-3 rounded-md mt-2 text-xs leading-relaxed">
+              {isSample ? (
+                // Sample-specific details
+                <div className="bg-white/80 rounded-lg p-4 border border-purple-200">
+                  <div className="flex justify-between flex-wrap gap-4">
+                    <div className="space-y-2">
+                      <p className="flex items-center gap-2">
+                        <span className="text-purple-700 font-bold text-sm">
+                          📋 Type:
+                        </span>
+                        <span className="text-purple-900 font-semibold">
+                          Sample Request
+                        </span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="text-purple-700 font-bold text-sm">
+                          📅 Request Date:
+                        </span>
+                        <span className="text-gray-700">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="text-purple-700 font-bold text-sm">
+                          👤 Rep:
+                        </span>
+                        <span className="text-gray-700">
+                          {order.rep?.name || "N/A"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="bg-linear-to-br from-purple-100 to-pink-100 rounded-lg p-3 border border-purple-300">
+                      <p className="font-bold mb-2 text-purple-800 flex items-center gap-1">
+                        <span>📦</span> Samples Requested:
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {Object.entries((order as any).samples || {}).map(
+                          ([key, value]) => {
+                            if (!value) return null;
+                            return (
+                              <div
+                                key={key}
+                                className="bg-white/70 rounded px-3 py-1.5 border border-purple-200"
+                              >
+                                <span className="font-bold text-purple-700 capitalize text-sm">
+                                  {key}:
+                                </span>{" "}
+                                <span className="text-gray-800 font-medium">
+                                  {value as string}
+                                </span>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                // Regular order details
+                <>
+                  <p>
+                    <span className="font-semibold">Order#:</span>{" "}
+                    {order.orderNumber}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Shipped Date:</span>{" "}
+                    {new Date(order.deliveryDate).toLocaleDateString()}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Amount:</span> $
+                    {(Number(order.total) || 0).toFixed(2)}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Rep:</span>{" "}
+                    {order.rep?.name || "N/A"}
+                  </p>
+                </>
+              )}
+            </div>
+          </Card>
+        );
+      })}
 
       {/* Pagination */}
       {totalOrders > itemsPerPage && onPageChange && onLimitChange && (

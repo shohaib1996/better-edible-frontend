@@ -39,7 +39,8 @@ interface DeliveryModalProps {
     name: string;
     address?: string;
   } | null;
-  rep?: Partial<IRep> | null; // <-- FIX
+  rep?: Partial<IRep> | null;
+  sampleId?: string | null;
 }
 
 export const DeliveryModal = ({
@@ -47,6 +48,7 @@ export const DeliveryModal = ({
   onClose,
   store,
   rep: repProp,
+  sampleId,
 }: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
   const reps = repsData?.data || [];
@@ -55,7 +57,7 @@ export const DeliveryModal = ({
 
   const [formData, setFormData] = useState({
     assignedTo: "",
-    disposition: "delivery",
+    disposition: sampleId ? "sample_drop" : "delivery",
     paymentAction: "",
     amount: "",
     scheduledAt: new Date(),
@@ -69,7 +71,13 @@ export const DeliveryModal = ({
         assignedTo: repProp._id ?? "",
       }));
     }
-  }, [repProp]);
+    if (sampleId) {
+      setFormData((prev) => ({
+        ...prev,
+        disposition: "sample_drop",
+      }));
+    }
+  }, [repProp, sampleId]);
 
   const handleChange = (key: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -89,6 +97,7 @@ export const DeliveryModal = ({
         amount: Number(formData.amount) || 0,
         scheduledAt: formData.scheduledAt,
         notes: formData.notes,
+        ...(sampleId && { sampleId }),
       }).unwrap();
 
       toast.success("✅ Delivery created successfully");

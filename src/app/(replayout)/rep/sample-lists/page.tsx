@@ -81,8 +81,12 @@ const SampleList = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="in progress">In Progress</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="accepted">Accepted</SelectItem>
+                <SelectItem value="manifested">Manifested</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -138,19 +142,27 @@ const SampleList = () => {
                           }
                         >
                           <SelectTrigger
-                            className={`w-[140px] h-8 ${
-                              sample.status === "delivered"
+                            className={`w-[140px] h-8 capitalize ${
+                              sample.status === "delivered" || sample.status === "shipped"
                                 ? "bg-green-100 text-green-800 border-green-200"
-                                : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                : sample.status === "cancelled"
+                                ? "bg-red-100 text-red-800 border-red-200"
+                                : sample.status === "manifested"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                : sample.status === "accepted"
+                                ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                : "bg-blue-100 text-blue-800 border-blue-200"
                             }`}
                           >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="in progress">
-                              In Progress
-                            </SelectItem>
+                            <SelectItem value="submitted">Submitted</SelectItem>
+                            <SelectItem value="accepted">Accepted</SelectItem>
+                            <SelectItem value="manifested">Manifested</SelectItem>
+                            <SelectItem value="shipped">Shipped</SelectItem>
                             <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

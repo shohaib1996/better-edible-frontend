@@ -55,7 +55,7 @@ export const SampleModal = ({
       const payload = {
         storeId,
         repId,
-        status: "in progress",
+        status: "submitted",
         samples: formData,
       };
 

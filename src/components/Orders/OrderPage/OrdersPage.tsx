@@ -7,6 +7,7 @@ import {
   useUpdateOrderMutation,
   useChangeOrderStatusMutation,
 } from "@/redux/api/orders/orders";
+import { useUpdateSampleStatusMutation } from "@/redux/api/Samples/samplesApi ";
 import {
   EntityModal,
   Field,
@@ -83,6 +84,7 @@ const OrdersPage = ({
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
   const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
   const [changeStatus] = useChangeOrderStatusMutation();
+  const [updateSampleStatus] = useUpdateSampleStatusMutation();
 
   const orders: IOrder[] = data?.orders || [];
   const totalOrders = data?.total || 0; // Get total count from API response
@@ -132,9 +134,18 @@ const OrdersPage = ({
 
   const handleChangeStatus = async (id: string, status: string) => {
     try {
-      await changeStatus({ id, status }).unwrap();
+      // Check if this is a sample by looking in the orders data
+      const item = orders.find((o) => o._id === id);
+      const isSample = (item as any)?.isSample === true;
+
+      if (isSample) {
+        await updateSampleStatus({ id, status }).unwrap();
+        toast.success(`Sample marked as ${status}`);
+      } else {
+        await changeStatus({ id, status }).unwrap();
+        toast.success(`Order marked as ${status}`);
+      }
       refetch();
-      toast.success(`Order marked as ${status}`);
     } catch {
       toast.error("Error updating status");
     }

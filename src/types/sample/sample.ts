@@ -6,13 +6,14 @@ export interface ISample {
   rep: {
     name: string;
   };
-  status: "in progress" | "delivered";
+  status: "submitted" | "accepted" | "manifested" | "shipped" | "delivered" | "cancelled";
   samples: {
     cannacrispy?: string;
     "bliss cannabis syrup"?: string;
     "fifty one fifty"?: string;
   };
   notes?: string;
+  deliveryDate?: string;
   createdAt: string;
   updatedAt: string;
 }
