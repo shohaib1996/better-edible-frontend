@@ -31,6 +31,7 @@ import { useUser } from "@/redux/hooks/useAuth";
 import { AddNoteModal } from "@/components/Notes/AddNoteModal";
 import { ManageFollowUpModal } from "@/components/Followup/ManageFollowUpModal";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { SampleModal } from "@/components/Sample/SampleModal";
 
 const Stores = () => {
   // 🔍 Search + Filter state
@@ -49,6 +50,9 @@ const Stores = () => {
     useState<IStore | null>(null);
   const [followupModalOpen, setFollowupModalOpen] = useState(false);
   const [selectedStoreForFollowup, setSelectedStoreForFollowup] =
+    useState<IStore | null>(null);
+  const [sampleModalOpen, setSampleModalOpen] = useState(false);
+  const [selectedStoreForSample, setSelectedStoreForSample] =
     useState<IStore | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -397,6 +401,17 @@ const Stores = () => {
                   <Button
                     variant="secondary"
                     size="sm"
+                    onClick={() => {
+                      setSelectedStoreForSample(store);
+                      setSampleModalOpen(true);
+                    }}
+                  >
+                    📦 Sample
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     className="bg-blue-700 hover:bg-blue-800 text-white"
                     onClick={() => {
                       setSelectedStoreForFollowup(store);
@@ -492,6 +507,18 @@ const Stores = () => {
           onClose={() => setFollowupModalOpen(false)}
           storeId={selectedStoreForFollowup._id}
           repId={user.id}
+        />
+      )}
+
+      {selectedStoreForSample && user && (
+        <SampleModal
+          open={sampleModalOpen}
+          onClose={() => setSampleModalOpen(false)}
+          storeId={selectedStoreForSample._id}
+          storeName={selectedStoreForSample.name}
+          storeAddress={selectedStoreForSample.address || ""}
+          repId={user.id}
+          repName={user.name || ""}
         />
       )}
     </div>
