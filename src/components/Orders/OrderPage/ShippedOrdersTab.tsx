@@ -279,61 +279,46 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
             </div>
 
             {/* Order Details */}
-            <div className="bg-gray-50 p-3 rounded-md mt-2 text-xs leading-relaxed">
+            <div className="bg-gray-50 rounded-md text-xs leading-relaxed">
               {isSample ? (
                 // Sample-specific details
-                <div className="bg-white/80 rounded-lg p-4 border border-purple-200">
-                  <div className="flex justify-between flex-wrap gap-4">
-                    <div className="space-y-2">
-                      <p className="flex items-center gap-2">
-                        <span className="text-purple-700 font-bold text-sm">
+                <div className="bg-white/80 rounded-lg p-3 border border-purple-200">
+                  <div className="flex justify-between flex-wrap gap-3">
+                    <div className="space-y-1">
+                      <p className="flex items-center gap-1.5">
+                        <span className="text-purple-700 font-bold text-xs">
                           📋 Type:
                         </span>
-                        <span className="text-purple-900 font-semibold">
+                        <span className="text-purple-900 font-semibold text-xs">
                           Sample Request
                         </span>
                       </p>
-                      <p className="flex items-center gap-2">
-                        <span className="text-purple-700 font-bold text-sm">
+                      <p className="flex items-center gap-1.5">
+                        <span className="text-purple-700 font-bold text-xs">
                           📅 Request Date:
                         </span>
-                        <span className="text-gray-700">
+                        <span className="text-gray-700 text-xs">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </span>
                       </p>
-                      <p className="flex items-center gap-2">
-                        <span className="text-purple-700 font-bold text-sm">
+                    </div>
+                    <div className="space-y-1">
+                      {Object.entries((order as any).samples || {})
+                        .filter(([_, value]) => value)
+                        .map(([key, value]) => (
+                          <p key={key} className="text-xs text-gray-700">
+                            <span className="font-bold uppercase">{key}:</span>{" "}
+                            {String(value)}
+                          </p>
+                        ))}
+                      <p className="flex items-center gap-1.5 text-xs">
+                        <span className="text-purple-700 font-bold">
                           👤 Rep:
                         </span>
                         <span className="text-gray-700">
                           {order.rep?.name || "N/A"}
                         </span>
                       </p>
-                    </div>
-                    <div className="bg-linear-to-br from-purple-100 to-pink-100 rounded-lg p-3 border border-purple-300">
-                      <p className="font-bold mb-2 text-purple-800 flex items-center gap-1">
-                        <span>📦</span> Samples Requested:
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        {Object.entries((order as any).samples || {}).map(
-                          ([key, value]) => {
-                            if (!value) return null;
-                            return (
-                              <div
-                                key={key}
-                                className="bg-white/70 rounded px-3 py-1.5 border border-purple-200"
-                              >
-                                <span className="font-bold text-purple-700 capitalize text-sm">
-                                  {key}:
-                                </span>{" "}
-                                <span className="text-gray-800 font-medium">
-                                  {value as string}
-                                </span>
-                              </div>
-                            );
-                          }
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
