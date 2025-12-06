@@ -313,10 +313,7 @@ after:transition-all after:duration-300 hover:after:w-full
                                 )}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
+                            <PopoverContent className="w-auto p-0" align="start">
                               <Calendar
                                 mode="single"
                                 selected={
