@@ -20,6 +20,7 @@ import {
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { OrderDetailsDialog } from "./OrderDetailsDialog";
 
 interface ShippedOrdersTabProps {
   orders: any[];
@@ -55,6 +56,15 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedRepName, setSelectedRepName] = useState<string | undefined>();
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+  const handleOpenDialog = (order: any) => {
+    setSelectedOrder(order);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedOrder(null);
+  };
 
   const handleFilter = () => {
     onFilter({
@@ -210,9 +220,18 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
               {/* Store Info */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wide">
-                    {order.store?.name || "N/A"}
-                  </h2>
+                  {!isSample ? (
+                    <button
+                      onClick={() => handleOpenDialog(order)}
+                      className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-blue-700 after:transition-all after:duration-300 hover:after:w-full"
+                    >
+                      {order.store?.name || "N/A"}
+                    </button>
+                  ) : (
+                    <span className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left">
+                      {order.store?.name || "N/A"}
+                    </span>
+                  )}
                   {isSample && (
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-md">
                       📦 SAMPLE REQUEST
@@ -363,6 +382,8 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           limitOptions={[10, 25, 50, 100]}
         />
       )}
+
+      <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />
     </div>
   );
 };

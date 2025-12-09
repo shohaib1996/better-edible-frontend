@@ -144,11 +144,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     {!isSample ? (
                       <button
                         onClick={() => handleOpenDialog(order)}
-                        className="
-text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer
-relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-blue-700
-after:transition-all after:duration-300 hover:after:w-full
-"
+                        className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-blue-700 after:transition-all after:duration-300 hover:after:w-full"
                       >
                         {order.store?.name || "N/A"}
                       </button>
@@ -313,7 +309,10 @@ after:transition-all after:duration-300 hover:after:w-full
                                 )}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={
