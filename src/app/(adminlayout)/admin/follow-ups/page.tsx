@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Info,
 } from "lucide-react";
 
 import { format, addDays, differenceInCalendarDays } from "date-fns";
@@ -43,6 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 /** Helper: convert a YYYY-MM-DD string (or Date) into a local Date at local midnight
  *  Returns null if invalid. This avoids timezone shifts when formatting/displaying.
@@ -84,6 +84,10 @@ const FollowUps = () => {
     null
   );
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
 
   // <-- IMPORTANT: send yyyy-MM-dd string to backend (date-only)
@@ -91,9 +95,13 @@ const FollowUps = () => {
     repId: selectedRepId,
     date: showAll ? undefined : format(selectedDate, "yyyy-MM-dd"),
     storeName: debouncedSearch,
+    page: currentPage,
+    limit: itemsPerPage,
   });
 
   const followups: IFollowUp[] = data?.followups || [];
+  const totalItems = data?.total || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const goPrevDay = () => setSelectedDate(addDays(selectedDate, -1));
   const goNextDay = () => setSelectedDate(addDays(selectedDate, 1));
@@ -109,7 +117,13 @@ const FollowUps = () => {
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-4">
           {/* Prev Button */}
-          <Button variant="outline" onClick={goPrevDay}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              goPrevDay();
+              if (!showAll) setCurrentPage(1);
+            }}
+          >
             <ChevronLeft />
           </Button>
 
@@ -135,14 +149,25 @@ const FollowUps = () => {
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(d) => d && setSelectedDate(d)}
-                initialFocus
+                onSelect={(d) => {
+                  if (d) {
+                    setSelectedDate(d);
+                    if (!showAll) setCurrentPage(1);
+                  }
+                }}
+                autoFocus
               />
             </PopoverContent>
           </Popover>
 
           {/* Next Button */}
-          <Button variant="outline" onClick={goNextDay}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              goNextDay();
+              if (!showAll) setCurrentPage(1);
+            }}
+          >
             <ChevronRight />
           </Button>
 
@@ -161,6 +186,7 @@ const FollowUps = () => {
                 );
                 setSelectedRep(selected);
               }
+              setCurrentPage(1);
             }}
           />
 
@@ -169,7 +195,10 @@ const FollowUps = () => {
             placeholder="Search stores..."
             className="max-w-xs border-2 border-emerald-400"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
           />
 
           {/* View All */}
@@ -185,6 +214,7 @@ const FollowUps = () => {
                   setSelectedRep(undefined);
                   setSelectedRepId(undefined);
                 }
+                setCurrentPage(1);
               }}
             />
             <label htmlFor="viewAll" className="text-sm">
@@ -282,6 +312,21 @@ const FollowUps = () => {
               </TableBody>
             </Table>
           </div>
+        )}
+
+        {/* ------------------- PAGINATION ------------------- */}
+        {totalItems > 0 && (
+          <GlobalPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onLimitChange={(limit) => {
+              setItemsPerPage(limit);
+              setCurrentPage(1);
+            }}
+          />
         )}
       </div>
 
