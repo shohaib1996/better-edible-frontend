@@ -31,7 +31,8 @@ export interface Field {
   render?: (
     value: any,
     onChange: (value: any) => void,
-    initialData?: any
+    initialData?: any,
+    setFieldValue?: (field: string, value: any) => void
   ) => React.ReactNode;
 }
 
@@ -92,7 +93,8 @@ export function EntityModal<T>({
                 field.render(
                   formData?.[field.name],
                   (value) => handleChange(field.name, value),
-                  initialData
+                  initialData,
+                  handleChange
                 )
               ) : field.type === "select" && field.options ? (
                 <Select

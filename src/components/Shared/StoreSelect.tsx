@@ -10,12 +10,14 @@ interface StoreSelectProps {
   value?: string;
   onChange: (value: string) => void;
   initialStore?: { _id: string; name: string };
+  onStoreSelect?: (store: any) => void;
 }
 
 export const StoreSelect: React.FC<StoreSelectProps> = ({
   value,
   onChange,
   initialStore,
+  onStoreSelect,
 }) => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -84,6 +86,13 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
 
   const handleStoreSelect = (storeId: string) => {
     onChange(storeId);
+
+    // Find the full store object and pass it up
+    const store = stores.find((s) => s._id === storeId);
+    if (store && onStoreSelect) {
+      onStoreSelect(store);
+    }
+
     setOpen(false);
     setSearch("");
   };

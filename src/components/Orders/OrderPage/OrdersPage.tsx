@@ -220,11 +220,21 @@ const OrdersPage = ({
     {
       name: "storeId",
       label: "Store",
-      render: (value, onChange, initialData) => (
+      render: (value, onChange, initialData, setFieldValue) => (
         <StoreSelect
           value={value}
           onChange={onChange}
           initialStore={initialData?.store}
+          onStoreSelect={(store) => {
+            if (store?.rep && setFieldValue) {
+              // Handle both populated full rep object or just ID
+              const repId =
+                typeof store.rep === "string" ? store.rep : store.rep._id;
+              if (repId) {
+                setFieldValue("repId", repId);
+              }
+            }
+          }}
         />
       ),
     },
