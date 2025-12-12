@@ -22,6 +22,9 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [stores, setStores] = useState<any[]>([]);
+  // Keep track of the selected store object to display it even if it's not in the current API list
+  const [cachedSelectedStore, setCachedSelectedStore] =
+    useState<any>(initialStore);
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +33,12 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
     limit: 10,
     page: 1,
   });
+
+  useEffect(() => {
+    if (initialStore) {
+      setCachedSelectedStore(initialStore);
+    }
+  }, [initialStore]);
 
   useEffect(() => {
     const fetchedStores = data?.stores || [];
@@ -82,15 +91,22 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
     }
   }, [open]);
 
-  const selectedStore = stores.find((s) => s._id === value);
+  // Find store in current list, or fallback to cached store if IDs match
+  const selectedStore =
+    stores.find((s) => s._id === value) ||
+    (cachedSelectedStore?._id === value ? cachedSelectedStore : null);
 
   const handleStoreSelect = (storeId: string) => {
     onChange(storeId);
 
     // Find the full store object and pass it up
     const store = stores.find((s) => s._id === storeId);
-    if (store && onStoreSelect) {
-      onStoreSelect(store);
+
+    if (store) {
+      setCachedSelectedStore(store); // Cache it so it persists when list changes
+      if (onStoreSelect) {
+        onStoreSelect(store);
+      }
     }
 
     setOpen(false);
