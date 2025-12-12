@@ -469,6 +469,11 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
             ? selectedOrderForDelivery?._id
             : null
         }
+        orderId={
+          !(selectedOrderForDelivery as any)?.isSample
+            ? selectedOrderForDelivery?._id
+            : null
+        }
       />
     </>
   );

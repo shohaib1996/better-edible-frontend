@@ -22,4 +22,6 @@ export interface Delivery {
   status: "pending" | "assigned" | "completed" | "cancelled" | "in_transit";
   createdAt?: string;
   updatedAt?: string;
+  orderId?: string;
+  sampleId?: string;
 }

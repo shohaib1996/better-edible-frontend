@@ -41,6 +41,7 @@ interface DeliveryModalProps {
   } | null;
   rep?: Partial<IRep> | null;
   sampleId?: string | null;
+  orderId?: string | null;
 }
 
 export const DeliveryModal = ({
@@ -49,6 +50,7 @@ export const DeliveryModal = ({
   store,
   rep: repProp,
   sampleId,
+  orderId,
 }: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
   const reps = repsData?.data || [];
@@ -98,6 +100,7 @@ export const DeliveryModal = ({
         scheduledAt: formData.scheduledAt,
         notes: formData.notes,
         ...(sampleId && { sampleId }),
+        ...(orderId && { orderId }),
       }).unwrap();
 
       toast.success("✅ Delivery created successfully");

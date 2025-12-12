@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
+import { useChangeOrderStatusMutation } from "@/redux/api/orders/orders";
+import { useUpdateSampleStatusMutation } from "@/redux/api/Samples/samplesApi ";
 
 interface DeliveryItemProps {
   delivery: Delivery;
@@ -50,10 +52,51 @@ export const DeliveryItem = ({
 
   const [updateStatus, { isLoading: isUpdatingStatus }] =
     useUpdateDeliveryStatusMutation();
+  const [changeOrderStatus] = useChangeOrderStatusMutation();
+  const [updateSampleStatus] = useUpdateSampleStatusMutation();
 
   const handleStatusChange = async (newStatus: string) => {
     try {
+      // unwrap() ensures this succeeds; if it fails, it throws an error and jumps to catch
       await updateStatus({ id: delivery._id, status: newStatus }).unwrap();
+      console.log(delivery);
+
+      // ✅ Auto-update linked order status to "shipped"
+      if (newStatus === "completed") {
+        if (delivery.orderId) {
+          // Regular Order
+          await changeOrderStatus({
+            id: delivery.orderId,
+            status: "shipped",
+          }).unwrap();
+          toast.success("Linked order marked as shipped");
+        } else if (delivery.sampleId) {
+          // Sample Request
+          await updateSampleStatus({
+            id: delivery.sampleId,
+            status: "shipped",
+          }).unwrap();
+          toast.success("Linked sample marked as shipped");
+        }
+      }
+
+      // ❌ Auto-update linked order status to "cancelled"
+      if (newStatus === "cancelled") {
+        if (delivery.orderId) {
+          await changeOrderStatus({
+            id: delivery.orderId,
+            status: "cancelled",
+          }).unwrap();
+          toast.success("Linked order marked as cancelled");
+        } else if (delivery.sampleId) {
+          await updateSampleStatus({
+            id: delivery.sampleId,
+            status: "cancelled",
+          }).unwrap();
+          toast.success("Linked sample marked as cancelled");
+        }
+      }
+
       toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
     } catch (error) {
       toast.error("Failed to update status");
@@ -161,7 +204,6 @@ export const DeliveryItem = ({
         >
           Order
         </Button>
-
         <Button
           variant="outline"
           size="sm"
@@ -223,7 +265,8 @@ export const DeliveryItem = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="in_transit">In Transit</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="completed">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>

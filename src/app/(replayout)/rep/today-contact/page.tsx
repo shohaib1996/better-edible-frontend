@@ -229,9 +229,10 @@ const TodayContact = () => {
 
     prevDeliveriesRef.current = deliveriesStr;
 
-    // Filter out completed deliveries
+    // Filter out completed and cancelled deliveries
     const activeDeliveries = deliveries.filter(
-      (delivery: Delivery) => delivery.status !== "completed"
+      (delivery: Delivery) =>
+        delivery.status !== "completed" && delivery.status !== "cancelled"
     );
 
     const stored = localStorage.getItem(ORDER_STORAGE_KEY);
