@@ -138,6 +138,12 @@ const OrdersPage = ({
       const item = orders.find((o) => o._id === id);
       const isSample = (item as any)?.isSample === true;
 
+      // If changing to "shipped" and no delivery date is set, set it to today
+      if (status === "shipped" && !item?.deliveryDate) {
+        const today = format(new Date(), "yyyy-MM-dd");
+        await updateOrder({ id, deliveryDate: today }).unwrap();
+      }
+
       if (isSample) {
         await updateSampleStatus({ id, status }).unwrap();
         toast.success(`Sample marked as ${status}`);
