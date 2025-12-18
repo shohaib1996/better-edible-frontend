@@ -19,5 +19,5 @@ jobs:
           script: |
             cd /opt/apps/better-edibles/production/frontend
             git pull origin main
-            cd ..
+            cd /opt/apps/better-edibles
             docker compose -f docker-compose.production.yml up -d --build frontend
