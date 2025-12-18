@@ -5,9 +5,6 @@ import Lottie from "lottie-react";
 import loginAnimation from "../../../public/Login.json";
 
 export default function LoginPage() {
-  // anywhere safe, e.g. footer text
-  console.log("staging deploy test");
-
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
       {/* Left side - Animation placeholder */}
