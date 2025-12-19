@@ -42,7 +42,7 @@ const OrdersPage = ({
   currentRepId?: string;
   currentRep?: Partial<IRep> | null;
 }) => {
-  const [activeTab, setActiveTab] = useState("new");
+  const [activeTab, setActiveTab] = useState(isRepView ? "all" : "new");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -70,13 +70,15 @@ const OrdersPage = ({
   const { data, isLoading, refetch } = useGetAllOrdersQuery({
     search: debouncedSearch || undefined,
     repName: isRepView ? undefined : selectedRepName || undefined, // Only use selectedRepName if not rep view
-    repId: isRepView ? currentRepId : undefined, // Filter by currentRepId if rep view
+    repId: isRepView
+      ? (activeTab === "new" ? currentRepId : undefined) // Only filter by currentRepId for "new" tab
+      : undefined, // Admin view doesn't filter by rep
     startDate,
     endDate,
     status:
-      activeTab === "new"
-        ? ["submitted", "accepted", "manifested"]
-        : ["shipped", "cancelled"],
+      activeTab === "shipped"
+        ? ["shipped", "cancelled"]
+        : ["submitted", "accepted", "manifested"],
     // Add pagination for shipped orders
     page: activeTab === "shipped" ? shippedPage : 1,
     limit: activeTab === "shipped" ? shippedLimit : 999, // Use large limit for new orders
@@ -91,13 +93,16 @@ const OrdersPage = ({
 
   // ─────────────── GROUP ORDERS ───────────────
   const grouped = useMemo(() => {
+    const allOrders = orders.filter(
+      (o) => o.status !== "shipped" && o.status !== "cancelled"
+    );
     const newOrders = orders.filter(
       (o) => o.status !== "shipped" && o.status !== "cancelled"
     );
     const shippedOrders = orders.filter(
       (o) => o.status === "shipped" || o.status === "cancelled"
     );
-    return { newOrders, shippedOrders };
+    return { allOrders, newOrders, shippedOrders };
   }, [orders]);
 
   // ─────────────── HANDLERS ───────────────
@@ -311,6 +316,7 @@ const OrdersPage = ({
         onFilter={handleFilter}
         reps={reps?.data || []}
         currentRep={currentRep}
+        isRepView={isRepView}
         totalOrders={totalOrders}
         shippedPage={shippedPage}
         shippedLimit={shippedLimit}

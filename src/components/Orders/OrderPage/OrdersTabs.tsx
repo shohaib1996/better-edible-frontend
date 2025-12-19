@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { AllOrdersTab } from "./AllOrdersTab";
 import { NewOrdersTab } from "./NewOrdersTab";
 import { ShippedOrdersTab } from "./ShippedOrdersTab";
 import { IRep } from "@/types";
@@ -8,6 +9,7 @@ interface OrdersTabsProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
   grouped: {
+    allOrders: any[];
     newOrders: any[];
     shippedOrders: any[];
   };
@@ -23,6 +25,7 @@ interface OrdersTabsProps {
   }) => void;
   reps: any[];
   currentRep?: Partial<IRep> | null;
+  isRepView?: boolean;
   // Pagination props
   totalOrders?: number;
   shippedPage?: number;
@@ -43,6 +46,7 @@ export const OrdersTabs = ({
   onFilter,
   reps,
   currentRep,
+  isRepView = false,
   totalOrders,
   shippedPage,
   shippedLimit,
@@ -59,9 +63,24 @@ export const OrdersTabs = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="flex gap-3">
+        {isRepView && <TabsTrigger value="all">All Orders</TabsTrigger>}
         <TabsTrigger value="new">New Orders</TabsTrigger>
         <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
       </TabsList>
+
+      {/* ALL ORDERS - Only for Rep View */}
+      {isRepView && (
+        <TabsContent value="all">
+          <AllOrdersTab
+            orders={grouped.allOrders}
+            handleChangeStatus={handleChangeStatus}
+            updateOrder={updateOrder}
+            refetch={refetch}
+            onEdit={onEdit}
+            currentRep={currentRep}
+          />
+        </TabsContent>
+      )}
 
       {/* NEW ORDERS */}
       <TabsContent value="new">
@@ -72,6 +91,7 @@ export const OrdersTabs = ({
           refetch={refetch}
           onEdit={onEdit} // ✅ pass down
           currentRep={currentRep}
+          isRepView={isRepView}
         />
       </TabsContent>
 
@@ -90,6 +110,8 @@ export const OrdersTabs = ({
           itemsPerPage={shippedLimit}
           onPageChange={onShippedPageChange}
           onLimitChange={onShippedLimitChange}
+          currentRep={currentRep}
+          isRepView={isRepView}
         />
       </TabsContent>
     </Tabs>

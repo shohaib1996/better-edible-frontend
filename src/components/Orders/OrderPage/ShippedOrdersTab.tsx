@@ -19,8 +19,10 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
+import { IRep } from "@/types";
 
 interface ShippedOrdersTabProps {
   orders: any[];
@@ -39,6 +41,8 @@ interface ShippedOrdersTabProps {
   itemsPerPage?: number;
   onPageChange?: (page: number) => void;
   onLimitChange?: (limit: number) => void;
+  currentRep?: Partial<IRep> | null;
+  isRepView?: boolean;
 }
 
 export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
@@ -52,6 +56,8 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   itemsPerPage = 10,
   onPageChange,
   onLimitChange,
+  currentRep,
+  isRepView = false,
 }) => {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -64,6 +70,10 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
   const handleCloseDialog = () => {
     setSelectedOrder(null);
+  };
+
+  const handleUnauthorizedAction = () => {
+    toast.error("You are not authorized to change it. This is not your order.");
   };
 
   const handleFilter = () => {
@@ -131,7 +141,10 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   };
 
   // ✅ Dropdown style based on current status
-  const getDropdownStyle = (status: string) => {
+  const getDropdownStyle = (status: string, isOwn: boolean) => {
+    if (!isOwn) {
+      return "bg-gray-400 cursor-not-allowed text-white";
+    }
     switch (status) {
       case "shipped":
         return "bg-green-600 hover:bg-green-700 text-white";
@@ -205,12 +218,14 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
       {orders.map((order) => {
         const isSample = (order as any).isSample === true;
+        const isOwnOrder = isRepView ? order.rep?._id === currentRep?._id : true;
 
         return (
           <Card
             key={order._id}
             className={cn(
               "border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition p-3",
+              !isOwnOrder && "opacity-75",
               isSample
                 ? "bg-linear-to-r from-purple-50 to-pink-50 border-l-4 border-l-purple-500 border-purple-200"
                 : getStatusStyle(order.status)
@@ -237,6 +252,11 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                       📦 SAMPLE REQUEST
                     </span>
                   )}
+                  {!isOwnOrder && (
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                      Other Rep's Order
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-600">{order.store?.address}</p>
                 <div className="mt-1">{getStatusBadge(order.status)}</div>
@@ -249,7 +269,14 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                     variant="secondary"
                     size="sm"
                     className="h-8 text-xs"
-                    onClick={() => onEdit(order)}
+                    onClick={() => {
+                      if (isOwnOrder) {
+                        onEdit(order);
+                      } else {
+                        handleUnauthorizedAction();
+                      }
+                    }}
+                    disabled={!isOwnOrder}
                   >
                     Edit
                   </Button>
@@ -257,14 +284,19 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
                 <Select
                   value={order.status}
-                  onValueChange={(value) =>
-                    handleChangeStatus(order._id, value)
-                  }
+                  onValueChange={(value) => {
+                    if (isOwnOrder) {
+                      handleChangeStatus(order._id, value);
+                    } else {
+                      handleUnauthorizedAction();
+                    }
+                  }}
+                  disabled={!isOwnOrder}
                 >
                   <SelectTrigger
                     className={cn(
                       "w-[120px] h-8 text-xs font-semibold border-none focus:ring-0",
-                      getDropdownStyle(order.status)
+                      getDropdownStyle(order.status, isOwnOrder)
                     )}
                   >
                     <SelectValue placeholder="Change" />
