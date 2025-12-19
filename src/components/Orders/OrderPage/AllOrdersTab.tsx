@@ -31,24 +31,22 @@ import { useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi ";
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
-interface NewOrdersTabProps {
+interface AllOrdersTabProps {
   orders: IOrder[];
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
   refetch: () => void;
   onEdit: (order: any) => void;
   currentRep?: Partial<IRep> | null;
-  isRepView?: boolean;
 }
 
-export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
+export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   orders,
   handleChangeStatus,
   updateOrder,
   refetch,
   onEdit,
   currentRep,
-  isRepView = false,
 }) => {
   const [updateSample] = useUpdateSampleMutation();
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
@@ -69,10 +67,10 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     toast.error("You are not authorized to change it. This is not your order.");
   };
 
-  const newOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const allOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
 
   if (!orders.length) {
-    return <p className="text-gray-500 mt-4">No new orders found.</p>;
+    return <p className="text-gray-500 mt-4">No orders found.</p>;
   }
 
   const getStatusStyle = (status: string) => {
@@ -130,12 +128,12 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     <>
       <div className="space-y-3">
         <div className="text-right font-semibold text-emerald-600 pr-2">
-          Total Orders Value: ${newOrdersValue.toFixed(2)}
+          Total Orders Value: ${allOrdersValue.toFixed(2)}
         </div>
 
         {orders.map((order) => {
           const isSample = (order as any).isSample === true;
-          const isOwnOrder = isRepView ? order.rep?._id === currentRep?._id : true;
+          const isOwnOrder = order.rep?._id === currentRep?._id;
 
           return (
             <Card
@@ -479,6 +477,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                                     toast.error("Error updating delivery date")
                                   );
                               }}
+                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
