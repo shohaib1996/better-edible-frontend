@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
+const isStaging = process.env.NEXT_PUBLIC_ENV === "staging";
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  basePath: isStaging ? "/staging" : "",
+  assetPrefix: isStaging ? "/staging" : "",
+
   images: {
-    // allow images from any hostname (http and https)
     remotePatterns: [
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "**" },
