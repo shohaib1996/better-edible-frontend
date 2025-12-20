@@ -15,16 +15,13 @@ jobs:
 
       - name: Deploy to staging server
         uses: appleboy/ssh-action@v1.0.0
-        env: # 👈 ADD THIS
-          NEXT_PUBLIC_ENV: staging # 👈 ADD THIS
         with:
           host: 143.244.182.86
           username: deploy
           key: ${{ secrets.PROD_SSH_KEY }}
           command_timeout: 25m
           script: |
-            cd /opt/apps/better-edibles/staging/frontend
+            cd /opt/apps/better-edibles
             git pull origin staging
 
-            cd /opt/apps/better-edibles
             docker compose -f docker-compose.staging.yml up -d --build staging-frontend

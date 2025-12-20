@@ -1,0 +1,25 @@
+services:
+  staging-backend:
+    container_name: better-edibles-staging-backend
+    build: ./staging/backend
+    restart: always
+    ports:
+      - "127.0.0.1:5100:5100"
+    env_file:
+      - ./env/common.env
+      - ./env/staging.env
+
+services:
+  staging-frontend:
+    container_name: better-edibles-staging-frontend
+    build:
+      context: . # 👈 ROOT (matches your structure)
+      dockerfile: Dockerfile # 👈 root Dockerfile
+      args:
+        NEXT_PUBLIC_ENV: staging
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3000"
+    env_file:
+      - ./env/common.env
+      - ./env/staging.env
