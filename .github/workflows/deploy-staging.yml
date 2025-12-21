@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to staging server
+      - name: Deploy staging frontend (pull-only)
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 143.244.182.86
           username: deploy
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            cd /opt/apps/better-edibles/staging/frontend
-            git pull origin staging
+            cd /opt/apps/better-edibles
+            docker compose -f docker-compose.staging.yml pull staging-frontend
+            docker compose -f docker-compose.staging.yml up -d staging-frontend
