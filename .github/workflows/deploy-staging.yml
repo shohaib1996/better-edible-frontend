@@ -10,22 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Deploy to staging server
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 143.244.182.86
           username: deploy
           key: ${{ secrets.PROD_SSH_KEY }}
-          command_timeout: 60m
           script: |
-            # 1️⃣ Pull latest frontend code (THIS is the git repo)
             cd /opt/apps/better-edibles/staging/frontend
             git pull origin staging
-
-            # 2️⃣ Rebuild frontend using infra compose file
-            cd /opt/apps/better-edibles
-            docker compose -f docker-compose.staging.yml build --no-cache staging-frontend
-            docker compose -f docker-compose.staging.yml up -d staging-frontend

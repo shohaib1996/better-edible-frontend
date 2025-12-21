@@ -7,7 +7,7 @@ ENV NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
