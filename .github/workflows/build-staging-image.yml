@@ -30,7 +30,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/shohaib1996/better-edibles-frontend:staging
-            ghcr.io/shohaib1996/better-edibles-frontend:staging-${{ github.sha }}
+            ghcr.io/shohaib1996/better-edible-frontend:staging
+            ghcr.io/shohaib1996/better-edible-frontend:staging-${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_ENV=staging

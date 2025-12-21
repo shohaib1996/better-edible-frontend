@@ -2,7 +2,7 @@ name: Deploy Frontend (Staging)
 
 on:
   workflow_run:
-    workflows: ["fix: limit docker build context for frontend"]
+    workflows: ["Build Staging Frontend Image"]
     types:
       - completed
 
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy staging frontend (pull exact image)
+      - name: Deploy staging frontend
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: 143.244.182.86
@@ -20,5 +20,5 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             cd /opt/apps/better-edibles
-            docker pull ghcr.io/shohaib1996/better-edibles-frontend:staging-${{ github.event.workflow_run.head_sha }}
+            docker pull ghcr.io/shohaib1996/better-edible-frontend:staging-${{ github.event.workflow_run.head_sha }}
             docker compose -f docker-compose.staging.yml up -d --force-recreate staging-frontend
