@@ -2,7 +2,7 @@ name: Deploy Frontend (Staging)
 
 on:
   workflow_run:
-    workflows: ["Build Staging Frontend Image"]
+    workflows: ["fix: limit docker build context for frontend"]
     types:
       - completed
 
