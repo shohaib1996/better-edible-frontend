@@ -1,0 +1,6 @@
+node_modules
+better-edibles-backend
+.git
+.github
+docker-compose*.yml
+.env*
