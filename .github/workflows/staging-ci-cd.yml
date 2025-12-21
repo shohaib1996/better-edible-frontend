@@ -1,4 +1,4 @@
-name: Build Staging Frontend Image
+name: Build and Deploy Staging
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       packages: write
@@ -36,3 +35,19 @@ jobs:
             ghcr.io/shohaib1996/better-edible-frontend:staging-${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_ENV=staging
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 143.244.182.86
+          username: deploy
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/apps/better-edibles
+            docker pull ghcr.io/shohaib1996/better-edible-frontend:staging
+            docker compose -f docker-compose.staging.yml up -d --force-recreate staging-frontend
