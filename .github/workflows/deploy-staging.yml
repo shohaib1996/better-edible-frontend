@@ -1,12 +1,14 @@
 name: Deploy Frontend (Staging)
 
 on:
-  push:
-    branches:
-      - staging
+  workflow_run:
+    workflows: ["Build Staging Frontend Image"]
+    types:
+      - completed
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
