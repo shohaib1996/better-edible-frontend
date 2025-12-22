@@ -35,6 +35,7 @@ jobs:
             ghcr.io/shohaib1996/better-edible-frontend:production-${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_ENV=production
+            NEXT_PUBLIC_API_URL=https://api.better-edibles.com/api
 
   deploy:
     needs: build
