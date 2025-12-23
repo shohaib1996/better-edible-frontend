@@ -126,7 +126,15 @@ export default function RepsPage() {
   const columns: Column<IRep>[] = [
     { key: "name", header: "Name" },
     // { key: "_id", header: "ID" },
-    { key: "territory", header: "Territory" },
+    {
+      key: "territory",
+      header: "Territory",
+      render: (rep) => (
+        <div className="max-w-[200px] wrap-break-word whitespace-normal">
+          {rep.territory}
+        </div>
+      ),
+    },
     {
       key: "checkin",
       header: "Clock In",
