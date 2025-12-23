@@ -7,7 +7,7 @@ import {
   useUpdateOrderMutation,
   useChangeOrderStatusMutation,
 } from "@/redux/api/orders/orders";
-import { useUpdateSampleStatusMutation } from "@/redux/api/Samples/samplesApi ";
+import { useUpdateSampleStatusMutation, useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi ";
 import {
   EntityModal,
   Field,
@@ -87,6 +87,7 @@ const OrdersPage = ({
   const [updateOrder, { isLoading: updating }] = useUpdateOrderMutation();
   const [changeStatus] = useChangeOrderStatusMutation();
   const [updateSampleStatus] = useUpdateSampleStatusMutation();
+  const [updateSample] = useUpdateSampleMutation();
 
   const orders: IOrder[] = data?.orders || [];
   const totalOrders = data?.total || 0; // Get total count from API response
@@ -143,10 +144,25 @@ const OrdersPage = ({
       const item = orders.find((o) => o._id === id);
       const isSample = (item as any)?.isSample === true;
 
-      // If changing to "shipped" and no delivery date is set, set it to today
-      if (status === "shipped" && !item?.deliveryDate) {
+      // If changing to "shipped"
+      if (status === "shipped") {
         const today = format(new Date(), "yyyy-MM-dd");
-        await updateOrder({ id, deliveryDate: today }).unwrap();
+        const updateData: any = { id };
+
+        // Set delivery date to today if not already set, or use existing delivery date
+        if (!item?.deliveryDate) {
+          updateData.deliveryDate = today;
+        }
+
+        // Always set shippedDate to today when marking as shipped
+        updateData.shippedDate = today;
+
+        // Use the correct mutation based on whether it's a sample or order
+        if (isSample) {
+          await updateSample(updateData).unwrap();
+        } else {
+          await updateOrder(updateData).unwrap();
+        }
       }
 
       if (isSample) {

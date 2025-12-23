@@ -352,6 +352,16 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                           {new Date(order.createdAt).toLocaleDateString()}
                         </span>
                       </p>
+                      {(order as any).shippedDate && (
+                        <p className="flex items-center gap-1.5">
+                          <span className="text-purple-700 font-bold text-xs">
+                            📦 Shipped Date:
+                          </span>
+                          <span className="text-gray-700 text-xs">
+                            {new Date((order as any).shippedDate).toLocaleDateString()}
+                          </span>
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       {Object.entries((order as any).samples || {})
@@ -380,10 +390,12 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                     <span className="font-semibold">Order#:</span>{" "}
                     {order.orderNumber}
                   </p>
-                  <p>
-                    <span className="font-semibold">Shipped Date:</span>{" "}
-                    {new Date(order.deliveryDate).toLocaleDateString()}
-                  </p>
+                  {order.shippedDate && (
+                    <p>
+                      <span className="font-semibold">Shipped Date:</span>{" "}
+                      {new Date(order.shippedDate).toLocaleDateString()}
+                    </p>
+                  )}
                   <p>
                     <span className="font-semibold">Amount:</span> $
                     {(Number(order.total) || 0).toFixed(2)}

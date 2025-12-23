@@ -50,6 +50,7 @@ const Stores = () => {
   const debouncedSearch = useDebounced({ searchQuery, delay: 500 });
   const [selectedRepFilter, setSelectedRepFilter] = useState<string>("");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<string>("asc"); // asc or desc
 
   // 📄 Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,6 +84,7 @@ const Stores = () => {
       paymentStatus:
         paymentFilter !== "all" && paymentFilter !== "due" ? paymentFilter : "",
       isDue: paymentFilter === "due" ? "true" : undefined,
+      sortOrder: sortOrder,
     },
     { refetchOnMountOrArgChange: true }
   );
@@ -339,6 +341,24 @@ const Stores = () => {
                   {rep.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value)}>
+            <SelectTrigger className="w-[180px] border border-accent">
+              <SelectValue placeholder="Sort Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">
+                <span className="flex items-center gap-2">
+                  ↑ A → Z (0-9 first)
+                </span>
+              </SelectItem>
+              <SelectItem value="desc">
+                <span className="flex items-center gap-2">
+                  ↓ Z → A (9-0 first)
+                </span>
+              </SelectItem>
             </SelectContent>
           </Select>
 

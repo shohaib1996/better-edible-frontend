@@ -14,6 +14,7 @@ export interface ISample {
   };
   notes?: string;
   deliveryDate?: string;
+  shippedDate?: string;
   createdAt: string;
   updatedAt: string;
 }

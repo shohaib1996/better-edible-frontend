@@ -13,6 +13,7 @@ export const storesApi = baseApi.injectEndpoints({
         if (args?.paymentStatus)
           params.append("paymentStatus", args.paymentStatus);
         if (args?.isDue) params.append("isDue", args.isDue.toString());
+        if (args?.sortOrder) params.append("sortOrder", args.sortOrder);
 
         return {
           url: `/stores?${params.toString()}`,

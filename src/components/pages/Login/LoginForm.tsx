@@ -62,7 +62,7 @@ export function LoginForm() {
           JSON.stringify(result?.rep || result)
         );
         toast.success("Login successful!");
-        router.push("/rep");
+        router.push("/rep/orders");
         return;
       } catch (_) {
         // If rep fails, try admin
@@ -75,7 +75,7 @@ export function LoginForm() {
           toast.success("Login successful!");
 
           const userRole = result?.admin?.role || result?.role;
-          if (userRole === "superadmin") router.push("/admin");
+          if (userRole === "superadmin") router.push("/admin/orders");
           else router.push("/rep");
         } catch (adminError: any) {
           toast.error(adminError?.data?.message || "Invalid email or password");

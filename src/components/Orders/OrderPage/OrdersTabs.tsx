@@ -61,59 +61,72 @@ export const OrdersTabs = ({
     );
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="flex gap-3">
-        {isRepView && <TabsTrigger value="all">All Orders</TabsTrigger>}
-        <TabsTrigger value="new">New Orders</TabsTrigger>
-        <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
-      </TabsList>
+    <div className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="flex gap-3">
+          {isRepView && <TabsTrigger value="all">All Orders</TabsTrigger>}
+          <TabsTrigger value="new">New Orders</TabsTrigger>
+          <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
+        </TabsList>
 
-      {/* ALL ORDERS - Only for Rep View */}
-      {isRepView && (
-        <TabsContent value="all">
-          <AllOrdersTab
-            orders={grouped.allOrders}
-            handleChangeStatus={handleChangeStatus}
-            updateOrder={updateOrder}
-            refetch={refetch}
-            onEdit={onEdit}
-            currentRep={currentRep}
-          />
-        </TabsContent>
-      )}
+        <div className="grid">
+          {/* ALL ORDERS - Only for Rep View */}
+          {isRepView && (
+            <TabsContent
+              value="all"
+              className="[grid-area:1/1] data-[state=inactive]:invisible data-[state=inactive]:h-0 data-[state=inactive]:overflow-hidden"
+            >
+              <AllOrdersTab
+                orders={grouped.allOrders}
+                handleChangeStatus={handleChangeStatus}
+                updateOrder={updateOrder}
+                refetch={refetch}
+                onEdit={onEdit}
+                currentRep={currentRep}
+              />
+            </TabsContent>
+          )}
 
-      {/* NEW ORDERS */}
-      <TabsContent value="new">
-        <NewOrdersTab
-          orders={grouped.newOrders}
-          handleChangeStatus={handleChangeStatus}
-          updateOrder={updateOrder}
-          refetch={refetch}
-          onEdit={onEdit} // ✅ pass down
-          currentRep={currentRep}
-          isRepView={isRepView}
-        />
-      </TabsContent>
+          {/* NEW ORDERS */}
+          <TabsContent
+            value="new"
+            className="[grid-area:1/1] data-[state=inactive]:invisible data-[state=inactive]:h-0 data-[state=inactive]:overflow-hidden"
+          >
+            <NewOrdersTab
+              orders={grouped.newOrders}
+              handleChangeStatus={handleChangeStatus}
+              updateOrder={updateOrder}
+              refetch={refetch}
+              onEdit={onEdit} // ✅ pass down
+              currentRep={currentRep}
+              isRepView={isRepView}
+            />
+          </TabsContent>
 
-      {/* SHIPPED ORDERS */}
-      <TabsContent value="shipped">
-        <ShippedOrdersTab
-          orders={grouped.shippedOrders}
-          handleChangeStatus={handleChangeStatus}
-          updateOrder={updateOrder}
-          onFilter={onFilter}
-          onEdit={onEdit} // ✅ pass down
-          isLoading={isLoading}
-          reps={reps}
-          totalOrders={totalOrders}
-          currentPage={shippedPage}
-          itemsPerPage={shippedLimit}
-          onPageChange={onShippedPageChange}
-          onLimitChange={onShippedLimitChange}
-          currentRep={currentRep}
-          isRepView={isRepView}
-        />
-      </TabsContent>
-    </Tabs>
+          {/* SHIPPED ORDERS */}
+          <TabsContent
+            value="shipped"
+            className="[grid-area:1/1] data-[state=inactive]:invisible data-[state=inactive]:h-0 data-[state=inactive]:overflow-hidden"
+          >
+            <ShippedOrdersTab
+              orders={grouped.shippedOrders}
+              handleChangeStatus={handleChangeStatus}
+              updateOrder={updateOrder}
+              onFilter={onFilter}
+              onEdit={onEdit} // ✅ pass down
+              isLoading={isLoading}
+              reps={reps}
+              totalOrders={totalOrders}
+              currentPage={shippedPage}
+              itemsPerPage={shippedLimit}
+              onPageChange={onShippedPageChange}
+              onLimitChange={onShippedLimitChange}
+              currentRep={currentRep}
+              isRepView={isRepView}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
   );
 };

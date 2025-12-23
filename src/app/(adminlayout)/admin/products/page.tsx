@@ -167,15 +167,18 @@ const ProductsPage = () => {
 
     // 🔹 Fifty-One Fifty
     else if (selectedLine === "Fifty-One Fifty") {
+      const discountPrice = values.discountPrice
+        ? parseFloat(values.discountPrice)
+        : 0;
+
       payload = {
         ...payload,
         itemName: values.itemName,
         price: parseFloat(values.price),
         priceDescription: values.priceDescription,
-        discountPrice: values.discountPrice
-          ? parseFloat(values.discountPrice)
-          : undefined,
-        discountDescription: values.discountDescription,
+        discountPrice: discountPrice,
+        discountDescription: values.discountDescription || "",
+        applyDiscount: discountPrice > 0,
       };
     }
 

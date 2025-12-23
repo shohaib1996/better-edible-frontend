@@ -48,8 +48,9 @@ export interface IOrder {
   status: OrderStatus;
 
   deliveryDate?: string | Date; // ISO string or Date
+  shippedDate?: string | Date; // ISO string or Date when marked as shipped
   createdAt: string | Date;
 
-  orderNumber: number;  
+  orderNumber: number;
   note: string     // human-readable sequence
 }

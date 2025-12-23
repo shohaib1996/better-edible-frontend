@@ -20,8 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
-import { useChangeOrderStatusMutation } from "@/redux/api/orders/orders";
-import { useUpdateSampleStatusMutation } from "@/redux/api/Samples/samplesApi ";
+import {
+  useChangeOrderStatusMutation,
+  useUpdateOrderMutation,
+} from "@/redux/api/orders/orders";
+import {
+  useUpdateSampleStatusMutation,
+  useUpdateSampleMutation,
+} from "@/redux/api/Samples/samplesApi ";
+import { format } from "date-fns";
 
 interface DeliveryItemProps {
   delivery: Delivery;
@@ -54,6 +61,8 @@ export const DeliveryItem = ({
     useUpdateDeliveryStatusMutation();
   const [changeOrderStatus] = useChangeOrderStatusMutation();
   const [updateSampleStatus] = useUpdateSampleStatusMutation();
+  const [updateOrder] = useUpdateOrderMutation();
+  const [updateSample] = useUpdateSampleMutation();
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -63,15 +72,33 @@ export const DeliveryItem = ({
 
       // ✅ Auto-update linked order status to "shipped"
       if (newStatus === "completed") {
+        const today = format(new Date(), "yyyy-MM-dd");
+
         if (delivery.orderId) {
-          // Regular Order
+          // Regular Order - Update dates and status
+          await updateOrder({
+            id: delivery.orderId,
+            deliveryDate: delivery.scheduledAt
+              ? format(new Date(delivery.scheduledAt), "yyyy-MM-dd")
+              : today,
+            shippedDate: today,
+          }).unwrap();
+
           await changeOrderStatus({
             id: delivery.orderId,
             status: "shipped",
           }).unwrap();
           toast.success("Linked order marked as shipped");
         } else if (delivery.sampleId) {
-          // Sample Request
+          // Sample Request - Update dates and status
+          await updateSample({
+            id: delivery.sampleId,
+            deliveryDate: delivery.scheduledAt
+              ? format(new Date(delivery.scheduledAt), "yyyy-MM-dd")
+              : today,
+            shippedDate: today,
+          }).unwrap();
+
           await updateSampleStatus({
             id: delivery.sampleId,
             status: "shipped",
