@@ -40,7 +40,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="https://res.cloudinary.com/dsn66l0iv/image/upload/v1766380963/logo_tw2vqf.png"
+            src="https://res.cloudinary.com/dsn66l0iv/image/upload/v1766512506/Better_Edibles_logo_tqs1pm.png"
             alt="Better Edibles Logo"
             width={100}
             height={50}
