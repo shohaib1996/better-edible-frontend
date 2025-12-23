@@ -90,21 +90,25 @@ export function AppSidebar() {
   const menuItems = user.role === "superadmin" ? adminItems : repItems;
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       {/* ---------------- HEADER ---------------- */}
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-4 py-2">
+        {/* Full logo - shown when expanded */}
+        <div className="gap-3 px-4 py-2 w-full h-[100px] group-data-[collapsible=icon]:hidden">
           <Image
             src="https://res.cloudinary.com/dsn66l0iv/image/upload/v1766380963/logo_tw2vqf.png"
             alt="Logo"
-            width={70}
-            height={80}
-            className="rounded-sm"
+            width={100}
+            height={100}
+            className="rounded-sm object-contain w-full h-full"
           />
-          <p className="text-xl font-semibold tracking-tight">
-            <span className="text-emerald-500">Better</span>{" "}
-            <span>Edibles</span>
-          </p>
+        </div>
+
+        {/* Compact logo - shown when collapsed */}
+        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center py-2">
+          <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
+            BE
+          </div>
         </div>
       </SidebarHeader>
 
@@ -161,9 +165,9 @@ function FooterUserMenu({ user }: { user: any }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 w-full justify-start p-2 h-auto"
+          className="flex items-center gap-2 w-full justify-start p-2 h-auto group-data-[collapsible=icon]:justify-center"
         >
-          <Avatar>
+          <Avatar className="h-8 w-8">
             <AvatarImage
               src={user?.avatar || "/placeholder.svg"}
               alt={user?.name || "User"}
@@ -173,19 +177,19 @@ function FooterUserMenu({ user }: { user: any }) {
             </AvatarFallback>
           </Avatar>
 
-          {/* Expanded Mode Content */}
-          <div className="flex flex-col items-start flex-1 min-w-0">
+          {/* Expanded Mode Content - Hidden when sidebar is collapsed */}
+          <div className="flex flex-col items-start flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-medium truncate">{user?.name}</span>
             <span className="text-xs text-muted-foreground truncate">
               {user?.email}
             </span>
           </div>
 
-          <Settings className="w-4 h-4 text-muted-foreground" />
+          <Settings className="w-4 h-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
 
         <DropdownMenuItem className="flex flex-col items-start">

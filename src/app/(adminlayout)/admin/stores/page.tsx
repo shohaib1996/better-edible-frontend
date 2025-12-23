@@ -425,7 +425,7 @@ const Stores = () => {
                       setAddNoteModalOpen(true);
                     }}
                   >
-                    {store.name} - {store._id}
+                    {store.name}
                   </h3>
                   <p className="text-sm text-gray-500">
                     {store.address || "No address"}
@@ -465,8 +465,7 @@ const Stores = () => {
 
                   {store.rep && (
                     <div className="text-sm mt-1">
-                      <strong>Rep:</strong> {store.rep.name || store.rep}-
-                      {store.rep._id}
+                      <strong>Rep:</strong> {store.rep.name || store.rep}
                     </div>
                   )}
 
