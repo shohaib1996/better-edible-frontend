@@ -16,7 +16,7 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock, FileText, LogIn } from "lucide-react";
+import { Clock, FileText, LogIn, Pen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -175,41 +175,71 @@ export default function RepsPage() {
       ),
     },
     {
+      key: "storeCount",
+      header: "Store Count",
+      render: (rep) => (
+        <span className="font-medium text-gray-700">
+          {rep.storeCount || 0}
+        </span>
+      ),
+    },
+    {
       key: "actions",
       header: "Actions",
       render: (rep) => (
-        <div className="flex gap-2">
+        <div className="flex gap-3 items-center">
           <Link href={`/admin/reps/${rep._id}`}>
-            <Button size="sm" variant="outline" className="cursor-pointer">
-              <Clock className="size-4 mr-1" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="cursor-pointer h-9 w-9 p-0"
+              title="View Clock In/Out"
+            >
+              <Clock className="size-4" />
             </Button>
           </Link>
           <Link href={`/admin/reps/notes/${rep._id}`}>
-            <Button size="sm" variant="outline" className="cursor-pointer">
-              <FileText className="size-4 mr-1" />
+            <Button
+              size="sm"
+              variant="outline"
+              className="cursor-pointer h-9 w-9 p-0"
+              title="View Notes"
+            >
+              <FileText className="size-4" />
             </Button>
           </Link>
           <Button
             size="sm"
             variant="default"
-            className="bg-blue-600 hover:bg-blue-700 h-8"
+            className="bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
             onClick={() => handleLoginAsRep(rep)}
+            title="Login As Rep"
           >
-            <LogIn className="size-4 mr-1" />
-            Login As
+            <LogIn className="size-4" />
           </Button>
           <Button
             size="sm"
             variant="outline"
+            className="h-9 w-9 p-0"
             onClick={() => {
               setEditingRep(rep);
               setOpen(true);
             }}
+            title="Edit"
           >
-            Edit
+            <Pen className="size-4" />
           </Button>
           <ConfirmDialog
-            triggerText="Delete"
+            trigger={
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-300"
+                title="Delete"
+              >
+                <Trash2 className="size-4 text-red-600" />
+              </Button>
+            }
             title="Delete Representative"
             description={`Are you sure you want to delete ${rep.name}? This action cannot be undone.`}
             confirmText="Yes, Delete"

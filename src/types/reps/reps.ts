@@ -1,5 +1,5 @@
-export type RepType = 'rep' | 'delivery' | 'both';
-export type RepStatus = 'active' | 'inactive' | 'suspended';
+export type RepType = "rep" | "delivery" | "both";
+export type RepStatus = "active" | "inactive" | "suspended";
 
 export interface IRep extends Document {
   _id: string;
@@ -15,4 +15,5 @@ export interface IRep extends Document {
   status: RepStatus;
   createdAt: Date;
   updatedAt: Date;
+  storeCount: number;
 }

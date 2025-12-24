@@ -218,7 +218,9 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
       {orders.map((order) => {
         const isSample = (order as any).isSample === true;
-        const isOwnOrder = isRepView ? order.rep?._id === currentRep?._id : true;
+        const isOwnOrder = isRepView
+          ? order.rep?._id === currentRep?._id
+          : true;
 
         return (
           <Card
@@ -352,26 +354,26 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                           {new Date(order.createdAt).toLocaleDateString()}
                         </span>
                       </p>
-                      {(order as any).shippedDate && (
+                      {(order as any).deliveryDate && (
                         <p className="flex items-center gap-1.5">
                           <span className="text-purple-700 font-bold text-xs">
                             📦 Shipped Date:
                           </span>
                           <span className="text-gray-700 text-xs">
-                            {new Date((order as any).shippedDate).toLocaleDateString()}
+                            {new Date(
+                              (order as any).deliveryDate
+                            ).toLocaleDateString()}
                           </span>
                         </p>
                       )}
                     </div>
                     <div className="space-y-1">
-                      {Object.entries((order as any).samples || {})
-                        .filter(([_, value]) => value)
-                        .map(([key, value]) => (
-                          <p key={key} className="text-xs text-gray-700">
-                            <span className="font-bold uppercase">{key}:</span>{" "}
-                            {String(value)}
-                          </p>
-                        ))}
+                      {(order as any).description && (
+                        <p className="text-xs text-gray-700">
+                          <span className="font-bold text-purple-700">📝 Description:</span>{" "}
+                          {(order as any).description}
+                        </p>
+                      )}
                       <p className="flex items-center gap-1.5 text-xs">
                         <span className="text-purple-700 font-bold">
                           👤 Rep:
@@ -390,10 +392,10 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                     <span className="font-semibold">Order#:</span>{" "}
                     {order.orderNumber}
                   </p>
-                  {order.shippedDate && (
+                  {order.deliveryDate && (
                     <p>
                       <span className="font-semibold">Shipped Date:</span>{" "}
-                      {new Date(order.shippedDate).toLocaleDateString()}
+                      {new Date(order.deliveryDate).toLocaleDateString()}
                     </p>
                   )}
                   <p>

@@ -15,7 +15,8 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface ConfirmDialogProps {
-  triggerText: string;
+  triggerText?: string;
+  trigger?: React.ReactNode;
   title?: string;
   description?: string;
   confirmText?: string;
@@ -27,6 +28,7 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({
   triggerText,
+  trigger,
   title = "Are you sure?",
   description = "This action cannot be undone.",
   confirmText = "Yes, Confirm",
@@ -38,14 +40,18 @@ export function ConfirmDialog({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button
-          className="cursor-pointer"
-          variant={variant}
-          size="sm"
-          disabled={disabled}
-        >
-          {triggerText}
-        </Button>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button
+            className="cursor-pointer"
+            variant={variant}
+            size="sm"
+            disabled={disabled}
+          >
+            {triggerText}
+          </Button>
+        )}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

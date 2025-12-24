@@ -7,11 +7,7 @@ export interface ISample {
     name: string;
   };
   status: "submitted" | "accepted" | "manifested" | "shipped" | "delivered" | "cancelled";
-  samples: {
-    cannacrispy?: string;
-    "bliss cannabis syrup"?: string;
-    "fifty one fifty"?: string;
-  };
+  description?: string;
   notes?: string;
   deliveryDate?: string;
   shippedDate?: string;

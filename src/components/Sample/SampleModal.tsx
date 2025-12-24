@@ -35,37 +35,23 @@ export const SampleModal = ({
 }: SampleModalProps) => {
   const [createSample, { isLoading }] = useCreateSampleMutation();
 
-  const [formData, setFormData] = useState({
-    cannacrispy: "",
-    "bliss cannabis syrup": "",
-    "fifty one fifty": "",
-  });
-
-  const handleChange = (key: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
+  const [description, setDescription] = useState("");
 
   const handleSubmit = async () => {
-    // check if at least one field has input
-    const hasAnyValue = Object.values(formData).some((v) => v.trim() !== "");
-    if (!hasAnyValue)
-      return toast.error("Please fill at least one sample field.");
+    if (!description.trim())
+      return toast.error("Please enter sample description.");
 
     try {
       const payload = {
         storeId,
         repId,
         status: "submitted",
-        samples: formData,
+        description,
       };
 
       await createSample(payload).unwrap();
       toast.success("Sample record created successfully!");
-      setFormData({
-        cannacrispy: "",
-        "bliss cannabis syrup": "",
-        "fifty one fifty": "",
-      });
+      setDescription("");
       onClose();
     } catch (err: any) {
       console.error("Error creating sample:", err);
@@ -93,22 +79,18 @@ export const SampleModal = ({
 
         {/* 👤 Rep Selection - Removed as per user request */}
 
-        {/* 🧾 Sample Text Areas */}
-        <div className="space-y-4 py-3">
-          {Object.entries(formData).map(([key, val]) => (
-            <div key={key} className="space-y-1">
-              <Label htmlFor={key} className="capitalize text-gray-700">
-                {key}
-              </Label>
-              <Textarea
-                id={key}
-                value={val}
-                onChange={(e) => handleChange(key, e.target.value)}
-                placeholder={`Enter details for ${key}`}
-                className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-          ))}
+        {/* 🧾 Sample Description */}
+        <div className="space-y-2 py-3">
+          <Label htmlFor="description" className="text-gray-700 font-medium">
+            Sample Description
+          </Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter sample details (e.g., Cannacrispy, Bliss Cannabis Syrup, Fifty One Fifty, etc.)"
+            className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 min-h-[150px]"
+          />
         </div>
 
         {/* Footer Buttons */}
