@@ -89,7 +89,7 @@ const SamplesList = () => {
                 <TableRow>
                   <TableHead>Store Name</TableHead>
                   <TableHead>Rep Name</TableHead>
-                  <TableHead>Samples</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created Date</TableHead>
                 </TableRow>
@@ -115,17 +115,8 @@ const SamplesList = () => {
                       </TableCell>
                       <TableCell>{sample.rep?.name || "Unknown Rep"}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {Object.entries(sample.samples || {}).map(
-                            ([key, value]) => (
-                              <span key={key} className="text-sm">
-                                <span className="font-semibold capitalize">
-                                  {key}:
-                                </span>{" "}
-                                {value as string}
-                              </span>
-                            )
-                          )}
+                        <div className="text-sm max-w-md">
+                          {sample.description || "No description provided"}
                         </div>
                       </TableCell>
                       <TableCell>
