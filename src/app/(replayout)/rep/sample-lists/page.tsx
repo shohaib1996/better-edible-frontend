@@ -96,7 +96,7 @@ const SampleList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Store Name</TableHead>
-                  <TableHead>Samples</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created Date</TableHead>
                 </TableRow>
@@ -121,17 +121,8 @@ const SampleList = () => {
                         {sample.store?.name || "Unknown Store"}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {Object.entries(sample.samples || {}).map(
-                            ([key, value]) => (
-                              <span key={key} className="text-sm">
-                                <span className="font-semibold capitalize">
-                                  {key}:
-                                </span>{" "}
-                                {value as string}
-                              </span>
-                            )
-                          )}
+                        <div className="text-sm max-w-md">
+                          {sample.description || "No description provided"}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -143,7 +134,8 @@ const SampleList = () => {
                         >
                           <SelectTrigger
                             className={`w-[140px] h-8 capitalize ${
-                              sample.status === "delivered" || sample.status === "shipped"
+                              sample.status === "delivered" ||
+                              sample.status === "shipped"
                                 ? "bg-green-100 text-green-800 border-green-200"
                                 : sample.status === "cancelled"
                                 ? "bg-red-100 text-red-800 border-red-200"
@@ -159,7 +151,9 @@ const SampleList = () => {
                           <SelectContent>
                             <SelectItem value="submitted">Submitted</SelectItem>
                             <SelectItem value="accepted">Accepted</SelectItem>
-                            <SelectItem value="manifested">Manifested</SelectItem>
+                            <SelectItem value="manifested">
+                              Manifested
+                            </SelectItem>
                             <SelectItem value="shipped">Shipped</SelectItem>
                             <SelectItem value="delivered">Delivered</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
