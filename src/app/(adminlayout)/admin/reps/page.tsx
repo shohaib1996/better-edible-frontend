@@ -16,7 +16,7 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock, FileText, LogIn, Pen, Trash2 } from "lucide-react";
+import { Clock, FileText, LogIn, Pen, Trash2, Timer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -254,14 +254,25 @@ export default function RepsPage() {
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Sales Representatives</h1>
-        <Button
-          onClick={() => {
-            setEditingRep(null);
-            setOpen(true);
-          }}
-        >
-          Add Representative
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/admin/reps/hours">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Timer className="size-4" />
+              Hours
+            </Button>
+          </Link>
+          <Button
+            onClick={() => {
+              setEditingRep(null);
+              setOpen(true);
+            }}
+          >
+            Add Representative
+          </Button>
+        </div>
       </div>
 
       <DataTable<IRep> columns={columns} data={reps} isLoading={isLoading} />

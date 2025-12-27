@@ -8,14 +8,36 @@ export const timelogsApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.timelogs],
     }),
     getTimelogsByRepId: builder.query({
-      query: ({ id, startDate, endDate }) => ({
-        url: `/timelogs/rep/${id}`,
-        params: { startDate, endDate },
-      }),
+      query: (args) => {
+        const { id, startDate, endDate } = args;
+        const params: any = {};
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        return {
+          url: `/timelogs/rep/${id}`,
+          params,
+        };
+      },
+      providesTags: [tagTypes.timelogs],
+    }),
+    getTimelogsSummary: builder.query({
+      query: (args = {}) => {
+        const { startDate, endDate } = args;
+        const params: any = {};
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        return {
+          url: `/timelogs/summary`,
+          params,
+        };
+      },
       providesTags: [tagTypes.timelogs],
     }),
   }),
 });
 
-export const { useGetAllTimeLogsQuery, useGetTimelogsByRepIdQuery } =
-  timelogsApi;
+export const {
+  useGetAllTimeLogsQuery,
+  useGetTimelogsByRepIdQuery,
+  useGetTimelogsSummaryQuery
+} = timelogsApi;
