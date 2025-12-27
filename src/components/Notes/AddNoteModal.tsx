@@ -157,7 +157,7 @@ export const AddNoteModal = ({
           ...data,
           entityId: storeId,
           author: repId,
-          date: new Date().toISOString(),
+          date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
         };
         await createNote(noteData).unwrap();
         toast.success("Note created successfully!");

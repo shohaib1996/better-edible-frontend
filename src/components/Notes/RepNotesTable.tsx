@@ -174,8 +174,18 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
                         </div>
                         {storeAddress && (
                           <div className="text-sm text-muted-foreground">
-                            {note.date &&
-                              format(new Date(note.date), "MM/dd/yyyy h:mma")}
+                            {note.date && (
+                              (() => {
+                                try {
+                                  // Parse YYYY-MM-DD string properly
+                                  const [year, month, day] = note.date.split('-');
+                                  const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                  return format(dateObj, "MM/dd/yyyy");
+                                } catch {
+                                  return note.date;
+                                }
+                              })()
+                            )}
                           </div>
                         )}
                       </TableCell>

@@ -159,7 +159,11 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                     <div>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Calendar size={14} />
-                        <span>{new Date(note.date).toLocaleDateString()}</span>
+                        <span>
+                          {note.date
+                            ? new Date(note.date).toLocaleDateString()
+                            : "No date"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                         <User size={14} />

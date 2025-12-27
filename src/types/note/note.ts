@@ -26,7 +26,7 @@ export interface INote {
     amount?: string;
   };
 
-  date?: string;        // ISO date string from backend
+  date?: string;        // YYYY-MM-DD date string from backend
   createdAt?: string;   // auto timestamps
   updatedAt?: string;
 }
