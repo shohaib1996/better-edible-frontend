@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Clock, Loader2, ArrowLeft } from "lucide-react";
+import { CalendarIcon, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGetTimelogsSummaryQuery } from "@/redux/api/Timelog/timelogs";
 import { ITimelogSummary } from "@/types";
