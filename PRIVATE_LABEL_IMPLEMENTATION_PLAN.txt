@@ -1,0 +1,643 @@
+================================================================================
+PRIVATE LABEL FEATURE - IMPLEMENTATION PLAN
+================================================================================
+
+PROJECT: Better Edibles - Private Label Gummy Orders
+DATE: 2025-12-28
+
+================================================================================
+1. CLIENT REQUIREMENTS SUMMARY
+================================================================================
+
+WHAT IS PRIVATE LABEL?
+- Custom-branded gummies for stores with their own labels/branding
+- Simplified ordering process for custom gummy products
+- Digital label artwork storage with each order
+
+WHERE:
+- Link/button below Orders page that says "Private Label"
+- Separate page from regular orders
+
+WHAT REPS NEED TO FILL:
+1. Store Selection (dropdown)
+2. Product Type: "BIOMAX gummy" OR "Rosin gummy"
+3. Flavor (text input or dropdown)
+4. Label Upload (file upload for digital label artwork)
+
+PRE-FILLED AUTOMATICALLY:
+- Pricing
+- Quantities (or have default quantities)
+- Rep information
+- All other standard order fields
+
+LABEL STORAGE:
+- Upload digital label files (images: PNG, JPG, PDF)
+- Store file paths/URLs with the order
+- View uploaded labels when managing private label orders
+
+================================================================================
+2. TECHNICAL IMPLEMENTATION PLAN
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 1: BACKEND SETUP
+────────────────────────────────────────────────────────────────────────────────
+
+2.1 DATABASE MODEL (New File: models/PrivateLabelOrder.ts)
+-----------------------------------------------------------
+Create PrivateLabelOrder schema with:
+
+Fields:
+- orderNumber (auto-increment, similar to Order)
+- store (ObjectId ref to Store)
+- rep (ObjectId ref to Rep)
+- productType (enum: ['BIOMAX', 'Rosin'])
+- flavor (String)
+- labelImages (Array of objects):
+  {
+    filename: String,
+    filepath: String,
+    mimetype: String,
+    size: Number,
+    uploadedAt: Date
+  }
+- quantity (Number, with default value)
+- unitPrice (Number, pre-filled based on productType)
+- subtotal (Number, calculated)
+- discount (Number, default 0)
+- total (Number, calculated)
+- status (enum: ['submitted', 'accepted', 'in-production', 'shipped', 'delivered', 'cancelled'])
+- note (String, optional)
+- deliveryDate (String, ISO format)
+- createdAt, updatedAt (timestamps)
+
+Features:
+- Auto-increment orderNumber (separate counter for private labels)
+- Virtual populate for store/rep details
+- Indexes on store, rep, status, createdAt
+
+2.2 FILE UPLOAD SETUP
+----------------------
+Install/Configure:
+- multer (for handling multipart/form-data)
+- Create upload directory: /uploads/private-labels/
+- File validation: Accept PNG, JPG, JPEG, PDF
+- File size limit: 5MB per file
+- Generate unique filenames to avoid conflicts
+
+Middleware:
+- Create upload middleware in middleware/uploadMiddleware.ts
+- Configure storage (diskStorage or cloud storage)
+- Error handling for file upload failures
+
+2.3 API ROUTES (routes/privateLabelRoutes.ts)
+----------------------------------------------
+Endpoints:
+- POST   /api/private-labels              Create new private label order
+- GET    /api/private-labels              Get all private label orders (with filters)
+- GET    /api/private-labels/:id          Get single private label order
+- PUT    /api/private-labels/:id          Update private label order
+- PUT    /api/private-labels/:id/status   Change status
+- DELETE /api/private-labels/:id          Delete private label order
+- GET    /api/private-labels/uploads/:filename  Serve uploaded label files
+
+2.4 CONTROLLER (controllers/privateLabelController.ts)
+-------------------------------------------------------
+Functions:
+
+createPrivateLabelOrder:
+- Validate store and rep
+- Handle file uploads (req.files)
+- Get pre-filled pricing based on productType
+- Calculate totals
+- Save order with label file paths
+- Return created order
+
+getAllPrivateLabelOrders:
+- Pagination support
+- Filter by: status, store, rep, date range
+- Populate store and rep details
+- Search functionality
+- Return orders with label file URLs
+
+getPrivateLabelOrderById:
+- Populate all related data
+- Return full order details including label URLs
+
+updatePrivateLabelOrder:
+- Update order fields
+- Handle new label uploads (append to existing)
+- Recalculate totals if quantity changes
+- Return updated order
+
+changePrivateLabelStatus:
+- Update status
+- Add status change timestamp
+- Return updated order
+
+deletePrivateLabelOrder:
+- Soft delete or hard delete
+- Optional: remove uploaded label files
+
+2.5 PRICING CONFIGURATION
+--------------------------
+Create pricing constants or DB collection:
+- BIOMAX gummy: { unitPrice: XX.XX, defaultQuantity: XX }
+- Rosin gummy: { unitPrice: XX.XX, defaultQuantity: XX }
+
+Store in:
+- Config file: config/privateLabelPricing.ts
+- OR in Product collection with special flag
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 2: FRONTEND SETUP
+────────────────────────────────────────────────────────────────────────────────
+
+2.6 REDUX API SLICE (src/redux/api/PrivateLabel/privateLabelApi.ts)
+--------------------------------------------------------------------
+Create RTK Query endpoints:
+
+- useGetAllPrivateLabelOrdersQuery
+- useGetPrivateLabelOrderByIdQuery
+- useCreatePrivateLabelOrderMutation
+- useUpdatePrivateLabelOrderMutation
+- useChangePrivateLabelStatusMutation
+- useDeletePrivateLabelOrderMutation
+
+Handle:
+- File upload (multipart/form-data)
+- Cache invalidation
+- Optimistic updates
+
+2.7 TYPES (src/types/privateLabel.ts)
+--------------------------------------
+Define TypeScript interfaces:
+
+interface IPrivateLabelOrder {
+  _id: string;
+  orderNumber: number;
+  store: IStore | string;
+  rep: IRep | string;
+  productType: 'BIOMAX' | 'Rosin';
+  flavor: string;
+  labelImages: ILabelImage[];
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  discount: number;
+  total: number;
+  status: PrivateLabelStatus;
+  note?: string;
+  deliveryDate?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ILabelImage {
+  filename: string;
+  filepath: string;
+  url: string;
+  mimetype: string;
+  size: number;
+  uploadedAt: Date;
+}
+
+type PrivateLabelStatus =
+  | 'submitted'
+  | 'accepted'
+  | 'in-production'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled';
+
+2.8 PRIVATE LABEL PAGE (src/components/PrivateLabel/PrivateLabelPage.tsx)
+--------------------------------------------------------------------------
+Structure similar to OrdersPage:
+- Header with "New Private Label Order" button
+- Filters (search, rep filter for admin)
+- Tabs: New Orders | In Production | Shipped
+- Order cards/table display
+- Status change dropdowns
+- View/Edit/Delete actions
+
+Features:
+- Search by store name
+- Filter by date range
+- Rep-specific view (reps only see their orders)
+- Admin view (see all orders)
+- Pagination for shipped orders
+
+2.9 PRIVATE LABEL ORDER FORM (src/components/PrivateLabel/PrivateLabelForm.tsx)
+--------------------------------------------------------------------------------
+Simplified form with fields:
+
+Required Fields:
+1. Store Select (StoreSelect component)
+2. Product Type (Radio buttons or Select):
+   - BIOMAX gummy
+   - Rosin gummy
+3. Flavor (Text input or Select with predefined options)
+4. Label Upload (File input with preview)
+   - Multiple file upload support
+   - Show uploaded file previews
+   - Remove file option
+
+Auto-filled/Read-only Fields:
+- Rep (pre-filled from current user)
+- Unit Price (shown based on product type selection)
+- Quantity (editable but has default value)
+- Subtotal (calculated: quantity × unitPrice)
+- Discount (editable, default 0)
+- Total (calculated: subtotal - discount)
+
+Optional Fields:
+- Delivery Date (Calendar picker)
+- Note (Textarea)
+
+Display:
+- Show pricing summary card
+- Real-time calculation updates
+- File upload progress indicator
+- Validation errors
+
+2.10 FILE UPLOAD COMPONENT (src/components/PrivateLabel/LabelUploader.tsx)
+---------------------------------------------------------------------------
+Features:
+- Drag & drop support
+- Multiple file selection
+- File type validation (PNG, JPG, PDF)
+- File size validation (max 5MB)
+- Image preview for uploaded files
+- Remove file before upload
+- Upload progress indicator
+- Error messages
+
+UI Elements:
+- Upload area with dashed border
+- File list with thumbnails
+- File name, size display
+- Remove button for each file
+
+2.11 LABEL IMAGE VIEWER (src/components/PrivateLabel/LabelImageViewer.tsx)
+---------------------------------------------------------------------------
+Display uploaded labels:
+- Thumbnail grid view
+- Click to enlarge/lightbox
+- Download option
+- File metadata (name, size, upload date)
+
+2.12 ORDER DETAIL DIALOG (src/components/PrivateLabel/PrivateLabelDetailsDialog.tsx)
+-------------------------------------------------------------------------------------
+Similar to OrderDetailsDialog but includes:
+- Product type badge
+- Flavor display
+- Label images gallery
+- Download all labels button
+- Order timeline (status changes)
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 3: NAVIGATION & INTEGRATION
+────────────────────────────────────────────────────────────────────────────────
+
+2.13 ADD NAVIGATION LINK
+-------------------------
+Location: Below Orders page link in main navigation
+
+Options:
+A) Sidebar navigation (if exists)
+B) Tab next to Orders
+C) Dropdown menu under Orders
+D) Button/link on Orders page header
+
+Implementation:
+- Add route in app router
+- Add navigation item
+- Add permission check (admin/rep only)
+
+2.14 ROUTING
+------------
+Add routes:
+- /private-labels          Main page
+- /private-labels/new      Create new order (optional)
+- /private-labels/:id      View order details (optional)
+
+2.15 PERMISSIONS
+----------------
+Access Control:
+- Admins: Full access to all private label orders
+- Reps: Only see/manage their own orders
+- Block access for other user types
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 4: ADDITIONAL FEATURES
+────────────────────────────────────────────────────────────────────────────────
+
+2.16 INVOICE GENERATION
+-----------------------
+Create private label invoice template:
+- Similar to regular order invoice
+- Include product type and flavor
+- Show label file references
+- Custom branding note
+
+2.17 PACKING SLIP
+-----------------
+Private label packing slip:
+- Store name and custom label note
+- Product type and flavor
+- Quantity
+- Special handling instructions
+
+2.18 STATUS WORKFLOW
+--------------------
+Private Label specific statuses:
+- submitted → accepted → in-production → shipped → delivered
+
+Status change notifications:
+- Email to store owner
+- Email to rep
+- Admin dashboard notification
+
+2.19 REPORTING
+--------------
+Private Label Reports:
+- Total private label orders by product type
+- Revenue from private labels
+- Orders by rep
+- Average turnaround time
+- Popular flavors
+
+────────────────────────────────────────────────────────────────────────────────
+PHASE 5: TESTING & DEPLOYMENT
+────────────────────────────────────────────────────────────────────────────────
+
+2.20 TESTING CHECKLIST
+----------------------
+Backend:
+☐ File upload works (single & multiple files)
+☐ File validation (type & size)
+☐ Order creation with files
+☐ Order retrieval with file URLs
+☐ Order update (add more files)
+☐ Status changes
+☐ Pagination works
+☐ Filters work correctly
+☐ File serving endpoint works
+☐ Delete order removes files
+
+Frontend:
+☐ Form validation
+☐ File upload UI works
+☐ Image preview works
+☐ Order creation submits correctly
+☐ Orders display with images
+☐ Image viewer/lightbox works
+☐ Edit order works
+☐ Status changes work
+☐ Filters work
+☐ Responsive design
+☐ Error handling
+
+Integration:
+☐ Admin can see all orders
+☐ Rep can only see own orders
+☐ Store auto-fills rep when selected
+☐ Pricing auto-fills correctly
+☐ Calculations are accurate
+☐ Navigation link appears correctly
+
+2.21 DEPLOYMENT STEPS
+---------------------
+1. Create uploads directory on server
+2. Configure file permissions
+3. Update environment variables
+4. Run database migrations (if needed)
+5. Deploy backend changes
+6. Deploy frontend changes
+7. Test in production environment
+8. Monitor for errors
+
+================================================================================
+3. FILE STRUCTURE
+================================================================================
+
+BACKEND (better-edibles-backend)
+─────────────────────────────────
+src/
+├── models/
+│   └── PrivateLabelOrder.ts               (NEW)
+├── controllers/
+│   └── privateLabelController.ts          (NEW)
+├── routes/
+│   └── privateLabelRoutes.ts              (NEW)
+├── middleware/
+│   └── uploadMiddleware.ts                (NEW)
+├── config/
+│   └── privateLabelPricing.ts             (NEW - optional)
+└── uploads/
+    └── private-labels/                    (NEW - directory)
+
+FRONTEND (better-edibles-frontend)
+───────────────────────────────────
+src/
+├── components/
+│   └── PrivateLabel/
+│       ├── PrivateLabelPage.tsx           (NEW)
+│       ├── PrivateLabelForm.tsx           (NEW)
+│       ├── LabelUploader.tsx              (NEW)
+│       ├── LabelImageViewer.tsx           (NEW)
+│       ├── PrivateLabelDetailsDialog.tsx  (NEW)
+│       ├── PrivateLabelFilters.tsx        (NEW)
+│       ├── PrivateLabelTabs.tsx           (NEW)
+│       ├── NewPrivateLabelsTab.tsx        (NEW)
+│       ├── InProductionTab.tsx            (NEW)
+│       └── ShippedPrivateLabelsTab.tsx    (NEW)
+├── redux/
+│   └── api/
+│       └── PrivateLabel/
+│           └── privateLabelApi.ts         (NEW)
+├── types/
+│   └── privateLabel.ts                    (NEW)
+└── app/ (or pages/)
+    └── private-labels/
+        └── page.tsx                        (NEW)
+
+================================================================================
+4. DEPENDENCIES TO INSTALL
+================================================================================
+
+BACKEND:
+--------
+npm install multer
+npm install @types/multer --save-dev
+
+FRONTEND:
+---------
+No new dependencies required (existing libraries should cover needs)
+Optional: react-dropzone (for better drag-drop UX)
+
+================================================================================
+5. CONFIGURATION NEEDED
+================================================================================
+
+BACKEND (.env):
+--------------
+UPLOAD_DIR=./uploads/private-labels
+MAX_FILE_SIZE=5242880  # 5MB in bytes
+ALLOWED_FILE_TYPES=image/png,image/jpeg,image/jpg,application/pdf
+
+FRONTEND (.env):
+---------------
+NEXT_PUBLIC_API_URL=http://localhost:5000
+(or existing API URL variable)
+
+================================================================================
+6. DATABASE CONSIDERATIONS
+================================================================================
+
+MONGODB:
+--------
+- No schema changes to existing collections
+- New collection: privatelabelorders
+- Indexes to create:
+  * { store: 1, createdAt: -1 }
+  * { rep: 1, status: 1 }
+  * { orderNumber: 1 } (unique)
+  * { status: 1, createdAt: -1 }
+
+BACKUP:
+-------
+- Backup existing orders before deployment
+- Plan for file backup strategy (uploaded labels)
+
+================================================================================
+7. PRICING DECISION NEEDED
+================================================================================
+
+QUESTION FOR CLIENT:
+--------------------
+What should be the pricing for private label gummies?
+
+Option 1: Fixed Pricing
+- BIOMAX gummy: $XX.XX per unit
+- Rosin gummy: $XX.XX per unit
+- Fixed default quantity
+
+Option 2: Use Existing Product Pricing
+- Link to existing BIOMAX product in database
+- Link to existing Rosin product in database
+- Use their pricing structure
+
+Option 3: Custom Configuration
+- Admin can set pricing in settings
+- Stored in database configuration table
+
+RECOMMENDED: Option 1 or 2 (simpler implementation)
+
+================================================================================
+8. IMPLEMENTATION ORDER
+================================================================================
+
+RECOMMENDED SEQUENCE:
+--------------------
+Day 1: Backend Foundation
+  1. Create PrivateLabelOrder model
+  2. Set up file upload middleware
+  3. Create basic CRUD routes & controller
+  4. Test file upload with Postman
+
+Day 2: Backend Completion
+  5. Add pricing logic
+  6. Add filters and pagination
+  7. Test all endpoints
+  8. Document API
+
+Day 3: Frontend Foundation
+  9. Create Redux API slice
+  10. Create types
+  11. Create basic page structure
+  12. Create navigation link
+
+Day 4: Frontend Form
+  13. Build PrivateLabelForm component
+  14. Build LabelUploader component
+  15. Integrate form with API
+  16. Test order creation
+
+Day 5: Frontend List & Details
+  17. Build order list/tabs
+  18. Build filters
+  19. Build detail dialog
+  20. Build label viewer
+  21. Test complete flow
+
+Day 6: Polish & Testing
+  22. Error handling
+  23. Loading states
+  24. Responsive design
+  25. Cross-browser testing
+  26. User acceptance testing
+
+================================================================================
+9. QUESTIONS FOR CLIENT
+================================================================================
+
+Before starting implementation, confirm:
+
+1. PRICING:
+   - What is the unit price for BIOMAX gummy?
+   - What is the unit price for Rosin gummy?
+   - What is the default quantity per order?
+
+2. FLAVORS:
+   - Should flavors be free text input OR dropdown selection?
+   - If dropdown, what are the available flavors?
+
+3. LABEL FILES:
+   - How many label files per order? (1 or multiple?)
+   - What file types to accept? (PNG, JPG, PDF?)
+   - Maximum file size? (Recommended: 5MB)
+
+4. WORKFLOW:
+   - Should there be an approval process?
+   - Who can create private label orders? (Reps only or also admins?)
+   - Any special notifications needed?
+
+5. STORAGE:
+   - Store files on server disk OR cloud storage (AWS S3, etc.)?
+
+6. QUANTITIES:
+   - Is quantity editable or always fixed?
+   - Minimum order quantity?
+
+7. PRODUCT CONFIGURATION:
+   - Are BIOMAX and Rosin gummy already in the products database?
+   - Should we create new product entries for private label?
+   - Or keep completely separate from regular products?
+
+================================================================================
+10. ESTIMATED DEVELOPMENT TIME
+================================================================================
+
+Backend Development:        12-16 hours
+Frontend Development:       16-20 hours
+Testing & Bug Fixes:        6-8 hours
+Documentation:              2-3 hours
+Deployment & Setup:         2-3 hours
+─────────────────────────────────────
+TOTAL:                      38-50 hours
+
+This is a medium-complexity feature requiring full-stack development.
+
+================================================================================
+END OF IMPLEMENTATION PLAN
+================================================================================
+
+Next Steps:
+1. Review this plan with client
+2. Get answers to questions in Section 9
+3. Get approval to proceed
+4. Start with Phase 1 (Backend Setup)
+
+Document Version: 1.0
+Created: 2025-12-28

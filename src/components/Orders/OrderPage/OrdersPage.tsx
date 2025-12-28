@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { IOrder, IRep } from "@/types";
+import { PrivateLabelModal } from "@/components/Orders/PrivateLabel/PrivateLabelModal";
 
 const OrdersPage = ({
   isRepView = false,
@@ -46,6 +47,7 @@ const OrdersPage = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [privateLabelModalOpen, setPrivateLabelModalOpen] = useState(false); // 🆕 Private Label Modal
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [startDate, setStartDate] = useState<string | undefined>();
   const [endDate, setEndDate] = useState<string | undefined>();
@@ -309,6 +311,7 @@ const OrdersPage = ({
           setEditingOrder({ repId: isRepView ? currentRepId : "" }); // Pre-fill repId if in rep view
           setModalOpen(true);
         }}
+        onNewPrivateLabel={() => setPrivateLabelModalOpen(true)} // 🆕 Private Label handler
       />
 
       <OrdersFilters
@@ -360,6 +363,14 @@ const OrdersPage = ({
           onChange={onOrderFormChange}
         />
       </EntityModal>
+
+      {/* 🆕 Private Label Modal */}
+      <PrivateLabelModal
+        open={privateLabelModalOpen}
+        onClose={() => setPrivateLabelModalOpen(false)}
+        repId={currentRepId} // Optional - will be auto-filled from store
+        onSuccess={refetch}
+      />
     </div>
   );
 };

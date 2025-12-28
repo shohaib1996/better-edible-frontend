@@ -86,6 +86,17 @@ export const ordersApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.orders],
     }),
+
+    // 🆕 Create Private Label Order (with file upload)
+    createPrivateLabelOrder: builder.mutation({
+      query: (formData) => ({
+        url: "/orders/private-label",
+        method: "POST",
+        body: formData,
+        // Don't set Content-Type header, let browser set it with boundary for multipart
+      }),
+      invalidatesTags: [tagTypes.orders],
+    }),
   }),
 });
 
@@ -97,4 +108,5 @@ export const {
   useChangeOrderStatusMutation,
   useCollectPaymentMutation,
   useDeleteOrderMutation,
+  useCreatePrivateLabelOrderMutation, // 🆕 Export new mutation
 } = ordersApi;
