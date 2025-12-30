@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Edit, Trash2 } from "lucide-react";
 import { IPrivateLabelProduct } from "@/types";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 
 interface PrivateLabelProductCardProps {
   product: IPrivateLabelProduct;
@@ -23,13 +24,7 @@ export const PrivateLabelProductCard: React.FC<
   };
 
   const handleDelete = () => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete "${product.name}"? This action cannot be undone.`
-      )
-    ) {
-      onDelete(product._id);
-    }
+    onDelete(product._id);
   };
 
   return (
@@ -102,15 +97,24 @@ export const PrivateLabelProductCard: React.FC<
             <Edit className="w-4 h-4" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDelete}
-            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </Button>
+          <ConfirmDialog
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
+            }
+            title="Delete Product"
+            description={`Are you sure you want to delete "${product.name}"? This action cannot be undone.`}
+            confirmText="Yes, Delete"
+            cancelText="Cancel"
+            variant="destructive"
+            onConfirm={handleDelete}
+          />
         </div>
       </div>
     </Card>
