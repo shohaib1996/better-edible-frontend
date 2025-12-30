@@ -135,7 +135,6 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
 
         {orders.map((order) => {
           const isSample = (order as any).isSample === true;
-          const isPrivateLabel = (order as any).isPrivateLabel === true; // 🆕 Check for private label
           const isOwnOrder = isRepView
             ? order.rep?._id === currentRep?._id
             : true;
@@ -148,8 +147,6 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                 !isOwnOrder && "opacity-75",
                 isSample
                   ? "bg-linear-to-r from-purple-50 to-pink-50 border-l-4 border-l-purple-500 border-purple-200"
-                  : isPrivateLabel
-                  ? "bg-linear-to-r from-orange-50 to-yellow-50 border-l-4 border-l-orange-500 border-orange-200"
                   : getStatusStyle(order.status)
               )}
             >
@@ -173,11 +170,6 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     {isSample && (
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-md">
                         📦 SAMPLE REQUEST
-                      </span>
-                    )}
-                    {isPrivateLabel && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-orange-600 to-yellow-600 text-white shadow-md">
-                        🏷️ PRIVATE LABEL
                       </span>
                     )}
                     {!isOwnOrder && (

@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import Image from "next/image";
 
 interface ImagePreviewModalProps {
   image: {
@@ -52,32 +47,58 @@ export const ImagePreviewModal = ({
 
   return (
     <Dialog open={!!image} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>
-            <span className="truncate">{image.filename}</span>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="flex items-center justify-center bg-gray-50 rounded-lg p-4 min-h-[400px]">
-          <img
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-none! w-full! h-full! border-0 bg-black p-0 shadow-none gap-0 m-0 rounded-none inset-0 translate-x-0 translate-y-0 left-0 top-0"
+        style={{
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "100vw",
+          maxHeight: "100vh",
+        }}
+      >
+        <Button
+          onClick={onClose}
+          className="fixed right-6 top-6 z-100 rounded-full bg-red-600 hover:bg-red-700 p-2 transition-colors shadow-2xl"
+          aria-label="Close"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-white"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </Button>
+
+        <div className="absolute inset-0 w-full h-full">
+          <Image
             src={image.url}
             alt={image.filename}
-            className="max-w-full max-h-[600px] object-contain"
+            fill
+            className="object-contain"
+            sizes="100vw"
+            priority
           />
         </div>
-        <DialogFooter className="flex justify-between items-center">
+
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-100">
           <Button
-            variant="outline"
             onClick={() => handleDownloadImage(image.url, image.filename)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-3 bg-white hover:bg-gray-100 text-black border-0 shadow-2xl px-10 py-4 text-lg font-semibold rounded-full"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-6 h-6" />
             Download
           </Button>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

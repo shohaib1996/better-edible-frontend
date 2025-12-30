@@ -5,3 +5,4 @@ export * from "./order/order";
 export * from "./delivery/delivery";
 export * from "./followups/followups";
 export * from "./sample/sample";
+export * from "./privateLabel/privateLabel";
