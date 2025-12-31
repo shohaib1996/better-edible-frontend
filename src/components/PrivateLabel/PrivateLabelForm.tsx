@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +17,23 @@ import {
 } from "@/components/ui/select";
 import { X, Plus, Upload } from "lucide-react";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
+import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 import { cn } from "@/lib/utils";
 
 interface FormItem {
   privateLabelType: string;
   flavor: string;
-  quantity: number;
+  quantity: number | "";
   unitPrice: number;
   labelFiles: File[];
+  existingImages?: Array<{
+    url: string;
+    secureUrl: string;
+    publicId: string;
+    format: string;
+    bytes: number;
+    originalFilename: string;
+  }>;
 }
 
 interface PrivateLabelFormProps {
@@ -33,10 +43,17 @@ interface PrivateLabelFormProps {
     discountType: "flat" | "percentage";
     note: string;
   }) => void;
+  initialData?: {
+    items: FormItem[];
+    discount: number;
+    discountType: "flat" | "percentage";
+    note: string;
+  };
 }
 
 export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
   onChange,
+  initialData,
 }) => {
   const { data: productsData, isLoading } = useGetPrivateLabelProductsQuery({
     activeOnly: true,
@@ -44,25 +61,43 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
 
   const products = productsData?.products || [];
 
-  const [items, setItems] = useState<FormItem[]>([
-    {
-      privateLabelType: "",
-      flavor: "",
-      quantity: 1,
-      unitPrice: 0,
-      labelFiles: [],
-    },
-  ]);
+  const [items, setItems] = useState<FormItem[]>(
+    initialData?.items || [
+      {
+        privateLabelType: "",
+        flavor: "",
+        quantity: 1,
+        unitPrice: 0,
+        labelFiles: [],
+      },
+    ]
+  );
 
   const [discountType, setDiscountType] = useState<"flat" | "percentage">(
-    "flat"
+    initialData?.discountType || "flat"
   );
-  const [discountValue, setDiscountValue] = useState<number>(0);
-  const [note, setNote] = useState<string>("");
+  const [discountValue, setDiscountValue] = useState<number>(
+    initialData?.discount || 0
+  );
+  const [note, setNote] = useState<string>(initialData?.note || "");
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    filename: string;
+  } | null>(null);
+
+  // Update state when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setItems(initialData.items);
+      setDiscountType(initialData.discountType);
+      setDiscountValue(initialData.discount);
+      setNote(initialData.note);
+    }
+  }, [initialData]);
 
   // Calculate totals
   const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
+    (sum, item) => sum + (Number(item.quantity) || 0) * item.unitPrice,
     0
   );
 
@@ -154,6 +189,16 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
     newItems[itemIndex].labelFiles = newItems[itemIndex].labelFiles.filter(
       (_, i) => i !== fileIndex
     );
+    setItems(newItems);
+  };
+
+  const handleRemoveExistingImage = (itemIndex: number, imageIndex: number) => {
+    const newItems = [...items];
+    if (newItems[itemIndex].existingImages) {
+      newItems[itemIndex].existingImages = newItems[
+        itemIndex
+      ].existingImages!.filter((_, i) => i !== imageIndex);
+    }
     setItems(newItems);
   };
 
@@ -250,13 +295,22 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                     type="number"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) =>
-                      handleItemChange(
-                        index,
-                        "quantity",
-                        parseInt(e.target.value) || 1
-                      )
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty string for user to clear and type
+                      if (value === "") {
+                        handleItemChange(index, "quantity", "");
+                      } else {
+                        handleItemChange(index, "quantity", parseInt(value));
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // On blur, ensure minimum value of 1
+                      const value = parseInt(e.target.value);
+                      if (!value || value < 1) {
+                        handleItemChange(index, "quantity", 1);
+                      }
+                    }}
                     className="bg-white"
                   />
                 </div>
@@ -265,7 +319,8 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                 <div>
                   <Label>Item Total</Label>
                   <div className="h-10 px-3 py-2 bg-gray-100 border rounded-md font-semibold text-orange-700">
-                    ${(item.quantity * item.unitPrice).toFixed(2)}
+                    $
+                    {((Number(item.quantity) || 0) * item.unitPrice).toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -297,26 +352,94 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                     />
                   </label>
 
-                  {/* File Preview */}
-                  {item.labelFiles.length > 0 && (
-                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                      {item.labelFiles.map((file, fileIndex) => (
-                        <div key={fileIndex} className="relative group">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="w-full h-20 object-cover rounded border-2 border-orange-300"
-                          />
+                  {/* Image Preview - Existing Images and New Files */}
+                  {((item.existingImages && item.existingImages.length > 0) ||
+                    item.labelFiles.length > 0) && (
+                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 gap-y-8">
+                      {/* Existing Images */}
+                      {item.existingImages?.map((image, imageIndex) => (
+                        <div
+                          key={`existing-${imageIndex}`}
+                          className="relative group w-full h-20"
+                        >
+                          <div
+                            className="cursor-pointer w-full h-full hover:opacity-80 transition-opacity"
+                            onClick={() =>
+                              setSelectedImage({
+                                url: image.secureUrl || image.url,
+                                filename:
+                                  image.originalFilename ||
+                                  `Label-${imageIndex + 1}.${
+                                    image.format || "jpg"
+                                  }`,
+                              })
+                            }
+                          >
+                            <Image
+                              src={image.secureUrl || image.url}
+                              alt={
+                                image.originalFilename ||
+                                `Label ${imageIndex + 1}`
+                              }
+                              fill
+                              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                              className="object-cover rounded border-2 border-green-300"
+                            />
+                          </div>
                           <button
                             type="button"
-                            onClick={() => handleRemoveFile(index, fileIndex)}
-                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                            onClick={() =>
+                              handleRemoveExistingImage(index, imageIndex)
+                            }
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
                           >
                             <X className="w-3 h-3" />
                           </button>
-                          <p className="text-xs text-gray-600 mt-1 truncate">
+                          <p className="text-xs text-gray-600 mt-1 truncate absolute -bottom-5 left-0 right-0">
+                            {image.originalFilename ||
+                              `Image ${imageIndex + 1}`}
+                          </p>
+                          <span className="absolute top-1 left-1 bg-green-600 text-white text-[10px] px-1 rounded z-10">
+                            Saved
+                          </span>
+                        </div>
+                      ))}
+
+                      {/* New Files */}
+                      {item.labelFiles.map((file, fileIndex) => (
+                        <div
+                          key={`new-${fileIndex}`}
+                          className="relative group w-full h-20"
+                        >
+                          {/* Using regular img for blob URLs as Next Image doesn't support them */}
+                          <div
+                            className="cursor-pointer w-full h-full hover:opacity-80 transition-opacity"
+                            onClick={() =>
+                              setSelectedImage({
+                                url: URL.createObjectURL(file),
+                                filename: file.name,
+                              })
+                            }
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={file.name}
+                              className="w-full h-full object-cover rounded border-2 border-orange-300"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(index, fileIndex)}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <p className="text-xs text-gray-600 mt-1 truncate absolute -bottom-5 left-0 right-0">
                             {file.name}
                           </p>
+                          <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] px-1 rounded z-10">
+                            New
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -359,7 +482,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                 {item.privateLabelType || "N/A"})
               </span>
               <span className="font-medium">
-                ${(item.quantity * item.unitPrice).toFixed(2)}
+                ${((Number(item.quantity) || 0) * item.unitPrice).toFixed(2)}
               </span>
             </div>
           ))}
@@ -442,6 +565,12 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
           <span className="text-orange-700">${total.toFixed(2)}</span>
         </div>
       </Card>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        image={selectedImage}
+        onClose={() => setSelectedImage(null)}
+      />
     </div>
   );
 };

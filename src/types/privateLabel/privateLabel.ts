@@ -36,6 +36,7 @@ export interface IPrivateLabelOrder {
   subtotal: number;
   discount: number;
   discountType: "flat" | "percentage";
+  discountAmount?: number; // Calculated discount amount in dollars
   total: number;
   note?: string;
   deliveryDate?: string;

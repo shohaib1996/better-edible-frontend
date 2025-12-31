@@ -64,6 +64,8 @@ export const PrivateLabelOrderDetailsModal: React.FC<
     }
   };
 
+  console.log(order);
+
   return (
     <>
       <Dialog open={!!order} onOpenChange={handleModalClose}>
@@ -240,9 +242,9 @@ export const PrivateLabelOrderDetailsModal: React.FC<
                   <span className="text-red-500">
                     {order.discountType === "percentage"
                       ? `${order.discount}% (-${fmt(
-                          (order.subtotal * order.discount) / 100
+                          order.discountAmount || 0
                         )})`
-                      : `-${fmt(order.discount)}`}
+                      : `-${fmt(order.discountAmount || order.discount || 0)}`}
                   </span>
                 </div>
 

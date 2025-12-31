@@ -42,6 +42,8 @@ interface DeliveryModalProps {
   rep?: Partial<IRep> | null;
   sampleId?: string | null;
   orderId?: string | null;
+  privateLabelOrderId?: string | null;
+  onSuccess?: () => void;
 }
 
 export const DeliveryModal = ({
@@ -51,6 +53,8 @@ export const DeliveryModal = ({
   rep: repProp,
   sampleId,
   orderId,
+  privateLabelOrderId,
+  onSuccess,
 }: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
   const reps = repsData?.data || [];
@@ -101,6 +105,7 @@ export const DeliveryModal = ({
         notes: formData.notes,
         ...(sampleId && { sampleId }),
         ...(orderId && { orderId }),
+        ...(privateLabelOrderId && { privateLabelOrderId }),
       }).unwrap();
 
       toast.success("✅ Delivery created successfully");
@@ -112,6 +117,7 @@ export const DeliveryModal = ({
         scheduledAt: new Date(),
         notes: "",
       });
+      onSuccess?.();
       onClose();
     } catch (error) {
       console.error(error);

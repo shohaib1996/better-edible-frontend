@@ -60,6 +60,7 @@ export const privateLabelApi = baseApi.injectEndpoints({
       query: ({
         status,
         repId,
+        repName,
         storeId,
         startDate,
         endDate,
@@ -71,6 +72,7 @@ export const privateLabelApi = baseApi.injectEndpoints({
         params: {
           status,
           repId,
+          repName,
           storeId,
           startDate,
           endDate,
@@ -98,13 +100,25 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // 🟧 Update private label order
+    // 🟧 Update private label order (supports both JSON and FormData)
     updatePrivateLabelOrder: builder.mutation({
-      query: ({ id, ...body }) => ({
-        url: `/private-labels/${id}`,
-        method: "PUT",
-        body,
-      }),
+      query: (arg) => {
+        // If arg is an object with id and body (FormData case)
+        if (arg.body instanceof FormData) {
+          return {
+            url: `/private-labels/${arg.id}`,
+            method: "PUT",
+            body: arg.body,
+          };
+        }
+        // Otherwise, it's a regular JSON update
+        const { id, ...body } = arg;
+        return {
+          url: `/private-labels/${id}`,
+          method: "PUT",
+          body,
+        };
+      },
       invalidatesTags: [tagTypes.privateLabelOrders],
     }),
 

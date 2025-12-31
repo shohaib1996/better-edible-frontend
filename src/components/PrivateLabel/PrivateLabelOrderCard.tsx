@@ -10,15 +10,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, FileText, Truck, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IPrivateLabelOrder } from "@/types";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { useUpdatePrivateLabelOrderMutation } from "@/redux/api/PrivateLabel/privateLabelApi";
 
 interface PrivateLabelOrderCardProps {
   order: IPrivateLabelOrder;
   canEditStatus: boolean;
   onStatusChange: (orderId: string, newStatus: string) => void;
   onViewDetails: (order: IPrivateLabelOrder) => void;
+  onEdit: (order: IPrivateLabelOrder) => void;
+  onDelivery?: (order: IPrivateLabelOrder) => void;
+  onGenerateInvoice?: (order: IPrivateLabelOrder) => void;
+  onPackingList?: (order: IPrivateLabelOrder) => void;
 }
 
 export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
@@ -26,7 +39,12 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
   canEditStatus,
   onStatusChange,
   onViewDetails,
+  onEdit,
+  onDelivery,
+  onGenerateInvoice,
+  onPackingList,
 }) => {
+  const [updateOrder] = useUpdatePrivateLabelOrderMutation();
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "submitted":
@@ -116,14 +134,53 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs h-8"
-            onClick={() => onViewDetails(order)}
-          >
-            View Details
-          </Button>
+          {/* Action Buttons - Only show for non-shipped/non-cancelled orders */}
+          {onDelivery && order.status !== "shipped" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 border-orange-300 hover:bg-orange-50"
+              onClick={() => onDelivery(order)}
+            >
+              <Truck className="w-3 h-3 mr-1" />
+              Delivery
+            </Button>
+          )}
+
+          {onGenerateInvoice && order.status !== "shipped" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 border-orange-300 hover:bg-orange-50"
+              onClick={() => onGenerateInvoice(order)}
+            >
+              <FileText className="w-3 h-3 mr-1" />
+              Invoice
+            </Button>
+          )}
+
+          {onPackingList && order.status !== "shipped" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 border-orange-300 hover:bg-orange-50"
+              onClick={() => onPackingList(order)}
+            >
+              <ClipboardList className="w-3 h-3 mr-1" />
+              Packing List
+            </Button>
+          )}
+
+          {order.status !== "shipped" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => onEdit(order)}
+            >
+              Edit
+            </Button>
+          )}
 
           <Select
             value={order.status}
@@ -176,12 +233,67 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
               <span className="font-semibold">Order Date:</span>{" "}
               {new Date(order.createdAt).toLocaleDateString()}
             </p>
-            <p>
-              <span className="font-semibold">Delivery Date:</span>{" "}
-              {order.deliveryDate
-                ? format(new Date(order.deliveryDate), "MM/dd/yyyy")
-                : "N/A"}
-            </p>
+            {order.status === "shipped" ? (
+              <p>
+                <span className="font-semibold">Shipped Date:</span>{" "}
+                {order.deliveryDate
+                  ? format(new Date(order.deliveryDate), "MM/dd/yyyy")
+                  : format(new Date(), "MM/dd/yyyy")}
+              </p>
+            ) : order.status === "cancelled" ? (
+              <p>
+                <span className="font-semibold">Cancelled At:</span>{" "}
+                {order.deliveryDate
+                  ? format(new Date(order.deliveryDate), "MM/dd/yyyy")
+                  : format(new Date(), "MM/dd/yyyy")}
+              </p>
+            ) : (
+              <p className="flex items-center gap-2">
+                <span className="font-semibold">Delivery Date:</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1.5 bg-white text-gray-700 font-normal h-6 text-xs border-orange-300 px-2"
+                      disabled={!canEditStatus}
+                    >
+                      <CalendarIcon className="h-3 w-3 text-orange-500" />
+                      {order.deliveryDate ? (
+                        format(new Date(order.deliveryDate), "MM/dd/yyyy")
+                      ) : (
+                        <span>Pick date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={
+                        order.deliveryDate
+                          ? new Date(order.deliveryDate)
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        if (!date || !canEditStatus) return;
+                        updateOrder({
+                          id: order._id,
+                          deliveryDate: format(date, "yyyy-MM-dd"),
+                        })
+                          .unwrap()
+                          .then(() => {
+                            toast.success("Delivery date updated");
+                          })
+                          .catch(() =>
+                            toast.error("Error updating delivery date")
+                          );
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </p>
+            )}
             <p>
               <span className="font-semibold">Rep:</span>{" "}
               {order.rep?.name || "N/A"}
