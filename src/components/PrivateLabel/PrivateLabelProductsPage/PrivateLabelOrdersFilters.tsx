@@ -65,7 +65,7 @@ export const PrivateLabelOrdersFilters = ({
           placeholder="Search by store name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 pr-3 py-1.5 w-full border rounded-xs text-sm focus:ring-1 focus:ring-primary outline-none border-primary"
+          className="pl-8 pr-3 py-1.5 w-full border rounded-xs text-base focus:ring-1 focus:ring-primary outline-none border-primary"
         />
       </div>
     </div>
