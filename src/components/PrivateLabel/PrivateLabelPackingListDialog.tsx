@@ -67,21 +67,22 @@ export const PrivateLabelPackingListDialog: React.FC<
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-orange-700">
-            🏷️ Private Label Packing List
+        <DialogContent className="max-w-4xl max-h-[80vh] rounded-xs w-[95vw] sm:w-full flex flex-col gap-4">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <span>🏷️</span> Private Label Packing List
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Order Info */}
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <h3 className="font-bold text-lg text-orange-800">
+          {/* Order Info */}
+          <div className="bg-muted p-3 sm:p-4 rounded-xs border border-border">
+            <h3 className="font-bold text-base sm:text-lg text-foreground">
               {order.store?.name}
             </h3>
-            <p className="text-sm text-gray-600">{order.store?.address}</p>
-            <div className="mt-2 text-sm space-y-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">{order.store?.address}</p>
+            <div className="mt-2 text-xs sm:text-sm space-y-1 text-foreground">
               <p>
                 <span className="font-semibold">Order ID:</span>{" "}
                 {order._id.slice(-8).toUpperCase()}
@@ -100,24 +101,24 @@ export const PrivateLabelPackingListDialog: React.FC<
           </div>
 
           {/* Items Table */}
-          <div className="border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-orange-100">
+          <div className="border border-border rounded-xs overflow-hidden overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead className="bg-primary/10 border-b border-border">
                 <tr>
-                  <th className="px-4 py-2 text-left text-sm font-semibold">
+                  <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-foreground first:rounded-tl-xs">
                     #
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-semibold">
+                  <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-foreground">
                     Product Type
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-semibold">
+                  <th className="px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-semibold text-foreground">
                     Flavor
                   </th>
-                  <th className="px-4 py-2 text-center text-sm font-semibold">
+                  <th className="px-2 sm:px-4 py-2 text-center text-xs sm:text-sm font-semibold text-foreground">
                     Qty
                   </th>
-                  <th className="px-4 py-2 text-center text-sm font-semibold">
-                    <div className="flex items-center justify-center gap-2">
+                  <th className="px-2 sm:px-4 py-2 text-center text-xs sm:text-sm font-semibold text-foreground last:rounded-tr-xs">
+                    <div className="flex items-center justify-center gap-1 sm:gap-2">
                       <span>QA</span>
                       <Checkbox
                         checked={selectAll}
@@ -136,19 +137,19 @@ export const PrivateLabelPackingListDialog: React.FC<
                   return (
                     <tr
                       key={idx}
-                      className={`border-t ${
-                        isChecked ? "bg-green-50" : "hover:bg-gray-50"
+                      className={`border-t border-border ${
+                        isChecked ? "bg-accent/20" : "hover:bg-muted/50"
                       }`}
                     >
-                      <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                      <td className="px-4 py-3 text-sm font-medium">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-foreground">{idx + 1}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-foreground">
                         {item.privateLabelType}
                       </td>
-                      <td className="px-4 py-3 text-sm">{item.flavor}</td>
-                      <td className="px-4 py-3 text-sm text-center">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-foreground">{item.flavor}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center text-foreground">
                         {item.quantity}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                         <Checkbox
                           checked={isChecked}
                           onCheckedChange={() => handleCheckChange(key)}
@@ -158,11 +159,11 @@ export const PrivateLabelPackingListDialog: React.FC<
                     </tr>
                   );
                 })}
-                <tr className="border-t bg-orange-50 font-semibold">
-                  <td colSpan={3} className="px-4 py-3 text-sm text-right">
+                <tr className="border-t border-border bg-secondary/30 font-semibold">
+                  <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-foreground">
                     Total Quantity:
                   </td>
-                  <td className="px-4 py-3 text-sm text-center">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center text-foreground">
                     {totalQuantity}
                   </td>
                   <td></td>
@@ -173,8 +174,8 @@ export const PrivateLabelPackingListDialog: React.FC<
 
           {/* Note */}
           {order.note && (
-            <div className="bg-gray-50 p-3 rounded border border-gray-200">
-              <p className="text-sm">
+            <div className="bg-muted p-2 sm:p-3 rounded-xs border border-border">
+              <p className="text-xs sm:text-sm text-foreground">
                 <span className="font-semibold">Note:</span> {order.note}
               </p>
             </div>
@@ -182,14 +183,14 @@ export const PrivateLabelPackingListDialog: React.FC<
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className="rounded-xs text-xs sm:text-sm px-3 sm:px-4">
               Close
             </Button>
             <Button
               onClick={handlePrint}
-              className="bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1 sm:gap-2 rounded-xs text-xs sm:text-sm px-3 sm:px-4"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-3 h-3 sm:w-4 sm:h-4" />
               Print Slip
             </Button>
           </div>

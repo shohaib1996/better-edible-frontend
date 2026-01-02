@@ -35,8 +35,12 @@ export const RepSelect: React.FC<RepSelectProps> = ({
           <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
         </div>
       ) : (
-        <Select value={value ?? ""} onValueChange={onChange} disabled={disabled}>
-          <SelectTrigger className="w-full">
+        <Select
+          value={value ?? ""}
+          onValueChange={onChange}
+          disabled={disabled}
+        >
+          <SelectTrigger className="w-full rounded-xs">
             <SelectValue placeholder="Select a rep" />
           </SelectTrigger>
           <SelectContent>

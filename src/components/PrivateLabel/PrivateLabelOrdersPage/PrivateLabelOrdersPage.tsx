@@ -11,6 +11,7 @@ import {
   useChangePrivateLabelOrderStatusMutation,
 } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { useGetAllStoresQuery } from "@/redux/api/Stores/stores";
 import { PrivateLabelOrderCard } from "@/components/PrivateLabel/PrivateLabelOrderCard";
 import { PrivateLabelOrderDetailsModal } from "@/components/PrivateLabel/PrivateLabelOrderDetailsModal";
 import { CreatePrivateLabelOrderModal } from "@/components/PrivateLabel/CreatePrivateLabelOrderModal";
@@ -22,6 +23,7 @@ import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPaginati
 import { IPrivateLabelOrder } from "@/types";
 import { useUser } from "@/redux/hooks/useAuth";
 import { generatePrivateLabelInvoice } from "@/utils/privateLabelInvoiceGenerator";
+import { cn } from "@/lib/utils";
 
 interface PrivateLabelOrdersPageProps {
   isRepView?: boolean;
@@ -59,6 +61,9 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
 
   // Fetch all reps for the filter dropdown
   const reps = useGetAllRepsQuery({});
+
+  // Prefetch stores to cache data before modal opens
+  useGetAllStoresQuery({ search: "", limit: 35, page: 1 });
 
   // Fetch orders based on current tab and role
   const getQueryParams = () => {
@@ -184,43 +189,53 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <Package className="w-8 h-8 text-orange-600" />
-            Private Label Orders
+          <h1 className="text-xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+            <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <span className="hidden sm:inline">Private Label Orders</span>
+            <span className="sm:hidden">Private Label Orders</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
             Manage private label orders with custom branding
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {isAdmin && (
             <Button
               onClick={handleManageProducts}
               variant="outline"
-              className="flex items-center gap-2"
+              size="sm"
+              className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
             >
-              <Package className="w-4 h-4" />
-              Manage Products
+              <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Manage Products</span>
+              <span className="sm:hidden">Products</span>
             </Button>
           )}
           <Button
             onClick={handleCreateOrder}
-            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+            size="sm"
+            className="flex items-center gap-1 sm:gap-2 bg-primary hover:bg-primary/90 dark:hover:bg-primary/90 text-primary-foreground dark:text-white dark:hover:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
           >
-            <Plus className="w-4 h-4" />
-            Create Order
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Create Order</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+        <TabsList
+          className={cn(
+            "grid w-full h-auto p-1.5",
+            isAdmin ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3"
+          )}
+        >
           {isAdmin ? (
             <>
               <TabsTrigger value="new">New Orders</TabsTrigger>
@@ -251,7 +266,7 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
         <div className="mt-2">
           {/* Total Value Display */}
           {orders.length > 0 && (
-            <div className="text-right font-semibold text-orange-600 mb-4 pr-2">
+            <div className="text-right font-semibold text-primary mb-4 pr-2">
               Total Orders Value: ${totalValue.toFixed(2)}
             </div>
           )}
@@ -259,9 +274,9 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
           {/* Orders List */}
           {orders.length === 0 ? (
             <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No orders found</p>
-              <p className="text-gray-400 text-sm mt-1">
+              <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">No orders found</p>
+              <p className="text-muted-foreground/70 text-sm mt-1">
                 Create your first private label order to get started
               </p>
             </div>

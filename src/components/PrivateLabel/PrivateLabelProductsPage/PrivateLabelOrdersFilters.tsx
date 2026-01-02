@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { IRep } from "@/types";
+import { Input } from "@/components/ui/input";
 
 interface PrivateLabelOrdersFiltersProps {
   reps: any;
@@ -29,40 +30,42 @@ export const PrivateLabelOrdersFilters = ({
   const repsData = reps?.data?.data || [];
 
   return (
-    <div className="flex flex-wrap gap-3 items-center justify-end mb-3">
+    <div className="flex flex-col md:flex-row gap-3 w-full">
       {!isRepView && (
-        <Select
-          value={selectedRepName || "all"}
-          onValueChange={(value) =>
-            setSelectedRepName(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Rep" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Reps</SelectItem>
-            {[
-              ...new Set(
-                repsData?.map((r: IRep) => r.name).filter(Boolean) || []
-              ),
-            ].map((repName) => (
-              <SelectItem key={repName as string} value={repName as string}>
-                {repName as string}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex-1">
+          <Select
+            value={selectedRepName || "all"}
+            onValueChange={(value) =>
+              setSelectedRepName(value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger className="rounded-xs border-primary w-full">
+              <SelectValue placeholder="Filter by Rep" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Reps</SelectItem>
+              {[
+                ...new Set(
+                  repsData?.map((r: IRep) => r.name).filter(Boolean) || []
+                ),
+              ].map((repName) => (
+                <SelectItem key={repName as string} value={repName as string}>
+                  {repName as string}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
-      <div className="relative w-64">
+      <div className="relative flex-2">
         <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-        <input
+        <Input
           type="text"
           placeholder="Search by store name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 pr-3 py-1.5 w-full border rounded-md text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+          className="pl-8 pr-3 py-1.5 w-full border rounded-xs text-sm focus:ring-1 focus:ring-primary outline-none border-primary"
         />
       </div>
     </div>

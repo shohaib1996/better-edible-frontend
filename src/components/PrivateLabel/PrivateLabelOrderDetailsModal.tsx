@@ -16,6 +16,7 @@ import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewMod
 import { format } from "date-fns";
 import { Eye } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface PrivateLabelOrderDetailsModalProps {
   order: IPrivateLabelOrder | null;
@@ -48,7 +49,12 @@ export const PrivateLabelOrderDetailsModal: React.FC<
       cancelled: "bg-red-100 text-red-800",
     };
     return (
-      <Badge className={colorMap[status] || "bg-gray-100 text-gray-800"}>
+      <Badge
+        className={cn(
+          colorMap[status] || "bg-gray-100 text-gray-800",
+          "rounded-xs"
+        )}
+      >
         {status}
       </Badge>
     );
@@ -69,16 +75,18 @@ export const PrivateLabelOrderDetailsModal: React.FC<
   return (
     <>
       <Dialog open={!!order} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-3xl h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span>Private Label Order</span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-orange-500 to-yellow-500 text-white shadow-md">
+            <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-lg font-bold">Private Label Order</span>
+                <span className="px-2 py-0.5 rounded-xs text-[10px] font-bold bg-linear-to-r from-primary to-secondary text-white shadow-md whitespace-nowrap">
                   🏷️ PRIVATE LABEL
                 </span>
               </div>
-              {getStatusBadge(order.status)}
+              <div className="flex items-center self-start sm:self-auto">
+                {getStatusBadge(order.status)}
+              </div>
             </DialogTitle>
           </DialogHeader>
 
@@ -86,28 +94,36 @@ export const PrivateLabelOrderDetailsModal: React.FC<
             {/* Store + Rep + Dates */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h3 className="font-semibold text-gray-700">Store Details</h3>
-                <p className="font-medium">{order.store?.name}</p>
-                <p className="text-sm text-gray-500">{order.store?.address}</p>
+                <h3 className="font-semibold text-foreground text-sm">
+                  Store Details
+                </h3>
+                <p className="font-medium text-foreground text-sm">
+                  {order.store?.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {order.store?.address}
+                </p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-700">
+                <h3 className="font-semibold text-foreground text-sm">
                   Order Information
                 </h3>
-                <p>
-                  <span className="font-medium">Rep:</span>{" "}
-                  {order.rep?.name || "N/A"}
-                </p>
-                <p>
-                  <span className="font-medium">Order Date:</span>{" "}
-                  {format(new Date(order.createdAt), "PPP")}
-                </p>
-                <p>
-                  <span className="font-medium">Delivery Date:</span>{" "}
-                  {order.deliveryDate
-                    ? format(new Date(order.deliveryDate), "PPP")
-                    : "N/A"}
-                </p>
+                <div className="space-y-1 mt-1">
+                  <p className="text-foreground text-xs sm:text-sm">
+                    <span className="font-medium">Rep:</span>{" "}
+                    {order.rep?.name || "N/A"}
+                  </p>
+                  <p className="text-foreground text-xs sm:text-sm">
+                    <span className="font-medium">Order Date:</span>{" "}
+                    {format(new Date(order.createdAt), "PPP")}
+                  </p>
+                  <p className="text-foreground text-xs sm:text-sm">
+                    <span className="font-medium">Delivery Date:</span>{" "}
+                    {order.deliveryDate
+                      ? format(new Date(order.deliveryDate), "PPP")
+                      : "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -115,22 +131,22 @@ export const PrivateLabelOrderDetailsModal: React.FC<
 
             {/* Items */}
             <div>
-              <h3 className="font-semibold mb-3 text-gray-700">Items</h3>
+              <h3 className="font-semibold mb-3 text-foreground">Items</h3>
               <div className="space-y-3">
                 {order.items && order.items.length > 0 ? (
                   order.items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="border border-orange-200 rounded-lg p-4 bg-linear-to-r from-orange-50 to-yellow-50"
+                      className="border border-primary/30 rounded-xs p-3 sm:p-4 bg-linear-to-r from-primary/10 to-secondary/10"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-semibold text-gray-800">
+                        <div className="w-full">
+                          <p className="font-semibold text-foreground text-sm">
                             {item.flavor} ({item.privateLabelType})
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Quantity: {item.quantity} × {fmt(item.unitPrice)} ={" "}
-                            <span className="font-semibold text-orange-700">
+                            <span className="font-semibold text-primary">
                               {fmt(item.lineTotal || item.total)}
                             </span>
                           </p>
@@ -140,7 +156,7 @@ export const PrivateLabelOrderDetailsModal: React.FC<
                       {/* Label Images */}
                       {item.labelImages && item.labelImages.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-sm font-medium text-gray-700 mb-2">
+                          <p className="text-sm font-medium text-foreground mb-2">
                             Label Images:
                           </p>
                           <div className="flex flex-wrap gap-2">
@@ -182,7 +198,7 @@ export const PrivateLabelOrderDetailsModal: React.FC<
                               return (
                                 <div
                                   key={imgIdx}
-                                  className="relative group cursor-pointer w-24 h-24 overflow-hidden rounded-lg border-2 border-orange-300 hover:border-orange-500 hover:shadow-lg transition-all duration-200"
+                                  className="relative group cursor-pointer w-20 h-20 sm:w-24 sm:h-24 overflow-hidden rounded-xs border-2 border-primary/30 hover:border-primary hover:shadow-lg transition-all duration-200"
                                   onClick={() =>
                                     setSelectedImage({
                                       url: imageUrl,
@@ -209,7 +225,7 @@ export const PrivateLabelOrderDetailsModal: React.FC<
                     </div>
                   ))
                 ) : (
-                  <p className="text-center py-6 text-gray-500">
+                  <p className="text-center py-6 text-muted-foreground">
                     No items in this order
                   </p>
                 )}
@@ -221,9 +237,9 @@ export const PrivateLabelOrderDetailsModal: React.FC<
             {/* Note */}
             {order.note && (
               <>
-                <div className="bg-gray-50 rounded-lg p-3 border">
-                  <h3 className="font-semibold mb-2 text-gray-700">Note</h3>
-                  <p className="text-sm text-gray-700">{order.note}</p>
+                <div className="bg-muted rounded-xs p-3 border border-border">
+                  <h3 className="font-semibold mb-2 text-foreground">Note</h3>
+                  <p className="text-sm text-foreground">{order.note}</p>
                 </div>
                 <Separator />
               </>
@@ -232,14 +248,14 @@ export const PrivateLabelOrderDetailsModal: React.FC<
             {/* Summary */}
             <div className="flex justify-end">
               <div className="w-full sm:w-1/2 space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-foreground">
                   <span className="font-medium">Subtotal:</span>
                   <span>{fmt(order.subtotal)}</span>
                 </div>
 
-                <div className="flex justify-between">
+                <div className="flex justify-between text-foreground">
                   <span className="font-medium">Discount:</span>
-                  <span className="text-red-500">
+                  <span className="text-destructive">
                     {order.discountType === "percentage"
                       ? `${order.discount}% (-${fmt(
                           order.discountAmount || 0
@@ -248,16 +264,20 @@ export const PrivateLabelOrderDetailsModal: React.FC<
                   </span>
                 </div>
 
-                <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                <div className="flex justify-between font-semibold text-lg border-t border-border pt-2 text-foreground">
                   <span>Total:</span>
-                  <span className="text-orange-700">{fmt(order.total)}</span>
+                  <span className="text-primary">{fmt(order.total)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xs w-full sm:w-auto"
+            >
               Close
             </Button>
           </DialogFooter>

@@ -32,6 +32,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 import {
@@ -45,6 +46,7 @@ import {
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 import { useUser } from "@/redux/hooks/useAuth";
 
@@ -156,6 +158,7 @@ export function AppSidebar() {
 
 function FooterUserMenu({ user }: { user: any }) {
   const router = useRouter();
+  const { isMobile } = useSidebar();
   const [open, setOpen] = useState(false);
 
   const handleLogout = () => {
@@ -192,7 +195,11 @@ function FooterUserMenu({ user }: { user: any }) {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent side="right" align="end" className="w-56">
+      <DropdownMenuContent
+        side={isMobile ? "top" : "right"}
+        align={isMobile ? "end" : "end"}
+        className="w-56"
+      >
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
 
         <DropdownMenuItem className="flex flex-col items-start">
@@ -214,10 +221,12 @@ function FooterUserMenu({ user }: { user: any }) {
         </DropdownMenuItem>
 
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <div className="flex items-center gap-2 w-full">
-            <Settings className="w-4 h-4" />
-            <span className="flex-1">Theme</span>
-            {/* Add ModeToggle if needed */}
+          <div className="flex items-center gap-2 w-full justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span>Theme</span>
+            </div>
+            <AnimatedThemeToggler className="h-8 w-8 rounded-md hover:bg-accent flex items-center justify-center transition-colors" />
           </div>
         </DropdownMenuItem>
 

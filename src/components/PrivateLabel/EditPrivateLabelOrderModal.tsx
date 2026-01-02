@@ -57,7 +57,9 @@ export const EditPrivateLabelOrderModal: React.FC<
   // Populate form with existing order data when order changes
   useEffect(() => {
     if (order) {
-      setStoreId(typeof order.store === "string" ? order.store : order.store._id);
+      setStoreId(
+        typeof order.store === "string" ? order.store : order.store._id
+      );
       setRepId(typeof order.rep === "string" ? order.rep : order.rep._id);
       setDeliveryDate(
         order.deliveryDate ? new Date(order.deliveryDate) : undefined
@@ -127,13 +129,11 @@ export const EditPrivateLabelOrderModal: React.FC<
       const hasNewFiles = formData.items.some(
         (item) => item.labelFiles && item.labelFiles.length > 0
       );
-      const hasExistingImagesChanges = formData.items.some(
-        (item, index) => {
-          const originalImages = order.items[index]?.labelImages || [];
-          const currentImages = item.existingImages || [];
-          return originalImages.length !== currentImages.length;
-        }
-      );
+      const hasExistingImagesChanges = formData.items.some((item, index) => {
+        const originalImages = order.items[index]?.labelImages || [];
+        const currentImages = item.existingImages || [];
+        return originalImages.length !== currentImages.length;
+      });
 
       if (hasNewFiles || hasExistingImagesChanges) {
         // If there are new files or image changes, use FormData
@@ -147,7 +147,8 @@ export const EditPrivateLabelOrderModal: React.FC<
           privateLabelType: item.privateLabelType,
           flavor: item.flavor,
           quantity: item.quantity,
-          keepExistingImages: item.existingImages?.map((img: any) => img.publicId) || [],
+          keepExistingImages:
+            item.existingImages?.map((img: any) => img.publicId) || [],
         }));
         formDataToSend.append("items", JSON.stringify(itemsData));
 
@@ -186,7 +187,8 @@ export const EditPrivateLabelOrderModal: React.FC<
             privateLabelType: item.privateLabelType,
             flavor: item.flavor,
             quantity: item.quantity,
-            keepExistingImages: item.existingImages?.map((img: any) => img.publicId) || [],
+            keepExistingImages:
+              item.existingImages?.map((img: any) => img.publicId) || [],
           })),
           discount: formData.discount,
           discountType: formData.discountType,
@@ -210,16 +212,16 @@ export const EditPrivateLabelOrderModal: React.FC<
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
             <span className="text-2xl">✏️</span>
             Edit Private Label Order
           </DialogTitle>
         </DialogHeader>
 
         {!canEdit && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 text-sm text-yellow-800">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xs p-3 text-sm text-yellow-800">
             <strong>Read Only:</strong> You don't have permission to edit this
             order.
           </div>
@@ -243,7 +245,11 @@ export const EditPrivateLabelOrderModal: React.FC<
 
             <div>
               <Label>Rep *</Label>
-              <RepSelect value={repId} onChange={setRepId} disabled={!canEdit} />
+              <RepSelect
+                value={repId}
+                onChange={setRepId}
+                disabled={!canEdit}
+              />
             </div>
           </div>
 
@@ -255,7 +261,7 @@ export const EditPrivateLabelOrderModal: React.FC<
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal mt-2",
+                    "w-full justify-start text-left font-normal mt-2 rounded-xs",
                     !deliveryDate && "text-muted-foreground"
                   )}
                   disabled={!canEdit}
@@ -279,17 +285,25 @@ export const EditPrivateLabelOrderModal: React.FC<
           </div>
 
           {/* Private Label Form */}
-          <PrivateLabelForm onChange={handleFormChange} initialData={formData} />
+          <PrivateLabelForm
+            onChange={handleFormChange}
+            initialData={formData}
+          />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-xs w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isLoading || !canEdit}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xs w-full sm:w-auto mt-2 sm:mt-0"
           >
             {isLoading ? "Updating..." : "Update Order"}
           </Button>

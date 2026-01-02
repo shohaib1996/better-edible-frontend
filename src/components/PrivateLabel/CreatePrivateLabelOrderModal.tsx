@@ -41,6 +41,7 @@ export const CreatePrivateLabelOrderModal: React.FC<
   const [storeId, setStoreId] = useState("");
   const [repId, setRepId] = useState(isRepView ? currentRepId || "" : "");
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const [formData, setFormData] = useState<{
     items: any[];
@@ -122,14 +123,18 @@ export const CreatePrivateLabelOrderModal: React.FC<
       }
 
       if (deliveryDate) {
-        formDataToSend.append("deliveryDate", format(deliveryDate, "yyyy-MM-dd"));
+        formDataToSend.append(
+          "deliveryDate",
+          format(deliveryDate, "yyyy-MM-dd")
+        );
       }
 
       await createOrder(formDataToSend).unwrap();
       toast.success("Private label order created successfully!");
 
       // Reset form and close modal
-      handleClose();
+      resetForm();
+      onClose();
       onSuccess();
     } catch (error: any) {
       console.error("Error creating order:", error);
@@ -137,25 +142,29 @@ export const CreatePrivateLabelOrderModal: React.FC<
     }
   };
 
-  const handleClose = () => {
-    // Reset form state
+  const resetForm = () => {
     setStoreId("");
     setRepId(isRepView ? currentRepId || "" : "");
     setDeliveryDate(undefined);
+    setCalendarOpen(false);
     setFormData({
       items: [],
       discount: 0,
       discountType: "flat",
       note: "",
     });
+  };
+
+  const handleCancel = () => {
+    resetForm();
     onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-4xl h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
             <span className="text-2xl">📦</span>
             Create Private Label Order
           </DialogTitle>
@@ -195,12 +204,12 @@ export const CreatePrivateLabelOrderModal: React.FC<
           {/* Delivery Date */}
           <div>
             <Label>Delivery Date</Label>
-            <Popover>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal mt-2",
+                    "w-full justify-start text-left font-normal mt-2 rounded-xs",
                     !deliveryDate && "text-muted-foreground"
                   )}
                 >
@@ -216,28 +225,35 @@ export const CreatePrivateLabelOrderModal: React.FC<
                 <Calendar
                   mode="single"
                   selected={deliveryDate}
-                  onSelect={setDeliveryDate}
+                  onSelect={(date) => {
+                    setDeliveryDate(date);
+                    setCalendarOpen(false);
+                  }}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
           {/* Private Label Form */}
-          <PrivateLabelForm onChange={handleFormChange} />
+          <PrivateLabelForm
+            onChange={handleFormChange}
+            initialData={formData.items.length > 0 ? formData : undefined}
+          />
         </div>
 
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={handleClose}
+            onClick={handleCancel}
             disabled={isLoading}
+            className="rounded-xs"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xs"
           >
             {isLoading ? "Creating..." : "Create Order"}
           </Button>

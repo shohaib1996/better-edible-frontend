@@ -66,7 +66,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
       {
         privateLabelType: "",
         flavor: "",
-        quantity: 1,
+        quantity: "",
         unitPrice: 0,
         labelFiles: [],
       },
@@ -125,7 +125,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
       {
         privateLabelType: "",
         flavor: "",
-        quantity: 1,
+        quantity: "",
         unitPrice: 0,
         labelFiles: [],
       },
@@ -203,7 +203,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
   };
 
   if (isLoading) {
-    return <div className="text-gray-500">Loading products...</div>;
+    return <div className="text-muted-foreground">Loading products...</div>;
   }
 
   return (
@@ -217,7 +217,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
             onClick={handleAddItem}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 rounded-xs"
           >
             <Plus className="w-4 h-4" />
             Add Item
@@ -228,10 +228,10 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
           {items.map((item, index) => (
             <Card
               key={index}
-              className="p-4 border-2 border-orange-200 bg-linear-to-r from-orange-50 to-yellow-50"
+              className="p-4 border-2 border-primary/20 bg-card rounded-xs"
             >
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-gray-700">
+                <h3 className="font-semibold text-card-foreground">
                   Item #{index + 1}
                 </h3>
                 {items.length > 1 && (
@@ -240,7 +240,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                     onClick={() => handleRemoveItem(index)}
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -257,7 +257,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                       handleItemChange(index, "privateLabelType", value)
                     }
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="w-full bg-background rounded-xs">
                       <SelectValue placeholder="Select product type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -269,7 +269,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                     </SelectContent>
                   </Select>
                   {item.unitPrice > 0 && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Unit price: ${item.unitPrice.toFixed(2)}/each
                     </p>
                   )}
@@ -284,7 +284,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                       handleItemChange(index, "flavor", e.target.value)
                     }
                     placeholder="e.g., Strawberry Lemonade"
-                    className="bg-white"
+                    className="rounded-xs"
                   />
                 </div>
 
@@ -293,7 +293,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                   <Label>Quantity *</Label>
                   <Input
                     type="number"
-                    min="1"
+                    min="0"
                     value={item.quantity}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -304,21 +304,15 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                         handleItemChange(index, "quantity", parseInt(value));
                       }
                     }}
-                    onBlur={(e) => {
-                      // On blur, ensure minimum value of 1
-                      const value = parseInt(e.target.value);
-                      if (!value || value < 1) {
-                        handleItemChange(index, "quantity", 1);
-                      }
-                    }}
-                    className="bg-white"
+                    placeholder="Enter quantity"
+                    className="rounded-xs"
                   />
                 </div>
 
                 {/* Item Total (Read-only) */}
                 <div>
                   <Label>Item Total</Label>
-                  <div className="h-10 px-3 py-2 bg-gray-100 border rounded-md font-semibold text-orange-700">
+                  <div className="h-10 px-3 py-2 bg-muted border rounded-xs font-semibold text-primary">
                     $
                     {((Number(item.quantity) || 0) * item.unitPrice).toFixed(2)}
                   </div>
@@ -333,12 +327,12 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                     htmlFor={`file-upload-${index}`}
                     className="cursor-pointer"
                   >
-                    <div className="border-2 border-dashed border-orange-300 rounded-lg p-4 text-center hover:border-orange-500 transition bg-white">
-                      <Upload className="w-8 h-8 mx-auto text-orange-500 mb-2" />
-                      <p className="text-sm text-gray-600">
+                    <div className="border-2 border-dashed border-primary/30 rounded-xs p-4 text-center hover:border-primary transition bg-card">
+                      <Upload className="w-8 h-8 mx-auto text-primary mb-2" />
+                      <p className="text-sm text-card-foreground">
                         Click to upload or drag and drop
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         PNG, JPG up to 5MB
                       </p>
                     </div>
@@ -383,7 +377,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                               }
                               fill
                               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                              className="object-cover rounded border-2 border-green-300"
+                              className="object-cover rounded border-2 border-green-600"
                             />
                           </div>
                           <button
@@ -391,11 +385,11 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                             onClick={() =>
                               handleRemoveExistingImage(index, imageIndex)
                             }
-                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
+                            className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
                           >
                             <X className="w-3 h-3" />
                           </button>
-                          <p className="text-xs text-gray-600 mt-1 truncate absolute -bottom-5 left-0 right-0">
+                          <p className="text-xs text-muted-foreground mt-1 truncate absolute -bottom-5 left-0 right-0">
                             {image.originalFilename ||
                               `Image ${imageIndex + 1}`}
                           </p>
@@ -424,17 +418,17 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                             <img
                               src={URL.createObjectURL(file)}
                               alt={file.name}
-                              className="w-full h-full object-cover rounded border-2 border-orange-300"
+                              className="w-full h-full object-cover rounded border-2 border-primary"
                             />
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveFile(index, fileIndex)}
-                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
+                            className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition z-10"
                           >
                             <X className="w-3 h-3" />
                           </button>
-                          <p className="text-xs text-gray-600 mt-1 truncate absolute -bottom-5 left-0 right-0">
+                          <p className="text-xs text-muted-foreground mt-1 truncate absolute -bottom-5 left-0 right-0">
                             {file.name}
                           </p>
                           <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] px-1 rounded z-10">
@@ -460,7 +454,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Add any special instructions or notes..."
-          className="mt-2"
+          className="mt-2 rounded-xs"
           rows={3}
         />
       </div>
@@ -468,8 +462,8 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
       <Separator />
 
       {/* Order Summary */}
-      <Card className="p-4 bg-linear-to-r from-orange-50 to-yellow-50 border-2 border-orange-200">
-        <h3 className="font-semibold text-lg mb-3 text-gray-700">
+      <Card className="p-4 bg-card border-2 border-primary/20 rounded-xs">
+        <h3 className="font-semibold text-lg mb-3 text-card-foreground">
           Order Summary
         </h3>
 
@@ -477,11 +471,11 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
         <div className="space-y-2 mb-3">
           {items.map((item, index) => (
             <div key={index} className="flex justify-between text-sm">
-              <span className="text-gray-600">
+              <span className="text-muted-foreground">
                 Item {index + 1}: {item.flavor || "(no flavor)"} (
                 {item.privateLabelType || "N/A"})
               </span>
-              <span className="font-medium">
+              <span className="font-medium text-card-foreground">
                 ${((Number(item.quantity) || 0) * item.unitPrice).toFixed(2)}
               </span>
             </div>
@@ -492,8 +486,10 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
 
         {/* Subtotal */}
         <div className="flex justify-between text-sm mb-2">
-          <span className="font-medium">Subtotal:</span>
-          <span className="font-semibold">${subtotal.toFixed(2)}</span>
+          <span className="font-medium text-card-foreground">Subtotal:</span>
+          <span className="font-semibold text-card-foreground">
+            ${subtotal.toFixed(2)}
+          </span>
         </div>
 
         {/* Discount */}
@@ -526,7 +522,7 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
             <Label className="text-sm w-24">Discount:</Label>
             <div className="relative flex-1">
               {discountType === "flat" && (
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   $
                 </span>
               )}
@@ -539,19 +535,19 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
                   setDiscountValue(parseFloat(e.target.value) || 0)
                 }
                 className={cn(
-                  "bg-white",
-                  discountType === "flat" ? "pl-7" : "pr-7"
+                  discountType === "flat" ? "pl-7" : "pr-7",
+                  "rounded-xs"
                 )}
               />
               {discountType === "percentage" && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   %
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex justify-between text-sm text-red-600">
+          <div className="flex justify-between text-sm text-destructive">
             <span>Discount Amount:</span>
             <span className="font-medium">-${discountAmount.toFixed(2)}</span>
           </div>
@@ -561,8 +557,8 @@ export const PrivateLabelForm: React.FC<PrivateLabelFormProps> = ({
 
         {/* Total */}
         <div className="flex justify-between text-lg font-bold">
-          <span>Total:</span>
-          <span className="text-orange-700">${total.toFixed(2)}</span>
+          <span className="text-card-foreground">Total:</span>
+          <span className="text-primary">${total.toFixed(2)}</span>
         </div>
       </Card>
 

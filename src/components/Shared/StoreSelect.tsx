@@ -30,7 +30,7 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
 
   const { data, isLoading, refetch } = useGetAllStoresQuery({
     search,
-    limit: 10,
+    limit: 35,
     page: 1,
   });
 
@@ -120,9 +120,9 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex h-9 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-xs transition-colors",
-          "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500",
-          !selectedStore && "text-gray-500"
+          "flex h-9 w-full items-center justify-between rounded-xs border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors text-foreground",
+          "focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
+          !selectedStore && "text-muted-foreground"
         )}
       >
         <span className="truncate">
@@ -138,11 +138,11 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
           {/* Search Input */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-2">
+          <div className="sticky top-0 bg-popover border-b border-border p-2">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
                 type="text"
@@ -159,7 +159,7 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
           <div className="max-h-[300px] overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center items-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
             ) : stores.length ? (
               <div className="p-1">
@@ -169,26 +169,26 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                     type="button"
                     onClick={() => handleStoreSelect(store._id)}
                     className={cn(
-                      "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors",
-                      "hover:bg-gray-100 focus:bg-gray-100",
-                      value === store._id && "bg-emerald-50"
+                      "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors text-popover-foreground group",
+                      "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                      value === store._id && "bg-primary/10"
                     )}
                   >
                     <div className="flex flex-col flex-1 items-start">
                       <span className="font-medium">{store.name}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/80">
                         {store.city ? `${store.city}, ` : ""}
                         {store.address || ""}
                       </span>
                     </div>
                     {value === store._id && (
-                      <Check className="h-4 w-4 text-emerald-600" />
+                      <Check className="h-4 w-4 text-primary" />
                     )}
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm p-4 text-center">
+              <div className="text-muted-foreground text-sm p-4 text-center">
                 No stores found
               </div>
             )}

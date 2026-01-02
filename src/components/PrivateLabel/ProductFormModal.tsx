@@ -90,7 +90,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg rounded-xs">
         <DialogHeader>
           <DialogTitle>
             {product ? "Edit Product" : "Add New Product"}
@@ -108,7 +108,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., BIOMAX, Rosin, Delta-8"
-              className="mt-2"
+              className="mt-2 rounded-xs"
             />
             {errors.name && (
               <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -132,7 +132,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 value={unitPrice}
                 onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
                 placeholder="0.00"
-                className="pl-7"
+                className="pl-7 rounded-xs"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
                 per unit/case
@@ -151,7 +151,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter product description (optional)"
-              className="mt-2"
+              className="mt-2 rounded-xs"
               rows={3}
             />
           </div>
@@ -173,13 +173,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="rounded-xs"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xs"
           >
             {isSubmitting
               ? "Saving..."

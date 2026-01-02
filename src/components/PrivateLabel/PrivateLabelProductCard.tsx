@@ -30,17 +30,19 @@ export const PrivateLabelProductCard: React.FC<
   return (
     <Card
       className={cn(
-        "p-4 transition-all hover:shadow-md",
+        "p-4 transition-all hover:shadow-md bg-card rounded-xs",
         product.isActive
-          ? "border-l-4 border-l-green-500 bg-white"
-          : "border-l-4 border-l-gray-400 bg-gray-50"
+          ? "border-l-4 border-l-green-600"
+          : "border-l-4 border-l-muted-foreground/40"
       )}
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         {/* Product Info */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-bold text-gray-800">{product.name}</h3>
+            <h3 className="text-lg font-bold text-card-foreground">
+              {product.name}
+            </h3>
             <div className="flex items-center gap-2">
               <Switch
                 checked={product.isActive}
@@ -48,13 +50,13 @@ export const PrivateLabelProductCard: React.FC<
                 className={cn(
                   product.isActive
                     ? "data-[state=checked]:bg-green-600"
-                    : "data-[state=unchecked]:bg-gray-400"
+                    : "data-[state=unchecked]:bg-muted-foreground"
                 )}
               />
               <span
                 className={cn(
                   "text-xs font-semibold",
-                  product.isActive ? "text-green-600" : "text-gray-500"
+                  product.isActive ? "text-green-600" : "text-muted-foreground"
                 )}
               >
                 {product.isActive ? "Active ✓" : "Inactive ✗"}
@@ -63,16 +65,16 @@ export const PrivateLabelProductCard: React.FC<
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               <span className="font-semibold">Price:</span>{" "}
-              <span className="text-orange-700 font-bold text-base">
+              <span className="text-primary font-bold text-base">
                 ${product.unitPrice.toFixed(2)}
               </span>
-              <span className="text-gray-500">/each</span>
+              <span className="text-muted-foreground">/each</span>
             </p>
 
             {product.description && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Description:</span>{" "}
                 {product.description.length > 100 ? (
                   <span title={product.description}>
@@ -92,7 +94,7 @@ export const PrivateLabelProductCard: React.FC<
             variant="outline"
             size="sm"
             onClick={() => onEdit(product)}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 rounded-xs"
           >
             <Edit className="w-4 h-4" />
             Edit
@@ -102,7 +104,7 @@ export const PrivateLabelProductCard: React.FC<
               <Button
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xs"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete
