@@ -4,14 +4,6 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { useGetAllNotesQuery } from "@/redux/api/Notes/notes";
 import { INote, StoreInfo } from "@/types/note/note";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +11,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
 
 interface RepNotesTableProps {
   repId: string;
@@ -56,10 +49,110 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
     setPage(1); // Reset to first page when changing limit
   };
 
+  const columns: Column<INote>[] = [
+    {
+      key: "index",
+      header: "#",
+      className: "w-[50px] font-medium",
+      render: (_, index) => {
+        const globalIndex = (page - 1) * limit + index + 1;
+        return <span>{globalIndex}</span>;
+      },
+    },
+    {
+      key: "storeName",
+      header: "Store Name",
+      render: (note) => {
+        const storeName =
+          typeof note.entityId === "string"
+            ? "Unknown Store"
+            : (note.entityId as StoreInfo)?.name || "Unknown Store";
+
+        const storeAddress =
+          typeof note.entityId === "string"
+            ? ""
+            : (note.entityId as StoreInfo)?.address || "";
+
+        return (
+          <div>
+            <div className="font-medium text-primary">{storeName}</div>
+            {storeAddress && (
+              <div className="text-sm text-muted-foreground">
+                {note.date &&
+                  (() => {
+                    try {
+                      const [year, month, day] = note.date.split("-");
+                      const dateObj = new Date(
+                        parseInt(year),
+                        parseInt(month) - 1,
+                        parseInt(day)
+                      );
+                      return format(dateObj, "MM/dd/yyyy");
+                    } catch {
+                      return note.date;
+                    }
+                  })()}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "visitType",
+      header: "Type of Visit",
+      render: (note) => (
+        <div>
+          <div>{note.visitType || "N/A"}</div>
+          {(note.sample || note.delivery) && (
+            <div className="text-sm text-muted-foreground">
+              {note.sample && "with sample"}
+              {note.sample && note.delivery && ", "}
+              {note.delivery && "with delivery"}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "disposition",
+      header: "Disposition",
+      render: (note) => {
+        const paymentParts = [];
+        if (note.payment?.cash) paymentParts.push("Cash");
+        if (note.payment?.check) paymentParts.push("Check");
+        if (note.payment?.noPay) paymentParts.push("No Payment");
+        if (note.payment?.amount)
+          paymentParts.push(`Amount: $${note.payment.amount}`);
+        const paymentLine =
+          paymentParts.length > 0 ? paymentParts.join(", ") : "";
+
+        return (
+          <div>
+            <div>{note.disposition || "N/A"}</div>
+            {paymentLine && (
+              <div className="text-sm font-medium">{paymentLine}</div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: "content",
+      header: "Message",
+      className: "min-w-[300px]",
+      render: (note) => (
+        <div className="whitespace-pre-wrap">
+          {note.content || "No message"}
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       {/* Date Picker Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <p className="text-sm text-muted-foreground">
             Viewing notes for {format(selectedDate, "MMMM d, yyyy")}
@@ -70,7 +163,7 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
             <Button
               variant="outline"
               className={cn(
-                "w-[240px] justify-start text-left font-normal",
+                "w-full sm:w-[240px] justify-start text-left font-normal rounded-xs bg-accent text-white dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90",
                 !selectedDate && "text-muted-foreground"
               )}
             >
@@ -104,125 +197,29 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
         <span className="font-semibold text-foreground">{total}</span>
       </div>
 
-      {/* Loading State */}
+      {/* Content */}
       {isLoading ? (
-        <div className="flex justify-center items-center h-96">
+        <div className="flex justify-center items-center h-64 border rounded-md">
+          {/* You might want a better loader here, but text is fine for now or reusable Loader */}
           <div className="text-muted-foreground">Loading notes...</div>
         </div>
       ) : notes.length === 0 ? (
-        <div className="flex justify-center items-center h-96">
-          <div className="text-muted-foreground">
-            No notes found for this date
+        <div className="flex flex-col justify-center items-center h-64 border rounded-md bg-muted/10">
+          <div className="bg-muted rounded-full p-4 mb-3">
+            <ClipboardList className="h-8 w-8 text-muted-foreground" />
           </div>
+          <h3 className="text-lg font-semibold text-foreground">
+            No notes found
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-sm text-center mt-1">
+            We couldn't find any notes for{" "}
+            {format(selectedDate, "MMMM d, yyyy")}. Try selecting a different
+            date.
+          </p>
         </div>
       ) : (
         <>
-          {/* Notes Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>Store Name</TableHead>
-                  <TableHead>Type of Visit</TableHead>
-                  <TableHead>Disposition</TableHead>
-                  <TableHead className="min-w-[300px]">Message</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {notes.map((note: INote, index: number) => {
-                  const storeName =
-                    typeof note.entityId === "string"
-                      ? "Unknown Store"
-                      : (note.entityId as StoreInfo)?.name || "Unknown Store";
-
-                  const storeAddress =
-                    typeof note.entityId === "string"
-                      ? ""
-                      : (note.entityId as StoreInfo)?.address || "";
-
-                  const visitTypeDisplay = note.visitType || "N/A";
-                  const dispositionDisplay = note.disposition || "N/A";
-
-                  // Build payment info line
-                  const paymentParts = [];
-                  if (note.payment?.cash) paymentParts.push("Cash");
-                  if (note.payment?.check) paymentParts.push("Check");
-                  if (note.payment?.noPay) paymentParts.push("No Payment");
-                  if (note.payment?.amount)
-                    paymentParts.push(`Amount: $${note.payment.amount}`);
-
-                  const paymentLine =
-                    paymentParts.length > 0 ? paymentParts.join(", ") : "";
-
-                  // Build visit type line
-                  const visitTypeLine = `Visit Type: ${
-                    note.visitType || "N/A"
-                  }`;
-
-                  // Calculate global index considering pagination
-                  const globalIndex = (page - 1) * limit + index + 1;
-
-                  return (
-                    <TableRow key={note._id || index}>
-                      <TableCell className="font-medium">
-                        {globalIndex}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-blue-600">
-                          {storeName}
-                        </div>
-                        {storeAddress && (
-                          <div className="text-sm text-muted-foreground">
-                            {note.date && (
-                              (() => {
-                                try {
-                                  // Parse YYYY-MM-DD string properly
-                                  const [year, month, day] = note.date.split('-');
-                                  const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                                  return format(dateObj, "MM/dd/yyyy");
-                                } catch {
-                                  return note.date;
-                                }
-                              })()
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>{visitTypeDisplay}</div>
-                        {(note.sample || note.delivery) && (
-                          <div className="text-sm text-muted-foreground">
-                            {note.sample && "with sample"}
-                            {note.sample && note.delivery && ", "}
-                            {note.delivery && "with delivery"}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>{dispositionDisplay}</div>
-                        {/* {visitTypeLine && (
-                          <div className="text-sm font-medium">
-                            {visitTypeLine}
-                          </div>
-                        )} */}
-                        {paymentLine && (
-                          <div className="text-sm font-medium">
-                            {paymentLine}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="whitespace-pre-wrap">
-                          {note.content || "No message"}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <DataTable columns={columns} data={notes} />
 
           {/* Pagination */}
           <GlobalPagination

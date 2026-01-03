@@ -7,7 +7,7 @@ import {
   useUpdateRepMutation,
 } from "@/redux/api/Rep/repApi";
 
-import { IRep } from "@/types";
+import type { IRep } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   DataTable,
@@ -140,15 +140,17 @@ export default function RepsPage() {
       header: "Clock In",
       render: (rep) => (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-xs text-xs font-medium ${
             rep.checkin
-              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-              : "bg-gray-100 text-gray-700 border border-gray-200"
+              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+              : "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground border border-border dark:border-border"
           }`}
         >
           <span
             className={`w-2 h-2 mr-1 rounded-full ${
-              rep.checkin ? "bg-emerald-500" : "bg-gray-400"
+              rep.checkin
+                ? "bg-emerald-500 dark:bg-emerald-400"
+                : "bg-gray-400 dark:bg-gray-600"
             }`}
           ></span>
           {rep.checkin ? "Clocked In" : "Clocked Out"}
@@ -162,12 +164,12 @@ export default function RepsPage() {
       header: "Status",
       render: (rep) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
+          className={`px-2 py-1 rounded-xs text-xs font-medium ${
             rep.status === "active"
-              ? "bg-green-100 text-green-700"
+              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
               : rep.status === "inactive"
-              ? "bg-gray-100 text-gray-700"
-              : "bg-red-100 text-red-700"
+              ? "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
+              : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
           }`}
         >
           {rep.status}
@@ -178,7 +180,7 @@ export default function RepsPage() {
       key: "storeCount",
       header: "Store Count",
       render: (rep) => (
-        <span className="font-medium text-gray-700">
+        <span className="font-medium text-foreground dark:text-foreground">
           {rep.storeCount || 0}
         </span>
       ),
@@ -192,7 +194,7 @@ export default function RepsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="cursor-pointer h-9 w-9 p-0"
+              className="cursor-pointer h-9 w-9 p-0 rounded-xs bg-transparent dark:hover:bg-secondary dark:hover:text-secondary-foreground"
               title="View Clock In/Out"
             >
               <Clock className="size-4" />
@@ -202,7 +204,7 @@ export default function RepsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="cursor-pointer h-9 w-9 p-0"
+              className="cursor-pointer h-9 w-9 p-0 rounded-xs bg-transparent dark:hover:bg-secondary dark:hover:text-secondary-foreground"
               title="View Notes"
             >
               <FileText className="size-4" />
@@ -211,7 +213,7 @@ export default function RepsPage() {
           <Button
             size="sm"
             variant="default"
-            className="bg-blue-600 hover:bg-blue-700 h-9 w-9 p-0"
+            className="cursor-pointer bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/80 h-9 w-9 p-0 rounded-xs text-primary-foreground"
             onClick={() => handleLoginAsRep(rep)}
             title="Login As Rep"
           >
@@ -220,7 +222,7 @@ export default function RepsPage() {
           <Button
             size="sm"
             variant="outline"
-            className="h-9 w-9 p-0"
+            className="cursor-pointer h-9 w-9 p-0 rounded-xs bg-transparent dark:hover:bg-secondary dark:hover:text-secondary-foreground"
             onClick={() => {
               setEditingRep(rep);
               setOpen(true);
@@ -234,10 +236,10 @@ export default function RepsPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-300"
+                className="cursor-pointer h-9 w-9 p-0 rounded-xs hover:bg-destructive/10 dark:hover:bg-destructive/20 hover:border-destructive dark:hover:border-destructive bg-transparent"
                 title="Delete"
               >
-                <Trash2 className="size-4 text-red-600" />
+                <Trash2 className="size-4 text-destructive dark:text-destructive" />
               </Button>
             }
             title="Delete Representative"
@@ -251,14 +253,16 @@ export default function RepsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Sales Representatives</h1>
-        <div className="flex gap-2">
-          <Link href="/admin/reps/hours">
+    <div className="p-6 space-y-4 bg-background text-foreground dark:bg-background dark:text-foreground">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+        <h1 className="text-2xl font-semibold text-foreground dark:text-foreground">
+          Sales Representatives
+        </h1>
+        <div className="flex w-full sm:w-auto gap-2">
+          <Link href="/admin/reps/hours" className="w-1/2 sm:w-auto">
             <Button
               variant="outline"
-              className="flex items-center gap-2"
+              className="w-full sm:w-auto dark:bg-accent flex items-center justify-center gap-2 rounded-xs bg-accent text-white dark:hover:bg-secondary dark:hover:text-secondary-foreground cursor-pointer"
             >
               <Timer className="size-4" />
               Hours
@@ -269,6 +273,7 @@ export default function RepsPage() {
               setEditingRep(null);
               setOpen(true);
             }}
+            className="w-1/2 sm:w-auto cursor-pointer rounded-xs"
           >
             Add Representative
           </Button>

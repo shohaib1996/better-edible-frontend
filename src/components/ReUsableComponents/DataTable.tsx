@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import {
   Table,
   TableBody,
@@ -11,9 +13,9 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
-  key: keyof T | string; // 👈 allow custom columns like "actions"
+  key: keyof T | string;
   header: string;
-  render?: (row: T) => React.ReactNode;
+  render?: (row: T, index: number) => React.ReactNode;
   className?: string;
 }
 
@@ -25,7 +27,7 @@ export interface DataTableProps<T> {
   className?: string;
 }
 
-export function DataTable<T extends { _id: string }>({
+export function DataTable<T extends { _id?: string }>({
   columns,
   data,
   isLoading,
@@ -33,12 +35,20 @@ export function DataTable<T extends { _id: string }>({
   className,
 }: DataTableProps<T>) {
   return (
-    <div className={cn("rounded-lg border bg-white shadow-sm", className)}>
+    <div
+      className={cn(
+        "rounded-xs border shadow-sm bg-card border-border overflow-x-auto",
+        className
+      )}
+    >
       <Table>
-        <TableHeader>
-          <TableRow>
+        <TableHeader className="bg-secondary">
+          <TableRow className="hover:bg-secondary border-b-0">
             {columns.map((col) => (
-              <TableHead key={String(col.key)} className={col.className}>
+              <TableHead
+                key={String(col.key)}
+                className={cn("text-secondary-foreground", col.className)}
+              >
                 {col.header}
               </TableHead>
             ))}
@@ -55,18 +65,21 @@ export function DataTable<T extends { _id: string }>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="text-center py-6 text-gray-500"
+                className="text-center py-6 text-muted-foreground"
               >
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
-            data.map((row) => (
-              <TableRow key={row._id}>
+            data.map((row, index) => (
+              <TableRow
+                key={row._id || index}
+                className={index % 2 === 0 ? "bg-muted/20" : ""}
+              >
                 {columns.map((col) => (
                   <TableCell key={String(col.key)} className={col.className}>
                     {col.render
-                      ? col.render(row)
+                      ? col.render(row, index)
                       : (row[col.key as keyof T] as React.ReactNode)}
                   </TableCell>
                 ))}

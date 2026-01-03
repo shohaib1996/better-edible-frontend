@@ -77,9 +77,9 @@ export function EntityModal<T>({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs bg-background text-foreground border-border">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold tracking-tight">
+          <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -104,7 +104,7 @@ export function EntityModal<T>({
                   <SelectTrigger
                     id={field.name}
                     className={cn(
-                      "w-full border border-gray-300 rounded-md bg-white text-sm h-9 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      "w-full border border-primary dark:border-border rounded-xs bg-secondary/20 dark:bg-background text-foreground h-9 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     )}
                   >
                     <SelectValue placeholder={`Select ${field.label}`} />
@@ -121,7 +121,7 @@ export function EntityModal<T>({
                 <PhoneInput
                   value={formData?.[field.name] ?? ""}
                   onChange={(value) => handleChange(field.name, value)}
-                  className="border border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500"
+                  className="rounded-xs border border-primary dark:border-border bg-secondary/20 dark:bg-background text-foreground focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500"
                 />
               ) : (
                 <Input
@@ -130,7 +130,7 @@ export function EntityModal<T>({
                   placeholder={field.placeholder || ""}
                   value={formData?.[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                  className="rounded-xs border border-primary dark:border-border bg-secondary/20 dark:bg-background text-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 />
               )}
             </div>
@@ -140,10 +140,18 @@ export function EntityModal<T>({
         {children}
 
         <DialogFooter className="pt-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xs bg-accent text-accent-foreground hover:bg-accent/90 border-transparent"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="rounded-xs"
+          >
             {isSubmitting ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>

@@ -104,7 +104,7 @@ const TimelogById = ({ id }: { id: string }) => {
       key: "repName",
       header: "Name",
       render: (row) => (
-        <span className="font-medium text-gray-800">{row.rep?.name}</span>
+        <span className="font-medium text-foreground">{row.rep?.name}</span>
       ),
     },
     {
@@ -125,7 +125,7 @@ const TimelogById = ({ id }: { id: string }) => {
       key: "workedHours",
       header: "Worked Duration",
       render: (row) => (
-        <span className="text-blue-600 font-semibold">
+        <span className="text-primary font-semibold">
           {calculateWorkedHours(row.checkinTime, row.checkoutTime)}
         </span>
       ),
@@ -138,20 +138,20 @@ const TimelogById = ({ id }: { id: string }) => {
   ];
 
   return (
-    <Card className="border-0 shadow-md bg-white">
+    <Card className="border-0 shadow-none bg-transparent">
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle className="text-xl font-bold text-gray-800">
+          <CardTitle className="text-xl font-bold text-foreground">
             🕒 Timelogs for {timelogs[0]?.rep?.name || "Representative"}
           </CardTitle>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
             <Popover open={startOpen} onOpenChange={setStartOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-40 justify-start text-left font-normal",
+                    "w-full sm:w-40 rounded-xs justify-start text-left font-normal bg-card dark:hover:bg-secondary dark:hover:text-secondary-foreground",
                     !startDate && "text-muted-foreground"
                   )}
                 >
@@ -160,7 +160,7 @@ const TimelogById = ({ id }: { id: string }) => {
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent align="start" side="bottom" className="p-2">
+              <PopoverContent align="center" side="bottom" className="p-0">
                 <Calendar
                   mode="single"
                   selected={startDate}
@@ -178,7 +178,7 @@ const TimelogById = ({ id }: { id: string }) => {
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-40 justify-start text-left font-normal",
+                    "w-full sm:w-40 rounded-xs justify-start text-left font-normal bg-card dark:hover:bg-secondary dark:hover:text-secondary-foreground",
                     !endDate && "text-muted-foreground"
                   )}
                 >
@@ -187,7 +187,7 @@ const TimelogById = ({ id }: { id: string }) => {
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent align="start" side="bottom" className="p-2">
+              <PopoverContent align="center" side="bottom" className="p-0">
                 <Calendar
                   mode="single"
                   selected={endDate}
@@ -200,19 +200,29 @@ const TimelogById = ({ id }: { id: string }) => {
               </PopoverContent>
             </Popover>
 
-            <Button size="sm" onClick={handleApplyFilter} className="ml-1">
-              Filter
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleClearFilter}>
-              Clear
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                size="sm"
+                onClick={handleApplyFilter}
+                className="flex-1 sm:flex-none rounded-xs"
+              >
+                Filter
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleClearFilter}
+                className="flex-1 rounded-xs sm:flex-none bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                Clear
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
 
       <CardContent>
         {isError && (
-          <div className="mb-4 rounded-md border px-4 py-3 text-sm text-red-700 bg-red-50">
+          <div className="mb-4 rounded-md border px-4 py-3 text-sm text-destructive bg-destructive/10 border-destructive/20">
             {/* @ts-ignore */}
             {error?.data?.message ||
               "Failed to load timelogs. Please try again."}
@@ -221,10 +231,10 @@ const TimelogById = ({ id }: { id: string }) => {
 
         {/* Show message when backend returns a message OR when filters are applied with no results */}
         {backendMessage || showEmptyFilterMessage ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed p-8 text-center bg-yellow-50">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed p-8 text-center bg-muted/30 border-border">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 text-yellow-600"
+              className="h-12 w-12 text-muted-foreground"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -237,11 +247,11 @@ const TimelogById = ({ id }: { id: string }) => {
               />
             </svg>
 
-            <div className="text-lg font-semibold text-gray-800">
+            <div className="text-lg font-semibold text-foreground">
               {backendMessage ||
                 "Time logs not available for the selected date range"}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Try a different date range or click{" "}
               <button onClick={handleClearFilter} className="underline">
                 Clear

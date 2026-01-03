@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface GlobalPaginationProps {
   currentPage: number;
@@ -84,7 +85,7 @@ export const GlobalPagination = ({
           value={itemsPerPage.toString()}
           onValueChange={(value) => onLimitChange(Number(value))}
         >
-          <SelectTrigger className="w-[80px] border-accent">
+          <SelectTrigger className="w-[80px] border-accent rounded-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -107,8 +108,8 @@ export const GlobalPagination = ({
                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                 className={
                   currentPage === 1
-                    ? "pointer-events-none opacity-50"
-                    : "cursor-pointer"
+                    ? "pointer-events-none opacity-50 rounded-xs"
+                    : "cursor-pointer rounded-xs"
                 }
               />
             </PaginationItem>
@@ -127,7 +128,11 @@ export const GlobalPagination = ({
                   <PaginationLink
                     onClick={() => onPageChange(page as number)}
                     isActive={currentPage === page}
-                    className="cursor-pointer"
+                    className={cn(
+                      "cursor-pointer rounded-xs",
+                      currentPage === page &&
+                        "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                    )}
                   >
                     {page}
                   </PaginationLink>
@@ -142,8 +147,8 @@ export const GlobalPagination = ({
                 }
                 className={
                   currentPage === totalPages
-                    ? "pointer-events-none opacity-50"
-                    : "cursor-pointer"
+                    ? "pointer-events-none opacity-50 rounded-xs"
+                    : "cursor-pointer rounded-xs"
                 }
               />
             </PaginationItem>
