@@ -64,6 +64,9 @@ export function EntityModal<T>({
   useEffect(() => {
     if (open) {
       setFormData(initialData || {}); // Ensure fallback
+    } else {
+      // Reset form data when modal closes to prevent stale data
+      setFormData({});
     }
   }, [open, initialData]);
 
