@@ -80,7 +80,7 @@ export function EntityModal<T>({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs bg-background text-foreground border-border">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs bg-background text-foreground border-border">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
             {title}
