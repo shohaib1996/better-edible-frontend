@@ -117,23 +117,27 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-xs bg-background text-foreground border-border flex flex-col">
           <DialogHeader>
-            <DialogTitle>🗒️ Store Notes</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg text-foreground">
+              🗒️ Store Notes
+            </DialogTitle>
           </DialogHeader>
 
           {store && (
-            <div className="bg-gray-50 border rounded-md p-4 mb-4">
-              <div className="flex justify-between items-start">
+            <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 rounded-xs p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                 <div>
-                  <h2 className="text-xl font-bold">{store.name}</h2>
-                  <p className="text-md text-gray-600">
+                  <h2 className="text-base sm:text-xl font-bold text-foreground">
+                    {store.name}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {store.address
                       ? `${store.address}`
                       : "Address not available"}
                   </p>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   <strong>Total Notes:</strong> {totalNotes}
                 </div>
               </div>
@@ -142,31 +146,34 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
 
           {isLoading || isFetching ? (
             <div className="flex justify-center items-center py-12">
-              <Loader2 className="animate-spin h-8 w-8 text-gray-600" />
+              <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
             </div>
           ) : notes.length === 0 ? (
-            <p className="text-gray-500 text-center py-10">
+            <p className="text-muted-foreground text-center py-10">
               No notes found for this store.
             </p>
           ) : (
-            <div className="space-y-4 max-h-[70vh] overflow-y-auto p-1">
+            <div className="space-y-3 sm:space-y-4 overflow-y-auto scrollbar-hidden pr-2 flex-1">
               {notes.map((note: any) => (
                 <div
                   key={note._id}
-                  className="border rounded-xl p-4 shadow-sm bg-white transition-all hover:shadow-lg"
+                  className="border border-border rounded-xs p-3 sm:p-4 shadow-sm bg-card transition-all hover:shadow-lg"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Calendar size={14} />
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-border bg-muted/20 dark:bg-muted/10 p-2 sm:p-3 rounded-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Calendar
+                          size={12}
+                          className="sm:w-[14px] sm:h-[14px]"
+                        />
                         <span>
                           {note.date
                             ? new Date(note.date).toLocaleDateString()
                             : "No date"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                        <User size={14} />
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <User size={12} className="sm:w-[14px] sm:h-[14px]" />
                         <span>
                           {(typeof note.author === "object" &&
                             note.author.name) ||
@@ -174,50 +181,63 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {note.sample && (
                         <Badge
                           variant="outline"
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1 text-xs"
                         >
-                          <Package size={12} /> Sample
+                          <Package size={10} className="sm:w-3 sm:h-3" />{" "}
+                          <span className="hidden sm:inline">Sample</span>
                         </Badge>
                       )}
                       {note.delivery && (
                         <Badge
                           variant="outline"
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1 text-xs"
                         >
-                          <Truck size={12} /> Delivery
+                          <Truck size={10} className="sm:w-3 sm:h-3" />{" "}
+                          <span className="hidden sm:inline">Delivery</span>
                         </Badge>
                       )}
                       {user?.role !== "superadmin" && (
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-7 w-7 sm:h-8 sm:w-8"
                           onClick={() => handleEdit(note)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="flex items-start gap-2">
-                      <ClipboardList size={16} className="text-gray-600 mt-1" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-3">
+                    <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-950/30 p-2 sm:p-3 rounded-xs">
+                      <ClipboardList
+                        size={14}
+                        className="text-blue-600 dark:text-blue-400 mt-1 sm:w-4 sm:h-4 shrink-0"
+                      />
                       <div>
-                        <h4 className="font-semibold">Disposition</h4>
-                        <p className="text-sm text-gray-700">
+                        <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+                          Disposition
+                        </h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {note.disposition || "—"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <ClipboardList size={16} className="text-gray-600 mt-1" />
+                    <div className="flex items-start gap-2 bg-purple-50 dark:bg-purple-950/30 p-2 sm:p-3 rounded-xs">
+                      <ClipboardList
+                        size={14}
+                        className="text-purple-600 dark:text-purple-400 mt-1 sm:w-4 sm:h-4 shrink-0"
+                      />
                       <div>
-                        <h4 className="font-semibold">Visit Type</h4>
-                        <p className="text-sm text-gray-700">
+                        <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+                          Visit Type
+                        </h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {note.visitType || "—"}
                         </p>
                       </div>
@@ -225,19 +245,26 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                   </div>
 
                   {note.content && (
-                    <div className="flex items-start gap-2 mt-4">
-                      <FileText size={16} className="text-gray-600 mt-1" />
+                    <div className="flex items-start gap-2 mt-2 sm:mt-4 bg-amber-50 dark:bg-amber-950/30 p-2 sm:p-3 rounded-xs">
+                      <FileText
+                        size={14}
+                        className="text-amber-600 dark:text-amber-400 mt-1 sm:w-4 sm:h-4 shrink-0"
+                      />
                       <div>
-                        <h4 className="font-semibold">Content</h4>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+                          Content
+                        </h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-wrap">
                           {note.content}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  <div className="mt-4 border-t pt-3">
-                    <h4 className="font-semibold mb-2">Payment</h4>
+                  <div className="mt-2 sm:mt-4 border-t border-border pt-2 sm:pt-3 bg-green-50 dark:bg-green-950/30 p-2 sm:p-3 rounded-xs">
+                    <h4 className="text-xs sm:text-sm font-semibold mb-2 text-foreground">
+                      Payment
+                    </h4>
                     {renderPaymentInfo(note.payment)}
                   </div>
                 </div>

@@ -77,7 +77,7 @@ export const GlobalPagination = ({
   const pages = generatePageNumbers();
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
       {/* Left side: Limit selector */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-600">Show</span>

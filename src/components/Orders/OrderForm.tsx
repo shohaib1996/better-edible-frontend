@@ -10,6 +10,11 @@ import { Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "../ui/checkbox";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface OrderFormProps {
   initialItems?: any[];
@@ -345,11 +350,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const renderPrice = (regular?: number, discount?: number) => {
     if (discount != null && discount < (regular ?? 0)) {
       return (
-        <div className="text-xs text-gray-600">
-          <span className="line-through text-red-500 mr-1">
+        <div className="text-xs text-muted-foreground">
+          <span className="line-through text-accent mr-1">
             ${Number(regular ?? 0).toFixed(2)}
           </span>
-          <span className="text-emerald-600 font-medium">
+          <span className="text-primary font-semibold">
             ${Number(discount).toFixed(2)}
           </span>
         </div>
@@ -357,7 +362,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     }
     if (regular != null) {
       return (
-        <div className="text-xs text-gray-600">
+        <div className="text-xs text-muted-foreground">
           ${Number(regular).toFixed(2)}
         </div>
       );
@@ -368,7 +373,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-40">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -395,35 +400,70 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedProducts).map(([line, items]) => (
-        <Card key={line} className="p-4 bg-gray-50">
-          <h2 className="font-semibold text-lg mb-3">{line}</h2>
-          <div className="space-y-3">
-            {items.map((product: any) => {
-              const pid = String(product._id);
-              const isChecked = !!discountToggles[pid];
-              return (
-                <div
-                  key={pid}
-                  className="grid grid-cols-12 items-center gap-3 bg-white p-3 rounded border"
-                >
-                  <div className="col-span-3 font-medium text-sm flex items-center gap-3">
-                    <span
-                      className={cn(
-                        "w-24",
-                        hasDiscount(product)
-                          ? "text-green-600 font-semibold"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {product.subProductLine || product.itemName}
-                    </span>
+    <div className="space-y-3 max-w-7xl mx-auto">
+      {/* Order Sheet Header */}
+      <div className="bg-linear-to-r from-primary to-secondary p-3 rounded-xs">
+        <h1 className="text-lg font-bold text-primary-foreground tracking-wide">
+          ORDER SHEET
+        </h1>
+      </div>
 
-                    {hasDiscount(product) && (
-                      <span className="mt-1">
+      {/* Products Table */}
+      <div className="space-y-2">
+        {Object.entries(groupedProducts).map(([line, items]) => (
+          <Card key={line} className="p-2 bg-muted/30 border-border rounded-xs shadow-sm">
+            <div className="bg-card px-2 py-1 rounded-xs mb-2 border-l-4 border-primary">
+              <h2 className="font-bold text-sm text-foreground">{line}</h2>
+            </div>
+            <div className="space-y-1.5">
+              {items.map((product: any) => {
+                const pid = String(product._id);
+                const isChecked = !!discountToggles[pid];
+                return (
+                  <div
+                    key={pid}
+                    className="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 bg-card p-2 rounded-xs border border-border hover:border-primary/50 transition-colors"
+                  >
+                    {/* Product Name + Discount Toggle */}
+                    <div className="sm:col-span-3 font-medium text-sm flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span
+                            className={cn(
+                              "flex-1 truncate text-xs sm:text-sm cursor-help",
+                              hasDiscount(product)
+                                ? "text-primary font-bold"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {product.subProductLine || product.itemName}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="bg-card text-foreground border border-border rounded-xs shadow-lg max-w-xs"
+                        >
+                          <div className="space-y-1">
+                            <p className="font-bold text-xs">
+                              {product.subProductLine || product.itemName}
+                            </p>
+                            {product.itemName && product.subProductLine && (
+                              <p className="text-[10px] text-muted-foreground">
+                                {product.itemName}
+                              </p>
+                            )}
+                            {product.productLine && (
+                              <p className="text-[10px] text-muted-foreground">
+                                Product Line: {product.productLine}
+                              </p>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {hasDiscount(product) && (
                         <Checkbox
-                          className="border border-accent cursor-pointer"
+                          className="border-2 border-primary cursor-pointer rounded-xs h-4 w-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           checked={isChecked}
                           onCheckedChange={(checked) =>
                             setDiscountToggles((prev) => ({
@@ -432,175 +472,188 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                             }))
                           }
                         />
-                      </span>
+                      )}
+                    </div>
+
+                    {/* BLISS (variants) */}
+                    {product.variants?.length &&
+                    product.productLine === "BLISS Cannabis Syrup" ? (
+                      <div className="sm:col-span-9 grid grid-cols-3 gap-2">
+                        {product.variants.map((variant: any) => {
+                          const key = normKey(variant.label);
+                          const regular = Number(variant.price ?? 0);
+                          const discount =
+                            variant.discountPrice != null
+                              ? Number(variant.discountPrice)
+                              : undefined;
+                          return (
+                            <div key={variant.label} className="flex flex-col gap-0.5">
+                              <Label className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                                {variant.label}
+                              </Label>
+                              {renderPrice(
+                                regular,
+                                isChecked ? discount : undefined
+                              )}
+                              <Input
+                                type="number"
+                                min="0"
+                                className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
+                                value={quantities[pid]?.[key] ?? ""}
+                                onChange={(e) =>
+                                  handleQtyChange(
+                                    pid,
+                                    key,
+                                    parseFloat(e.target.value || "0") || 0
+                                  )
+                                }
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : product.productLine === "Cannacrispy" ? (
+                      <div className="sm:col-span-9 grid grid-cols-3 gap-2">
+                        {["hybrid", "indica", "sativa"].map((type) => {
+                          const { unitPrice, discountPrice } = pickPrice(
+                            product,
+                            type
+                          );
+                          const regular = unitPrice;
+                          const discount =
+                            discountPrice && discountPrice > 0
+                              ? discountPrice
+                              : undefined;
+                          return (
+                            <div key={type} className="flex flex-col gap-0.5">
+                              <Label className="text-[10px] sm:text-xs text-muted-foreground font-medium capitalize">
+                                {type}
+                              </Label>
+                              {renderPrice(
+                                regular,
+                                isChecked ? discount : undefined
+                              )}
+                              <Input
+                                type="number"
+                                min="0"
+                                className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
+                                value={quantities[pid]?.[type] ?? ""}
+                                onChange={(e) =>
+                                  handleQtyChange(
+                                    pid,
+                                    type,
+                                    parseFloat(e.target.value || "0") || 0
+                                  )
+                                }
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="sm:col-span-9 flex flex-col gap-0.5">
+                        <Label className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                          Quantity
+                        </Label>
+                        {renderPrice(
+                          Number(product.price ?? 0),
+                          isChecked && product.discountPrice != null
+                            ? Number(product.discountPrice)
+                            : undefined
+                        )}
+                        <Input
+                          type="number"
+                          min="0"
+                          className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2 max-w-xs"
+                          value={quantities[pid]?.qty ?? ""}
+                          onChange={(e) =>
+                            handleQtyChange(
+                              pid,
+                              "qty",
+                              parseFloat(e.target.value || "0") || 0
+                            )
+                          }
+                        />
+                      </div>
                     )}
                   </div>
+                );
+              })}
+            </div>
+          </Card>
+        ))}
+      </div>
 
-                  {/* BLISS (variants) */}
-                  {product.variants?.length &&
-                  product.productLine === "BLISS Cannabis Syrup" ? (
-                    <>
-                      {product.variants.map((variant: any) => {
-                        const key = normKey(variant.label);
-                        const regular = Number(variant.price ?? 0);
-                        const discount =
-                          variant.discountPrice != null
-                            ? Number(variant.discountPrice)
-                            : undefined;
-                        return (
-                          <div
-                            key={variant.label}
-                            className="col-span-3 flex flex-col"
-                          >
-                            <Label className="text-xs text-gray-500 mb-1">
-                              {variant.label}
-                            </Label>
-                            {renderPrice(
-                              regular,
-                              isChecked ? discount : undefined
-                            )}
-                            <Input
-                              type="number"
-                              min="0"
-                              className="h-8 border-emerald-500"
-                              value={quantities[pid]?.[key] ?? ""}
-                              onChange={(e) =>
-                                handleQtyChange(
-                                  pid,
-                                  key,
-                                  parseFloat(e.target.value || "0") || 0
-                                )
-                              }
-                            />
-                          </div>
-                        );
-                      })}
-                    </>
-                  ) : product.productLine === "Cannacrispy" ? (
-                    <>
-                      {["hybrid", "indica", "sativa"].map((type) => {
-                        const { unitPrice, discountPrice } = pickPrice(
-                          product,
-                          type
-                        );
-                        const regular = unitPrice;
-                        const discount =
-                          discountPrice && discountPrice > 0
-                            ? discountPrice
-                            : undefined;
-                        return (
-                          <div key={type} className="col-span-3 flex flex-col">
-                            <Label className="text-xs text-gray-500 mb-1 capitalize">
-                              {type}
-                            </Label>
-                            {renderPrice(
-                              regular,
-                              isChecked ? discount : undefined
-                            )}
-                            <Input
-                              type="number"
-                              min="0"
-                              className="h-8 border-emerald-500"
-                              value={quantities[pid]?.[type] ?? ""}
-                              onChange={(e) =>
-                                handleQtyChange(
-                                  pid,
-                                  type,
-                                  parseFloat(e.target.value || "0") || 0
-                                )
-                              }
-                            />
-                          </div>
-                        );
-                      })}
-                    </>
-                  ) : (
-                    <div className="col-span-3 flex flex-col">
-                      <Label className="text-xs text-gray-500 mb-1">
-                        Quantity
-                      </Label>
-                      {renderPrice(
-                        Number(product.price ?? 0),
-                        isChecked && product.discountPrice != null
-                          ? Number(product.discountPrice)
-                          : undefined
-                      )}
-                      <Input
-                        type="number"
-                        min="0"
-                        className="h-8 border-emerald-500"
-                        value={quantities[pid]?.qty ?? ""}
-                        onChange={(e) =>
-                          handleQtyChange(
-                            pid,
-                            "qty",
-                            parseFloat(e.target.value || "0") || 0
-                          )
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      ))}
+      <Separator className="my-3 bg-border" />
 
-      <Separator className="my-4" />
-
-      <Card className="p-4 bg-white border">
-        <h3 className="font-semibold mb-3">Order Summary</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span>Total Cases:</span>
-            <span className="font-medium">{totals.totalCases}</span>
+      {/* Order Summary */}
+      <Card className="p-3 bg-card border-border rounded-xs shadow-md">
+        <div className="bg-linear-to-r from-primary/10 to-secondary/10 px-2 py-1.5 rounded-xs mb-3 border-l-4 border-primary">
+          <h3 className="font-bold text-sm text-foreground">ORDER SUMMARY</h3>
+        </div>
+        <div className="space-y-2">
+          {/* Total Cases */}
+          <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-muted/20 rounded-xs">
+            <span className="text-muted-foreground font-medium">Total Cases:</span>
+            <span className="font-bold text-foreground">{totals.totalCases}</span>
           </div>
 
-          <div className="flex justify-between text-sm">
-            <span>Subtotal:</span>
-            <span className="font-medium">${totals.totalPrice.toFixed(2)}</span>
+          {/* Subtotal */}
+          <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-muted/20 rounded-xs">
+            <span className="text-muted-foreground font-medium">Subtotal:</span>
+            <span className="font-bold text-foreground">${totals.totalPrice.toFixed(2)}</span>
           </div>
 
-          <div className="flex gap-3 items-center">
-            <select
-              value={discountType}
-              onChange={(e) =>
-                setDiscountType(e.target.value as "flat" | "percent")
-              }
-              className="border rounded-md px-2 py-1 text-sm"
-            >
-              <option value="flat">Flat ($)</option>
-              <option value="percent">Percent (%)</option>
-            </select>
-            <Input
-              type="number"
-              value={discountValue}
-              onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
-              placeholder="Enter discount"
-              className="w-32 border-emerald-500"
-            />
+          {/* Discount Section */}
+          <div className="bg-muted/30 p-2 rounded-xs border border-border">
+            <Label className="text-[10px] sm:text-xs text-muted-foreground font-medium mb-1 block">
+              Apply Discount
+            </Label>
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <select
+                value={discountType}
+                onChange={(e) =>
+                  setDiscountType(e.target.value as "flat" | "percent")
+                }
+                className="bg-input border border-border rounded-xs px-2 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer"
+              >
+                <option value="flat">Flat ($)</option>
+                <option value="percent">Percent (%)</option>
+              </select>
+              <Input
+                type="number"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(Number(e.target.value) || 0)}
+                placeholder="0.00"
+                className="flex-1 sm:flex-initial h-8 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
+              />
+            </div>
           </div>
 
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Discount:</span>
-            <span>- ${totals.discountAmount.toFixed(2)}</span>
+          {/* Discount Amount */}
+          <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-accent/10 rounded-xs border border-accent/30">
+            <span className="text-muted-foreground font-medium">Discount:</span>
+            <span className="font-bold text-accent">- ${totals.discountAmount.toFixed(2)}</span>
           </div>
 
-          <div className="flex justify-between font-semibold text-emerald-700">
-            <span>Final Total:</span>
-            <span>${totals.finalTotal.toFixed(2)}</span>
+          {/* Final Total */}
+          <div className="flex justify-between items-center text-sm sm:text-base px-3 py-2 bg-linear-to-r from-primary/20 to-secondary/20 rounded-xs border-2 border-primary">
+            <span className="font-bold text-foreground">FINAL TOTAL:</span>
+            <span className="font-bold text-xl text-primary">${totals.finalTotal.toFixed(2)}</span>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="order-note">Note</Label>
+          {/* Notes Section */}
+          <div className="pt-2">
+            <Label htmlFor="order-note" className="text-xs text-muted-foreground font-medium mb-1 block">
+              Order Notes
+            </Label>
             <Textarea
               id="order-note"
-              placeholder="Add any special notes or instructions for this order..."
+              placeholder="Add special notes or instructions..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+              className="text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs resize-none bg-input"
             />
           </div>
         </div>

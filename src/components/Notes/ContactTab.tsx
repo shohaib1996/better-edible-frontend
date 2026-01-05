@@ -7,12 +7,13 @@ import {
   useDeleteContactMutation,
 } from "@/redux/api/Contacts/contactsApi";
 import { toast } from "sonner";
-import { Loader2, Pencil, Trash, Plus } from "lucide-react";
+import { Loader2, Pencil, Trash, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
 
 type ContactItem = {
   _id?: string;
@@ -186,36 +187,54 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
   };
 
   return (
-    <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Store Contacts</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetchContacts()}>
-            Refresh
+    <div className="space-y-4 max-h-[60vh] overflow-y-auto scrollbar-hidden p-0.5 flex-1 min-h-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h3 className="text-lg font-semibold text-foreground">
+          Store Contacts
+        </h3>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchContacts()}
+            className="flex-1 sm:flex-none rounded-xs border-border hover:bg-muted"
+          >
+            <RefreshCw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
-          <Button onClick={handleAddContactRow} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Add Contact
+          <Button
+            onClick={handleAddContactRow}
+            size="sm"
+            className="flex-1 sm:flex-none rounded-xs bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Contact</span>
           </Button>
         </div>
       </div>
 
       {contactsLoading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="animate-spin h-6 w-6 text-gray-600" />
+          <Loader2 className="animate-spin h-6 w-6 text-primary" />
         </div>
       ) : contacts.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground text-center py-8">
           No contacts found for this store.
         </p>
       ) : (
         <div className="space-y-3">
           {contacts.map((c, idx) => (
-            <div key={c._id ?? `new-${idx}`} className="border rounded-md p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 space-y-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <Label>Name</Label>
+            <Card
+              key={c._id ?? `new-${idx}`}
+              className="p-4 rounded-xs border-border bg-card"
+            >
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Name *
+                      </Label>
                       <Input
                         value={c.name}
                         onChange={(e) =>
@@ -223,11 +242,13 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                         }
                         disabled={!c.editing}
                         placeholder="Contact name"
-                        className="border border-green-500"
+                        className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary disabled:opacity-60"
                       />
                     </div>
-                    <div>
-                      <Label>Role</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Role
+                      </Label>
                       <Input
                         value={c.role}
                         onChange={(e) =>
@@ -235,14 +256,16 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                         }
                         disabled={!c.editing}
                         placeholder="Role"
-                        className="border border-green-500"
+                        className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary disabled:opacity-60"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <Label>Email</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Email
+                      </Label>
                       <Input
                         value={c.email}
                         onChange={(e) =>
@@ -250,11 +273,14 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                         }
                         disabled={!c.editing}
                         placeholder="Email"
-                        className="border border-green-500"
+                        type="email"
+                        className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary disabled:opacity-60"
                       />
                     </div>
-                    <div>
-                      <Label>Phone</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-foreground">
+                        Phone
+                      </Label>
                       <Input
                         value={c.phone}
                         onChange={(e) =>
@@ -262,13 +288,16 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                         }
                         disabled={!c.editing}
                         placeholder="Phone"
-                        className="border border-green-500"
+                        type="tel"
+                        className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary disabled:opacity-60"
                       />
                     </div>
                   </div>
 
-                  <div className="mt-2">
-                    <Label>Important things to know</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Important things to know
+                    </Label>
                     <Textarea
                       value={c.importantToKnow}
                       onChange={(e) =>
@@ -280,36 +309,40 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                       }
                       disabled={!c.editing}
                       placeholder="Important to know"
-                      className="border border-green-500"
+                      className="border border-border rounded-xs bg-input text-foreground resize-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary disabled:opacity-60 min-h-[60px]"
+                      rows={2}
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex lg:flex-col items-center lg:items-end justify-end gap-2 lg:min-w-[100px]">
                   {c.saving || c.deleting ? (
-                    <Loader2 className="animate-spin h-5 w-5" />
+                    <Loader2 className="animate-spin h-5 w-5 text-primary" />
                   ) : (
                     <>
                       {!c.editing ? (
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => toggleEdit(idx)}
+                          className="rounded-xs border hover:text-primary hover:bg-muted cursor-pointer"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
                         </Button>
                       ) : (
-                        <div className="flex flex-col gap-2">
+                        <div className="flex lg:flex-col gap-2 w-full lg:w-auto">
                           <Button
                             onClick={() => handleSaveContact(idx)}
                             size="sm"
+                            className="flex-1 lg:flex-none rounded-xs bg-primary text-primary-foreground hover:bg-primary/90"
                           >
                             Save
                           </Button>
                           <Button
-                            variant="outline"
                             onClick={() => toggleEdit(idx)}
                             size="sm"
+                            className="flex-1 lg:flex-none rounded-xs bg-accent text-accent-foreground hover:bg-accent/90"
                           >
                             Cancel
                           </Button>
@@ -317,18 +350,20 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                       )}
 
                       <Button
-                        variant="ghost"
-                        size="icon"
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDeleteContact(idx)}
                         title="Delete Contact"
+                        className="rounded-xs border-destructive/30 text-destructive hover:bg-accent hover:text-white cursor-pointer"
                       >
-                        <Trash className="h-4 w-4 text-red-500" />
+                        <Trash className="h-4 w-4 mr-2" />
+                        Delete
                       </Button>
                     </>
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

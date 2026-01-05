@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -153,37 +154,42 @@ export const ManageFollowUpModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-lg bg-background border-border rounded-xs p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border bg-muted/20">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <CalendarIcon className="h-5 w-5 text-primary" />
             {isEditing ? "Edit Follow-Up" : "Create Follow-Up"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-3">
+        <div className="p-6 space-y-5">
           {/* Date Picker */}
           <div className="flex flex-col space-y-2">
-            <Label>Follow-Up Date</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Follow-Up Date
+            </Label>
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`justify-start text-left font-normal ${
-                    !date ? "text-muted-foreground" : ""
-                  }`}
+                  className={cn(
+                    "w-full justify-start text-left font-normal border-border rounded-xs bg-input text-foreground hover:bg-muted/50 hover:text-foreground",
+                    !date && "text-muted-foreground"
+                  )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                   {date ? format(date, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
 
-              <PopoverContent className="p-0">
+              <PopoverContent className="p-0 rounded-xs border-border">
                 <Calendar
                   mode="single"
                   selected={date}
                   onSelect={setDate}
                   initialFocus
+                  className="rounded-xs bg-background"
                 />
               </PopoverContent>
             </Popover>
@@ -191,14 +197,24 @@ export const ManageFollowUpModal = ({
 
           {/* Interest Level Dropdown */}
           <div className="flex flex-col space-y-2">
-            <Label>Interest Level</Label>
+            <Label className="text-sm font-medium text-foreground">
+              Interest Level
+            </Label>
             <Select value={interestLevel} onValueChange={setInterestLevel}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full border-border rounded-xs bg-input text-foreground focus:ring-primary">
                 <SelectValue placeholder="Select interest level" />
               </SelectTrigger>
-              <SelectContent position="popper" align="start">
+              <SelectContent
+                position="popper"
+                align="start"
+                className="rounded-xs border-border"
+              >
                 {INTEREST_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
+                  <SelectItem
+                    key={opt}
+                    value={opt}
+                    className="rounded-xs focus:bg-accent focus:text-accent-foreground"
+                  >
                     {opt}
                   </SelectItem>
                 ))}
@@ -209,8 +225,8 @@ export const ManageFollowUpModal = ({
           {/* Assign To (Admin Only) */}
           {showRepSelect && (
             <div className="flex flex-col space-y-2">
-              <Label>
-                Assign To <span className="text-red-500">*</span>
+              <Label className="text-sm font-medium text-foreground">
+                Assign To <span className="text-destructive">*</span>
               </Label>
               <RepSelect value={selectedRepId} onChange={setSelectedRepId} />
             </div>
@@ -218,21 +234,30 @@ export const ManageFollowUpModal = ({
 
           {/* Comments */}
           <div className="flex flex-col space-y-2">
-            <Label>Note</Label>
+            <Label className="text-sm font-medium text-foreground">Note</Label>
             <Textarea
               placeholder="Write additional notes..."
               value={comments}
               onChange={(e) => setComments(e.target.value)}
+              className="min-h-[100px] border-border rounded-xs bg-input text-foreground resize-none focus-visible:ring-primary"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="px-6 py-4 bg-muted/20 border-t border-border gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xs border-border hover:bg-muted/50"
+          >
             Cancel
           </Button>
 
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="rounded-xs bg-primary text-primary-foreground hover:bg-primary/90 ml-2 shadow-sm"
+          >
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {isEditing ? "Save Changes" : "Save Follow-Up"}
           </Button>
