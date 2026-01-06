@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useCreateSampleMutation } from "@/redux/api/Samples/samplesApi ";
+import { useCreateSampleMutation } from "@/redux/api/Samples/samplesApi";
 
 interface SampleModalProps {
   open: boolean;

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IOrder } from "@/types";
+import type { IOrder } from "@/types";
 import { generatePackingList } from "@/utils/generatePackingList";
+import {
+  Store,
+  Calendar,
+  Package,
+  Printer,
+  X,
+  ClipboardList,
+} from "lucide-react";
 
 interface PackingListDialogProps {
   order: IOrder | null;
@@ -29,12 +38,10 @@ export const PackingListDialog: React.FC<PackingListDialogProps> = ({
     (item: any) => `${item.product}-${item.unitLabel || "none"}`
   );
 
-  // ✅ Toggle individual checkbox
   const handleToggleQa = (key: string) => {
     setQaChecks((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // ✅ Select / Deselect all checkboxes
   const handleSelectAll = () => {
     const newValue = !selectAll;
     setSelectAll(newValue);
@@ -47,47 +54,90 @@ export const PackingListDialog: React.FC<PackingListDialogProps> = ({
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl p-4">
-        <DialogHeader>
-          <DialogTitle className="text-center text-lg font-semibold tracking-wide">
-            PACKING LIST
-          </DialogTitle>
+      <DialogContent className="max-w-2xl p-0 rounded-xs border border-border bg-card dark:bg-card max-h-[85vh] overflow-y-auto scrollbar-hidden">
+        <DialogHeader className="sticky top-0 z-10 bg-secondary/30 dark:bg-secondary/10 px-4 py-3 border-b border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              <DialogTitle className="text-lg font-bold text-foreground dark:text-foreground">
+                PACKING LIST
+              </DialogTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8 rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:text-white dark:hover:bg-primary"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        {/* ✅ Scrollable Section */}
-        <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
-          {/* Order Info */}
-          <div className="space-y-2 text-sm text-gray-800">
-            <p className="font-semibold text-blue-600">{order.store?.name}</p>
-            <p>{order.store?.address}</p>
-            <p className="mt-1">
-              <strong>Order#:</strong> {order.orderNumber}
-            </p>
-            <p>
-              <strong>Order Date:</strong>{" "}
-              {new Date(order.createdAt).toLocaleString("en-US", {
-                dateStyle: "short",
-                timeStyle: "medium",
-              })}
-            </p>
-            <p>
-              <strong>Delivery Date:</strong>{" "}
-              {order.deliveryDate
-                ? new Date(order.deliveryDate).toLocaleDateString("en-US")
-                : "N/A"}
-            </p>
+        <div className="p-4 space-y-4">
+          <div className="bg-secondary/30 dark:bg-secondary/10 rounded-xs p-3 space-y-2">
+            <div className="flex items-start gap-2">
+              <Store className="h-4 w-4 text-primary mt-0.5" />
+              <div>
+                <p className="font-semibold text-primary dark:text-primary">
+                  {order.store?.name}
+                </p>
+                <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+                  {order.store?.address}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-accent" />
+                <span className="text-muted-foreground dark:text-muted-foreground">
+                  Order#:
+                </span>
+                <span className="font-medium text-foreground dark:text-foreground">
+                  {order.orderNumber}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-accent" />
+                <span className="text-muted-foreground dark:text-muted-foreground">
+                  Order:
+                </span>
+                <span className="font-medium text-foreground dark:text-foreground">
+                  {new Date(order.createdAt).toLocaleDateString("en-US")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-accent" />
+                <span className="text-muted-foreground dark:text-muted-foreground">
+                  Delivery:
+                </span>
+                <span className="font-medium text-foreground dark:text-foreground">
+                  {order.deliveryDate
+                    ? new Date(order.deliveryDate).toLocaleDateString("en-US")
+                    : "N/A"}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Table */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border border-border rounded-xs overflow-hidden">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-gray-800 sticky top-0">
+              <thead className="bg-secondary/50 dark:bg-secondary/20 text-foreground dark:text-foreground">
                 <tr>
-                  <th className="px-2 py-1 border">#</th>
-                  <th className="px-2 py-1 border text-left">Product Name</th>
-                  <th className="px-2 py-1 border">Cases</th>
-                  <th className="px-2 py-1 border">Metric Tag</th>
-                  <th className="px-2 py-1 border text-center">
+                  <th className="px-2 py-2 border-b border-border text-center w-10">
+                    #
+                  </th>
+                  <th className="px-2 py-2 border-b border-border text-left">
+                    Product Name
+                  </th>
+                  <th className="px-2 py-2 border-b border-border text-center w-20">
+                    Cases
+                  </th>
+                  <th className="px-2 py-2 border-b border-border text-center w-24">
+                    Metric Tag
+                  </th>
+                  <th className="px-2 py-2 border-b border-border text-center w-16">
                     <div className="flex items-center justify-center gap-1">
                       QA
                       <input
@@ -95,6 +145,7 @@ export const PackingListDialog: React.FC<PackingListDialogProps> = ({
                         checked={selectAll}
                         onChange={handleSelectAll}
                         title="Select all QA"
+                        className="h-4 w-4 rounded-xs accent-primary cursor-pointer"
                       />
                     </div>
                   </th>
@@ -106,58 +157,78 @@ export const PackingListDialog: React.FC<PackingListDialogProps> = ({
                     item.unitLabel || "none"
                   }`;
                   return (
-                    <tr key={uniqueKey}>
-                      <td className="border px-2 py-1 text-center">
+                    <tr
+                      key={uniqueKey}
+                      className="hover:bg-secondary/20 dark:hover:bg-secondary/10 transition-colors"
+                    >
+                      <td className="border-b border-border px-2 py-2 text-center text-muted-foreground dark:text-muted-foreground">
                         {idx + 1}
                       </td>
-                      <td className="border px-2 py-1">
+                      <td className="border-b border-border px-2 py-2 text-foreground dark:text-foreground">
                         {item.name}
                         {item.unitLabel ? ` - ${item.unitLabel}` : ""}
                       </td>
-                      <td className="border px-2 py-1 text-center">
+                      <td className="border-b border-border px-2 py-2 text-center font-medium text-foreground dark:text-foreground">
                         {item.qty ?? 0}
                       </td>
-                      <td className="border px-2 py-1 text-center">-</td>
-                      <td className="border px-2 py-1 text-center">
+                      <td className="border-b border-border px-2 py-2 text-center text-muted-foreground dark:text-muted-foreground">
+                        -
+                      </td>
+                      <td className="border-b border-border px-2 py-2 text-center">
                         <input
                           type="checkbox"
                           checked={qaChecks[uniqueKey] || false}
                           onChange={() => handleToggleQa(uniqueKey)}
+                          className="h-4 w-4 rounded-xs accent-primary cursor-pointer"
                         />
                       </td>
                     </tr>
                   );
                 })}
-                <tr className="bg-gray-50 font-semibold">
-                  <td colSpan={2} className="border px-2 py-1 text-right">
+                <tr className="bg-secondary/30 dark:bg-secondary/10 font-semibold">
+                  <td
+                    colSpan={2}
+                    className="px-2 py-2 text-right text-foreground dark:text-foreground"
+                  >
                     Total Cases:
                   </td>
-                  <td className="border px-2 py-1 text-center">
+                  <td className="px-2 py-2 text-center text-primary dark:text-primary">
                     {order.items?.reduce(
                       (sum: number, i: any) => sum + (i.qty ?? 0),
                       0
                     )}
                   </td>
-                  <td colSpan={2} className="border px-2 py-1"></td>
+                  <td colSpan={2} className="px-2 py-2"></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           {order.note && (
-            <p className="text-xs text-gray-600 mt-2">Note: {order.note}</p>
+            <div className="bg-secondary/30 dark:bg-secondary/10 rounded-xs p-3">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+                <span className="font-medium text-foreground dark:text-foreground">
+                  Note:
+                </span>{" "}
+                {order.note}
+              </p>
+            </div>
           )}
         </div>
 
-        {/* ✅ Fixed footer */}
-        <div className="flex justify-between mt-4 border-t pt-3">
-          <Button variant="outline" onClick={onClose}>
+        <div className="sticky bottom-0 bg-card dark:bg-card border-t border-border px-4 py-3 flex justify-between gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xs border-border hover:bg-secondary/30 dark:hover:bg-secondary/20 bg-transparent"
+          >
             Close
           </Button>
           <Button
             onClick={() => generatePackingList(order, qaChecks)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="rounded-xs bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
           >
+            <Printer className="h-4 w-4" />
             Print Slip
           </Button>
         </div>

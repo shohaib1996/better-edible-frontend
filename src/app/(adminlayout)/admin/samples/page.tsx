@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
-import { useGetAllSamplesQuery } from "@/redux/api/Samples/samplesApi ";
+import { useGetAllSamplesQuery } from "@/redux/api/Samples/samplesApi";
 import { ISample } from "@/types";
 import { RepSelect } from "@/components/Shared/RepSelect";
 

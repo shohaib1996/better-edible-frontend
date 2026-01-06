@@ -99,7 +99,7 @@ export const DeliveryModal = ({
 
   const handleSubmit = async () => {
     if (!store?._id) return toast.error("Store not found");
-    if (!formData.assignedTo || !formData.paymentAction)
+    if (!formData.assignedTo)
       return toast.error("Please fill all required fields");
 
     try {
@@ -250,7 +250,7 @@ export const DeliveryModal = ({
           {/* Payment Action */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">
-              Payment Action *
+              Payment Action
             </Label>
             <Select
               value={formData.paymentAction}

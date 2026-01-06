@@ -267,7 +267,11 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
           {/* Total Value Display */}
           {orders.length > 0 && (
             <div className="text-right font-semibold text-primary mb-4 pr-2">
-              Total Orders Value: ${totalValue.toFixed(2)}
+              Total Orders Value: $
+              {totalValue.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           )}
 

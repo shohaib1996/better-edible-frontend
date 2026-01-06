@@ -7,14 +7,16 @@ import {
   useUpdateOrderMutation,
   useChangeOrderStatusMutation,
 } from "@/redux/api/orders/orders";
-import { useUpdateSampleStatusMutation, useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi ";
+import {
+  useUpdateSampleStatusMutation,
+  useUpdateSampleMutation,
+} from "@/redux/api/Samples/samplesApi";
 import {
   EntityModal,
   Field,
 } from "@/components/ReUsableComponents/EntityModal";
 import { OrderForm } from "@/components/Orders/OrderForm";
 import { OrdersHeader } from "@/components/Orders/OrderPage/OrdersHeader";
-import { OrdersFilters } from "@/components/Orders/OrderPage/OrdersFilters";
 import { OrdersTabs } from "@/components/Orders/OrderPage/OrdersTabs";
 import { useDebounced } from "@/redux/hooks/hooks";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
@@ -71,7 +73,9 @@ const OrdersPage = ({
     search: debouncedSearch || undefined,
     repName: isRepView ? undefined : selectedRepName || undefined, // Only use selectedRepName if not rep view
     repId: isRepView
-      ? (activeTab === "new" ? currentRepId : undefined) // Only filter by currentRepId for "new" tab
+      ? activeTab === "new"
+        ? currentRepId
+        : undefined // Only filter by currentRepId for "new" tab
       : undefined, // Admin view doesn't filter by rep
     startDate,
     endDate,
@@ -309,15 +313,12 @@ const OrdersPage = ({
           setEditingOrder({ repId: isRepView ? currentRepId : "" }); // Pre-fill repId if in rep view
           setModalOpen(true);
         }}
-      />
-
-      <OrdersFilters
         reps={reps}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         selectedRepName={selectedRepName}
         setSelectedRepName={setSelectedRepName}
-        isRepView={isRepView} // Pass isRepView to OrdersFilters
+        isRepView={isRepView}
       />
 
       <OrdersTabs

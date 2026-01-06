@@ -4,6 +4,7 @@ import { AllOrdersTab } from "./AllOrdersTab";
 import { NewOrdersTab } from "./NewOrdersTab";
 import { ShippedOrdersTab } from "./ShippedOrdersTab";
 import { IRep } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface OrdersTabsProps {
   activeTab: string;
@@ -63,7 +64,12 @@ export const OrdersTabs = ({
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex gap-3">
+        <TabsList
+          className={cn(
+            "w-full grid",
+            isRepView ? "grid-cols-3" : "grid-cols-2"
+          )}
+        >
           {isRepView && <TabsTrigger value="all">All Orders</TabsTrigger>}
           <TabsTrigger value="new">New Orders</TabsTrigger>
           <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>

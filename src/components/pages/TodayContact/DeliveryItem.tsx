@@ -27,7 +27,7 @@ import {
 import {
   useUpdateSampleStatusMutation,
   useUpdateSampleMutation,
-} from "@/redux/api/Samples/samplesApi ";
+} from "@/redux/api/Samples/samplesApi";
 import { format } from "date-fns";
 
 interface DeliveryItemProps {

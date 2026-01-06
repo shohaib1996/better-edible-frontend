@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -25,8 +25,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
 export default function TimeLogsSummaryPage() {
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const today = new Date();
+  const sevenDaysAgo = subDays(today, 7);
+
+  const [startDate, setStartDate] = useState<Date | undefined>(sevenDaysAgo);
+  const [endDate, setEndDate] = useState<Date | undefined>(today);
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
 
@@ -75,7 +78,7 @@ export default function TimeLogsSummaryPage() {
       </div>
 
       {/* Date Filters */}
-      <Card className="border-border bg-card rounded-xs">
+      <Card className="border-border py-0 bg-card rounded-xs">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <Popover open={startOpen} onOpenChange={setStartOpen}>
@@ -186,7 +189,7 @@ export default function TimeLogsSummaryPage() {
         <div className="space-y-4 sm:space-y-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="border-border bg-card rounded-xs">
+            <Card className="border-border bg-card rounded-xs py-0">
               <CardContent className="p-4 sm:p-6">
                 <div className="text-sm text-muted-foreground mb-1">
                   Total Reps
@@ -196,7 +199,7 @@ export default function TimeLogsSummaryPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-border bg-card rounded-xs">
+            <Card className="border-border bg-card rounded-xs py-0">
               <CardContent className="p-4 sm:p-6">
                 <div className="text-sm text-muted-foreground mb-1">
                   Date Range
@@ -208,7 +211,7 @@ export default function TimeLogsSummaryPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="border-border bg-card rounded-xs sm:col-span-2 lg:col-span-1">
+            <Card className="border-border bg-card rounded-xs sm:col-span-2 lg:col-span-1 py-0">
               <CardContent className="p-4 sm:p-6">
                 <div className="text-sm text-muted-foreground mb-1">
                   Total Hours
@@ -224,9 +227,9 @@ export default function TimeLogsSummaryPage() {
           </div>
 
           {/* Table */}
-          <Card className="border-border bg-card">
+          <Card className="border-border bg-card py-0">
             <CardContent className="p-0">
-              <div className="rounded-md border border-border overflow-x-auto">
+              <div className="rounded-xs border border-border overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-secondary">
                     <TableRow className="hover:bg-secondary">

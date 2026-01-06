@@ -88,7 +88,7 @@ export const EditDeliveryModal = ({
   // ✅ Always send the correct UTC midnight of the selected day
   const handleSubmit = async () => {
     if (!delivery?._id) return toast.error("Delivery not found");
-    if (!formData.assignedTo || !formData.paymentAction)
+    if (!formData.assignedTo)
       return toast.error("Please fill all required fields");
 
     try {

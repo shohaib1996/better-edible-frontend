@@ -8,9 +8,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IOrder } from "@/types/order/order";
+import type { IOrder } from "@/types/order/order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Store, Calendar, Package, FileText, X } from "lucide-react";
 
 interface OrderDetailsDialogProps {
   order: IOrder | null;
@@ -25,22 +26,25 @@ export const OrderDetailsDialog = ({
 
   const getStatusBadge = (status: string) => {
     const colorMap: Record<string, string> = {
-      submitted: "bg-blue-100 text-blue-800",
-      accepted: "bg-yellow-100 text-yellow-800",
-      manifested: "bg-emerald-100 text-emerald-800",
-      shipped: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
+      submitted: "bg-blue-500 text-white dark:bg-blue-600",
+      accepted: "bg-yellow-500 text-white dark:bg-yellow-600",
+      manifested: "bg-emerald-500 text-white dark:bg-emerald-600",
+      shipped: "bg-green-500 text-white dark:bg-green-600",
+      cancelled: "bg-red-500 text-white dark:bg-red-600",
     };
     return (
-      <Badge className={colorMap[status] || "bg-gray-100 text-gray-800"}>
-        {status}
+      <Badge
+        className={`${colorMap[status] || "bg-gray-500 text-white"} rounded-xs`}
+      >
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
 
   const fmt = (value: number) => `$${value.toFixed(2)}`;
 
-  const subtotal = order.subtotal ??
+  const subtotal =
+    order.subtotal ??
     (order.items && order.items.length > 0
       ? order.items.reduce((acc, it) => acc + it.qty * it.unitPrice, 0)
       : 0);
@@ -50,30 +54,42 @@ export const OrderDetailsDialog = ({
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs bg-card dark:bg-card border border-border dark:border-gray-700">
+        <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center justify-between">
-            <span>Order #{order.orderNumber}</span>
+            <span className="text-foreground dark:text-white flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              Order #{order.orderNumber}
+            </span>
             {getStatusBadge(order.status)}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-3">
-          {/* Store + Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-semibold">Store Details</h3>
-              <p>{order.store?.name}</p>
-              <p className="text-sm text-gray-500">{order.store?.address}</p>
+        <div className="space-y-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-secondary/30 dark:bg-secondary/10 p-3 rounded-xs border border-border dark:border-gray-700">
+              <h3 className="font-semibold text-foreground dark:text-white flex items-center gap-2 mb-2">
+                <Store className="h-4 w-4 text-primary" />
+                Store Details
+              </h3>
+              <p className="text-foreground dark:text-gray-200 font-medium">
+                {order.store?.name}
+              </p>
+              <p className="text-sm text-muted-foreground dark:text-gray-400">
+                {order.store?.address}
+              </p>
             </div>
-            <div>
-              <h3 className="font-semibold">Dates</h3>
-              <p>
-                <span className="font-medium">Order Date:</span>{" "}
+            <div className="bg-secondary/30 dark:bg-secondary/10 p-3 rounded-xs border border-border dark:border-gray-700">
+              <h3 className="font-semibold text-foreground dark:text-white flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Dates
+              </h3>
+              <p className="text-foreground dark:text-gray-200">
+                <span className="font-medium text-primary">Order Date:</span>{" "}
                 {new Date(order.createdAt).toLocaleDateString()}
               </p>
-              <p>
-                <span className="font-medium">Delivery Date:</span>{" "}
+              <p className="text-foreground dark:text-gray-200">
+                <span className="font-medium text-primary">Delivery Date:</span>{" "}
                 {order.deliveryDate
                   ? new Date(order.deliveryDate).toLocaleDateString()
                   : "N/A"}
@@ -81,21 +97,28 @@ export const OrderDetailsDialog = ({
             </div>
           </div>
 
-          <Separator />
+          <Separator className="dark:bg-gray-700" />
 
           {order.items && order.items.length > 0 ? (
-            /* Regular Order Items Table */
-            <div className="">
-              <h3 className="font-semibold mb-3">Items</h3>
-              <div className="border">
+            /* Items table with dark mode and rounded-xs */
+            <div>
+              <h3 className="font-semibold mb-3 text-foreground dark:text-white flex items-center gap-2">
+                <Package className="h-4 w-4 text-primary" />
+                Items ({order.items.length})
+              </h3>
+              <div className="border border-border dark:border-gray-700 rounded-xs overflow-hidden">
                 {/* Header */}
-                <div className="hidden sm:grid grid-cols-4 border-b font-medium text-gray-700 text-sm">
-                  <div className="py-2 px-2 border-r">Item</div>
-                  <div className="py-2 px-2 text-right border-r">
+                <div className="hidden sm:grid grid-cols-4 bg-secondary/50 dark:bg-secondary/20 font-medium text-foreground dark:text-gray-200 text-sm">
+                  <div className="py-2 px-3 border-r border-border dark:border-gray-700">
+                    Item
+                  </div>
+                  <div className="py-2 px-3 text-right border-r border-border dark:border-gray-700">
                     Unit Price
                   </div>
-                  <div className="py-2 px-2 text-right border-r">Quantity</div>
-                  <div className="py-2 px-2 text-right">Total</div>
+                  <div className="py-2 px-3 text-right border-r border-border dark:border-gray-700">
+                    Qty
+                  </div>
+                  <div className="py-2 px-3 text-right">Total</div>
                 </div>
 
                 {/* Rows */}
@@ -105,30 +128,35 @@ export const OrderDetailsDialog = ({
                     return (
                       <div
                         key={idx}
-                        className="grid grid-cols-1 sm:grid-cols-4 border-b last:border-b-0"
+                        className="grid grid-cols-1 sm:grid-cols-4 border-b border-border dark:border-gray-700 last:border-b-0 bg-card dark:bg-card hover:bg-secondary/20 dark:hover:bg-secondary/10 transition-colors"
                       >
-                        {/* Item */}
-                        <div className="py-3 px-2 border-r">
-                          <p className="font-medium">{item.name}</p>
+                        {/* Item - Mobile shows all info stacked */}
+                        <div className="py-2 px-3 sm:border-r border-border dark:border-gray-700">
+                          <p className="font-medium text-foreground dark:text-white">
+                            {item.name}
+                          </p>
                           {item.unitLabel && (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs text-muted-foreground dark:text-gray-400">
                               {item.unitLabel}
                             </p>
                           )}
+                          {/* Mobile-only price info */}
+                          <div className="sm:hidden text-sm text-muted-foreground dark:text-gray-400 mt-1">
+                            {fmt(item.unitPrice)} x {item.qty} ={" "}
+                            <span className="text-primary font-medium">
+                              {fmt(lineTotal)}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Price */}
-                        <div className="py-3 px-2 text-right border-r">
+                        {/* Desktop-only columns */}
+                        <div className="hidden sm:block py-2 px-3 text-right border-r border-border dark:border-gray-700 text-foreground dark:text-gray-200">
                           {fmt(item.unitPrice)}
                         </div>
-
-                        {/* Quantity */}
-                        <div className="py-3 px-2 text-right border-r">
+                        <div className="hidden sm:block py-2 px-3 text-right border-r border-border dark:border-gray-700 text-foreground dark:text-gray-200">
                           {item.qty}
                         </div>
-
-                        {/* Total */}
-                        <div className="py-3 px-2 text-right">
+                        <div className="hidden sm:block py-2 px-3 text-right text-primary font-medium">
                           {fmt(lineTotal)}
                         </div>
                       </div>
@@ -138,48 +166,58 @@ export const OrderDetailsDialog = ({
               </div>
             </div>
           ) : (
-            /* No items message */
-            <div className="text-center py-6 text-gray-500">
+            <div className="text-center py-6 text-muted-foreground dark:text-gray-400 bg-secondary/20 dark:bg-secondary/10 rounded-xs">
+              <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No items in this order</p>
             </div>
           )}
 
-          <Separator />
+          <Separator className="dark:bg-gray-700" />
 
-          {/* Note if exists */}
           {order.note && (
             <>
-              <div className="bg-gray-50 rounded-lg p-3 border">
-                <h3 className="font-semibold mb-2">Note</h3>
-                <p className="text-sm text-gray-700">{order.note}</p>
+              <div className="bg-secondary/30 dark:bg-secondary/10 rounded-xs p-3 border border-border dark:border-gray-700">
+                <h3 className="font-semibold mb-2 text-foreground dark:text-white flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Note
+                </h3>
+                <p className="text-sm text-muted-foreground dark:text-gray-300">
+                  {order.note}
+                </p>
               </div>
-              <Separator />
+              <Separator className="dark:bg-gray-700" />
             </>
           )}
 
-          {/* Summary aligned right */}
           <div className="flex justify-end">
-            <div className="w-full sm:w-1/3 space-y-2">
-              <div className="flex justify-between">
+            <div className="w-full sm:w-1/2 md:w-1/3 space-y-2 bg-secondary/30 dark:bg-secondary/10 p-3 rounded-xs border border-border dark:border-gray-700">
+              <div className="flex justify-between text-foreground dark:text-gray-200">
                 <span className="font-medium">Subtotal:</span>
                 <span>{fmt(subtotal)}</span>
               </div>
 
               <div className="flex justify-between">
-                <span className="font-medium">Discount:</span>
-                <span className="text-red-500">-{fmt(discount)}</span>
+                <span className="font-medium text-foreground dark:text-gray-200">
+                  Discount:
+                </span>
+                <span className="text-accent">-{fmt(discount)}</span>
               </div>
 
-              <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                <span>Total:</span>
-                <span>{fmt(total)}</span>
+              <div className="flex justify-between font-semibold text-lg border-t border-border dark:border-gray-600 pt-2">
+                <span className="text-foreground dark:text-white">Total:</span>
+                <span className="text-primary">{fmt(total)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="pt-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:text-white dark:hover:bg-primary border-none"
+          >
+            <X className="h-4 w-4 mr-2" />
             Close
           </Button>
         </DialogFooter>

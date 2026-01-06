@@ -63,26 +63,6 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const colorMap: Record<string, string> = {
-      submitted: "bg-blue-600 text-white",
-      accepted: "bg-secondary text-secondary-foreground",
-      manifested: "bg-green-600 text-primary-foreground",
-      shipped: "bg-green-600 text-white",
-      cancelled: "bg-destructive text-white",
-    };
-    return (
-      <span
-        className={cn(
-          "px-2 py-0.5 rounded-xs text-xs font-semibold capitalize",
-          colorMap[status] || "bg-muted text-muted-foreground"
-        )}
-      >
-        {status}
-      </span>
-    );
-  };
-
   const getStatusDropdownColor = (status: string, canEdit: boolean) => {
     if (!canEdit) {
       return "bg-muted cursor-not-allowed text-muted-foreground border-muted";
@@ -140,11 +120,6 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
             >
               {order.store?.name || "N/A"}
             </button>
-            <span>{getStatusBadge(order.status)}</span>
-            {/* Private Label Badge with primary gradient */}
-            {/* <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-primary to-secondary text-white shadow-md">
-              🏷️ PRIVATE LABEL
-            </span> */}
             {!canEditStatus && (
               <span className="px-2 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
                 Read Only

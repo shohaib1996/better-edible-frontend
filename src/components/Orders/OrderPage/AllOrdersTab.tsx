@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,19 +17,30 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import {
+  CalendarIcon,
+  Truck,
+  FileText,
+  Pencil,
+  ClipboardList,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
-import { IOrder, IRep } from "@/types";
+import type { IOrder, IRep } from "@/types";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { generateInvoice } from "@/utils/invoiceGenerator";
 import { PackingListDialog } from "./PackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
-import { useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi ";
-
+import { useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi";
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 interface AllOrdersTabProps {
@@ -39,6 +51,23 @@ interface AllOrdersTabProps {
   onEdit: (order: any) => void;
   currentRep?: Partial<IRep> | null;
 }
+
+const getStatusSelectBg = (status: string) => {
+  switch (status) {
+    case "submitted":
+      return "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:text-white";
+    case "accepted":
+      return "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-500 dark:text-white";
+    case "manifested":
+      return "bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:text-white";
+    case "shipped":
+      return "bg-green-600 hover:bg-green-700 text-white dark:bg-green-600 dark:text-white";
+    case "cancelled":
+      return "bg-red-600 hover:bg-red-700 text-white dark:bg-red-600 dark:text-white";
+    default:
+      return "bg-gray-700 hover:bg-gray-800 text-white dark:bg-gray-700 dark:text-white";
+  }
+};
 
 export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   orders,
@@ -70,53 +99,44 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   const allOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
 
   if (!orders.length) {
-    return <p className="text-gray-500 mt-4">No orders found.</p>;
+    return <p className="text-muted-foreground mt-4">No orders found.</p>;
   }
 
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "submitted":
-        return "bg-blue-50 border-l-4 border-blue-500";
+        return "border-l-4 border-l-blue-600";
       case "accepted":
-        return "bg-yellow-50 border-l-4 border-yellow-500";
+        return "border-l-4 border-l-yellow-500";
       case "manifested":
-        return "bg-emerald-50 border-l-4 border-emerald-500";
+        return "border-l-4 border-l-emerald-600";
       case "shipped":
-        return "bg-green-50 border-l-4 border-green-600";
+        return "border-l-4 border-l-green-600";
       case "cancelled":
-        return "bg-red-50 border-l-4 border-red-600";
+        return "border-l-4 border-l-red-600";
       default:
-        return "bg-white border-l-4 border-gray-200";
-    }
-  };
-
-  const getStatusDropdownColor = (status: string, isOwn: boolean) => {
-    if (!isOwn) {
-      return "bg-gray-400 cursor-not-allowed text-white";
-    }
-    switch (status) {
-      case "submitted":
-        return "bg-blue-600 hover:bg-blue-700 text-white";
-      case "accepted":
-        return "bg-yellow-600 hover:bg-yellow-700 text-white";
-      case "manifested":
-        return "bg-emerald-600 hover:bg-emerald-700 text-white";
-      default:
-        return "bg-gray-700 hover:bg-gray-800 text-white";
+        return "border-l-4 border-l-border";
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const colorMap: Record<string, string> = {
-      submitted: "bg-blue-100 text-blue-800",
-      accepted: "bg-yellow-100 text-yellow-800",
-      manifested: "bg-emerald-100 text-emerald-800",
+    const colorMap: Record<string, { bg: string; text: string }> = {
+      submitted: { bg: "bg-blue-600", text: "text-white" },
+      accepted: { bg: "bg-yellow-500", text: "text-white" },
+      manifested: { bg: "bg-emerald-600", text: "text-white" },
+      shipped: { bg: "bg-green-600", text: "text-white" },
+      cancelled: { bg: "bg-red-600", text: "text-white" },
+    };
+    const colors = colorMap[status] || {
+      bg: "bg-muted",
+      text: "text-muted-foreground",
     };
     return (
       <span
         className={cn(
-          "px-2 py-0.5 rounded-full text-xs font-semibold capitalize",
-          colorMap[status] || "bg-gray-100 text-gray-800"
+          "px-2 py-0.5 rounded-xs text-xs font-semibold capitalize",
+          colors.bg,
+          colors.text
         )}
       >
         {status}
@@ -125,10 +145,14 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   };
 
   return (
-    <>
+    <TooltipProvider>
       <div className="space-y-3">
-        <div className="text-right font-semibold text-emerald-600 pr-2">
-          Total Orders Value: ${allOrdersValue.toFixed(2)}
+        <div className="text-right font-semibold text-primary pr-2">
+          Total Orders Value: $
+          {allOrdersValue.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </div>
 
         {orders.map((order) => {
@@ -139,134 +163,170 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
             <Card
               key={order._id}
               className={cn(
-                "border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition p-3",
+                "border rounded-xs overflow-hidden shadow-sm hover:shadow-md transition py-3 gap-0",
                 !isOwnOrder && "opacity-75",
                 isSample
-                  ? "bg-linear-to-r from-purple-50 to-pink-50 border-l-4 border-l-purple-500 border-purple-200"
+                  ? "bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-l-4 border-l-purple-500 border-purple-200 dark:border-purple-800"
                   : getStatusStyle(order.status)
               )}
             >
               {/* Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-2 bg-white gap-2">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-3 py-1.5 gap-2">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     {!isSample ? (
                       <button
                         onClick={() => handleOpenDialog(order)}
-                        className="text-sm font-bold text-blue-700 uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-blue-700 after:transition-all after:duration-300 hover:after:w-full"
+                        className="text-sm font-bold text-primary uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
                       >
                         {order.store?.name || "N/A"}
                       </button>
                     ) : (
-                      <span className="text-sm font-bold text-blue-700 uppercase tracking-wide">
+                      <span className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
                         {order.store?.name || "N/A"}
                       </span>
                     )}
-                    <span>{getStatusBadge(order.status)}</span>
+                    {getStatusBadge(order.status)}
                     {isSample && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-md">
-                        📦 SAMPLE REQUEST
+                      <span className="px-2 py-0.5 rounded-xs text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white">
+                        SAMPLE
                       </span>
                     )}
                     {!isOwnOrder && (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
-                        Other Rep's Order
+                      <span className="px-2 py-0.5 rounded-xs text-xs font-semibold bg-muted text-muted-foreground">
+                        Other Rep
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     {order.store?.address || "No address available"}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
+                <div className="flex flex-wrap items-center gap-1.5 mt-2 md:mt-0">
                   {isSample ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "text-xs h-8 border-purple-500 text-purple-700",
-                        isOwnOrder
-                          ? "hover:bg-purple-400 cursor-pointer"
-                          : "opacity-50 cursor-not-allowed"
-                      )}
-                      onClick={() => {
-                        if (isOwnOrder) {
-                          setSelectedOrderForDelivery(order);
-                          setDeliveryModalOpen(true);
-                        } else {
-                          handleUnauthorizedAction();
-                        }
-                      }}
-                      disabled={!isOwnOrder}
-                    >
-                      Delivery
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8 rounded-xs bg-accent text-white border border-purple-400 dark:border-purple-600 hover:bg-primary hover:text-white transition-colors dark:bg-accent dark:text-white",
+                            !isOwnOrder && "opacity-50 cursor-not-allowed"
+                          )}
+                          onClick={() => {
+                            if (isOwnOrder) {
+                              setSelectedOrderForDelivery(order);
+                              setDeliveryModalOpen(true);
+                            } else {
+                              handleUnauthorizedAction();
+                            }
+                          }}
+                          disabled={!isOwnOrder}
+                        >
+                          <Truck className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delivery</TooltipContent>
+                    </Tooltip>
                   ) : (
                     <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8"
-                        onClick={() => {
-                          if (isOwnOrder) {
-                            setSelectedOrderForDelivery(order);
-                            setDeliveryModalOpen(true);
-                          } else {
-                            handleUnauthorizedAction();
-                          }
-                        }}
-                        disabled={!isOwnOrder}
-                      >
-                        Delivery
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8"
-                        onClick={() => {
-                          if (isOwnOrder) {
-                            generateInvoice(order);
-                          } else {
-                            handleUnauthorizedAction();
-                          }
-                        }}
-                        disabled={!isOwnOrder}
-                      >
-                        Generate Invoice
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-xs bg-accent text-white border border-border dark:border-gray-600 hover:bg-primary hover:text-white transition-colors dark:bg-accent dark:text-white",
+                              !isOwnOrder && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => {
+                              if (isOwnOrder) {
+                                setSelectedOrderForDelivery(order);
+                                setDeliveryModalOpen(true);
+                              } else {
+                                handleUnauthorizedAction();
+                              }
+                            }}
+                            disabled={!isOwnOrder}
+                          >
+                            <Truck className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delivery</TooltipContent>
+                      </Tooltip>
 
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          if (isOwnOrder) {
-                            onEdit(order);
-                          } else {
-                            handleUnauthorizedAction();
-                          }
-                        }}
-                        className="text-xs h-8"
-                        disabled={!isOwnOrder}
-                      >
-                        Edit
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-xs bg-accent text-white border border-border dark:border-gray-600 hover:bg-primary hover:text-white transition-colors dark:bg-accent dark:text-white",
+                              !isOwnOrder && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => {
+                              if (isOwnOrder) {
+                                generateInvoice(order);
+                              } else {
+                                handleUnauthorizedAction();
+                              }
+                            }}
+                            disabled={!isOwnOrder}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Generate Invoice</TooltipContent>
+                      </Tooltip>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8"
-                        onClick={() => {
-                          if (isOwnOrder) {
-                            setPackingOrder(order);
-                          } else {
-                            handleUnauthorizedAction();
-                          }
-                        }}
-                        disabled={!isOwnOrder}
-                      >
-                        Packing List
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-xs bg-secondary text-white border border-secondary hover:bg-primary hover:text-white transition-colors dark:bg-secondary dark:text-white",
+                              !isOwnOrder && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => {
+                              if (isOwnOrder) {
+                                onEdit(order);
+                              } else {
+                                handleUnauthorizedAction();
+                              }
+                            }}
+                            disabled={!isOwnOrder}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-8 w-8 rounded-xs bg-accent text-white border border-border dark:border-gray-600 hover:bg-primary hover:text-white transition-colors dark:bg-accent dark:text-white",
+                              !isOwnOrder && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => {
+                              if (isOwnOrder) {
+                                setPackingOrder(order);
+                              } else {
+                                handleUnauthorizedAction();
+                              }
+                            }}
+                            disabled={!isOwnOrder}
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Packing List</TooltipContent>
+                      </Tooltip>
                     </>
                   )}
 
@@ -283,13 +343,15 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                   >
                     <SelectTrigger
                       className={cn(
-                        "w-[120px] h-8 text-xs font-semibold border-none focus:ring-0",
-                        getStatusDropdownColor(order.status, isOwnOrder)
+                        "h-8! w-24 text-xs font-semibold rounded-xs border-none focus:ring-0 gap-1 [&>svg]:ml-0",
+                        isOwnOrder
+                          ? getStatusSelectBg(order.status)
+                          : "bg-gray-400 cursor-not-allowed text-white"
                       )}
                     >
-                      <SelectValue placeholder="Change status" />
+                      <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent className="text-sm">
+                    <SelectContent className="text-sm rounded-xs">
                       {[
                         "submitted",
                         "accepted",
@@ -300,16 +362,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                         <SelectItem
                           key={s}
                           value={s}
-                          className={cn(
-                            "capitalize font-medium",
-                            s === "submitted"
-                              ? "text-blue-700"
-                              : s === "accepted"
-                              ? "text-yellow-700"
-                              : s === "manifested"
-                              ? "text-emerald-700"
-                              : "text-gray-700"
-                          )}
+                          className="capitalize font-medium rounded-xs"
                         >
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </SelectItem>
@@ -319,135 +372,132 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                 </div>
               </div>
 
-              {/* Order Details */}
-              <div className="bg-gray-50 text-xs leading-relaxed rounded-md">
+              <div className="bg-secondary/30 dark:bg-secondary/10 text-xs leading-relaxed rounded-xs mx-3 px-3 py-2">
                 {isSample ? (
-                  // Sample-specific details
-                  <div className="bg-white/80 rounded-lg p-3 border border-purple-200">
-                    <div className="flex justify-between flex-wrap gap-3">
-                      <div className="space-y-1">
-                        <p className="flex items-center gap-1.5">
-                          <span className="text-purple-700 font-bold text-xs">
-                            📋 Type:
-                          </span>
-                          <span className="text-purple-900 font-semibold text-xs">
-                            Sample Request
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-1.5">
-                          <span className="text-purple-700 font-bold text-xs">
-                            📅 Request Date:
-                          </span>
-                          <span className="text-gray-700 text-xs">
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </span>
-                        </p>
-                        <p className="flex items-center gap-1.5">
-                          <span className="text-purple-700 font-bold text-xs">
-                            🚚 Delivery Date:
-                          </span>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-1.5 bg-white text-gray-700 font-normal h-6 text-xs border-purple-300 px-2"
-                                disabled={!isOwnOrder}
-                              >
-                                <CalendarIcon className="h-3 w-3 text-purple-500" />
-                                {order.deliveryDate ? (
-                                  format(
-                                    new Date(order.deliveryDate),
-                                    "MM/dd/yyyy"
-                                  )
-                                ) : (
-                                  <span>Pick date</span>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={
-                                  order.deliveryDate
-                                    ? new Date(order.deliveryDate)
-                                    : undefined
-                                }
-                                onSelect={(date) => {
-                                  if (!date || !isOwnOrder) return;
-                                  updateSample({
-                                    id: order._id,
-                                    deliveryDate: format(date, "yyyy-MM-dd"),
-                                  })
-                                    .unwrap()
-                                    .then(() => {
-                                      toast.success("Delivery date updated");
-                                      refetch();
-                                    })
-                                    .catch(() =>
-                                      toast.error(
-                                        "Error updating delivery date"
-                                      )
-                                    );
-                                }}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        {(order as any).description && (
-                          <p className="text-xs text-gray-700">
-                            <span className="font-bold text-purple-700">📝 Description:</span>{" "}
-                            {(order as any).description}
-                          </p>
-                        )}
-                        <p className="flex items-center gap-1.5 text-xs">
-                          <span className="text-purple-700 font-bold">
-                            👤 Rep:
-                          </span>
-                          <span className="text-gray-700">
-                            {order.rep?.name || "N/A"}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Regular order details
-                  <div className="flex justify-between flex-wrap gap-2">
-                    <div>
-                      <p>
-                        <span className="font-semibold">Order#:</span>{" "}
-                        {order.orderNumber}
+                  <div className="flex justify-between flex-wrap gap-3">
+                    <div className="space-y-0.5">
+                      <p className="flex items-center gap-1.5">
+                        <span className="text-purple-700 dark:text-purple-400 font-semibold">
+                          Type:
+                        </span>
+                        <span className="text-foreground font-medium">
+                          Sample Request
+                        </span>
                       </p>
-                      <p>
-                        <span className="font-semibold">Order Date:</span>{" "}
-                        {new Date(order.createdAt).toLocaleDateString()}
+                      <p className="flex items-center gap-1.5">
+                        <span className="text-purple-700 dark:text-purple-400 font-semibold">
+                          Request Date:
+                        </span>
+                        <span className="text-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
                       </p>
-
                       <p className="flex items-center gap-2">
-                        <span className="font-semibold">Delivery Date:</span>
+                        <span className="text-purple-700 dark:text-purple-400 font-semibold">
+                          Delivery Date:
+                        </span>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex items-center gap-2 bg-white text-gray-700 font-normal h-7 text-xs"
+                              className="flex items-center gap-1.5 bg-card text-foreground font-normal dark:hover:text-purple-600 h-6 text-xs border-purple-300 dark:border-purple-700 px-2 rounded-xs"
                               disabled={!isOwnOrder}
                             >
-                              <CalendarIcon className="h-3.5 w-3.5 text-gray-500" />
-                              {order.deliveryDate ? (
-                                format(
-                                  new Date(order.deliveryDate),
-                                  "MM/dd/yyyy"
-                                )
-                              ) : (
-                                <span>Pick date</span>
-                              )}
+                              <CalendarIcon className="h-3 w-3 text-purple-500 dark:text-purple-400 " />
+                              {order.deliveryDate
+                                ? format(
+                                    new Date(order.deliveryDate),
+                                    "MM/dd/yyyy"
+                                  )
+                                : "Pick date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={
+                                order.deliveryDate
+                                  ? new Date(order.deliveryDate)
+                                  : undefined
+                              }
+                              onSelect={(date) => {
+                                if (!date || !isOwnOrder) return;
+                                updateSample({
+                                  id: order._id,
+                                  deliveryDate: format(date, "yyyy-MM-dd"),
+                                })
+                                  .unwrap()
+                                  .then(() => {
+                                    toast.success("Delivery date updated");
+                                    refetch();
+                                  })
+                                  .catch(() =>
+                                    toast.error("Error updating delivery date")
+                                  );
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </p>
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      {(order as any).description && (
+                        <p className="text-foreground">
+                          <span className="font-semibold text-purple-700 dark:text-purple-400">
+                            Description:
+                          </span>{" "}
+                          {(order as any).description}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-semibold text-purple-700 dark:text-purple-400">
+                          Rep:
+                        </span>{" "}
+                        <span className="text-primary font-medium">
+                          {order.rep?.name || "N/A"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between flex-wrap gap-2">
+                    <div className="space-y-0.5">
+                      <p>
+                        <span className="font-semibold text-primary">
+                          Order#:
+                        </span>{" "}
+                        <span className="text-foreground">
+                          {order.orderNumber}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-semibold text-primary">
+                          Order Date:
+                        </span>{" "}
+                        <span className="text-foreground">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </span>
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <span className="font-semibold text-primary">
+                          Delivery Date:
+                        </span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-1.5 bg-card text-foreground font-normal dark:hover:text-secondary h-6 text-xs rounded-xs"
+                              disabled={!isOwnOrder}
+                            >
+                              <CalendarIcon className="h-3 w-3 text-muted-foreground " />
+                              {order.deliveryDate
+                                ? format(
+                                    new Date(order.deliveryDate),
+                                    "MM/dd/yyyy"
+                                  )
+                                : "Pick date"}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -478,27 +528,39 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                           </PopoverContent>
                         </Popover>
                       </p>
-                    </div>
-
-                    <div>
                       <p>
-                        <span className="font-semibold">Amount:</span>{" "}
-                        <span className="font-bold text-gray-800">
-                          ${order.total.toFixed(2)}
+                        <span className="font-semibold text-primary">Rep:</span>{" "}
+                        <span className="text-primary font-medium">
+                          {order.rep?.name || "N/A"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      <p>
+                        <span className="font-semibold text-primary">
+                          Total Items:
+                        </span>{" "}
+                        <span className="text-foreground">
+                          {order.items?.length || 0}
                         </span>
                       </p>
                       <p>
-                        <span className="font-semibold">Rep:</span>{" "}
-                        {order.rep?.name || "N/A"}
+                        <span className="font-semibold text-primary">
+                          Amount:
+                        </span>{" "}
+                        <span className="font-bold text-primary">
+                          ${order.total.toFixed(2)}
+                        </span>
                       </p>
                     </div>
                   </div>
                 )}
 
                 {order.note && (
-                  <div className="mt-2">
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Note:</span> {order.note}
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-foreground">
+                      <span className="font-semibold text-primary">Note:</span>{" "}
+                      {order.note}
                     </p>
                   </div>
                 )}
@@ -507,6 +569,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
           );
         })}
       </div>
+
       <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />
       <PackingListDialog
         order={packingOrder}
@@ -528,6 +591,6 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
             : null
         }
       />
-    </>
+    </TooltipProvider>
   );
 };

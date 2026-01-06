@@ -24,7 +24,7 @@ import { format } from "date-fns";
 import {
   useGetAllSamplesQuery,
   useUpdateSampleStatusMutation,
-} from "@/redux/api/Samples/samplesApi ";
+} from "@/redux/api/Samples/samplesApi";
 import { ISample } from "@/types";
 import { toast } from "sonner";
 
