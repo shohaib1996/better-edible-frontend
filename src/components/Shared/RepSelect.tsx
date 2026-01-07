@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/select";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RepSelectProps {
   value?: string;
   onChange: (value: string) => void;
   showAllOption?: boolean;
   disabled?: boolean;
+  className?: string;
 }
 
 export const RepSelect: React.FC<RepSelectProps> = ({
@@ -23,6 +25,7 @@ export const RepSelect: React.FC<RepSelectProps> = ({
   onChange,
   showAllOption,
   disabled = false,
+  className,
 }) => {
   const { data, isLoading } = useGetAllRepsQuery({});
   const reps = data?.data || [];
@@ -40,7 +43,7 @@ export const RepSelect: React.FC<RepSelectProps> = ({
           onValueChange={onChange}
           disabled={disabled}
         >
-          <SelectTrigger className="w-full rounded-xs">
+          <SelectTrigger className={cn("w-full rounded-xs", className)}>
             <SelectValue placeholder="Select a rep" />
           </SelectTrigger>
           <SelectContent>
