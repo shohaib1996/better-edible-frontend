@@ -144,7 +144,7 @@ export default function RepsHoursContent() {
                     setStartDate(d ?? undefined);
                     setStartOpen(false);
                   }}
-                  initialFocus
+                  autoFocus
                   className="rounded-xs"
                 />
               </PopoverContent>
@@ -171,7 +171,7 @@ export default function RepsHoursContent() {
                     setEndDate(d ?? undefined);
                     setEndOpen(false);
                   }}
-                  initialFocus
+                  autoFocus
                   className="rounded-xs"
                 />
               </PopoverContent>
