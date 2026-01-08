@@ -582,42 +582,48 @@ const ProductsPage = () => {
                     <div className="bg-secondary/30 dark:bg-secondary/10 rounded-xs p-2 text-sm space-y-1">
                       {line === "Cannacrispy" && (
                         <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground font-medium">
                               Hybrid:
                             </span>
-                            <span className="ml-1 text-foreground">
-                              {item.prices?.hybrid?.price ?? "-"}
+                            <span className="text-foreground">
+                              {item.prices?.hybrid?.price ??
+                                item.hybridBreakdown?.hybrid ??
+                                "-"}
                             </span>
                             {item.prices?.hybrid?.discountPrice && (
-                              <span className="ml-1 text-primary">
-                                (${item.prices.hybrid.discountPrice.toFixed(2)})
+                              <span className="text-primary font-medium">
+                                ${item.prices.hybrid.discountPrice.toFixed(2)}
                               </span>
                             )}
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground font-medium">
                               Indica:
                             </span>
-                            <span className="ml-1 text-foreground">
-                              {item.prices?.indica?.price ?? "-"}
+                            <span className="text-foreground">
+                              {item.prices?.indica?.price ??
+                                item.hybridBreakdown?.indica ??
+                                "-"}
                             </span>
                             {item.prices?.indica?.discountPrice && (
-                              <span className="ml-1 text-primary">
-                                (${item.prices.indica.discountPrice.toFixed(2)})
+                              <span className="text-primary font-medium">
+                                ${item.prices.indica.discountPrice.toFixed(2)}
                               </span>
                             )}
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground font-medium">
                               Sativa:
                             </span>
-                            <span className="ml-1 text-foreground">
-                              {item.prices?.sativa?.price ?? "-"}
+                            <span className="text-foreground">
+                              {item.prices?.sativa?.price ??
+                                item.hybridBreakdown?.sativa ??
+                                "-"}
                             </span>
                             {item.prices?.sativa?.discountPrice && (
-                              <span className="ml-1 text-primary">
-                                (${item.prices.sativa.discountPrice.toFixed(2)})
+                              <span className="text-primary font-medium">
+                                ${item.prices.sativa.discountPrice.toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -646,16 +652,16 @@ const ProductsPage = () => {
                       {line === "BLISS Cannabis Syrup" && (
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           {item.variants?.map((v: any) => (
-                            <div key={v.label}>
-                              <span className="text-muted-foreground">
+                            <div key={v.label} className="flex flex-col">
+                              <span className="text-muted-foreground font-medium">
                                 {v.label}:
                               </span>
-                              <span className="ml-1 text-foreground">
+                              <span className="text-foreground">
                                 ${v.price?.toFixed(2)}
                               </span>
                               {v.discountPrice && (
-                                <span className="ml-1 text-primary">
-                                  (${v.discountPrice.toFixed(2)})
+                                <span className="text-primary font-medium">
+                                  ${v.discountPrice.toFixed(2)}
                                 </span>
                               )}
                             </div>
