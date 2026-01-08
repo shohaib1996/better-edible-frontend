@@ -13,9 +13,9 @@ const RepLayout = async ({ children }: { children: React.ReactNode }) => {
   const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <div className="flex max-w-7xl mx-auto w-full" id="layout-container">
+      <div className="flex max-w-7xl mx-auto w-full min-h-screen" id="layout-container">
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="w-full">
           <ImpersonationBanner />
           <SidebarTrigger className="m-2" />
           {children}

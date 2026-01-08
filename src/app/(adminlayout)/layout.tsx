@@ -13,9 +13,9 @@ export default async function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex max-w-7xl mx-auto w-full" id="layout-container">
+      <div className="flex max-w-7xl mx-auto w-full min-h-screen" id="layout-container">
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="w-full">
           <SidebarTrigger className="m-2" />
           {children}
         </SidebarInset>

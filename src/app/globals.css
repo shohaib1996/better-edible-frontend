@@ -162,6 +162,20 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scrollbar-gutter: stable; /* Reserve space for scrollbar to prevent layout shift */
+  }
+
+  /* Hide scrollbar while keeping functionality */
+  html::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+
+  html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
 }
 
 @layer utilities {
