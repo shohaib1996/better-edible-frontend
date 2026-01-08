@@ -549,7 +549,11 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                           Amount:
                         </span>{" "}
                         <span className="font-bold text-primary">
-                          ${order.total.toFixed(2)}
+                          $
+                          {order.total.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </p>
                     </div>

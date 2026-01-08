@@ -111,19 +111,6 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
     onPageChange?.(1);
   };
 
-  if (isLoading || !orders.length) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
-
-  if (!orders.length)
-    return (
-      <p className="text-muted-foreground mt-4">No shipped orders found.</p>
-    );
-
   const shippedTotal = orders.reduce(
     (sum, o) => (o?.status === "shipped" ? sum + (Number(o?.total) || 0) : sum),
     0
@@ -241,238 +228,261 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           </Button>
         </div>
 
-        <div className="text-right font-semibold text-emerald-600 dark:text-emerald-400 pr-1">
-          Shipped Orders Value: $
-          {shippedTotal.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+          </div>
+        ) : !orders.length ? (
+          <p className="text-muted-foreground mt-4 text-center">
+            No shipped orders found.
+          </p>
+        ) : (
+          <>
+            <div className="text-right font-semibold text-emerald-600 dark:text-emerald-400 pr-1">
+              Shipped Orders Value: $
+              {shippedTotal.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
 
-        {orders.map((order) => {
-          const isSample = (order as any).isSample === true;
-          const isOwnOrder = isRepView
-            ? order.rep?._id === currentRep?._id
-            : true;
+            {orders.map((order) => {
+              const isSample = (order as any).isSample === true;
+              const isOwnOrder = isRepView
+                ? order.rep?._id === currentRep?._id
+                : true;
 
-          return (
-            <Card
-              key={order._id}
-              className={cn(
-                "rounded-xs overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card py-3 gap-0",
-                !isOwnOrder && "opacity-75",
-                isSample
-                  ? "border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20"
-                  : getStatusStyle(order.status)
-              )}
-            >
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 px-3 py-0 border-b border-border/50">
-                {/* Store Info */}
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {!isSample ? (
-                      <button
-                        onClick={() => handleOpenDialog(order)}
-                        className="group text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative"
-                      >
-                        <span className="relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 group-hover:after:w-full">
-                          {order.store?.name || "N/A"}
-                        </span>
-                      </button>
-                    ) : (
-                      <span className="text-sm font-bold text-foreground uppercase tracking-wide">
-                        {order.store?.name || "N/A"}
-                      </span>
-                    )}
-                    {getStatusBadge(order.status)}
-                    {isSample && (
-                      <span className="px-2 py-0.5 rounded-xs text-xs font-bold bg-purple-600 text-white flex items-center gap-1">
-                        <Package className="w-3 h-3" /> SAMPLE
-                      </span>
-                    )}
-                    {!isOwnOrder && (
-                      <span className="px-2 py-0.5 rounded-xs text-xs font-semibold bg-muted text-muted-foreground">
-                        Other Rep
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {order.store?.address}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {!isSample && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 rounded-xs border border-border dark:border-gray-500 bg-primary text-white hover:bg-primary hover:text-white dark:hover:bg-primary"
-                          onClick={() => {
-                            if (isOwnOrder) {
-                              onEdit(order);
-                            } else {
-                              handleUnauthorizedAction();
-                            }
-                          }}
-                          disabled={!isOwnOrder}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Edit Order</p>
-                      </TooltipContent>
-                    </Tooltip>
+              return (
+                <Card
+                  key={order._id}
+                  className={cn(
+                    "rounded-xs overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card py-3 gap-0",
+                    !isOwnOrder && "opacity-75",
+                    isSample
+                      ? "border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20"
+                      : getStatusStyle(order.status)
                   )}
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 px-3 py-0 border-b border-border/50">
+                    {/* Store Info */}
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {!isSample ? (
+                          <button
+                            onClick={() => handleOpenDialog(order)}
+                            className="group text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative"
+                          >
+                            <span className="relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 group-hover:after:w-full">
+                              {order.store?.name || "N/A"}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="text-sm font-bold text-foreground uppercase tracking-wide">
+                            {order.store?.name || "N/A"}
+                          </span>
+                        )}
+                        {getStatusBadge(order.status)}
+                        {isSample && (
+                          <span className="px-2 py-0.5 rounded-xs text-xs font-bold bg-purple-600 text-white flex items-center gap-1">
+                            <Package className="w-3 h-3" /> SAMPLE
+                          </span>
+                        )}
+                        {!isOwnOrder && (
+                          <span className="px-2 py-0.5 rounded-xs text-xs font-semibold bg-muted text-muted-foreground">
+                            Other Rep
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {order.store?.address}
+                      </p>
+                    </div>
 
-                  <Select
-                    value={order.status}
-                    onValueChange={(value) => {
-                      if (isOwnOrder) {
-                        handleChangeStatus(order._id, value);
-                      } else {
-                        handleUnauthorizedAction();
-                      }
-                    }}
-                    disabled={!isOwnOrder}
-                  >
-                    <SelectTrigger
-                      className={cn(
-                        "w-24 h-8! text-xs font-semibold border-none focus:ring-0 rounded-xs px-2 gap-1 [&>svg]:ml-0",
-                        getDropdownStyle(order.status, isOwnOrder)
+                    <div className="flex items-center gap-1.5">
+                      {!isSample && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 rounded-xs border border-border dark:border-gray-500 bg-primary text-white hover:bg-primary hover:text-white dark:hover:bg-primary"
+                              onClick={() => {
+                                if (isOwnOrder) {
+                                  onEdit(order);
+                                } else {
+                                  handleUnauthorizedAction();
+                                }
+                              }}
+                              disabled={!isOwnOrder}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit Order</p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
-                    >
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent className="text-sm rounded-xs">
-                      {[
-                        "shipped",
-                        "cancelled",
-                        "manifested",
-                        "accepted",
-                        "submitted",
-                      ].map((s) => (
-                        <SelectItem
-                          key={s}
-                          value={s}
-                          className="capitalize font-medium rounded-xs"
+
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) => {
+                          if (isOwnOrder) {
+                            handleChangeStatus(order._id, value);
+                          } else {
+                            handleUnauthorizedAction();
+                          }
+                        }}
+                        disabled={!isOwnOrder}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "w-24 h-8! text-xs font-semibold border-none focus:ring-0 rounded-xs px-2 gap-1 [&>svg]:ml-0",
+                            getDropdownStyle(order.status, isOwnOrder)
+                          )}
                         >
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="px-3 pt-2 text-xs bg-muted/50 dark:bg-muted/20">
-                {isSample ? (
-                  <div className="flex justify-between flex-wrap gap-3">
-                    <div className="space-y-0.5">
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                          Type:
-                        </span>
-                        <span className="text-foreground font-medium">
-                          Sample Request
-                        </span>
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                          Request Date:
-                        </span>
-                        <span className="text-muted-foreground">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </span>
-                      </p>
-                      {(order as any).deliveryDate && (
-                        <p className="flex items-center gap-1.5">
-                          <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                            Shipped:
-                          </span>
-                          <span className="text-muted-foreground">
-                            {new Date(
-                              (order as any).deliveryDate
-                            ).toLocaleDateString()}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-0.5 text-right">
-                      {(order as any).description && (
-                        <p className="text-muted-foreground">
-                          <span className="font-semibold text-purple-600 dark:text-purple-400">
-                            Note:
-                          </span>{" "}
-                          {(order as any).description}
-                        </p>
-                      )}
-                      <p>
-                        <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                          Rep:
-                        </span>{" "}
-                        <span className="text-primary font-medium">
-                          {order.rep?.name || "N/A"}
-                        </span>
-                      </p>
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent className="text-sm rounded-xs">
+                          {[
+                            "shipped",
+                            "cancelled",
+                            "manifested",
+                            "accepted",
+                            "submitted",
+                          ].map((s) => (
+                            <SelectItem
+                              key={s}
+                              value={s}
+                              className="capitalize font-medium rounded-xs"
+                            >
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex justify-between flex-wrap gap-2 bg-accent/10 p-2 rounded-xs">
-                    <div className="space-y-0.5">
-                      <p>
-                        <span className="text-primary font-semibold">
-                          Order#:
-                        </span>{" "}
-                        <span className="text-foreground">
-                          {order.orderNumber}
-                        </span>
-                      </p>
-                      {order.deliveryDate && (
-                        <p>
-                          <span className="text-primary font-semibold">
-                            Shipped:
-                          </span>{" "}
-                          <span className="text-muted-foreground">
-                            {new Date(order.deliveryDate).toLocaleDateString()}
-                          </span>
-                        </p>
-                      )}
-                      <p>
-                        <span className="text-primary font-semibold">Rep:</span>{" "}
-                        <span className="text-primary font-medium">
-                          {order.rep?.name || "N/A"}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        Amount: ${(Number(order.total) || 0).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-          );
-        })}
 
-        {/* Pagination */}
-        {totalOrders > itemsPerPage && onPageChange && onLimitChange && (
-          <GlobalPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalOrders}
-            itemsPerPage={itemsPerPage}
-            onPageChange={onPageChange}
-            onLimitChange={(limit) => {
-              onLimitChange(limit);
-              onPageChange(1);
-            }}
-            limitOptions={[10, 25, 50, 100]}
-          />
+                  <div className="px-3 pt-2 text-xs bg-muted/50 dark:bg-muted/20">
+                    {isSample ? (
+                      <div className="flex justify-between flex-wrap gap-3">
+                        <div className="space-y-0.5">
+                          <p className="flex items-center gap-1.5">
+                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                              Type:
+                            </span>
+                            <span className="text-foreground font-medium">
+                              Sample Request
+                            </span>
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                              Request Date:
+                            </span>
+                            <span className="text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </span>
+                          </p>
+                          {(order as any).deliveryDate && (
+                            <p className="flex items-center gap-1.5">
+                              <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                                Shipped:
+                              </span>
+                              <span className="text-muted-foreground">
+                                {new Date(
+                                  (order as any).deliveryDate
+                                ).toLocaleDateString()}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-0.5 text-right">
+                          {(order as any).description && (
+                            <p className="text-muted-foreground">
+                              <span className="font-semibold text-purple-600 dark:text-purple-400">
+                                Note:
+                              </span>{" "}
+                              {(order as any).description}
+                            </p>
+                          )}
+                          <p>
+                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                              Rep:
+                            </span>{" "}
+                            <span className="text-primary font-medium">
+                              {order.rep?.name || "N/A"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between flex-wrap gap-2 bg-accent/10 p-2 rounded-xs">
+                        <div className="space-y-0.5">
+                          <p>
+                            <span className="text-primary font-semibold">
+                              Order#:
+                            </span>{" "}
+                            <span className="text-foreground">
+                              {order.orderNumber}
+                            </span>
+                          </p>
+                          {order.deliveryDate && (
+                            <p>
+                              <span className="text-primary font-semibold">
+                                Shipped:
+                              </span>{" "}
+                              <span className="text-muted-foreground">
+                                {new Date(
+                                  order.deliveryDate
+                                ).toLocaleDateString()}
+                              </span>
+                            </p>
+                          )}
+                          <p>
+                            <span className="text-primary font-semibold">
+                              Rep:
+                            </span>{" "}
+                            <span className="text-primary font-medium">
+                              {order.rep?.name || "N/A"}
+                            </span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-emerald-600 dark:text-emerald-400 font-bold">
+                            Amount: $
+                            {(Number(order.total) || 0).toLocaleString(
+                              "en-US",
+                              {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+
+            {/* Pagination */}
+            {totalOrders > itemsPerPage && onPageChange && onLimitChange && (
+              <GlobalPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalOrders}
+                itemsPerPage={itemsPerPage}
+                onPageChange={onPageChange}
+                onLimitChange={(limit) => {
+                  onLimitChange(limit);
+                  onPageChange(1);
+                }}
+                limitOptions={[10, 25, 50, 100]}
+              />
+            )}
+          </>
         )}
 
         <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />

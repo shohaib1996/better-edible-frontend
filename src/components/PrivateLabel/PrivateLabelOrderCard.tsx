@@ -326,7 +326,11 @@ export const PrivateLabelOrderCard: React.FC<PrivateLabelOrderCardProps> = ({
             <p>
               <span className="font-semibold">Amount:</span>{" "}
               <span className="font-bold text-primary">
-                ${order.total.toFixed(2)}
+                $
+                {order.total.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </p>
           </div>

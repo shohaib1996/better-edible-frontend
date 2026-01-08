@@ -107,46 +107,6 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const colorMap: Record<string, { bg: string; text: string }> = {
-      submitted: {
-        bg: "bg-blue-100 dark:bg-blue-950",
-        text: "text-blue-800 dark:text-blue-200",
-      },
-      accepted: {
-        bg: "bg-yellow-100 dark:bg-yellow-950",
-        text: "text-yellow-800 dark:text-yellow-200",
-      },
-      manifested: {
-        bg: "bg-emerald-100 dark:bg-emerald-950",
-        text: "text-emerald-800 dark:text-emerald-200",
-      },
-      shipped: {
-        bg: "bg-green-100 dark:bg-green-950",
-        text: "text-green-800 dark:text-green-200",
-      },
-      cancelled: {
-        bg: "bg-red-100 dark:bg-red-950",
-        text: "text-red-800 dark:text-red-200",
-      },
-    };
-    const colors = colorMap[status] || {
-      bg: "bg-muted",
-      text: "text-muted-foreground",
-    };
-    return (
-      <span
-        className={cn(
-          "px-2 py-1 rounded-xs text-xs font-semibold capitalize",
-          colors.bg,
-          colors.text
-        )}
-      >
-        {status}
-      </span>
-    );
-  };
-
   const getStatusSelectBg = (status: string) => {
     switch (status) {
       case "submitted":
@@ -190,6 +150,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                 isSample
                   ? "bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800"
                   : "",
+                getStatusStyle(order.status, isSample),
                 getStatusStyle(order.status, isSample)
               )}
             >
@@ -209,7 +170,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                         {order.store?.name || "N/A"}
                       </span>
                     )}
-                    <span>{getStatusBadge(order.status)}</span>
+
                     {isSample && (
                       <span className="px-3 py-1 rounded-xs text-xs font-bold bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-md">
                         SAMPLE REQUEST
@@ -581,7 +542,11 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     </div>
                     <div className="text-right space-y-0.5">
                       <p className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        Amount: ${order.total?.toFixed(2) || "0.00"}
+                        Amount: $
+                        {order.total?.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"}
                       </p>
                       <p className="text-primary font-medium">
                         Rep: {order.rep?.name || "N/A"}

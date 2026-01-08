@@ -77,8 +77,8 @@ const OrdersPage = ({
         ? currentRepId
         : undefined // Only filter by currentRepId for "new" tab
       : undefined, // Admin view doesn't filter by rep
-    startDate,
-    endDate,
+    startDate: activeTab === "shipped" ? startDate : undefined,
+    endDate: activeTab === "shipped" ? endDate : undefined,
     status:
       activeTab === "shipped"
         ? ["shipped", "cancelled"]

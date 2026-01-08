@@ -87,7 +87,10 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
     } else {
       // Rep View
       if (activeTab === "all") {
-        return { ...baseParams }; // All orders from entire system
+        return {
+          ...baseParams,
+          status: ["submitted", "accepted", "manifested"],
+        }; // All active orders from entire system
       } else if (activeTab === "new") {
         return {
           ...baseParams,
