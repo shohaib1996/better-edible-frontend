@@ -61,19 +61,19 @@ export const SampleModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-lg">
+      <DialogContent className="sm:max-w-md rounded-xs">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-gray-800">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             Create Sample Record
           </DialogTitle>
         </DialogHeader>
 
         {/* 🏪 Store Info */}
-        <div className="bg-gray-50 border rounded-md p-3 mb-4">
-          <h2 className="text-base font-semibold text-gray-800">{storeName}</h2>
-          <p className="text-sm text-gray-600">{storeAddress}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            Assigned Rep: <span className="font-medium">{repName}</span>
+        <div className="bg-secondary/30 dark:bg-secondary/10 border border-border rounded-xs p-3 mb-4">
+          <h2 className="text-base font-semibold text-foreground">{storeName}</h2>
+          <p className="text-sm text-muted-foreground">{storeAddress}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Assigned Rep: <span className="font-medium text-primary">{repName}</span>
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export const SampleModal = ({
 
         {/* 🧾 Sample Description */}
         <div className="space-y-2 py-3">
-          <Label htmlFor="description" className="text-gray-700 font-medium">
+          <Label htmlFor="description" className="text-foreground font-medium">
             Sample Description
           </Label>
           <Textarea
@@ -89,16 +89,24 @@ export const SampleModal = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Enter sample details (e.g., Cannacrispy, Bliss Cannabis Syrup, Fifty One Fifty, etc.)"
-            className="border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 min-h-[150px]"
+            className="border border-accent focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[150px] rounded-xs"
           />
         </div>
 
         {/* Footer Buttons */}
         <DialogFooter className="pt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="rounded-xs"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xs"
+          >
             {isLoading ? "Saving..." : "Save"}
           </Button>
         </DialogFooter>

@@ -59,14 +59,14 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer rounded-xs">
+          <AlertDialogCancel className="bg-secondary text-white hover:bg-secondary/90 dark:bg-secondary dark:text-white dark:hover:bg-secondary/80 cursor-pointer rounded-xs border-none">
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             className={
               variant === "destructive"
-                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer rounded-xs"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer rounded-xs"
+                ? "bg-destructive text-white hover:bg-destructive/90 cursor-pointer rounded-xs"
+                : "bg-primary text-white hover:bg-primary/90 cursor-pointer rounded-xs"
             }
             onClick={onConfirm}
           >

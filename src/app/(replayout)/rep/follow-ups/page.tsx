@@ -3,8 +3,8 @@
 import { useState, useCallback } from "react";
 import { useGetAllFollowupsQuery } from "@/redux/api/Followups/followupsApi";
 import { useUser } from "@/redux/hooks/useAuth";
-import { useDebounced } from "@/redux/hooks/hooks";
-import { IFollowUp } from "@/types";
+import { useDebounce } from "@/hooks/useDebounce";
+import type { IFollowUp } from "@/types";
 import { useCreateOrderMutation } from "@/redux/api/orders/orders";
 import { useDeleteFollowupMutation } from "@/redux/api/Followups/followupsApi";
 import { OrderModal } from "@/components/pages/TodayContact/OrderModal";
@@ -32,6 +32,9 @@ import {
   Repeat,
   ShoppingCart,
   Truck,
+  ClipboardList,
+  Search,
+  X,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -170,14 +173,32 @@ const FollowUps = () => {
     setDeliveryModalOpen(true);
   };
 
+  const handleClearDate = () => {
+    setShowAll(true);
+    setSearch("");
+  };
+
+  const handleReset = () => {
+    setSearch("");
+    setShowAll(false);
+    setSelectedDate(new Date());
+  };
+
+  const showReset =
+    search ||
+    showAll ||
+    selectedDate.toDateString() !== new Date().toDateString();
+
   const orderFields: Field[] = [
     {
       name: "storeId",
       label: "Store",
       render: (value, onChange, initialData) => (
-        <div className="p-2 border rounded-md bg-gray-50">
+        <div className="p-2 border rounded-xs bg-muted">
           <p className="font-semibold">{initialData?.store?.name}</p>
-          <p className="text-sm text-gray-500">{initialData?.store?.address}</p>
+          <p className="text-sm text-muted-foreground">
+            {initialData?.store?.address}
+          </p>
         </div>
       ),
     },
@@ -185,7 +206,7 @@ const FollowUps = () => {
       name: "repId",
       label: "Rep",
       render: (value, onChange) => (
-        <div className="p-2 border rounded-md bg-gray-50">
+        <div className="p-2 border rounded-xs bg-muted">
           <p className="font-semibold">{user?.name}</p>
         </div>
       ),
@@ -199,7 +220,7 @@ const FollowUps = () => {
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal rounded-xs",
                 !value && "text-muted-foreground"
               )}
             >
@@ -211,7 +232,7 @@ const FollowUps = () => {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0 rounded-xs">
             <Calendar
               mode="single"
               selected={value ? toLocalDate(value) || undefined : undefined}
@@ -219,6 +240,7 @@ const FollowUps = () => {
                 onChange(date ? format(date, "yyyy-MM-dd") : "")
               }
               initialFocus
+              className="rounded-xs"
             />
           </PopoverContent>
         </Popover>
@@ -226,7 +248,7 @@ const FollowUps = () => {
     },
   ];
 
-  const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
+  const debouncedSearch = useDebounce(search, 500);
 
   // <-- IMPORTANT: send yyyy-MM-dd string to backend (date-only)
   const { data, isLoading } = useGetAllFollowupsQuery({
@@ -240,175 +262,240 @@ const FollowUps = () => {
   const goPrevDay = () => setSelectedDate(addDays(selectedDate, -1));
   const goNextDay = () => setSelectedDate(addDays(selectedDate, 1));
 
-  if (isLoading) return <p className="p-4 text-gray-500">Loading...</p>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-muted-foreground">Loading follow-ups...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* ------------------- HEADER ------------------- */}
-      <h1 className="text-2xl font-semibold">Follow Ups</h1>
+    <div className="p-4 md:p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Repeat className="h-6 w-6 text-primary" />
+        <h1 className="text-xl md:text-2xl font-semibold text-foreground">
+          Follow Ups
+        </h1>
+      </div>
 
-      {/* ------------------- FILTERS ------------------- */}
-      <Card className="p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Prev Button */}
-          <Button variant="outline" onClick={goPrevDay}>
-            <ChevronLeft />
-          </Button>
+      {/* Filters */}
+      <Card className="p-4 rounded-xs border border-border bg-card dark:bg-card max-w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+          {/* Date Navigation */}
+          <div className="flex items-center gap-1 min-w-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goPrevDay}
+              disabled={showAll}
+              className="h-9 w-9 shrink-0 rounded-xs border border-gray-300 dark:border-gray-600 bg-background hover:bg-accent hover:text-accent-foreground dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-          {/* Calendar Popover */}
-          <Popover modal>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-44 flex justify-between",
-                  !selectedDate && "text-muted-foreground"
-                )}
-                disabled={showAll}
-              >
-                {selectedDate
-                  ? format(selectedDate, "MMMM dd, yyyy")
-                  : "Pick date"}
-                <CalendarIcon className="w-4 h-4 opacity-70" />
-              </Button>
-            </PopoverTrigger>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={showAll}
+                  className={cn(
+                    "flex-1 justify-start text-left font-normal rounded-xs h-9 min-w-0 dark:hover:bg-secondary border dark:border-border",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {selectedDate
+                      ? format(selectedDate, "MMM dd, yyyy")
+                      : "Pick a date"}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-xs" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => d && setSelectedDate(d)}
+                  initialFocus
+                  className="rounded-xs"
+                />
+              </PopoverContent>
+            </Popover>
 
-            <PopoverContent className="p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(d) => d && setSelectedDate(d)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goNextDay}
+              disabled={showAll}
+              className="h-9 w-9 shrink-0 rounded-xs border border-gray-300 dark:border-gray-600 bg-background hover:bg-accent hover:text-accent-foreground dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
 
-          {/* Next Button */}
-          <Button variant="outline" onClick={goNextDay}>
-            <ChevronRight />
-          </Button>
-
-          {/* Search */}
-          <Input
-            placeholder="Search stores..."
-            className="max-w-xs border-2 border-emerald-400"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          {/* View All */}
-          <div className="flex items-center gap-2 ml-auto">
-            <Checkbox
-              id="viewAll"
-              checked={showAll}
-              className="border-2 border-emerald-500"
-              onCheckedChange={(v) => {
-                setShowAll(Boolean(v));
-                if (Boolean(v)) {
-                  setSearch("");
-                }
-              }}
-            />
-            <label htmlFor="viewAll" className="text-sm">
-              View All
-            </label>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleClearDate}
+              className="h-9 w-9 shrink-0 rounded-xs border border-gray-300 dark:border-gray-600 bg-background hover:bg-accent hover:text-accent-foreground dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors"
+              title="View all follow-ups"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
+
+          {/* Search Input */}
+          <div className="relative min-w-0 md:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by store name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 rounded-xs h-9 w-full"
+            />
+          </div>
+
+          {/* Reset Button */}
+          {showReset && (
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              className="rounded-xs h-9 gap-1 md:col-span-3"
+            >
+              <X className="h-4 w-4" />
+              <span>Reset All Filters</span>
+            </Button>
+          )}
         </div>
       </Card>
 
-      {/* ------------------- LIST ------------------- */}
+      {/* Followups List */}
       <div className="space-y-3">
-        <h2 className="font-semibold text-lg">Followups</h2>
+        {followups.length === 0 ? (
+          <Card className="p-6 rounded-xs text-center border-border">
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="h-12 w-12 rounded-full bg-muted/20 flex items-center justify-center">
+                <ClipboardList className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm">
+                No follow-ups found.
+              </p>
+            </div>
+          </Card>
+        ) : (
+          followups.map((f) => {
+            const dateStr = (f as any).followupDate as string | undefined;
+            const local = toLocalDate(dateStr);
 
-        {followups.length === 0 && (
-          <p className="text-gray-500 text-sm">No followups found.</p>
-        )}
+            const today = new Date();
+            const delay = local
+              ? Math.max(0, differenceInCalendarDays(today, local))
+              : 0;
+            const borderColorClass =
+              delay > 0
+                ? "border-l-red-500 dark:border-l-red-600"
+                : "border-l-emerald-500 dark:border-l-emerald-600";
 
-        {followups.map((f) => {
-          const dateStr = (f as any).followupDate as string | undefined;
-          const local = toLocalDate(dateStr);
-
-          const today = new Date();
-          const delay = local
-            ? Math.max(0, differenceInCalendarDays(today, local))
-            : 0;
-          const borderColorClass =
-            delay > 0 ? "border-red-500" : "border-emerald-500";
-
-          return (
-            <Card
-              key={f._id}
-              className={`border-l-4 ${borderColorClass} shadow-sm py-0`}
-            >
-              <CardContent className="p-4 flex flex-col gap-2">
-                {/* TOP ROW */}
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg">{f.store.name}</h3>
-                    <p className="text-gray-600 text-sm">{f.store.address}</p>
-
-                    <p className="text-gray-600 text-sm">
-                      Rep: <span className="font-medium">{f.rep.name}</span>
-                    </p>
-
-                    <p className="text-gray-500 text-sm">
-                      Followup:{" "}
-                      {dateStr && local
-                        ? format(local, "MMM dd, yyyy")
-                        : "No date"}
-                    </p>
-
-                    {/* Delay Info */}
-                    {delay > 0 && (
-                      <p className="text-red-600 font-semibold text-sm">
-                        Delayed by {delay} day{delay > 1 ? "s" : ""}
+            return (
+              <Card
+                key={f._id}
+                className={`border-l-4 py-0 ${borderColorClass} rounded-xs shadow-sm`}
+              >
+                <CardContent className="p-4 flex flex-col gap-3">
+                  {/* TOP ROW */}
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-foreground">
+                        {f.store.name}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {f.store.address}
                       </p>
-                    )}
 
-                    <p className="text-gray-700 mt-1">{f.comments}</p>
+                      <p className="text-muted-foreground text-sm mt-1">
+                        Rep:{" "}
+                        <span className="font-medium text-primary">
+                          {f.rep.name}
+                        </span>
+                      </p>
+
+                      <p className="text-muted-foreground text-sm">
+                        Followup:{" "}
+                        <span className="font-medium">
+                          {dateStr && local
+                            ? format(local, "MMM dd, yyyy")
+                            : "No date"}
+                        </span>
+                      </p>
+
+                      {/* Delay Info */}
+                      {delay > 0 && (
+                        <p className="text-red-600 dark:text-red-500 font-semibold text-sm mt-1">
+                          Delayed by {delay} day{delay > 1 ? "s" : ""}
+                        </p>
+                      )}
+
+                      {f.comments && (
+                        <p className="text-foreground mt-2 text-sm">
+                          {f.comments}
+                        </p>
+                      )}
+                    </div>
+
+                    <ConfirmDialog
+                      triggerText="Dismiss"
+                      title="Are you sure you want to dismiss this follow-up?"
+                      description="This action cannot be undone."
+                      onConfirm={() => handleDeleteFollowup(f._id)}
+                    />
                   </div>
 
-                  <ConfirmDialog
-                    triggerText="Dismiss"
-                    title="Are you sure you want to dismiss this follow-up?"
-                    description="This action cannot be undone."
-                    onConfirm={() => handleDeleteFollowup(f._id)}
-                  />
-                </div>
+                  {/* ACTION BUTTONS */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelivery(f)}
+                      className="rounded-xs border-input hover:bg-accent hover:text-accent-foreground dark:border-gray-600 dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors"
+                    >
+                      <Truck className="w-4 h-4 mr-1" /> Delivery
+                    </Button>
 
-                {/* ACTION BUTTONS */}
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleDelivery(f)}
-                  >
-                    <Truck className="w-4 h-4 mr-1" /> Delivery
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xs border-input hover:bg-accent hover:text-accent-foreground dark:border-gray-600 dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors"
+                    >
+                      <Mail className="w-4 h-4 mr-1" /> Email
+                    </Button>
 
-                  <Button size="sm" variant="secondary">
-                    <Mail className="w-4 h-4 mr-1" /> Email
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleNewOrder(f)}
+                      className="rounded-xs border-input hover:bg-accent hover:text-accent-foreground dark:border-gray-600 dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors"
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-1" /> Orders
+                    </Button>
 
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleNewOrder(f)}
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-1" /> Orders
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleEditFollowup(f)}
-                  >
-                    <Repeat className="w-4 h-4 mr-1" /> Re Followup
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditFollowup(f)}
+                      className="rounded-xs border-input hover:bg-accent hover:text-accent-foreground dark:border-gray-600 dark:text-gray-200 dark:hover:bg-primary dark:hover:text-primary-foreground transition-colors"
+                    >
+                      <Repeat className="w-4 mr-1" /> Re Followup
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       <OrderModal
