@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 interface TodayContactControlsProps {
   date: string;
@@ -25,12 +25,13 @@ export const TodayContactControls = ({
   setSearch,
 }: TodayContactControlsProps) => {
   return (
-    <div className="flex flex-wrap gap-3 items-center justify-between bg-white p-4 rounded-lg shadow-sm border">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center bg-card dark:bg-card p-3 rounded-xs shadow-sm border border-border">
+      <div className="flex items-center gap-2 flex-1 md:flex-1">
         {/* Previous Day Button */}
         <Button
           variant="outline"
           size="icon"
+          className="h-9 w-9 rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:hover:bg-primary border-0 shrink-0"
           onClick={() =>
             setDate(
               new Date(new Date(date).setDate(new Date(date).getDate() - 1))
@@ -39,20 +40,20 @@ export const TodayContactControls = ({
             )
           }
         >
-          <ChevronLeft />
+          <ChevronLeft className="h-4 w-4" />
         </Button>
 
         {/* Date Picker */}
         <Popover>
-          <PopoverTrigger asChild className="border-green-500">
+          <PopoverTrigger asChild>
             <Button
               variant="outline"
-              className="w-44 justify-center font-normal"
+              className="flex-1 dark:hover:text-secondary dark:border-border justify-center font-normal rounded-xs border-border bg-transparent"
             >
-              {format(new Date(date), "PPP")}
+              {format(new Date(date), "MMM dd, yyyy")}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 rounded-xs" align="start">
             <Calendar
               mode="single"
               selected={new Date(date)}
@@ -76,6 +77,7 @@ export const TodayContactControls = ({
         <Button
           variant="outline"
           size="icon"
+          className="h-9 w-9 rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:hover:bg-primary border-0 shrink-0"
           onClick={() =>
             setDate(
               new Date(new Date(date).setDate(new Date(date).getDate() + 1))
@@ -84,16 +86,19 @@ export const TodayContactControls = ({
             )
           }
         >
-          <ChevronRight />
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      <Input
-        placeholder="Search store..."
-        className="w-60 border-green-500"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="relative flex-1 md:flex-2">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search store..."
+          className="pl-9 rounded-xs border-border w-full"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
     </div>
   );
 };

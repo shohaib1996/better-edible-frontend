@@ -24,6 +24,7 @@ interface ConfirmDialogProps {
   variant?: "default" | "destructive" | "outline";
   onConfirm: () => void;
   disabled?: boolean;
+  className?: string;
 }
 
 export function ConfirmDialog({
@@ -36,6 +37,7 @@ export function ConfirmDialog({
   variant = "destructive",
   onConfirm,
   disabled,
+  className,
 }: ConfirmDialogProps) {
   return (
     <AlertDialog>
@@ -44,7 +46,7 @@ export function ConfirmDialog({
           trigger
         ) : (
           <Button
-            className="cursor-pointer rounded-xs"
+            className={className || "cursor-pointer rounded-xs"}
             variant={variant}
             size="sm"
             disabled={disabled}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useGetAllDeliveriesQuery } from "@/redux/api/Deliveries/deliveryApi";
 import { useUser } from "@/redux/hooks/useAuth";
 import {
@@ -17,9 +17,9 @@ import { TodayContactHeader } from "@/components/pages/TodayContact/TodayContact
 import { TodayContactControls } from "@/components/pages/TodayContact/TodayContactControls";
 import { DeliveryList } from "@/components/pages/TodayContact/DeliveryList";
 import { OrderModal } from "@/components/pages/TodayContact/OrderModal";
-import { Field } from "@/components/ReUsableComponents/EntityModal";
+import type { Field } from "@/components/ReUsableComponents/EntityModal";
 import { EditDeliveryModal } from "@/components/Delivery/EditDeliveryModal";
-import { Delivery } from "@/types";
+import type { Delivery } from "@/types";
 import {
   Popover,
   PopoverTrigger,
@@ -42,7 +42,7 @@ const TodayContact = () => {
 
   const [checkin, { isLoading: checkinLoading }] = useCheckInRepMutation();
   const [checkout, { isLoading: checkoutLoading }] = useCheckOutRepMutation();
-  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -146,9 +146,13 @@ const TodayContact = () => {
       name: "storeId",
       label: "Store",
       render: (value, onChange, initialData) => (
-        <div className="p-2 border rounded-md bg-gray-50">
-          <p className="font-semibold">{initialData?.store?.name}</p>
-          <p className="text-sm text-gray-500">{initialData?.store?.address}</p>
+        <div className="p-2 border border-border rounded-xs bg-secondary/30 dark:bg-secondary/10">
+          <p className="font-semibold text-foreground">
+            {initialData?.store?.name}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {initialData?.store?.address}
+          </p>
         </div>
       ),
     },
@@ -156,8 +160,8 @@ const TodayContact = () => {
       name: "repId",
       label: "Rep",
       render: (value, onChange) => (
-        <div className="p-2 border rounded-md bg-gray-50">
-          <p className="font-semibold">{user?.name}</p>
+        <div className="p-2 border border-border rounded-xs bg-secondary/30 dark:bg-secondary/10">
+          <p className="font-semibold text-foreground">{user?.name}</p>
         </div>
       ),
     },
@@ -170,7 +174,7 @@ const TodayContact = () => {
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal rounded-xs",
                 !value && "text-muted-foreground"
               )}
             >
@@ -182,7 +186,7 @@ const TodayContact = () => {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent className="w-auto p-0 rounded-xs">
             <Calendar
               mode="single"
               selected={value ? new Date(value) : undefined}
@@ -257,7 +261,6 @@ const TodayContact = () => {
       const newList = [...prev];
       const targetIndex = direction === "up" ? index - 1 : index + 1;
       if (targetIndex < 0 || targetIndex >= newList.length) return prev;
-
       [newList[index], newList[targetIndex]] = [
         newList[targetIndex],
         newList[index],
@@ -277,35 +280,35 @@ const TodayContact = () => {
 
   // 🔹 Check-in / Check-out Logic
   const handleCheckInOrOut = async () => {
-    if (!password.trim() || !user) return;
+    if (!pin.trim() || !user) return;
 
     const action = repData?.checkin ? "checkout" : "checkin";
 
     try {
       if (action === "checkin") {
-        await checkin({ loginName: user.loginName, password }).unwrap();
+        await checkin({ loginName: user.loginName, pin }).unwrap();
         toast.success(`${user.name} checked in successfully`);
       } else {
-        await checkout({ loginName: user.loginName, password }).unwrap();
+        await checkout({ loginName: user.loginName, pin }).unwrap();
         toast.success(`${user.name} checked out successfully`);
       }
       setIsModalOpen(false);
-      setPassword("");
-    } catch {
+      setPin("");
+    } catch (error: any) {
       const actionName = action === "checkin" ? "in" : "out";
-      toast.error(`Check ${actionName} failed`);
+      toast.error(error?.data?.message || `Check ${actionName} failed`);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-5">
-      <div className="container mx-auto space-y-6">
+    <main className="min-h-screen bg-background p-0 md:p-5">
+      <div className="container mx-auto space-y-3 md:space-y-6 px-3 md:px-4">
         <TodayContactHeader
           repData={repData}
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
-          password={password}
-          setPassword={setPassword}
+          pin={pin}
+          setPin={setPin}
           handleCheckInOrOut={handleCheckInOrOut}
           checkinLoading={checkinLoading}
           checkoutLoading={checkoutLoading}

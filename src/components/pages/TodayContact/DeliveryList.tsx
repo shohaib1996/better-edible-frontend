@@ -3,7 +3,7 @@
 
 import { Loader2 } from "lucide-react";
 import { DeliveryItem } from "./DeliveryItem";
-import { Delivery } from "@/types";
+import type { Delivery } from "@/types";
 
 interface DeliveryListProps {
   isLoading: boolean;
@@ -23,13 +23,13 @@ export const DeliveryList = ({
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20">
-        <Loader2 className="animate-spin w-6 h-6 text-green-600" />
+        <Loader2 className="animate-spin w-6 h-6 text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {orderedDeliveries.length > 0 ? (
         orderedDeliveries.map((delivery, index) => (
           <DeliveryItem
@@ -44,9 +44,11 @@ export const DeliveryList = ({
           />
         ))
       ) : (
-        <p className="text-center text-gray-500 py-10">
-          No deliveries assigned for today.
-        </p>
+        <div className="text-center py-10 bg-card rounded-xs border border-border">
+          <p className="text-muted-foreground">
+            No deliveries assigned for today.
+          </p>
+        </div>
       )}
     </div>
   );
