@@ -81,13 +81,26 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
                 {note.date &&
                   (() => {
                     try {
-                      const [year, month, day] = note.date.split("-");
+                      // Parse "YYYY-MM-DD HH:MM" format
+                      const [datePart, timePart] = note.date.split(' ');
+                      const [year, month, day] = datePart.split('-');
+                      const [hours, minutes] = timePart ? timePart.split(':') : ['00', '00'];
+
                       const dateObj = new Date(
                         parseInt(year),
                         parseInt(month) - 1,
-                        parseInt(day)
+                        parseInt(day),
+                        parseInt(hours),
+                        parseInt(minutes)
                       );
-                      return format(dateObj, "MM/dd/yyyy");
+
+                      // Format as "MM/DD/YYYY HH:MM AM/PM"
+                      const dateStr = format(dateObj, "MM/dd/yyyy");
+                      const hour12 = parseInt(hours) % 12 || 12;
+                      const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                      const timeStr = `${hour12}:${minutes} ${ampm}`;
+
+                      return `${dateStr} ${timeStr}`;
                     } catch {
                       return note.date;
                     }

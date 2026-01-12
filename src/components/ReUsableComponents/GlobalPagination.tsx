@@ -33,7 +33,7 @@ export const GlobalPagination = ({
   itemsPerPage,
   onPageChange,
   onLimitChange,
-  limitOptions = [10, 25, 50, 100],
+  limitOptions = [9, 10, 25, 50, 100],
 }: GlobalPaginationProps) => {
   // Generate page numbers to display
   const generatePageNumbers = () => {

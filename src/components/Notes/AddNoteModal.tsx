@@ -153,11 +153,31 @@ export const AddNoteModal = ({
         await updateNote({ id: note._id, ...data }).unwrap();
         toast.success("Note updated successfully!");
       } else {
+        // Get current time in PST/PDT (America/Los_Angeles timezone)
+        const now = new Date();
+        const pstTime = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/Los_Angeles',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).formatToParts(now);
+
+        const dateParts: Record<string, string> = {};
+        pstTime.forEach(part => {
+          dateParts[part.type] = part.value;
+        });
+
+        // Format as "YYYY-MM-DD HH:MM" in PST timezone
+        const dateString = `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hour}:${dateParts.minute}`;
+
         const noteData = {
           ...data,
           entityId: storeId,
           author: repId,
-          date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+          date: dateString,
         };
         await createNote(noteData).unwrap();
         toast.success("Note created successfully!");

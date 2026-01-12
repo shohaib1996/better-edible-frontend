@@ -42,7 +42,7 @@ const Stores = () => {
 
   // 📄 Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(9);
 
   // 📦 Local state
   const [modalOpen, setModalOpen] = useState(false);
