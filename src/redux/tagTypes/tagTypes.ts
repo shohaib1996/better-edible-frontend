@@ -6,6 +6,7 @@ export const tagTypes = {
   orders: "orders",
   deliveries: "deliveries",
   products: "products",
+  productLines: "productLines",
   samples: "samples",
   contacts: "contacts",
   followups: "followups",

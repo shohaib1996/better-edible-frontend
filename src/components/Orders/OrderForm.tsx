@@ -60,6 +60,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const normKey = (s?: string | null) =>
     s ? String(s).trim().toLowerCase() : "";
 
+  // Helper to get product line configuration
+  const getProductLineConfig = (product: any) => {
+    const productLine = typeof product.productLine === 'string'
+      ? null
+      : product.productLine;
+
+    return {
+      name: typeof product.productLine === 'string'
+        ? product.productLine
+        : productLine?.name || '',
+      pricingType: productLine?.pricingStructure?.type || 'simple',
+      variantLabels: productLine?.pricingStructure?.variantLabels || [],
+      typeLabels: productLine?.pricingStructure?.typeLabels || [],
+    };
+  };
+
   // Initialize quantities and discount toggles when editing an existing order
   useEffect(() => {
     if (initialItems?.length && products.length) {
@@ -72,13 +88,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         const product = products.find((p: any) => String(p._id) === productId);
         if (!product) return acc;
 
+        const config = getProductLineConfig(product);
         let key = "qty";
+
         if (item.unitLabel) {
           key = normKey(item.unitLabel);
-        } else if (product.productLine === "Cannacrispy") {
-          for (const t of ["hybrid", "indica", "sativa"]) {
-            if (item.name?.toLowerCase()?.includes(t)) {
-              key = t;
+        } else if (config.pricingType === "multi-type" && config.typeLabels.length > 0) {
+          // For multi-type products, try to infer the type from the item name
+          for (const t of config.typeLabels) {
+            if (item.name?.toLowerCase()?.includes(t.toLowerCase())) {
+              key = normKey(t);
               break;
             }
           }
@@ -139,8 +158,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const groupedProducts = useMemo(() => {
     const map: Record<string, any[]> = {};
     for (const p of products) {
-      if (!map[p.productLine]) map[p.productLine] = [];
-      map[p.productLine].push(p);
+      // Handle both populated productLine object and string
+      const lineName = typeof p.productLine === 'string'
+        ? p.productLine
+        : p.productLine?.name || 'Uncategorized';
+      if (!map[lineName]) map[lineName] = [];
+      map[lineName].push(p);
     }
     return map;
   }, [products]);
@@ -242,14 +265,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       if (!product) continue;
 
       const applyDiscountFlag = !!discountToggles[productId];
+      const config = getProductLineConfig(product);
 
       let productTotal = 0;
 
-      // BLISS (variants)
-      if (
-        product.variants?.length &&
-        product.productLine === "BLISS Cannabis Syrup"
-      ) {
+      // Variants pricing (e.g., BLISS Cannabis Syrup)
+      if (config.pricingType === "variants" && product.variants?.length) {
         for (const variant of product.variants) {
           const k = normKey(variant.label);
           const qty = Number((val as any)[k] || 0);
@@ -270,10 +291,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           }
         }
       }
-      // Cannacrispy (hybrid/indica/sativa)
-      else if (product.productLine === "Cannacrispy") {
-        for (const type of ["hybrid", "indica", "sativa"]) {
-          const qty = Number((val as any)[type] || 0);
+      // Multi-type pricing (e.g., Cannacrispy with hybrid/indica/sativa)
+      else if (config.pricingType === "multi-type" && config.typeLabels.length > 0) {
+        for (const type of config.typeLabels) {
+          const qty = Number((val as any)[normKey(type)] || 0);
           if (qty > 0) {
             const { unitPrice, discountPrice } = pickPrice(product, type);
             const effective = (discountPrice ?? unitPrice) as number;
@@ -288,7 +309,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           }
         }
       }
-      // Default single-qty products
+      // Simple pricing (default single-qty products)
       else {
         const qty = Number((val as any).qty || 0);
         if (qty > 0) {
@@ -379,17 +400,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   }
 
   const hasDiscount = (product: any): boolean => {
-    if (product.productLine === "Fifty-One Fifty") {
-      return !!product.applyDiscount;
+    const config = getProductLineConfig(product);
+
+    // Simple pricing - check product-level discount
+    if (config.pricingType === "simple") {
+      return !!product.applyDiscount || (product.discountPrice && product.discountPrice < product.price);
     }
 
-    if (product.productLine === "BLISS Cannabis Syrup") {
-      return product.variants?.some(
+    // Variants pricing - check if any variant has discount
+    if (config.pricingType === "variants" && product.variants?.length) {
+      return product.variants.some(
         (v: any) => v.discountPrice && v.discountPrice < v.price
       );
     }
 
-    if (product.productLine === "Cannacrispy") {
+    // Multi-type pricing - check if any type has discount
+    if (config.pricingType === "multi-type" && product.prices) {
       const priceValues = Object.values(product.prices || {});
       return priceValues.some(
         (p: any) => p.discountPrice && p.discountPrice < p.price
@@ -419,6 +445,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               {items.map((product: any) => {
                 const pid = String(product._id);
                 const isChecked = !!discountToggles[pid];
+                const config = getProductLineConfig(product);
+
                 return (
                   <div
                     key={pid}
@@ -452,9 +480,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                 {product.itemName}
                               </p>
                             )}
-                            {product.productLine && (
+                            {config.name && (
                               <p className="text-[10px] text-muted-foreground">
-                                Product Line: {product.productLine}
+                                Product Line: {config.name}
                               </p>
                             )}
                           </div>
@@ -475,9 +503,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                       )}
                     </div>
 
-                    {/* BLISS (variants) */}
-                    {product.variants?.length &&
-                    product.productLine === "BLISS Cannabis Syrup" ? (
+                    {/* Variants pricing */}
+                    {config.pricingType === "variants" && product.variants?.length ? (
                       <div className="sm:col-span-9 grid grid-cols-3 gap-2">
                         {product.variants.map((variant: any) => {
                           const key = normKey(variant.label);
@@ -512,9 +539,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                           );
                         })}
                       </div>
-                    ) : product.productLine === "Cannacrispy" ? (
+                    ) : config.pricingType === "multi-type" && config.typeLabels.length > 0 ? (
                       <div className="sm:col-span-9 grid grid-cols-3 gap-2">
-                        {["hybrid", "indica", "sativa"].map((type) => {
+                        {config.typeLabels.map((type: string) => {
                           const { unitPrice, discountPrice } = pickPrice(
                             product,
                             type
@@ -537,11 +564,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                 type="number"
                                 min="0"
                                 className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
-                                value={quantities[pid]?.[type] ?? ""}
+                                value={quantities[pid]?.[normKey(type)] ?? ""}
                                 onChange={(e) =>
                                   handleQtyChange(
                                     pid,
-                                    type,
+                                    normKey(type),
                                     parseFloat(e.target.value || "0") || 0
                                   )
                                 }

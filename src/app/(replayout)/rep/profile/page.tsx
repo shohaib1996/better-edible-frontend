@@ -70,11 +70,11 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">My Profile</h1>
+      <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Details */}
-        <Card>
+        <Card className="rounded-xs border-border/50 shadow-lg">
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
           </CardHeader>
@@ -108,7 +108,7 @@ const Profile = () => {
 
         <div className="space-y-6">
           {/* Change PIN */}
-          <Card>
+          <Card className="rounded-xs border-border/50 shadow-lg">
             <CardHeader>
               <CardTitle>Change PIN</CardTitle>
             </CardHeader>
@@ -121,12 +121,13 @@ const Profile = () => {
                   placeholder="Enter new PIN"
                   value={newPin}
                   onChange={(e) => setNewPin(e.target.value)}
+                  className="rounded-xs"
                 />
               </div>
               <Button
                 onClick={handlePinChange}
                 disabled={isPinLoading || !newPin}
-                className="w-full"
+                className="w-full rounded-xs"
               >
                 {isPinLoading && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -137,7 +138,7 @@ const Profile = () => {
           </Card>
 
           {/* Change Password */}
-          <Card>
+          <Card className="rounded-xs border-border/50 shadow-lg">
             <CardHeader>
               <CardTitle>Change Password</CardTitle>
             </CardHeader>
@@ -150,12 +151,13 @@ const Profile = () => {
                   placeholder="Enter new password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  className="rounded-xs"
                 />
               </div>
               <Button
                 onClick={handlePasswordChange}
                 disabled={isPasswordLoading || !newPassword}
-                className="w-full"
+                className="w-full rounded-xs"
               >
                 {isPasswordLoading && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
