@@ -146,7 +146,7 @@ export function EntityModal<T>({
           <Button
             variant="outline"
             onClick={onClose}
-            className="rounded-xs bg-accent text-accent-foreground hover:bg-accent/90 border-transparent"
+            className="rounded-xs bg-accent dark:bg-accent text-white dark:text-white dark:hover:bg-accent/90 hover:bg-accent/90 border-transparent"
           >
             Cancel
           </Button>
