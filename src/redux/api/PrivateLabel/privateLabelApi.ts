@@ -1,5 +1,19 @@
 import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
+import {
+  IPrivateLabelProduct,
+  IPrivateLabelOrder,
+  IGetProductsParams,
+  ICreateProductRequest,
+  IUpdateProductRequest,
+  IGetPrivateLabelOrdersParams,
+  IGetPrivateLabelOrdersResponse,
+  IChangeOrderStatusRequest,
+} from "@/types";
+
+// ─────────────────────────────
+// API SLICE
+// ─────────────────────────────
 
 export const privateLabelApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -7,8 +21,8 @@ export const privateLabelApi = baseApi.injectEndpoints({
     // PRIVATE LABEL PRODUCTS
     // ============================================
 
-    // 🟩 Get all private label products
-    getPrivateLabelProducts: builder.query({
+    // Get all private label products
+    getPrivateLabelProducts: builder.query<IPrivateLabelProduct[], IGetProductsParams>({
       query: ({ activeOnly = false }) => ({
         url: "/private-label-products",
         params: { activeOnly },
@@ -16,14 +30,17 @@ export const privateLabelApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.privateLabelProducts],
     }),
 
-    // 🟦 Get single product by ID
-    getPrivateLabelProductById: builder.query({
+    // Get single product by ID
+    getPrivateLabelProductById: builder.query<IPrivateLabelProduct, string>({
       query: (id) => `/private-label-products/${id}`,
       providesTags: [tagTypes.privateLabelProducts],
     }),
 
-    // 🟨 Create new product
-    createPrivateLabelProduct: builder.mutation({
+    // Create new product
+    createPrivateLabelProduct: builder.mutation<
+      { message: string; product: IPrivateLabelProduct },
+      ICreateProductRequest
+    >({
       query: (body) => ({
         url: "/private-label-products",
         method: "POST",
@@ -32,8 +49,11 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelProducts],
     }),
 
-    // 🟧 Update product
-    updatePrivateLabelProduct: builder.mutation({
+    // Update product
+    updatePrivateLabelProduct: builder.mutation<
+      { message: string; product: IPrivateLabelProduct },
+      IUpdateProductRequest
+    >({
       query: ({ id, ...body }) => ({
         url: `/private-label-products/${id}`,
         method: "PUT",
@@ -42,8 +62,8 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelProducts],
     }),
 
-    // 🟥 Delete product
-    deletePrivateLabelProduct: builder.mutation({
+    // Delete product
+    deletePrivateLabelProduct: builder.mutation<{ message: string }, string>({
       query: (id) => ({
         url: `/private-label-products/${id}`,
         method: "DELETE",
@@ -52,11 +72,11 @@ export const privateLabelApi = baseApi.injectEndpoints({
     }),
 
     // ============================================
-    // PRIVATE LABEL ORDERS
+    // PRIVATE LABEL ORDERS (Legacy)
     // ============================================
 
-    // 🟩 Get all private label orders (with optional filters)
-    getPrivateLabelOrders: builder.query({
+    // Get all private label orders (with optional filters)
+    getPrivateLabelOrders: builder.query<IGetPrivateLabelOrdersResponse, IGetPrivateLabelOrdersParams>({
       query: ({
         status,
         repId,
@@ -84,14 +104,17 @@ export const privateLabelApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // 🟦 Get single order by ID
-    getPrivateLabelOrderById: builder.query({
+    // Get single order by ID
+    getPrivateLabelOrderById: builder.query<IPrivateLabelOrder, string>({
       query: (id) => `/private-labels/${id}`,
       providesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // 🟨 Create new private label order (with FormData for file upload)
-    createPrivateLabelOrder: builder.mutation({
+    // Create new private label order (with FormData for file upload)
+    createPrivateLabelOrder: builder.mutation<
+      { message: string; order: IPrivateLabelOrder },
+      FormData
+    >({
       query: (formData) => ({
         url: "/private-labels",
         method: "POST",
@@ -100,11 +123,14 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // 🟧 Update private label order (supports both JSON and FormData)
-    updatePrivateLabelOrder: builder.mutation({
+    // Update private label order (supports both JSON and FormData)
+    updatePrivateLabelOrder: builder.mutation<
+      { message: string; order: IPrivateLabelOrder },
+      { id: string; body: FormData } | (Partial<IPrivateLabelOrder> & { id: string })
+    >({
       query: (arg) => {
-        // If arg is an object with id and body (FormData case)
-        if (arg.body instanceof FormData) {
+        // If arg has body property that is FormData
+        if ("body" in arg && arg.body instanceof FormData) {
           return {
             url: `/private-labels/${arg.id}`,
             method: "PUT",
@@ -122,8 +148,11 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // 🟫 Change order status
-    changePrivateLabelOrderStatus: builder.mutation({
+    // Change order status
+    changePrivateLabelOrderStatus: builder.mutation<
+      { message: string; order: IPrivateLabelOrder },
+      IChangeOrderStatusRequest
+    >({
       query: ({ id, status }) => ({
         url: `/private-labels/${id}/status`,
         method: "PUT",
@@ -132,8 +161,8 @@ export const privateLabelApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.privateLabelOrders],
     }),
 
-    // ❌ Delete order
-    deletePrivateLabelOrder: builder.mutation({
+    // Delete order
+    deletePrivateLabelOrder: builder.mutation<{ message: string }, string>({
       query: (id) => ({
         url: `/private-labels/${id}`,
         method: "DELETE",
@@ -142,6 +171,10 @@ export const privateLabelApi = baseApi.injectEndpoints({
     }),
   }),
 });
+
+// ─────────────────────────────
+// EXPORT HOOKS
+// ─────────────────────────────
 
 export const {
   // Products

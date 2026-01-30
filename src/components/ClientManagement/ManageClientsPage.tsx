@@ -18,7 +18,7 @@ export const ManageClientsPage = () => {
   const [limit, setLimit] = useState(10);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const { data: reps } = useGetAllRepsQuery({});
@@ -32,7 +32,7 @@ export const ManageClientsPage = () => {
       page: currentPage,
       limit: limit,
     },
-    { refetchOnMountOrArgChange: true }
+    { refetchOnMountOrArgChange: true },
   );
 
   const clients = data?.clients || [];
@@ -65,7 +65,7 @@ export const ManageClientsPage = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-foreground">
-            Manage Clients
+            Manage Private Label Clients
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Total Clients: <span className="font-medium">{totalClients}</span>

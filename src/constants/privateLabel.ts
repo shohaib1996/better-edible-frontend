@@ -1,22 +1,4 @@
 // ─────────────────────────────
-// PRODUCT PRICING (FIXED)
-// ─────────────────────────────
-
-export const PRODUCT_PRICES: Record<string, number> = {
-  "BIOMAX Gummies": 1.75,
-  "Rosin Gummies": 2.5,
-};
-
-// ─────────────────────────────
-// PRODUCTION QUANTITIES
-// ─────────────────────────────
-
-export const PRODUCTION_QUANTITIES = {
-  HALF_BATCH: 624,
-  FULL_BATCH: 1248,
-};
-
-// ─────────────────────────────
 // LABEL STAGES (7-STAGE PIPELINE)
 // ─────────────────────────────
 
@@ -52,7 +34,6 @@ export const STAGE_COLORS: Record<LabelStage, string> = {
   ready_for_production: "bg-green-600",
 };
 
-// Tailwind text colors for stages
 export const STAGE_TEXT_COLORS: Record<LabelStage, string> = {
   design_in_progress: "text-yellow-500",
   awaiting_store_approval: "text-yellow-600",
@@ -142,63 +123,8 @@ export const CLIENT_STATUS_COLORS: Record<ClientStatus, string> = {
 };
 
 // ─────────────────────────────
-// HELPER FUNCTIONS
+// UI HELPER FUNCTIONS
 // ─────────────────────────────
-
-/**
- * Get unit price by product type
- */
-export const getUnitPrice = (productType: string): number => {
-  return PRODUCT_PRICES[productType] || 0;
-};
-
-/**
- * Calculate line total for an item
- */
-export const calculateLineTotal = (
-  productType: string,
-  quantity: number
-): number => {
-  const unitPrice = getUnitPrice(productType);
-  return Number((quantity * unitPrice).toFixed(2));
-};
-
-/**
- * Calculate order subtotal from items
- */
-export const calculateSubtotal = (
-  items: Array<{ productType: string; quantity: number }>
-): number => {
-  return Number(
-    items
-      .reduce((sum, item) => sum + calculateLineTotal(item.productType, item.quantity), 0)
-      .toFixed(2)
-  );
-};
-
-/**
- * Calculate discount amount
- */
-export const calculateDiscountAmount = (
-  subtotal: number,
-  discount: number,
-  discountType: "flat" | "percentage"
-): number => {
-  if (discountType === "percentage") {
-    return Number(((subtotal * discount) / 100).toFixed(2));
-  }
-  return discount;
-};
-
-/**
- * Calculate final total after discount
- */
-export const calculateTotal = (
-  subtotal: number,
-  discountAmount: number
-): number => {
-  return Number(Math.max(0, subtotal - discountAmount).toFixed(2));
-};
 
 /**
  * Format currency for display
@@ -208,15 +134,6 @@ export const formatCurrency = (amount: number): string => {
     style: "currency",
     currency: "USD",
   }).format(amount);
-};
-
-/**
- * Calculate production start date (14 days before delivery)
- */
-export const calculateProductionStartDate = (deliveryDate: Date): Date => {
-  const productionStart = new Date(deliveryDate);
-  productionStart.setDate(productionStart.getDate() - 14);
-  return productionStart;
 };
 
 /**

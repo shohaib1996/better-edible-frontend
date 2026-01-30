@@ -28,6 +28,8 @@ export interface IPrivateLabelOrderItem {
   }>; // Label image objects from Cloudinary
 }
 
+export type PrivateLabelOrderStatus = "submitted" | "accepted" | "manifested" | "shipped" | "cancelled";
+
 export interface IPrivateLabelOrder {
   _id: string;
   store: IStore;
@@ -40,7 +42,54 @@ export interface IPrivateLabelOrder {
   total: number;
   note?: string;
   deliveryDate?: string;
-  status: "submitted" | "accepted" | "manifested" | "shipped" | "cancelled";
+  status: PrivateLabelOrderStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+// ─────────────────────────────
+// API REQUEST/RESPONSE TYPES
+// ─────────────────────────────
+
+export interface IGetProductsParams {
+  activeOnly?: boolean;
+}
+
+export interface ICreateProductRequest {
+  name: string;
+  unitPrice: number;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface IUpdateProductRequest {
+  id: string;
+  name?: string;
+  unitPrice?: number;
+  description?: string;
+  isActive?: boolean;
+}
+
+export interface IGetPrivateLabelOrdersParams {
+  status?: string;
+  repId?: string;
+  repName?: string;
+  storeId?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface IGetPrivateLabelOrdersResponse {
+  total: number;
+  orders: IPrivateLabelOrder[];
+  page: number;
+  limit: number;
+}
+
+export interface IChangeOrderStatusRequest {
+  id: string;
+  status: PrivateLabelOrderStatus;
 }
