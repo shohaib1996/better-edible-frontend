@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PrivateLabelClient } from "@/redux/api/PrivateLabel/privateLabelClientApi";
+import { IPrivateLabelClient } from "@/types";
 import { useGetAllLabelsQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { LabelCard } from "./LabelCard";
 import { AddLabelModal } from "./AddLabelModal";
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 
 interface ClientExpandedViewProps {
-  client: PrivateLabelClient;
+  client: IPrivateLabelClient;
   onUpdate: () => void;
 }
 

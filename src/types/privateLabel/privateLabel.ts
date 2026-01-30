@@ -55,6 +55,11 @@ export interface IGetProductsParams {
   activeOnly?: boolean;
 }
 
+export interface IGetProductsResponse {
+  total: number;
+  products: IPrivateLabelProduct[];
+}
+
 export interface ICreateProductRequest {
   name: string;
   unitPrice: number;

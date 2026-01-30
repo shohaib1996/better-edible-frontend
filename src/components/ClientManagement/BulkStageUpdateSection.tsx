@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Label as LabelType } from "@/redux/api/PrivateLabel/labelApi";
+import { ILabel } from "@/types";
 import { useBulkUpdateLabelStagesMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ import {
 
 interface BulkStageUpdateSectionProps {
   clientId: string;
-  labels: LabelType[];
+  labels: ILabel[];
   onUpdate: () => void;
 }
 

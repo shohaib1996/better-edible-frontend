@@ -1,19 +1,21 @@
 "use client";
 
-import { Label } from "@/redux/api/PrivateLabel/labelApi";
+import { ILabel } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { STAGE_LABELS, STAGE_COLORS } from "@/constants/privateLabel";
 import type { LabelStage } from "@/constants/privateLabel";
 
 interface LabelCardProps {
-  label: Label;
+  label: ILabel;
   onUpdate: () => void;
 }
 
 export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
-  const stageColor = STAGE_COLORS[label.currentStage as LabelStage] || "bg-gray-500";
-  const stageLabel = STAGE_LABELS[label.currentStage as LabelStage] || label.currentStage;
+  const stageColor =
+    STAGE_COLORS[label.currentStage as LabelStage] || "bg-gray-500";
+  const stageLabel =
+    STAGE_LABELS[label.currentStage as LabelStage] || label.currentStage;
 
   return (
     <Card className="p-4">

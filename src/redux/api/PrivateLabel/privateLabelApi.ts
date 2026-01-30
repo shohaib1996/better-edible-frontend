@@ -4,6 +4,7 @@ import {
   IPrivateLabelProduct,
   IPrivateLabelOrder,
   IGetProductsParams,
+  IGetProductsResponse,
   ICreateProductRequest,
   IUpdateProductRequest,
   IGetPrivateLabelOrdersParams,
@@ -22,7 +23,10 @@ export const privateLabelApi = baseApi.injectEndpoints({
     // ============================================
 
     // Get all private label products
-    getPrivateLabelProducts: builder.query<IPrivateLabelProduct[], IGetProductsParams>({
+    getPrivateLabelProducts: builder.query<
+      IGetProductsResponse,
+      IGetProductsParams
+    >({
       query: ({ activeOnly = false }) => ({
         url: "/private-label-products",
         params: { activeOnly },
@@ -76,7 +80,10 @@ export const privateLabelApi = baseApi.injectEndpoints({
     // ============================================
 
     // Get all private label orders (with optional filters)
-    getPrivateLabelOrders: builder.query<IGetPrivateLabelOrdersResponse, IGetPrivateLabelOrdersParams>({
+    getPrivateLabelOrders: builder.query<
+      IGetPrivateLabelOrdersResponse,
+      IGetPrivateLabelOrdersParams
+    >({
       query: ({
         status,
         repId,
@@ -126,7 +133,12 @@ export const privateLabelApi = baseApi.injectEndpoints({
     // Update private label order (supports both JSON and FormData)
     updatePrivateLabelOrder: builder.mutation<
       { message: string; order: IPrivateLabelOrder },
-      { id: string; body: FormData } | (Partial<IPrivateLabelOrder> & { id: string })
+      | { id: string; body: FormData }
+      | (Partial<IPrivateLabelOrder> & {
+          id: string;
+          storeId?: string;
+          repId?: string;
+        })
     >({
       query: (arg) => {
         // If arg has body property that is FormData

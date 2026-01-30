@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  PrivateLabelClient,
-  useUpdateClientScheduleMutation,
-} from "@/redux/api/PrivateLabel/privateLabelClientApi";
+import { IPrivateLabelClient } from "@/types";
+import { useUpdateClientScheduleMutation } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +19,7 @@ import { Loader2 } from "lucide-react";
 import { SCHEDULE_INTERVAL_LABELS } from "@/constants/privateLabel";
 
 interface RecurringScheduleSectionProps {
-  client: PrivateLabelClient;
+  client: IPrivateLabelClient;
   onUpdate: () => void;
 }
 
@@ -30,7 +28,7 @@ export const RecurringScheduleSection = ({
   onUpdate,
 }: RecurringScheduleSectionProps) => {
   const [enabled, setEnabled] = useState(
-    client.recurringSchedule?.enabled || false
+    client.recurringSchedule?.enabled || false,
   );
   const [interval, setInterval] = useState<
     "monthly" | "bimonthly" | "quarterly"
@@ -39,11 +37,19 @@ export const RecurringScheduleSection = ({
 
   const handleSave = async () => {
     try {
-      await updateSchedule({
-        id: client._id,
-        enabled,
-        interval: enabled ? interval : undefined,
-      }).unwrap();
+      if (!enabled) {
+        await updateSchedule({
+          id: client._id,
+          enabled,
+          interval: undefined,
+        }).unwrap();
+      } else {
+        await updateSchedule({
+          id: client._id,
+          enabled,
+          interval,
+        }).unwrap();
+      }
 
       toast.success("Schedule updated successfully");
       onUpdate();
@@ -57,6 +63,14 @@ export const RecurringScheduleSection = ({
   const hasChanges =
     enabled !== (client.recurringSchedule?.enabled || false) ||
     (enabled && interval !== client.recurringSchedule?.interval);
+
+  // Helper to safely access the interval label
+  const getIntervalLabel = (key: string) => {
+    return (
+      SCHEDULE_INTERVAL_LABELS[key as keyof typeof SCHEDULE_INTERVAL_LABELS] ||
+      key
+    );
+  };
 
   return (
     <Card className="p-6">
@@ -109,11 +123,9 @@ export const RecurringScheduleSection = ({
             {client.recurringSchedule?.enabled ? (
               <span className="text-green-600">
                 Active -{" "}
-                {
-                  SCHEDULE_INTERVAL_LABELS[
-                    client.recurringSchedule?.interval || "monthly"
-                  ]
-                }
+                {getIntervalLabel(
+                  client.recurringSchedule?.interval || "monthly",
+                )}
               </span>
             ) : (
               <span className="text-muted-foreground">Disabled</span>

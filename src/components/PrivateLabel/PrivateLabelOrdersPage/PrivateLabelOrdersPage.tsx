@@ -20,7 +20,7 @@ import { PrivateLabelOrdersFilters } from "@/components/PrivateLabel/PrivateLabe
 import { PrivateLabelPackingListDialog } from "@/components/PrivateLabel/PrivateLabelPackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
-import { IPrivateLabelOrder } from "@/types";
+import { IPrivateLabelOrder, PrivateLabelOrderStatus } from "@/types";
 import { useUser } from "@/redux/hooks/useAuth";
 import { generatePrivateLabelInvoice } from "@/utils/privateLabelInvoiceGenerator";
 import { cn } from "@/lib/utils";
@@ -40,12 +40,12 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
 
   const [activeTab, setActiveTab] = useState(isRepView ? "all" : "new");
   const [selectedOrder, setSelectedOrder] = useState<IPrivateLabelOrder | null>(
-    null
+    null,
   );
   const [editOrder, setEditOrder] = useState<IPrivateLabelOrder | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [packingOrder, setPackingOrder] = useState<IPrivateLabelOrder | null>(
-    null
+    null,
   );
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] =
     useState<IPrivateLabelOrder | null>(null);
@@ -104,9 +104,8 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
     return baseParams;
   };
 
-  const { data, isLoading, refetch } = useGetPrivateLabelOrdersQuery(
-    getQueryParams()
-  );
+  const { data, isLoading, refetch } =
+    useGetPrivateLabelOrdersQuery(getQueryParams());
   const [changeStatus] = useChangePrivateLabelOrderStatusMutation();
 
   const orders: IPrivateLabelOrder[] = data?.orders || [];
@@ -139,7 +138,10 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      await changeStatus({ id: orderId, status: newStatus }).unwrap();
+      await changeStatus({
+        id: orderId,
+        status: newStatus as PrivateLabelOrderStatus,
+      }).unwrap();
       toast.success(`Order status changed to ${newStatus}`);
       refetch();
     } catch (error) {
@@ -236,7 +238,7 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
         <TabsList
           className={cn(
             "grid w-full h-auto p-1.5",
-            isAdmin ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3"
+            isAdmin ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3",
           )}
         >
           {isAdmin ? (

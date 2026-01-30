@@ -1,14 +1,14 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Repeat } from "lucide-react";
-import { PrivateLabelClient } from "@/redux/api/PrivateLabel/privateLabelClientApi";
+import { IPrivateLabelClient } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ClientExpandedView } from "./ClientExpandedView";
 
 interface ClientCardProps {
-  client: PrivateLabelClient;
+  client: IPrivateLabelClient;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onUpdate: () => void;
