@@ -12,4 +12,7 @@ export const tagTypes = {
   followups: "followups",
   privateLabelOrders: "privateLabelOrders",
   privateLabelProducts: "privateLabelProducts",
+  privateLabelClients: "privateLabelClients",
+  labels: "labels",
+  clientOrders: "clientOrders",
 };
