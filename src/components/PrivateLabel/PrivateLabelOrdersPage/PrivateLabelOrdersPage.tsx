@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   useGetPrivateLabelOrdersQuery,
@@ -165,6 +165,10 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
     router.push("/admin/private-label-products");
   };
 
+  const handleManageClients = () => {
+    router.push("/admin/manage-clients");
+  };
+
   const handleDelivery = (order: IPrivateLabelOrder) => {
     setSelectedOrderForDelivery(order);
     setDeliveryModalOpen(true);
@@ -210,16 +214,28 @@ export const PrivateLabelOrdersPage: React.FC<PrivateLabelOrdersPageProps> = ({
 
         <div className="flex gap-2 w-full sm:w-auto">
           {isAdmin && (
-            <Button
-              onClick={handleManageProducts}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
-            >
-              <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Manage Products</span>
-              <span className="sm:hidden">Products</span>
-            </Button>
+            <>
+              <Button
+                onClick={handleManageClients}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+              >
+                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Manage Clients</span>
+                <span className="sm:hidden">Clients</span>
+              </Button>
+              <Button
+                onClick={handleManageProducts}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+              >
+                <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Manage Products</span>
+                <span className="sm:hidden">Products</span>
+              </Button>
+            </>
           )}
           <Button
             onClick={handleCreateOrder}
