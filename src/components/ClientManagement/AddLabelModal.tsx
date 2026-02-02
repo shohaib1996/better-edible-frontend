@@ -22,6 +22,26 @@ import { useCreateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { Loader2, Upload, X } from "lucide-react";
 
+// Helper to get user info from localStorage
+const getUserFromStorage = (): {
+  userId: string;
+  userType: "admin" | "rep";
+} | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const storedUser = localStorage.getItem("better-user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userType =
+        user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
+      return { userId: user.id, userType };
+    }
+  } catch {
+    console.error("Failed to parse user from localStorage");
+  }
+  return null;
+};
+
 interface AddLabelModalProps {
   open: boolean;
   onClose: () => void;
@@ -68,10 +88,17 @@ export const AddLabelModal = ({
     }
 
     try {
+      const userInfo = getUserFromStorage();
+
       const formData = new FormData();
       formData.append("clientId", clientId);
       formData.append("flavorName", flavorName.trim());
       formData.append("productType", productType);
+
+      if (userInfo) {
+        formData.append("userId", userInfo.userId);
+        formData.append("userType", userInfo.userType);
+      }
 
       files.forEach((file) => {
         formData.append("labelImages", file);
@@ -129,11 +156,15 @@ export const AddLabelModal = ({
               </SelectTrigger>
               <SelectContent>
                 {products.map(
-                  (product: { _id: string; name: string; unitPrice: number }) => (
+                  (product: {
+                    _id: string;
+                    name: string;
+                    unitPrice: number;
+                  }) => (
                     <SelectItem key={product._id} value={product.name}>
                       {product.name} - ${product.unitPrice.toFixed(2)}/unit
                     </SelectItem>
-                  )
+                  ),
                 )}
               </SelectContent>
             </Select>

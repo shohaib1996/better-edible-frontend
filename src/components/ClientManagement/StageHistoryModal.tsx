@@ -93,7 +93,7 @@ export const StageHistoryModal = ({
                           {new Date(entry.changedAt).toLocaleString()}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Changed by:{" "}
+                          {entry.notes === "Label created" ? "Created by:" : "Changed by:"}{" "}
                           {entry.changedBy?.name
                             ? `${entry.changedBy.name}${entry.changedBy.email ? ` (${entry.changedBy.email})` : ""}`
                             : "Unknown"}
