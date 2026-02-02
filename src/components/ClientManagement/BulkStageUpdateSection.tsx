@@ -21,6 +21,22 @@ import {
   LabelStage,
 } from "@/constants/privateLabel";
 
+// Helper to get user info from localStorage
+const getUserFromStorage = (): { userId: string; userType: "admin" | "rep" } | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const storedUser = localStorage.getItem("better-user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userType = user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
+      return { userId: user.id, userType };
+    }
+  } catch {
+    console.error("Failed to parse user from localStorage");
+  }
+  return null;
+};
+
 interface BulkStageUpdateSectionProps {
   clientId: string;
   labels: ILabel[];
@@ -50,10 +66,14 @@ export const BulkStageUpdateSection = ({
       return;
     }
 
+    const userInfo = getUserFromStorage();
+
     try {
       const result = await bulkUpdateStages({
         clientId,
         stage: selectedStage,
+        userId: userInfo?.userId,
+        userType: userInfo?.userType,
       }).unwrap();
 
       toast.success(`${result.updatedCount} labels updated to ${STAGE_LABELS[selectedStage]}`);

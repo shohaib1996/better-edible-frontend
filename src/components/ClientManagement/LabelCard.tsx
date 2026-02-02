@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ILabel } from "@/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -13,14 +14,59 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   LABEL_STAGES,
   STAGE_LABELS,
   STAGE_COLORS,
 } from "@/constants/privateLabel";
 import type { LabelStage } from "@/constants/privateLabel";
-import { useUpdateLabelStageMutation } from "@/redux/api/PrivateLabel/labelApi";
-import { Loader2, ImageIcon, Eye } from "lucide-react";
+import {
+  useUpdateLabelStageMutation,
+  useDeleteLabelMutation,
+} from "@/redux/api/PrivateLabel/labelApi";
+import {
+  Loader2,
+  ImageIcon,
+  Eye,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  History,
+} from "lucide-react";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
+import { EditLabelModal } from "./EditLabelModal";
+import { StageHistoryModal } from "./StageHistoryModal";
+
+// Helper to get user info from localStorage
+const getUserFromStorage = (): { userId: string; userType: "admin" | "rep" } | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const storedUser = localStorage.getItem("better-user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const userType = user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
+      return { userId: user.id, userType };
+    }
+  } catch {
+    console.error("Failed to parse user from localStorage");
+  }
+  return null;
+};
 
 interface LabelCardProps {
   label: ILabel;
@@ -28,14 +74,15 @@ interface LabelCardProps {
 }
 
 export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
-  const [updateLabelStage, { isLoading }] = useUpdateLabelStageMutation();
-  const [selectedStage, setSelectedStage] = useState<string>(
-    label.currentStage,
-  );
-  const [previewImage, setPreviewImage] = useState<{
-    url: string;
-    filename: string;
-  } | null>(null);
+  const [updateLabelStage, { isLoading: updatingStage }] =
+    useUpdateLabelStageMutation();
+  const [deleteLabel, { isLoading: deleting }] = useDeleteLabelMutation();
+
+  const [selectedStage, setSelectedStage] = useState<string>(label.currentStage);
+  const [previewImage, setPreviewImage] = useState<{ url: string; filename: string } | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const stageColor =
     STAGE_COLORS[label.currentStage as LabelStage] || "bg-gray-500";
@@ -45,10 +92,14 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
   const handleStageChange = async (newStage: string) => {
     if (newStage === label.currentStage) return;
 
+    const userInfo = getUserFromStorage();
+
     try {
       await updateLabelStage({
         id: label._id,
         stage: newStage as LabelStage,
+        userId: userInfo?.userId,
+        userType: userInfo?.userType,
       }).unwrap();
 
       setSelectedStage(newStage);
@@ -62,8 +113,16 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
     }
   };
 
-  const handleImageClick = (imageUrl: string, filename: string) => {
-    setPreviewImage({ url: imageUrl, filename });
+  const handleDelete = async () => {
+    try {
+      await deleteLabel(label._id).unwrap();
+      toast.success("Label deleted successfully");
+      onUpdate();
+    } catch (error: unknown) {
+      console.error("Error deleting label:", error);
+      const err = error as { data?: { message?: string } };
+      toast.error(err.data?.message || "Failed to delete label");
+    }
   };
 
   return (
@@ -76,10 +135,10 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
             onClick={() => {
               if (label.labelImages && label.labelImages.length > 0) {
                 const img = label.labelImages[0];
-                handleImageClick(
-                  img.secureUrl || img.url,
-                  img.originalFilename || label.flavorName,
-                );
+                setPreviewImage({
+                  url: img.secureUrl || img.url,
+                  filename: img.originalFilename || `${label.flavorName}-label`,
+                });
               }
             }}
           >
@@ -96,6 +155,12 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Eye className="h-6 w-6 text-white" />
                 </div>
+                {/* Image count badge */}
+                {label.labelImages.length > 1 && (
+                  <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                    +{label.labelImages.length - 1}
+                  </div>
+                )}
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -121,10 +186,10 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
             <Select
               value={selectedStage}
               onValueChange={handleStageChange}
-              disabled={isLoading}
+              disabled={updatingStage}
             >
               <SelectTrigger className="w-full">
-                {isLoading ? (
+                {updatingStage ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Updating...</span>
@@ -142,6 +207,32 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Actions Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowEdit(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                <History className="mr-2 h-4 w-4" />
+                View History
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </Card>
 
@@ -150,6 +241,48 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
         image={previewImage}
         onClose={() => setPreviewImage(null)}
       />
+
+      {/* Edit Modal */}
+      {showEdit && (
+        <EditLabelModal
+          open={showEdit}
+          label={label}
+          onClose={() => setShowEdit(false)}
+          onSuccess={onUpdate}
+        />
+      )}
+
+      {/* History Modal */}
+      {showHistory && (
+        <StageHistoryModal
+          open={showHistory}
+          label={label}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Label</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the label &ldquo;{label.flavorName}
+              &rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

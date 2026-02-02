@@ -5,6 +5,7 @@ export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
+    credentials: "include", // Send cookies with requests for authentication
   }),
   tagTypes: Object.values(tagTypes),
   endpoints: (builder) => ({}),

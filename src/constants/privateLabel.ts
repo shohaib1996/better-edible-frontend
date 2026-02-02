@@ -171,3 +171,13 @@ export const getPreviousLabelStage = (currentStage: LabelStage): LabelStage | nu
   }
   return LABEL_STAGES[currentIndex - 1];
 };
+
+// ─────────────────────────────
+// PRODUCTION QUANTITIES
+// ─────────────────────────────
+// Standard batch sizes for production orders
+
+export const PRODUCTION_QUANTITIES = {
+  HALF_BATCH: 624,
+  FULL_BATCH: 1248,
+} as const;

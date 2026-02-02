@@ -67,10 +67,10 @@ export const labelApi = baseApi.injectEndpoints({
       { message: string; label: ILabel },
       IUpdateLabelStageRequest
     >({
-      query: ({ id, stage, notes }) => ({
+      query: ({ id, stage, notes, userId, userType }) => ({
         url: `/labels/${id}/stage`,
         method: "PATCH",
-        body: { stage, notes },
+        body: { stage, notes, userId, userType },
       }),
       invalidatesTags: [tagTypes.labels, tagTypes.privateLabelClients],
     }),
@@ -80,10 +80,10 @@ export const labelApi = baseApi.injectEndpoints({
       { message: string; updatedCount: number },
       IBulkUpdateStagesRequest
     >({
-      query: ({ clientId, stage, notes }) => ({
+      query: ({ clientId, stage, notes, userId, userType }) => ({
         url: "/labels/bulk/stage",
         method: "PATCH",
-        body: { clientId, stage, notes },
+        body: { clientId, stage, notes, userId, userType },
       }),
       invalidatesTags: [tagTypes.labels, tagTypes.privateLabelClients],
     }),

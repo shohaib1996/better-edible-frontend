@@ -8,6 +8,7 @@ import { useGetAllLabelsQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { LabelCard } from "./LabelCard";
 import { AddLabelModal } from "./AddLabelModal";
 import { RecurringScheduleSection } from "./RecurringScheduleSection";
+import { BulkStageUpdateSection } from "./BulkStageUpdateSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -149,14 +150,24 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
               <Loader2 className="animate-spin h-6 w-6" />
             </div>
           ) : labels.length > 0 ? (
-            <div className="space-y-3">
-              {labels.map((label) => (
-                <LabelCard
-                  key={label._id}
-                  label={label}
-                  onUpdate={handleUpdate}
-                />
-              ))}
+            <div className="space-y-4">
+              {/* Bulk Stage Update Section */}
+              <BulkStageUpdateSection
+                clientId={clientId}
+                labels={labels}
+                onUpdate={handleUpdate}
+              />
+
+              {/* Label Cards */}
+              <div className="space-y-3">
+                {labels.map((label) => (
+                  <LabelCard
+                    key={label._id}
+                    label={label}
+                    onUpdate={handleUpdate}
+                  />
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-8">

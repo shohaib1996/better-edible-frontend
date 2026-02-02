@@ -86,10 +86,14 @@ export interface IUpdateLabelStageRequest {
   id: string;
   stage: LabelStage;
   notes?: string;
+  userId?: string;
+  userType?: "admin" | "rep";
 }
 
 export interface IBulkUpdateStagesRequest {
   clientId: string;
   stage: LabelStage;
   notes?: string;
+  userId?: string;
+  userType?: "admin" | "rep";
 }
