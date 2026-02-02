@@ -1,4 +1,5 @@
 export * from "./ManageClientsPage";
+export * from "./SingleClientPage";
 export * from "./ClientFilters";
 export * from "./ClientCard";
 export * from "./ClientExpandedView";

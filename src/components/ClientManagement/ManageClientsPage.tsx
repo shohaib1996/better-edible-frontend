@@ -17,14 +17,11 @@ export const ManageClientsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [expandedClients, setExpandedClients] = useState<Set<string>>(
-    new Set(),
-  );
 
   const { data: reps } = useGetAllRepsQuery({});
   const allReps = reps?.data || [];
 
-  const { data, isLoading, refetch } = useGetAllPrivateLabelClientsQuery(
+  const { data, isLoading } = useGetAllPrivateLabelClientsQuery(
     {
       status: statusFilter !== "all" ? statusFilter : undefined,
       repId: repFilter || undefined,
@@ -38,18 +35,6 @@ export const ManageClientsPage = () => {
   const clients = data?.clients || [];
   const totalClients = data?.total || 0;
   const totalPages = Math.ceil(totalClients / limit);
-
-  const toggleExpanded = (clientId: string) => {
-    setExpandedClients((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(clientId)) {
-        newSet.delete(clientId);
-      } else {
-        newSet.add(clientId);
-      }
-      return newSet;
-    });
-  };
 
   if (isLoading) {
     return (
@@ -88,13 +73,7 @@ export const ManageClientsPage = () => {
       {/* Client List */}
       <div className="space-y-4">
         {clients.map((client) => (
-          <ClientCard
-            key={client._id}
-            client={client}
-            isExpanded={expandedClients.has(client._id)}
-            onToggleExpand={() => toggleExpanded(client._id)}
-            onUpdate={refetch}
-          />
+          <ClientCard key={client._id} client={client} />
         ))}
       </div>
 
@@ -123,7 +102,7 @@ export const ManageClientsPage = () => {
       <AddClientModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSuccess={refetch}
+        onSuccess={() => {}}
       />
     </div>
   );
