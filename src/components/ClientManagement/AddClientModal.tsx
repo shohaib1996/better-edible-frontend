@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCreatePrivateLabelClientMutation } from "@/redux/api/PrivateLabel/privateLabelClientApi";
-import { useGetAllStoresQuery } from "@/redux/api/Stores/stores";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
+import { StoreSelect } from "@/components/Shared/StoreSelect";
 import { Loader2 } from "lucide-react";
 
 interface AddClientModalProps {
@@ -43,11 +43,9 @@ export const AddClientModal = ({
     "monthly" | "bimonthly" | "quarterly"
   >("monthly");
 
-  const { data: storesData } = useGetAllStoresQuery({ page: 1, limit: 1000 });
   const { data: repsData } = useGetAllRepsQuery({});
   const [createClient, { isLoading }] = useCreatePrivateLabelClientMutation();
 
-  const stores = storesData?.stores || [];
   const reps = repsData?.data || [];
 
   const handleSubmit = async () => {
@@ -124,18 +122,7 @@ export const AddClientModal = ({
           {/* Store Selection */}
           <div>
             <Label htmlFor="store">Store *</Label>
-            <Select value={storeId} onValueChange={setStoreId}>
-              <SelectTrigger id="store">
-                <SelectValue placeholder="Select a store" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map((store: { _id: string; name: string; city?: string }) => (
-                  <SelectItem key={store._id} value={store._id}>
-                    {store.name} - {store.city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <StoreSelect value={storeId} onChange={setStoreId} />
           </div>
 
           {/* Contact Email */}

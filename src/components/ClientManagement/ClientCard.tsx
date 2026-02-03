@@ -40,11 +40,24 @@ export const ClientCard = ({ client }: ClientCardProps) => {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {client.store?.city}, {client.store?.state}
+              {[
+                client.store?.address,
+                client.store?.city,
+                client.store?.state,
+                client.store?.zip,
+              ]
+                .filter(Boolean)
+                .join(", ")}
             </p>
           </div>
 
           <div className="flex gap-6 text-sm">
+            <div>
+              <span className="text-muted-foreground">Rep: </span>
+              <span className="font-medium">
+                {client.assignedRep?.name || "Unassigned"}
+              </span>
+            </div>
             <div>
               <span className="text-muted-foreground">Approved Labels: </span>
               <span className="font-medium">
