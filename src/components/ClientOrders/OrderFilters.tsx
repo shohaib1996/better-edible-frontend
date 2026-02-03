@@ -20,6 +20,7 @@ interface OrderFiltersProps {
   clientFilter: string;
   onClientFilterChange: (value: string) => void;
   allClients: IPrivateLabelClient[];
+  hideStatusFilter?: boolean;
 }
 
 export const OrderFilters = ({
@@ -30,9 +31,10 @@ export const OrderFilters = ({
   clientFilter,
   onClientFilterChange,
   allClients,
+  hideStatusFilter = false,
 }: OrderFiltersProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className={`grid grid-cols-1 gap-4 ${hideStatusFilter ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
       {/* Search */}
       <div>
         <Label htmlFor="search">Search</Label>
@@ -45,23 +47,25 @@ export const OrderFilters = ({
         />
       </div>
 
-      {/* Status Filter */}
-      <div>
-        <Label htmlFor="status">Status</Label>
-        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger id="status">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Status Filter - Hide when on shipped tab */}
+      {!hideStatusFilter && (
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+            <SelectTrigger id="status">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Client Filter */}
       <div>

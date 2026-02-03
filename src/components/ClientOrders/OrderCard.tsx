@@ -193,11 +193,11 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             )}
           </div>
 
-          {/* Actions - Two Rows */}
+          {/* Actions - Two Rows (hide most actions for shipped orders) */}
           <div className="flex flex-col gap-2 items-end">
             {/* Row 1: Delivery, Packing List, Invoice, Status Selector */}
             <div className="flex flex-wrap items-center justify-end gap-2">
-              {/* Delivery Button */}
+              {/* Delivery Button - Only for non-shipped */}
               {order.status !== "shipped" && (
                 <Button
                   variant="outline"
@@ -209,7 +209,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 </Button>
               )}
 
-              {/* Packing List Button */}
+              {/* Packing List Button - Only for non-shipped */}
               {order.status !== "shipped" && (
                 <Button
                   variant="outline"
@@ -221,7 +221,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 </Button>
               )}
 
-              {/* Invoice Button */}
+              {/* Invoice Button - Only for non-shipped */}
               {order.status !== "shipped" && (
                 <Button
                   variant="outline"
@@ -233,7 +233,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 </Button>
               )}
 
-              {/* Status Selector */}
+              {/* Status Selector - Always visible */}
               <Select
                 value={order.status}
                 onValueChange={(value) =>
@@ -254,54 +254,56 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               </Select>
             </div>
 
-            {/* Row 2: Push to PPS, Ship ASAP, Edit, Delete */}
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {/* Push to PPS Button */}
-              {canPushToPPS && (
+            {/* Row 2: Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
+            {order.status !== "shipped" && (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {/* Push to PPS Button */}
+                {canPushToPPS && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePushToPPS}
+                    disabled={pushing}
+                  >
+                    {pushing ? "Pushing..." : "Push to PPS"}
+                  </Button>
+                )}
+
+                {/* Ship ASAP Toggle */}
+                <Button
+                  variant={order.shipASAP ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={handleToggleShipASAP}
+                  disabled={toggling}
+                >
+                  <Truck className="h-4 w-4 mr-1" />
+                  {order.shipASAP ? "ASAP On" : "Ship ASAP"}
+                </Button>
+
+                {/* Edit Button */}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handlePushToPPS}
-                  disabled={pushing}
+                  onClick={() => setShowEditModal(true)}
+                  disabled={!canEdit}
+                  title={canEdit ? "Edit Order" : "Cannot edit order in production"}
                 >
-                  {pushing ? "Pushing..." : "Push to PPS"}
+                  <Pencil className="h-4 w-4" />
                 </Button>
-              )}
 
-              {/* Ship ASAP Toggle */}
-              <Button
-                variant={order.shipASAP ? "destructive" : "outline"}
-                size="sm"
-                onClick={handleToggleShipASAP}
-                disabled={toggling}
-              >
-                <Truck className="h-4 w-4 mr-1" />
-                {order.shipASAP ? "ASAP On" : "Ship ASAP"}
-              </Button>
-
-              {/* Edit Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEditModal(true)}
-                disabled={!canEdit}
-                title={canEdit ? "Edit Order" : "Cannot edit order in production"}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-
-              {/* Delete Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={inProduction}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                title={inProduction ? "Cannot delete order in production" : "Delete Order"}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+                {/* Delete Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={inProduction}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  title={inProduction ? "Cannot delete order in production" : "Delete Order"}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </Card>
