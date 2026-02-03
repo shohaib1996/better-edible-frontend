@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Truck, Calendar, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Truck, Calendar, Pencil, Trash2, FileText, ClipboardList } from "lucide-react";
 import {
   useUpdateClientOrderStatusMutation,
   usePushOrderToPPSMutation,
@@ -13,12 +13,6 @@ import { IClientOrder, ClientOrderStatus } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -42,6 +36,11 @@ import {
   canEditOrder,
   isOrderInProduction,
 } from "@/constants/privateLabel";
+import { EditOrderModal } from "./EditOrderModal";
+import { OrderDetailsModal } from "./OrderDetailsModal";
+import { ClientOrderPackingListDialog } from "./ClientOrderPackingListDialog";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
+import { generateClientOrderInvoice } from "@/utils/clientOrderInvoiceGenerator";
 
 interface OrderCardProps {
   order: IClientOrder;
@@ -56,6 +55,10 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
   const [deleteOrder, { isLoading: deleting }] = useDeleteClientOrderMutation();
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPackingListDialog, setShowPackingListDialog] = useState(false);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
 
   const handleStatusChange = async (newStatus: ClientOrderStatus) => {
     try {
@@ -144,9 +147,12 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               )}
             </div>
 
-            <p className="text-sm text-muted-foreground mb-1">
+            <button
+              onClick={() => setShowDetailsModal(true)}
+              className="text-sm font-medium text-foreground mb-1 cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+            >
               {order.client?.store?.name || "Unknown Store"}
-            </p>
+            </button>
 
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
               <span className="flex items-center gap-1">
@@ -187,73 +193,115 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Status Selector */}
-            <Select
-              value={order.status}
-              onValueChange={(value) =>
-                handleStatusChange(value as ClientOrderStatus)
-              }
-              disabled={updatingStatus}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Actions - Two Rows */}
+          <div className="flex flex-col gap-2 items-end">
+            {/* Row 1: Delivery, Packing List, Invoice, Status Selector */}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {/* Delivery Button */}
+              {order.status !== "shipped" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeliveryModal(true)}
+                >
+                  <Truck className="h-4 w-4 mr-1" />
+                  Delivery
+                </Button>
+              )}
 
-            {/* Push to PPS Button */}
-            {canPushToPPS && (
+              {/* Packing List Button */}
+              {order.status !== "shipped" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPackingListDialog(true)}
+                >
+                  <ClipboardList className="h-4 w-4 mr-1" />
+                  Packing List
+                </Button>
+              )}
+
+              {/* Invoice Button */}
+              {order.status !== "shipped" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateClientOrderInvoice(order)}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  Invoice
+                </Button>
+              )}
+
+              {/* Status Selector */}
+              <Select
+                value={order.status}
+                onValueChange={(value) =>
+                  handleStatusChange(value as ClientOrderStatus)
+                }
+                disabled={updatingStatus}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Row 2: Push to PPS, Ship ASAP, Edit, Delete */}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {/* Push to PPS Button */}
+              {canPushToPPS && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePushToPPS}
+                  disabled={pushing}
+                >
+                  {pushing ? "Pushing..." : "Push to PPS"}
+                </Button>
+              )}
+
+              {/* Ship ASAP Toggle */}
+              <Button
+                variant={order.shipASAP ? "destructive" : "outline"}
+                size="sm"
+                onClick={handleToggleShipASAP}
+                disabled={toggling}
+              >
+                <Truck className="h-4 w-4 mr-1" />
+                {order.shipASAP ? "ASAP On" : "Ship ASAP"}
+              </Button>
+
+              {/* Edit Button */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePushToPPS}
-                disabled={pushing}
+                onClick={() => setShowEditModal(true)}
+                disabled={!canEdit}
+                title={canEdit ? "Edit Order" : "Cannot edit order in production"}
               >
-                {pushing ? "Pushing..." : "Push to PPS"}
+                <Pencil className="h-4 w-4" />
               </Button>
-            )}
 
-            {/* Ship ASAP Toggle */}
-            <Button
-              variant={order.shipASAP ? "destructive" : "outline"}
-              size="sm"
-              onClick={handleToggleShipASAP}
-              disabled={toggling}
-            >
-              <Truck className="h-4 w-4 mr-1" />
-              {order.shipASAP ? "ASAP On" : "Ship ASAP"}
-            </Button>
-
-            {/* More Actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled={!canEdit}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit Order
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-red-600"
-                  disabled={inProduction}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Order
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              {/* Delete Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={inProduction}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                title={inProduction ? "Cannot delete order in production" : "Delete Order"}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
@@ -280,6 +328,44 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Order Modal */}
+      <EditOrderModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        order={order}
+        onSuccess={onUpdate}
+      />
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal
+        order={showDetailsModal ? order : null}
+        onClose={() => setShowDetailsModal(false)}
+      />
+
+      {/* Packing List Dialog */}
+      <ClientOrderPackingListDialog
+        order={showPackingListDialog ? order : null}
+        onClose={() => setShowPackingListDialog(false)}
+      />
+
+      {/* Delivery Modal */}
+      <DeliveryModal
+        open={showDeliveryModal}
+        onClose={() => setShowDeliveryModal(false)}
+        store={
+          order.client?.store
+            ? {
+                _id: order.client.store._id,
+                name: order.client.store.name,
+                address: order.client.store.address,
+              }
+            : null
+        }
+        rep={order.assignedRep}
+        orderId={order._id}
+        onSuccess={onUpdate}
+      />
     </>
   );
 };

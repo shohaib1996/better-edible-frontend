@@ -15,6 +15,7 @@ import {
   CalendarSync,
   Gift,
   Tag,
+  Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -58,6 +59,7 @@ const adminItems = [
   { title: "Products", url: "/admin/products", icon: Calendar },
   { title: "Orders", url: "/admin/orders", icon: Search },
   { title: "Private Label", url: "/admin/private-label-orders", icon: Tag },
+  { title: "Private L. Client Orders", url: "/admin/client-orders", icon: Users },
   { title: "Follow Ups", url: "/admin/follow-ups", icon: CalendarSync },
   { title: "Samples List", url: "/admin/samples", icon: Gift },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
@@ -68,6 +70,7 @@ const repItems = [
   { title: "Follow Ups", url: "/rep/follow-ups", icon: Calendar },
   { title: "Orders", url: "/rep/orders", icon: Search },
   { title: "Private Label", url: "/rep/private-label-orders", icon: Tag },
+  { title: "Private L. Client Orders", url: "/rep/client-orders", icon: Users },
   { title: "Delivery", url: "/rep/delivery", icon: Truck },
   { title: "Stores", url: "/rep/stores", icon: Briefcase },
   { title: "Sample Lists", url: "/rep/sample-lists", icon: Grid },
