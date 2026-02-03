@@ -23,9 +23,10 @@ import {
 import { useGetClientsWithApprovedLabelsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetApprovedLabelsByClientQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { useCreateClientOrderMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageIcon } from "lucide-react";
 import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
 import { ILabel, DiscountType } from "@/types";
+import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 
 interface CreateOrderModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  labelImageUrl?: string;
 }
 
 export const CreateOrderModal = ({
@@ -54,6 +56,7 @@ export const CreateOrderModal = ({
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
   const [note, setNote] = useState<string>("");
   const [shipASAP, setShipASAP] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<{ url: string; filename: string } | null>(null);
 
   const { data: clients } = useGetClientsWithApprovedLabelsQuery();
   const { data: labels, isLoading: labelsLoading } =
@@ -74,6 +77,9 @@ export const CreateOrderModal = ({
       setSelectedLabels(selectedLabels.filter((l) => l.labelId !== label._id));
     } else {
       const unitPrice = label.unitPrice || 0;
+      const labelImageUrl = label.labelImages && label.labelImages.length > 0
+        ? label.labelImages[0].secureUrl || label.labelImages[0].url
+        : undefined;
       setSelectedLabels([
         ...selectedLabels,
         {
@@ -83,6 +89,7 @@ export const CreateOrderModal = ({
           quantity: PRODUCTION_QUANTITIES.HALF_BATCH,
           unitPrice,
           lineTotal: PRODUCTION_QUANTITIES.HALF_BATCH * unitPrice,
+          labelImageUrl,
         },
       ]);
     }
@@ -209,7 +216,7 @@ export const CreateOrderModal = ({
           {selectedClientId && !labelsLoading && labels && labels.length > 0 && (
             <div>
               <Label>Select Labels *</Label>
-              <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
                 {labels.map((label: ILabel) => (
                   <div
                     key={label._id}
@@ -221,10 +228,38 @@ export const CreateOrderModal = ({
                       )}
                       onCheckedChange={() => handleLabelToggle(label)}
                     />
-                    <span className="flex-1">
-                      {label.flavorName} - {label.productType} - $
-                      {(label.unitPrice || 0).toFixed(2)}/unit
-                    </span>
+                    {/* Label Image Thumbnail */}
+                    <div
+                      className="relative w-12 h-12 shrink-0 overflow-hidden rounded-md bg-muted cursor-pointer group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (label.labelImages && label.labelImages.length > 0) {
+                          const img = label.labelImages[0];
+                          setPreviewImage({
+                            url: img.secureUrl || img.url,
+                            filename: img.originalFilename || `${label.flavorName}-label`,
+                          });
+                        }
+                      }}
+                    >
+                      {label.labelImages && label.labelImages.length > 0 ? (
+                        <img
+                          src={label.labelImages[0].secureUrl || label.labelImages[0].url}
+                          alt={label.flavorName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{label.flavorName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {label.productType} - ${(label.unitPrice || 0).toFixed(2)}/unit
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -247,6 +282,20 @@ export const CreateOrderModal = ({
                     key={item.labelId}
                     className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-md"
                   >
+                    {/* Label Image Thumbnail */}
+                    <div className="w-12 h-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {item.labelImageUrl ? (
+                        <img
+                          src={item.labelImageUrl}
+                          alt={item.flavorName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1">
                       <p className="font-medium">{item.flavorName}</p>
                       <p className="text-xs text-muted-foreground">
@@ -413,6 +462,12 @@ export const CreateOrderModal = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        image={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </Dialog>
   );
 };

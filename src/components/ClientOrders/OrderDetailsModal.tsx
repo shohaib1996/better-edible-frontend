@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,9 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
 } from "@/constants/privateLabel";
-import { Truck } from "lucide-react";
+import { Truck, Eye, ImageIcon } from "lucide-react";
+import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
+import Image from "next/image";
 
 interface OrderDetailsModalProps {
   order: IClientOrder | null;
@@ -29,13 +31,33 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   order,
   onClose,
 }) => {
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    filename: string;
+  } | null>(null);
+
+  // Reset selectedImage when order changes or modal closes
+  React.useEffect(() => {
+    if (!order) {
+      setSelectedImage(null);
+    }
+  }, [order]);
+
   if (!order) return null;
 
   const fmt = (value: number | undefined) =>
     value != null ? `$${value.toFixed(2)}` : "$0.00";
 
+  const handleModalClose = (open: boolean) => {
+    if (!open && !selectedImage) {
+      // Only close if image preview is not open
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
+    <>
+    <Dialog open={!!order} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -126,29 +148,69 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             </h3>
             <div className="space-y-3">
               {order.items && order.items.length > 0 ? (
-                order.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-primary/30 rounded-xs p-3 sm:p-4 bg-linear-to-r from-primary/10 to-secondary/10"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="w-full">
-                        <p className="font-semibold text-foreground text-sm">
-                          {item.flavorName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.productType}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Quantity: {item.quantity} x {fmt(item.unitPrice)} ={" "}
-                          <span className="font-semibold text-primary">
-                            {fmt(item.lineTotal)}
-                          </span>
-                        </p>
+                order.items.map((item, idx) => {
+                  // Get label images from the populated label field
+                  const labelImages = item.label?.labelImages || [];
+
+                  return (
+                    <div
+                      key={idx}
+                      className="border border-primary/30 rounded-xs p-3 sm:p-4 bg-linear-to-r from-primary/10 to-secondary/10"
+                    >
+                      <div className="flex gap-4 items-start">
+                        {/* Label Image Thumbnail */}
+                        <div
+                          className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-md bg-muted cursor-pointer group"
+                          onClick={() => {
+                            if (labelImages.length > 0) {
+                              const img = labelImages[0];
+                              setSelectedImage({
+                                url: img.secureUrl || img.url,
+                                filename: `${item.flavorName}-label`,
+                              });
+                            }
+                          }}
+                        >
+                          {labelImages.length > 0 ? (
+                            <>
+                              <Image
+                                src={labelImages[0].secureUrl || labelImages[0].url}
+                                alt={item.flavorName}
+                                fill
+                                sizes="80px"
+                                className="object-cover"
+                              />
+                              {/* Hover Overlay */}
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
+                                <Eye className="text-white w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Item Details */}
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground text-sm">
+                            {item.flavorName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.productType}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Quantity: {item.quantity} x {fmt(item.unitPrice)} ={" "}
+                            <span className="font-semibold text-primary">
+                              {fmt(item.lineTotal)}
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-center py-6 text-muted-foreground">
                   No items in this order
@@ -208,5 +270,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Image Preview Modal */}
+    <ImagePreviewModal
+      image={selectedImage}
+      onClose={() => setSelectedImage(null)}
+    />
+    </>
   );
 };
