@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Repeat } from "lucide-react";
+import { ArrowLeft, Loader2, Repeat, Pencil } from "lucide-react";
 import { useGetPrivateLabelClientByIdQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetAllLabelsQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { LabelCard } from "./LabelCard";
 import { AddLabelModal } from "./AddLabelModal";
+import { EditClientInfoModal } from "./EditClientInfoModal";
 import { RecurringScheduleSection } from "./RecurringScheduleSection";
 import { BulkStageUpdateSection } from "./BulkStageUpdateSection";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ interface SingleClientPageProps {
 export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
   const router = useRouter();
   const [addLabelModalOpen, setAddLabelModalOpen] = useState(false);
+  const [editInfoModalOpen, setEditInfoModalOpen] = useState(false);
 
   const {
     data: client,
@@ -183,6 +185,17 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
 
         {/* Info Tab */}
         <TabsContent value="info" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Store Information</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditInfoModalOpen(true)}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Info
+            </Button>
+          </div>
           <Card className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <div>
@@ -218,6 +231,14 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
         open={addLabelModalOpen}
         onClose={() => setAddLabelModalOpen(false)}
         clientId={client._id}
+        onSuccess={handleUpdate}
+      />
+
+      {/* Edit Client Info Modal */}
+      <EditClientInfoModal
+        open={editInfoModalOpen}
+        onClose={() => setEditInfoModalOpen(false)}
+        client={client}
         onSuccess={handleUpdate}
       />
     </div>
