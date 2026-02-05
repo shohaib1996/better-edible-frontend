@@ -135,6 +135,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     {format(new Date(order.actualShipDate), "PPP")}
                   </p>
                 )}
+                {order.trackingNumber && (
+                  <p className="text-foreground text-xs sm:text-sm">
+                    <span className="font-medium">Tracking Number:</span>{" "}
+                    {order.trackingNumber}
+                  </p>
+                )}
               </div>
             </div>
           </div>

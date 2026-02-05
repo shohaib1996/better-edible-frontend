@@ -61,9 +61,11 @@ export interface IClientOrder {
   isRecurring: boolean;
   parentOrder?: string;
   shipASAP: boolean;
+  trackingNumber?: string;
   emailsSent: {
     sevenDayReminder: boolean;
     readyToShipNotification: boolean;
+    shippedNotification: boolean;
   };
   createdAt: string;
   updatedAt: string;

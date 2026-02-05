@@ -59,14 +59,37 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPackingListDialog, setShowPackingListDialog] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [showShippedDialog, setShowShippedDialog] = useState(false);
 
   const handleStatusChange = async (newStatus: ClientOrderStatus) => {
+    // Show dialog for tracking number when changing to shipped
+    if (newStatus === "shipped") {
+      setShowShippedDialog(true);
+      return;
+    }
+
     try {
       await updateStatus({
         id: order._id,
         status: newStatus,
       }).unwrap();
       toast.success("Order status updated");
+      onUpdate();
+    } catch (error: unknown) {
+      console.error("Error updating status:", error);
+      const err = error as { data?: { message?: string } };
+      toast.error(err.data?.message || "Failed to update status");
+    }
+  };
+
+  const handleConfirmShipped = async () => {
+    try {
+      await updateStatus({
+        id: order._id,
+        status: "shipped",
+      }).unwrap();
+      toast.success("Order marked as shipped");
+      setShowShippedDialog(false);
       onUpdate();
     } catch (error: unknown) {
       console.error("Error updating status:", error);
@@ -326,6 +349,27 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               className="bg-red-600 hover:bg-red-700"
             >
               {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Mark as Shipped Dialog */}
+      <AlertDialog open={showShippedDialog} onOpenChange={setShowShippedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark Order as Shipped</AlertDialogTitle>
+            <AlertDialogDescription>
+              Order {order.orderNumber} will be marked as shipped. An email notification will be sent to both the client and rep.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmShipped}
+              disabled={updatingStatus}
+            >
+              {updatingStatus ? "Updating..." : "Mark as Shipped"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

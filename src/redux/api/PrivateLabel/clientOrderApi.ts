@@ -63,12 +63,12 @@ export const clientOrderApi = baseApi.injectEndpoints({
     // Update order status
     updateClientOrderStatus: builder.mutation<
       { message: string; order: IClientOrder },
-      { id: string; status: ClientOrderStatus }
+      { id: string; status: ClientOrderStatus; trackingNumber?: string }
     >({
-      query: ({ id, status }) => ({
+      query: ({ id, status, trackingNumber }) => ({
         url: `/client-orders/${id}/status`,
         method: "PATCH",
-        body: { status },
+        body: { status, trackingNumber },
       }),
       invalidatesTags: [tagTypes.clientOrders],
     }),
