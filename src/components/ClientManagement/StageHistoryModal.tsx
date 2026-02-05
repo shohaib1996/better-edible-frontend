@@ -96,7 +96,9 @@ export const StageHistoryModal = ({
                           {entry.notes === "Label created" ? "Created by:" : "Changed by:"}{" "}
                           {entry.changedBy?.name
                             ? `${entry.changedBy.name}${entry.changedBy.email ? ` (${entry.changedBy.email})` : ""}`
-                            : "Unknown"}
+                            : entry.stage === "store_approved"
+                              ? "Store Owner"
+                              : "Unknown"}
                         </p>
                         {entry.notes && (
                           <p className="text-sm mt-2 p-2 bg-muted rounded-md italic">
