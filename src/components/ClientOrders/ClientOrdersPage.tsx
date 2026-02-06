@@ -150,10 +150,12 @@ export const ClientOrdersPage = ({
             onClick={handleManageClients}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+            className="flex items-center gap-1 sm:gap-2 bg-card hover:bg-accent/50 text-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border-border shadow-xs transition-all duration-200"
           >
-            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">{isAdmin ? "Manage Clients" : "My Clients"}</span>
+            <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+            <span className="hidden sm:inline">
+              {isAdmin ? "Manage Clients" : "My Clients"}
+            </span>
             <span className="sm:hidden">Clients</span>
           </Button>
           {isAdmin && (
@@ -161,9 +163,9 @@ export const ClientOrdersPage = ({
               onClick={handleManageProducts}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+              className="flex items-center gap-1 sm:gap-2 bg-card hover:bg-accent/50 text-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border-border shadow-xs transition-all duration-200"
             >
-              <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               <span className="hidden sm:inline">Manage Products</span>
               <span className="sm:hidden">Products</span>
             </Button>
@@ -171,7 +173,7 @@ export const ClientOrdersPage = ({
           <Button
             onClick={() => setCreateModalOpen(true)}
             size="sm"
-            className="flex items-center gap-1 sm:gap-2 bg-primary hover:bg-primary/90 dark:hover:bg-primary/90 text-primary-foreground dark:text-white dark:hover:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+            className="flex items-center gap-1 sm:gap-2 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial shadow-sm transition-all duration-200"
           >
             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">Create Order</span>
@@ -184,20 +186,45 @@ export const ClientOrdersPage = ({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList
           className={cn(
-            "grid w-full h-auto p-1.5",
+            "grid w-full h-auto p-1 bg-muted/50 rounded-xs",
             isAdmin ? "grid-cols-2" : "grid-cols-3",
           )}
         >
           {isAdmin ? (
             <>
-              <TabsTrigger value="active">Active Orders</TabsTrigger>
-              <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
+              <TabsTrigger
+                value="active"
+                className="rounded-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                Active Orders
+              </TabsTrigger>
+              <TabsTrigger
+                value="shipped"
+                className="rounded-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                Shipped Orders
+              </TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="all">All Orders</TabsTrigger>
-              <TabsTrigger value="my">My Orders</TabsTrigger>
-              <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className="rounded-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                All Orders
+              </TabsTrigger>
+              <TabsTrigger
+                value="my"
+                className="rounded-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                My Orders
+              </TabsTrigger>
+              <TabsTrigger
+                value="shipped"
+                className="rounded-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-200"
+              >
+                Shipped Orders
+              </TabsTrigger>
             </>
           )}
         </TabsList>

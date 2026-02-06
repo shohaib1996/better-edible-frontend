@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectContent,
@@ -34,31 +34,44 @@ export const OrderFilters = ({
   hideStatusFilter = false,
 }: OrderFiltersProps) => {
   return (
-    <div className={`grid grid-cols-1 gap-4 ${hideStatusFilter ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+    <div
+      className={`grid grid-cols-1 gap-4 ${hideStatusFilter ? "md:grid-cols-5" : "md:grid-cols-6"}`}
+    >
       {/* Search */}
-      <div>
-        <Label htmlFor="search">Search</Label>
+      <div className="md:col-span-3">
         <Input
           id="search"
           type="text"
           placeholder="Order number or store name..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
+          className="rounded-xs border-border focus:ring-primary/20"
         />
       </div>
 
       {/* Status Filter - Hide when on shipped tab */}
       {!hideStatusFilter && (
-        <div>
-          <Label htmlFor="status">Status</Label>
+        <div className="md:col-span-1">
           <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger id="status">
+            <SelectTrigger
+              id="status"
+              className="w-full rounded-xs border-border"
+            >
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+            <SelectContent className="rounded-xs border-border">
+              <SelectItem
+                value="all"
+                className="rounded-xs cursor-pointer focus:bg-accent/50"
+              >
+                All Statuses
+              </SelectItem>
               {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
+                <SelectItem
+                  key={value}
+                  value={value}
+                  className="rounded-xs cursor-pointer focus:bg-accent/50"
+                >
                   {label}
                 </SelectItem>
               ))}
@@ -68,21 +81,32 @@ export const OrderFilters = ({
       )}
 
       {/* Client Filter */}
-      <div>
-        <Label htmlFor="client">Client</Label>
+      <div className="md:col-span-2">
         <Select
           value={clientFilter || "all"}
           onValueChange={(value) =>
             onClientFilterChange(value === "all" ? "" : value)
           }
         >
-          <SelectTrigger id="client">
+          <SelectTrigger
+            id="client"
+            className="w-full rounded-xs border-border"
+          >
             <SelectValue placeholder="All Clients" />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Clients</SelectItem>
+          <SelectContent className="rounded-xs border-border">
+            <SelectItem
+              value="all"
+              className="rounded-xs cursor-pointer focus:bg-accent/50"
+            >
+              All Clients
+            </SelectItem>
             {allClients.map((client) => (
-              <SelectItem key={client._id} value={client._id}>
+              <SelectItem
+                key={client._id}
+                value={client._id}
+                className="rounded-xs cursor-pointer focus:bg-accent/50"
+              >
                 {client.store?.name}
               </SelectItem>
             ))}

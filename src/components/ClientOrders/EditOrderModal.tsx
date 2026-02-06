@@ -121,7 +121,7 @@ export const EditOrderModal = ({
           };
         }
         return item;
-      })
+      }),
     );
   };
 
@@ -135,7 +135,10 @@ export const EditOrderModal = ({
   };
 
   // Calculate totals
-  const subtotal = selectedLabels.reduce((sum, item) => sum + item.lineTotal, 0);
+  const subtotal = selectedLabels.reduce(
+    (sum, item) => sum + item.lineTotal,
+    0,
+  );
   const discountAmount =
     discountType === "percentage" ? (subtotal * discount) / 100 : discount;
   const total = Math.max(0, subtotal - discountAmount);
@@ -177,7 +180,7 @@ export const EditOrderModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-xs border-border bg-card">
         <DialogHeader>
           <DialogTitle>Edit Order - {order.orderNumber}</DialogTitle>
         </DialogHeader>
@@ -201,17 +204,18 @@ export const EditOrderModal = ({
           {!labelsLoading && labels && labels.length > 0 && (
             <div>
               <Label>Select Labels *</Label>
-              <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
+              <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-xs p-2 scrollbar-thin">
                 {labels.map((label: ILabel) => (
                   <div
                     key={label._id}
-                    className="flex items-center gap-3 p-2 hover:bg-muted rounded-md"
+                    className="flex items-center gap-3 p-2 hover:bg-accent/30 rounded-xs transition-colors"
                   >
                     <Checkbox
                       checked={selectedLabels.some(
-                        (l) => l.labelId === label._id
+                        (l) => l.labelId === label._id,
                       )}
                       onCheckedChange={() => handleLabelToggle(label)}
+                      className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
                     />
                     <span className="flex-1">
                       {label.flavorName} - {label.productType} - $
@@ -237,7 +241,7 @@ export const EditOrderModal = ({
                 {selectedLabels.map((item) => (
                   <div
                     key={item.labelId}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-md"
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-xs bg-card"
                   >
                     <div className="flex-1">
                       <p className="font-medium">{item.flavorName}</p>
@@ -255,6 +259,7 @@ export const EditOrderModal = ({
                         }
                         size="sm"
                         onClick={() => setQuickQuantity(item.labelId, "half")}
+                        className="rounded-xs"
                       >
                         Half (624)
                       </Button>
@@ -267,6 +272,7 @@ export const EditOrderModal = ({
                         }
                         size="sm"
                         onClick={() => setQuickQuantity(item.labelId, "full")}
+                        className="rounded-xs"
                       >
                         Full (1248)
                       </Button>
@@ -275,10 +281,13 @@ export const EditOrderModal = ({
                       type="number"
                       value={item.quantity}
                       onChange={(e) =>
-                        handleQuantityChange(item.labelId, Number(e.target.value))
+                        handleQuantityChange(
+                          item.labelId,
+                          Number(e.target.value),
+                        )
                       }
                       min={1}
-                      className="w-24"
+                      className="w-24 rounded-xs border-border"
                     />
                     <span className="w-24 text-right font-medium">
                       ${item.lineTotal.toFixed(2)}
@@ -297,6 +306,7 @@ export const EditOrderModal = ({
               type="date"
               value={deliveryDate}
               onChange={(e) => setDeliveryDate(e.target.value)}
+              className="rounded-xs border-border"
             />
           </div>
 
@@ -308,12 +318,22 @@ export const EditOrderModal = ({
                 value={discountType}
                 onValueChange={(value: DiscountType) => setDiscountType(value)}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] rounded-xs border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flat">Flat ($)</SelectItem>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                <SelectContent className="rounded-xs">
+                  <SelectItem
+                    value="flat"
+                    className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  >
+                    Flat ($)
+                  </SelectItem>
+                  <SelectItem
+                    value="percentage"
+                    className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  >
+                    Percentage (%)
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -322,20 +342,24 @@ export const EditOrderModal = ({
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 min={0}
                 max={discountType === "percentage" ? 100 : undefined}
-                className="flex-1"
+                className="flex-1 rounded-xs border-border"
               />
             </div>
           </div>
 
           {/* Ship ASAP Checkbox */}
-          <div className="flex items-center space-x-2 p-4 border rounded-md bg-muted/50">
+          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-muted/30 border-border">
             <Checkbox
               id="editShipASAP"
               checked={shipASAP}
               onCheckedChange={(checked) => setShipASAP(!!checked)}
+              className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
             />
             <div>
-              <Label htmlFor="editShipASAP" className="cursor-pointer font-medium">
+              <Label
+                htmlFor="editShipASAP"
+                className="cursor-pointer font-medium"
+              >
                 Ship ASAP
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -353,12 +377,13 @@ export const EditOrderModal = ({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add any notes for this order..."
               rows={3}
+              className="rounded-xs border-border"
             />
           </div>
 
           {/* Order Summary */}
           {selectedLabels.length > 0 && (
-            <div className="p-4 border rounded-md bg-muted/50">
+            <div className="p-4 border rounded-xs bg-muted/30 border-border">
               <h4 className="font-semibold mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -387,12 +412,20 @@ export const EditOrderModal = ({
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xs border-border hover:bg-accent/50 text-foreground"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || selectedLabels.length === 0 || !deliveryDate}
+              disabled={
+                isLoading || selectedLabels.length === 0 || !deliveryDate
+              }
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Order

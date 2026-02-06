@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Truck, Calendar, Pencil, Trash2, FileText, ClipboardList } from "lucide-react";
+import {
+  Truck,
+  Calendar,
+  Pencil,
+  Trash2,
+  FileText,
+  ClipboardList,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   useUpdateClientOrderStatusMutation,
   usePushOrderToPPSMutation,
@@ -119,7 +127,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
       toast.success(
         order.shipASAP
           ? "Ship ASAP disabled"
-          : "Order marked for immediate shipping"
+          : "Order marked for immediate shipping",
       );
       onUpdate();
     } catch (error: unknown) {
@@ -147,26 +155,36 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
   return (
     <>
-      <Card className="p-4">
+      <Card className="p-4 rounded-xs border-border/60 bg-card hover:border-primary/20 transition-all duration-300 shadow-xs hover:shadow-md">
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           {/* Order Info */}
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
-              <Badge className={ORDER_STATUS_COLORS[order.status]}>
+              <Badge
+                className={cn(
+                  ORDER_STATUS_COLORS[order.status],
+                  "rounded-xs px-2.5 py-0.5 border",
+                )}
+              >
                 {ORDER_STATUS_LABELS[order.status]}
               </Badge>
               {order.shipASAP && (
                 <Badge
                   variant="destructive"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 rounded-xs"
                 >
                   <Truck className="h-3 w-3" />
                   Ship ASAP
                 </Badge>
               )}
               {order.isRecurring && (
-                <Badge variant="outline">Recurring</Badge>
+                <Badge
+                  variant="outline"
+                  className="rounded-xs border-primary/20 text-primary bg-primary/5"
+                >
+                  Recurring
+                </Badge>
               )}
             </div>
 
@@ -226,6 +244,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeliveryModal(true)}
+                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
                 >
                   <Truck className="h-4 w-4 mr-1" />
                   Delivery
@@ -238,6 +257,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPackingListDialog(true)}
+                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
                 >
                   <ClipboardList className="h-4 w-4 mr-1" />
                   Packing List
@@ -249,6 +269,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
                   onClick={() => generateClientOrderInvoice(order)}
                 >
                   <FileText className="h-4 w-4 mr-1" />
@@ -264,12 +285,16 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 }
                 disabled={updatingStatus}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] rounded-xs border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xs">
                   {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="rounded-xs cursor-pointer focus:bg-accent/50"
+                    >
                       {label}
                     </SelectItem>
                   ))}
@@ -287,6 +312,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                     size="sm"
                     onClick={handlePushToPPS}
                     disabled={pushing}
+                    className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
                   >
                     {pushing ? "Pushing..." : "Push to PPS"}
                   </Button>
@@ -298,6 +324,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={handleToggleShipASAP}
                   disabled={toggling}
+                  className="rounded-xs"
                 >
                   <Truck className="h-4 w-4 mr-1" />
                   {order.shipASAP ? "ASAP On" : "Ship ASAP"}
@@ -309,7 +336,10 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={() => setShowEditModal(true)}
                   disabled={!canEdit}
-                  title={canEdit ? "Edit Order" : "Cannot edit order in production"}
+                  title={
+                    canEdit ? "Edit Order" : "Cannot edit order in production"
+                  }
+                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -320,8 +350,12 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={inProduction}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  title={inProduction ? "Cannot delete order in production" : "Delete Order"}
+                  className="rounded-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50"
+                  title={
+                    inProduction
+                      ? "Cannot delete order in production"
+                      : "Delete Order"
+                  }
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -333,7 +367,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xs border-border bg-card">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order</AlertDialogTitle>
             <AlertDialogDescription>
@@ -342,11 +376,11 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xs"
             >
               {deleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -356,18 +390,20 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
       {/* Mark as Shipped Dialog */}
       <AlertDialog open={showShippedDialog} onOpenChange={setShowShippedDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-xs border-border bg-card">
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Order as Shipped</AlertDialogTitle>
             <AlertDialogDescription>
-              Order {order.orderNumber} will be marked as shipped. An email notification will be sent to both the client and rep.
+              Order {order.orderNumber} will be marked as shipped. An email
+              notification will be sent to both the client and rep.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmShipped}
               disabled={updatingStatus}
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {updatingStatus ? "Updating..." : "Mark as Shipped"}
             </AlertDialogAction>

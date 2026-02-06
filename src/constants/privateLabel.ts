@@ -25,23 +25,28 @@ export const STAGE_LABELS: Record<LabelStage, string> = {
 };
 
 export const STAGE_COLORS: Record<LabelStage, string> = {
-  design_in_progress: "bg-yellow-500",
-  awaiting_store_approval: "bg-yellow-600",
-  store_approved: "bg-orange-500",
-  submitted_to_olcc: "bg-orange-600",
-  olcc_approved: "bg-blue-500",
-  print_order_submitted: "bg-purple-500",
-  ready_for_production: "bg-green-600",
+  design_in_progress:
+    "bg-secondary/10 border-secondary/20 text-secondary-foreground",
+  awaiting_store_approval:
+    "bg-secondary/20 border-secondary/30 text-secondary-foreground",
+  store_approved: "bg-primary/10 border-primary/20 text-primary",
+  submitted_to_olcc: "bg-primary/20 border-primary/30 text-primary-foreground",
+  olcc_approved:
+    "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
+  print_order_submitted:
+    "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
+  ready_for_production:
+    "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
 };
 
 export const STAGE_TEXT_COLORS: Record<LabelStage, string> = {
-  design_in_progress: "text-yellow-500",
-  awaiting_store_approval: "text-yellow-600",
-  store_approved: "text-orange-500",
-  submitted_to_olcc: "text-orange-600",
-  olcc_approved: "text-blue-500",
-  print_order_submitted: "text-purple-500",
-  ready_for_production: "text-green-600",
+  design_in_progress: "text-secondary-foreground",
+  awaiting_store_approval: "text-secondary-foreground",
+  store_approved: "text-primary",
+  submitted_to_olcc: "text-primary-foreground",
+  olcc_approved: "text-blue-600 dark:text-blue-400",
+  print_order_submitted: "text-purple-600 dark:text-purple-400",
+  ready_for_production: "text-green-600 dark:text-green-400",
 };
 
 // ─────────────────────────────
@@ -71,30 +76,36 @@ export const ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
 };
 
 export const ORDER_STATUS_COLORS: Record<ClientOrderStatus, string> = {
-  waiting: "bg-gray-500",
-  stage_1: "bg-yellow-500",
-  stage_2: "bg-yellow-600",
-  stage_3: "bg-orange-500",
-  stage_4: "bg-orange-600",
-  ready_to_ship: "bg-blue-500",
-  shipped: "bg-green-600",
+  waiting: "bg-muted text-muted-foreground border-muted-foreground/20",
+  stage_1: "bg-secondary/10 text-secondary-foreground border-secondary/20",
+  stage_2: "bg-secondary/30 text-secondary-foreground border-secondary/40",
+  stage_3: "bg-primary/10 text-primary border-primary/20",
+  stage_4: "bg-primary/30 text-primary-foreground border-primary/40",
+  ready_to_ship:
+    "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  shipped:
+    "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
 };
 
 export const ORDER_STATUS_TEXT_COLORS: Record<ClientOrderStatus, string> = {
-  waiting: "text-gray-500",
-  stage_1: "text-yellow-500",
-  stage_2: "text-yellow-600",
-  stage_3: "text-orange-500",
-  stage_4: "text-orange-600",
-  ready_to_ship: "text-blue-500",
-  shipped: "text-green-600",
+  waiting: "text-muted-foreground",
+  stage_1: "text-secondary-foreground",
+  stage_2: "text-secondary-foreground",
+  stage_3: "text-primary",
+  stage_4: "text-primary-foreground",
+  ready_to_ship: "text-blue-600 dark:text-blue-400",
+  shipped: "text-green-600 dark:text-green-400",
 };
 
 // ─────────────────────────────
 // RECURRING SCHEDULE
 // ─────────────────────────────
 
-export const SCHEDULE_INTERVALS = ["monthly", "bimonthly", "quarterly"] as const;
+export const SCHEDULE_INTERVALS = [
+  "monthly",
+  "bimonthly",
+  "quarterly",
+] as const;
 
 export type ScheduleInterval = (typeof SCHEDULE_INTERVALS)[number];
 
@@ -118,8 +129,9 @@ export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
 };
 
 export const CLIENT_STATUS_COLORS: Record<ClientStatus, string> = {
-  onboarding: "bg-yellow-500",
-  active: "bg-green-600",
+  onboarding: "bg-secondary/10 border-secondary/20 text-secondary-foreground",
+  active:
+    "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
 };
 
 // ─────────────────────────────
@@ -153,7 +165,9 @@ export const isOrderInProduction = (status: ClientOrderStatus): boolean => {
 /**
  * Get next stage in label pipeline
  */
-export const getNextLabelStage = (currentStage: LabelStage): LabelStage | null => {
+export const getNextLabelStage = (
+  currentStage: LabelStage,
+): LabelStage | null => {
   const currentIndex = LABEL_STAGES.indexOf(currentStage);
   if (currentIndex === -1 || currentIndex === LABEL_STAGES.length - 1) {
     return null;
@@ -164,7 +178,9 @@ export const getNextLabelStage = (currentStage: LabelStage): LabelStage | null =
 /**
  * Get previous stage in label pipeline
  */
-export const getPreviousLabelStage = (currentStage: LabelStage): LabelStage | null => {
+export const getPreviousLabelStage = (
+  currentStage: LabelStage,
+): LabelStage | null => {
   const currentIndex = LABEL_STAGES.indexOf(currentStage);
   if (currentIndex <= 0) {
     return null;

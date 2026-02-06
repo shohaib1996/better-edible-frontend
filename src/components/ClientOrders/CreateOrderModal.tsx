@@ -56,7 +56,10 @@ export const CreateOrderModal = ({
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
   const [note, setNote] = useState<string>("");
   const [shipASAP, setShipASAP] = useState<boolean>(false);
-  const [previewImage, setPreviewImage] = useState<{ url: string; filename: string } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{
+    url: string;
+    filename: string;
+  } | null>(null);
 
   const { data: clients } = useGetClientsWithApprovedLabelsQuery();
   const { data: labels, isLoading: labelsLoading } =
@@ -77,9 +80,10 @@ export const CreateOrderModal = ({
       setSelectedLabels(selectedLabels.filter((l) => l.labelId !== label._id));
     } else {
       const unitPrice = label.unitPrice || 0;
-      const labelImageUrl = label.labelImages && label.labelImages.length > 0
-        ? label.labelImages[0].secureUrl || label.labelImages[0].url
-        : undefined;
+      const labelImageUrl =
+        label.labelImages && label.labelImages.length > 0
+          ? label.labelImages[0].secureUrl || label.labelImages[0].url
+          : undefined;
       setSelectedLabels([
         ...selectedLabels,
         {
@@ -107,7 +111,7 @@ export const CreateOrderModal = ({
           };
         }
         return item;
-      })
+      }),
     );
   };
 
@@ -121,7 +125,10 @@ export const CreateOrderModal = ({
   };
 
   // Calculate totals
-  const subtotal = selectedLabels.reduce((sum, item) => sum + item.lineTotal, 0);
+  const subtotal = selectedLabels.reduce(
+    (sum, item) => sum + item.lineTotal,
+    0,
+  );
   const discountAmount =
     discountType === "percentage" ? (subtotal * discount) / 100 : discount;
   const total = Math.max(0, subtotal - discountAmount);
@@ -178,7 +185,7 @@ export const CreateOrderModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-xs border-border bg-card">
         <DialogHeader>
           <DialogTitle>Create New Order</DialogTitle>
         </DialogHeader>
@@ -193,12 +200,16 @@ export const CreateOrderModal = ({
                 setSelectedClientId(value);
               }}
             >
-              <SelectTrigger id="client">
+              <SelectTrigger id="client" className="rounded-xs border-border">
                 <SelectValue placeholder="Choose a client with approved labels..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xs">
                 {clients?.map((client) => (
-                  <SelectItem key={client._id} value={client._id}>
+                  <SelectItem
+                    key={client._id}
+                    value={client._id}
+                    className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  >
                     {client.store?.name}
                   </SelectItem>
                 ))}
@@ -213,64 +224,80 @@ export const CreateOrderModal = ({
             </div>
           )}
 
-          {selectedClientId && !labelsLoading && labels && labels.length > 0 && (
-            <div>
-              <Label>Select Labels *</Label>
-              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
-                {labels.map((label: ILabel) => (
-                  <div
-                    key={label._id}
-                    className="flex items-center gap-3 p-2 hover:bg-muted rounded-md"
-                  >
-                    <Checkbox
-                      checked={selectedLabels.some(
-                        (l) => l.labelId === label._id
-                      )}
-                      onCheckedChange={() => handleLabelToggle(label)}
-                    />
-                    {/* Label Image Thumbnail */}
+          {selectedClientId &&
+            !labelsLoading &&
+            labels &&
+            labels.length > 0 && (
+              <div>
+                <Label>Select Labels *</Label>
+                <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border rounded-xs p-2 scrollbar-thin">
+                  {labels.map((label: ILabel) => (
                     <div
-                      className="relative w-12 h-12 shrink-0 overflow-hidden rounded-md bg-muted cursor-pointer group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (label.labelImages && label.labelImages.length > 0) {
-                          const img = label.labelImages[0];
-                          setPreviewImage({
-                            url: img.secureUrl || img.url,
-                            filename: img.originalFilename || `${label.flavorName}-label`,
-                          });
-                        }
-                      }}
+                      key={label._id}
+                      className="flex items-center gap-3 p-2 hover:bg-accent/30 rounded-xs transition-colors"
                     >
-                      {label.labelImages && label.labelImages.length > 0 ? (
-                        <img
-                          src={label.labelImages[0].secureUrl || label.labelImages[0].url}
-                          alt={label.flavorName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                      <Checkbox
+                        checked={selectedLabels.some(
+                          (l) => l.labelId === label._id,
+                        )}
+                        onCheckedChange={() => handleLabelToggle(label)}
+                        className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
+                      />
+                      {/* Label Image Thumbnail */}
+                      <div
+                        className="relative w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted cursor-pointer group border border-border"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (
+                            label.labelImages &&
+                            label.labelImages.length > 0
+                          ) {
+                            const img = label.labelImages[0];
+                            setPreviewImage({
+                              url: img.secureUrl || img.url,
+                              filename:
+                                img.originalFilename ||
+                                `${label.flavorName}-label`,
+                            });
+                          }
+                        }}
+                      >
+                        {label.labelImages && label.labelImages.length > 0 ? (
+                          <img
+                            src={
+                              label.labelImages[0].secureUrl ||
+                              label.labelImages[0].url
+                            }
+                            alt={label.flavorName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{label.flavorName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {label.productType} - $
+                          {(label.unitPrice || 0).toFixed(2)}/unit
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{label.flavorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {label.productType} - ${(label.unitPrice || 0).toFixed(2)}/unit
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {selectedClientId && !labelsLoading && labels && labels.length === 0 && (
-            <p className="text-muted-foreground text-sm">
-              No approved labels found for this client.
-            </p>
-          )}
+          {selectedClientId &&
+            !labelsLoading &&
+            labels &&
+            labels.length === 0 && (
+              <p className="text-muted-foreground text-sm">
+                No approved labels found for this client.
+              </p>
+            )}
 
           {/* Quantity Inputs */}
           {selectedLabels.length > 0 && (
@@ -280,10 +307,10 @@ export const CreateOrderModal = ({
                 {selectedLabels.map((item) => (
                   <div
                     key={item.labelId}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-md"
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-xs bg-card"
                   >
                     {/* Label Image Thumbnail */}
-                    <div className="w-12 h-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                    <div className="w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted border border-border">
                       {item.labelImageUrl ? (
                         <img
                           src={item.labelImageUrl}
@@ -312,6 +339,7 @@ export const CreateOrderModal = ({
                         }
                         size="sm"
                         onClick={() => setQuickQuantity(item.labelId, "half")}
+                        className="rounded-xs"
                       >
                         Half (624)
                       </Button>
@@ -324,6 +352,7 @@ export const CreateOrderModal = ({
                         }
                         size="sm"
                         onClick={() => setQuickQuantity(item.labelId, "full")}
+                        className="rounded-xs"
                       >
                         Full (1248)
                       </Button>
@@ -332,10 +361,13 @@ export const CreateOrderModal = ({
                       type="number"
                       value={item.quantity}
                       onChange={(e) =>
-                        handleQuantityChange(item.labelId, Number(e.target.value))
+                        handleQuantityChange(
+                          item.labelId,
+                          Number(e.target.value),
+                        )
                       }
                       min={1}
-                      className="w-24"
+                      className="w-24 rounded-xs border-border"
                     />
                     <span className="w-24 text-right font-medium">
                       ${item.lineTotal.toFixed(2)}
@@ -354,6 +386,7 @@ export const CreateOrderModal = ({
               type="date"
               value={deliveryDate}
               onChange={(e) => setDeliveryDate(e.target.value)}
+              className="rounded-xs border-border"
             />
           </div>
 
@@ -365,12 +398,22 @@ export const CreateOrderModal = ({
                 value={discountType}
                 onValueChange={(value: DiscountType) => setDiscountType(value)}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] rounded-xs border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flat">Flat ($)</SelectItem>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                <SelectContent className="rounded-xs">
+                  <SelectItem
+                    value="flat"
+                    className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  >
+                    Flat ($)
+                  </SelectItem>
+                  <SelectItem
+                    value="percentage"
+                    className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  >
+                    Percentage (%)
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -379,17 +422,18 @@ export const CreateOrderModal = ({
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 min={0}
                 max={discountType === "percentage" ? 100 : undefined}
-                className="flex-1"
+                className="flex-1 rounded-xs border-border"
               />
             </div>
           </div>
 
           {/* Ship ASAP Checkbox */}
-          <div className="flex items-center space-x-2 p-4 border rounded-md bg-muted/50">
+          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-muted/30 border-border">
             <Checkbox
               id="shipASAP"
               checked={shipASAP}
               onCheckedChange={(checked) => setShipASAP(!!checked)}
+              className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
             />
             <div>
               <Label htmlFor="shipASAP" className="cursor-pointer font-medium">
@@ -410,12 +454,13 @@ export const CreateOrderModal = ({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add any notes for this order..."
               rows={3}
+              className="rounded-xs border-border"
             />
           </div>
 
           {/* Order Summary */}
           {selectedLabels.length > 0 && (
-            <div className="p-4 border rounded-md bg-muted/50">
+            <div className="p-4 border rounded-xs bg-muted/30 border-border">
               <h4 className="font-semibold mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -444,7 +489,12 @@ export const CreateOrderModal = ({
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xs border-border hover:bg-accent/50 text-foreground"
+            >
               Cancel
             </Button>
             <Button
@@ -455,6 +505,7 @@ export const CreateOrderModal = ({
                 selectedLabels.length === 0 ||
                 !deliveryDate
               }
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Order
