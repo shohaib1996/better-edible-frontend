@@ -247,7 +247,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeliveryModal(true)}
-                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <Truck className="h-4 w-4 mr-1" />
                   Delivery
@@ -260,7 +260,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPackingListDialog(true)}
-                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <ClipboardList className="h-4 w-4 mr-1" />
                   Packing List
@@ -272,7 +272,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   onClick={() => generateClientOrderInvoice(order)}
                 >
                   <FileText className="h-4 w-4 mr-1" />
@@ -288,7 +288,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 }
                 disabled={updatingStatus}
               >
-                <SelectTrigger className="w-[140px] rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
+                <SelectTrigger className="h-8.5 w-[140px] rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xs border-border dark:border-white/20">
@@ -315,7 +315,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                     size="sm"
                     onClick={handlePushToPPS}
                     disabled={pushing}
-                    className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                    className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   >
                     {pushing ? "Pushing..." : "Push to PPS"}
                   </Button>
@@ -328,7 +328,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   onClick={handleToggleShipASAP}
                   disabled={toggling}
                   className={cn(
-                    "rounded-xs transition-all duration-200",
+                    "h-8.5 rounded-xs transition-all duration-200",
                     !order.shipASAP &&
                       "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
                   )}
@@ -346,7 +346,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   title={
                     canEdit ? "Edit Order" : "Cannot edit order in production"
                   }
-                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -357,7 +357,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={inProduction}
-                  className="rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                  className="h-8.5 rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                   title={
                     inProduction
                       ? "Cannot delete order in production"
