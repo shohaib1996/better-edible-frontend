@@ -48,6 +48,7 @@ import { OrderDetailsModal } from "./OrderDetailsModal";
 import { ClientOrderPackingListDialog } from "./ClientOrderPackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { generateClientOrderInvoice } from "@/utils/clientOrderInvoiceGenerator";
+import { cn } from "@/lib/utils";
 
 interface OrderCardProps {
   order: IClientOrder;
@@ -181,7 +182,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="text-lg font-bold text-foreground mb-1 cursor-pointer text-left relative hover:text-primary transition-colors duration-200"
+              className="text-lg font-bold text-foreground mb-1 cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
             >
               {order.client?.store?.name || "Unknown Store"}
             </button>
@@ -246,7 +247,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeliveryModal(true)}
-                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
+                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <Truck className="h-4 w-4 mr-1" />
                   Delivery
@@ -259,7 +260,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPackingListDialog(true)}
-                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
+                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <ClipboardList className="h-4 w-4 mr-1" />
                   Packing List
@@ -271,7 +272,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
+                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   onClick={() => generateClientOrderInvoice(order)}
                 >
                   <FileText className="h-4 w-4 mr-1" />
@@ -287,15 +288,15 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 }
                 disabled={updatingStatus}
               >
-                <SelectTrigger className="w-[140px] rounded-xs border-border">
+                <SelectTrigger className="w-[140px] rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xs">
+                <SelectContent className="rounded-xs border-border dark:border-white/20">
                   {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
                     <SelectItem
                       key={value}
                       value={value}
-                      className="rounded-xs cursor-pointer focus:bg-accent/50"
+                      className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
                     >
                       {label}
                     </SelectItem>
@@ -314,7 +315,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                     size="sm"
                     onClick={handlePushToPPS}
                     disabled={pushing}
-                    className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
+                    className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   >
                     {pushing ? "Pushing..." : "Push to PPS"}
                   </Button>
@@ -326,7 +327,11 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={handleToggleShipASAP}
                   disabled={toggling}
-                  className="rounded-xs"
+                  className={cn(
+                    "rounded-xs transition-all duration-200",
+                    !order.shipASAP &&
+                      "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
+                  )}
                 >
                   <Truck className="h-4 w-4 mr-1" />
                   {order.shipASAP ? "ASAP On" : "Ship ASAP"}
@@ -341,7 +346,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   title={
                     canEdit ? "Edit Order" : "Cannot edit order in production"
                   }
-                  className="rounded-xs border-border hover:bg-accent/50 hover:text-accent-foreground"
+                  className="rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -352,7 +357,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   size="sm"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={inProduction}
-                  className="rounded-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-900/50"
+                  className="rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                   title={
                     inProduction
                       ? "Cannot delete order in production"

@@ -45,7 +45,7 @@ export const OrderFilters = ({
           placeholder="Order number or store name..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="rounded-xs border-border focus:ring-primary/20"
+          className="rounded-xs border-border dark:border-white/20 focus:ring-primary/20 hover:border-primary hover:bg-primary/5 transition-all duration-200"
         />
       </div>
 
@@ -55,14 +55,14 @@ export const OrderFilters = ({
           <Select value={statusFilter} onValueChange={onStatusFilterChange}>
             <SelectTrigger
               id="status"
-              className="w-full rounded-xs border-border"
+              className="w-full rounded-xs border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 transition-all duration-200"
             >
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
-            <SelectContent className="rounded-xs border-border">
+            <SelectContent className="rounded-xs border-border dark:border-white/20">
               <SelectItem
                 value="all"
-                className="rounded-xs cursor-pointer focus:bg-accent/50"
+                className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
               >
                 All Statuses
               </SelectItem>
@@ -70,7 +70,7 @@ export const OrderFilters = ({
                 <SelectItem
                   key={value}
                   value={value}
-                  className="rounded-xs cursor-pointer focus:bg-accent/50"
+                  className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
                 >
                   {label}
                 </SelectItem>
@@ -90,14 +90,14 @@ export const OrderFilters = ({
         >
           <SelectTrigger
             id="client"
-            className="w-full rounded-xs border-border"
+            className="w-full rounded-xs border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 transition-all duration-200"
           >
             <SelectValue placeholder="All Clients" />
           </SelectTrigger>
-          <SelectContent className="rounded-xs border-border">
+          <SelectContent className="rounded-xs border-border dark:border-white/20">
             <SelectItem
               value="all"
-              className="rounded-xs cursor-pointer focus:bg-accent/50"
+              className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
             >
               All Clients
             </SelectItem>
@@ -105,7 +105,7 @@ export const OrderFilters = ({
               <SelectItem
                 key={client._id}
                 value={client._id}
-                className="rounded-xs cursor-pointer focus:bg-accent/50"
+                className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
               >
                 {client.store?.name}
               </SelectItem>

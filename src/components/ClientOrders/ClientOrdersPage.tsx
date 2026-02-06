@@ -150,7 +150,7 @@ export const ClientOrdersPage = ({
             onClick={handleManageClients}
             variant="outline"
             size="sm"
-            className="flex items-center gap-1 sm:gap-2 bg-accent hover:bg-accent/50 text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border-border shadow-xs transition-all duration-200 h-8.5"
+            className="flex items-center gap-1 sm:gap-2 bg-card hover:border-primary hover:bg-primary/5 hover:text-primary text-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border border-border dark:border-white/20 shadow-xs transition-all duration-200 h-8.5"
           >
             <Users className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
             <span className="hidden sm:inline">
@@ -163,7 +163,7 @@ export const ClientOrdersPage = ({
               onClick={handleManageProducts}
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 sm:gap-2 bg-card hover:bg-accent/50 text-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border-border shadow-xs transition-all duration-200"
+              className="flex h-8.5 items-center gap-1 sm:gap-2 bg-card hover:border-primary hover:bg-primary/5 hover:text-primary text-foreground cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial border border-border dark:border-white/20 shadow-xs transition-all duration-200"
             >
               <Package className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
               <span className="hidden sm:inline">Manage Products</span>
