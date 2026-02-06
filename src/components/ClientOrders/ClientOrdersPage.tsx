@@ -41,10 +41,12 @@ export const ClientOrdersPage = ({
   };
 
   const handleManageClients = () => {
-    router.push("/admin/manage-clients");
+    router.push(isAdmin ? "/admin/manage-clients" : "/rep/manage-clients");
   };
 
-  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({ limit: 1000 });
+  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({
+    limit: 1000,
+  });
   const allClients = clientsData?.clients || [];
 
   // Build query params based on active tab and view type
@@ -60,7 +62,8 @@ export const ClientOrdersPage = ({
         if (statusFilter !== "all") {
           baseParams.status = statusFilter;
         } else {
-          baseParams.status = "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+          baseParams.status =
+            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
         }
         baseParams.limit = 999;
       } else {
@@ -76,7 +79,8 @@ export const ClientOrdersPage = ({
         if (statusFilter !== "all") {
           baseParams.status = statusFilter;
         } else {
-          baseParams.status = "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+          baseParams.status =
+            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
         }
         baseParams.limit = 999;
       } else if (activeTab === "my") {
@@ -85,7 +89,8 @@ export const ClientOrdersPage = ({
         if (statusFilter !== "all") {
           baseParams.status = statusFilter;
         } else {
-          baseParams.status = "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+          baseParams.status =
+            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
         }
         baseParams.limit = 999;
       } else {
@@ -101,7 +106,7 @@ export const ClientOrdersPage = ({
 
   const { data, isLoading, refetch } = useGetAllClientOrdersQuery(
     getQueryParams(),
-    { refetchOnMountOrArgChange: true }
+    { refetchOnMountOrArgChange: true },
   );
 
   const orders = data?.orders || [];
@@ -133,7 +138,7 @@ export const ClientOrdersPage = ({
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
             <ShoppingCart className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-            <span>Client Orders</span>
+            <span>Private Label Client Orders</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Total Orders: <span className="font-medium">{totalOrders}</span>
@@ -141,29 +146,27 @@ export const ClientOrdersPage = ({
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            onClick={handleManageClients}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+          >
+            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">{isAdmin ? "Manage Clients" : "My Clients"}</span>
+            <span className="sm:hidden">Clients</span>
+          </Button>
           {isAdmin && (
-            <>
-              <Button
-                onClick={handleManageClients}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
-              >
-                <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Manage Clients</span>
-                <span className="sm:hidden">Clients</span>
-              </Button>
-              <Button
-                onClick={handleManageProducts}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
-              >
-                <Package className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Manage Products</span>
-                <span className="sm:hidden">Products</span>
-              </Button>
-            </>
+            <Button
+              onClick={handleManageProducts}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 sm:gap-2 bg-accent dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90 text-accent-foreground dark:text-white cursor-pointer rounded-xs text-xs sm:text-sm flex-1 sm:flex-initial"
+            >
+              <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Manage Products</span>
+              <span className="sm:hidden">Products</span>
+            </Button>
           )}
           <Button
             onClick={() => setCreateModalOpen(true)}
@@ -182,7 +185,7 @@ export const ClientOrdersPage = ({
         <TabsList
           className={cn(
             "grid w-full h-auto p-1.5",
-            isAdmin ? "grid-cols-2" : "grid-cols-3"
+            isAdmin ? "grid-cols-2" : "grid-cols-3",
           )}
         >
           {isAdmin ? (
@@ -235,8 +238,8 @@ export const ClientOrdersPage = ({
                 {activeTab === "shipped"
                   ? "No shipped orders yet"
                   : activeTab === "my"
-                  ? "You have no active orders"
-                  : "Create your first client order to get started"}
+                    ? "You have no active orders"
+                    : "Create your first client order to get started"}
               </p>
             </div>
           ) : (

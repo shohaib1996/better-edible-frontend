@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Repeat, Pencil } from "lucide-react";
 import { useGetPrivateLabelClientByIdQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
@@ -17,12 +17,15 @@ import { Card } from "@/components/ui/card";
 
 interface SingleClientPageProps {
   clientId: string;
+  isRepView?: boolean;
 }
 
-export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
+export const SingleClientPage = ({ clientId, isRepView = false }: SingleClientPageProps) => {
   const router = useRouter();
   const [addLabelModalOpen, setAddLabelModalOpen] = useState(false);
   const [editInfoModalOpen, setEditInfoModalOpen] = useState(false);
+
+  const backPath = isRepView ? "/rep/manage-clients" : "/admin/manage-clients";
 
   const {
     data: client,
@@ -43,6 +46,17 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
 
   const labels = labelsData?.labels || [];
 
+  // Calculate label counts from the labels data
+  const labelCounts = useMemo(() => {
+    const approved = labels.filter(
+      (label) => label.currentStage === "ready_for_production"
+    ).length;
+    const inProgress = labels.filter(
+      (label) => label.currentStage !== "ready_for_production"
+    ).length;
+    return { approved, inProgress };
+  }, [labels]);
+
   const handleUpdate = () => {
     refetchClient();
     refetchLabels();
@@ -61,7 +75,7 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
       <div className="p-4 sm:p-6">
         <Button
           variant="ghost"
-          onClick={() => router.push("/admin/manage-clients")}
+          onClick={() => router.push(backPath)}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -84,7 +98,7 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
       {/* Back Button */}
       <Button
         variant="ghost"
-        onClick={() => router.push("/admin/manage-clients")}
+        onClick={() => router.push(backPath)}
         className="mb-2"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -116,13 +130,13 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
           <div className="flex gap-6 text-sm">
             <div className="text-center">
               <span className="text-2xl font-bold text-green-600">
-                {client.labelCounts?.approved || 0}
+                {labelCounts.approved}
               </span>
               <p className="text-muted-foreground">Approved Labels</p>
             </div>
             <div className="text-center">
               <span className="text-2xl font-bold text-yellow-600">
-                {client.labelCounts?.inProgress || 0}
+                {labelCounts.inProgress}
               </span>
               <p className="text-muted-foreground">In Progress</p>
             </div>
@@ -240,6 +254,7 @@ export const SingleClientPage = ({ clientId }: SingleClientPageProps) => {
         onClose={() => setEditInfoModalOpen(false)}
         client={client}
         onSuccess={handleUpdate}
+        isRepView={isRepView}
       />
     </div>
   );

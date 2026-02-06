@@ -28,6 +28,7 @@ interface EditClientInfoModalProps {
   onClose: () => void;
   client: IPrivateLabelClient;
   onSuccess: () => void;
+  isRepView?: boolean;
 }
 
 export const EditClientInfoModal = ({
@@ -35,12 +36,13 @@ export const EditClientInfoModal = ({
   onClose,
   client,
   onSuccess,
+  isRepView = false,
 }: EditClientInfoModalProps) => {
   const [contactEmail, setContactEmail] = useState(client.contactEmail);
   const [assignedRepId, setAssignedRepId] = useState(client.assignedRep._id);
   const [status, setStatus] = useState<PrivateLabelClientStatus>(client.status);
 
-  const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
+  const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({}, { skip: isRepView });
   const [updateClient, { isLoading: updating }] =
     useUpdatePrivateLabelClientMutation();
 
@@ -63,7 +65,8 @@ export const EditClientInfoModal = ({
       await updateClient({
         id: client._id,
         contactEmail: contactEmail.trim(),
-        assignedRepId,
+        // Rep cannot change assigned rep - keep original
+        assignedRepId: isRepView ? client.assignedRep._id : assignedRepId,
         status,
       }).unwrap();
 
@@ -107,10 +110,17 @@ export const EditClientInfoModal = ({
             />
           </div>
 
-          {/* Assigned Rep */}
+          {/* Assigned Rep - Only show for admin, read-only for rep */}
           <div className="space-y-2">
             <Label htmlFor="assignedRep">Assigned Rep</Label>
-            {repsLoading ? (
+            {isRepView ? (
+              <>
+                <Input value={client.assignedRep?.name || ""} disabled />
+                <p className="text-xs text-muted-foreground">
+                  Assigned rep cannot be changed
+                </p>
+              </>
+            ) : repsLoading ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading reps...

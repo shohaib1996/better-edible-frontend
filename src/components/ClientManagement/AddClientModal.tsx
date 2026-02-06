@@ -28,22 +28,26 @@ interface AddClientModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  isRepView?: boolean;
+  currentRepId?: string;
 }
 
 export const AddClientModal = ({
   open,
   onClose,
   onSuccess,
+  isRepView = false,
+  currentRepId,
 }: AddClientModalProps) => {
   const [storeId, setStoreId] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [repId, setRepId] = useState("");
+  const [repId, setRepId] = useState(isRepView && currentRepId ? currentRepId : "");
   const [recurringEnabled, setRecurringEnabled] = useState(false);
   const [interval, setInterval] = useState<
     "monthly" | "bimonthly" | "quarterly"
   >("monthly");
 
-  const { data: repsData } = useGetAllRepsQuery({});
+  const { data: repsData } = useGetAllRepsQuery({}, { skip: isRepView });
   const [createClient, { isLoading }] = useCreatePrivateLabelClientMutation();
 
   const reps = repsData?.data || [];
@@ -58,7 +62,9 @@ export const AddClientModal = ({
       toast.error("Please enter a contact email");
       return;
     }
-    if (!repId) {
+
+    const assignedRepId = isRepView ? currentRepId : repId;
+    if (!assignedRepId) {
       toast.error("Please select a rep");
       return;
     }
@@ -75,7 +81,7 @@ export const AddClientModal = ({
       } = {
         storeId,
         contactEmail,
-        assignedRepId: repId,
+        assignedRepId: assignedRepId!,
       };
 
       if (recurringEnabled) {
@@ -137,22 +143,24 @@ export const AddClientModal = ({
             />
           </div>
 
-          {/* Assigned Rep */}
-          <div>
-            <Label htmlFor="rep">Assigned Rep *</Label>
-            <Select value={repId} onValueChange={setRepId}>
-              <SelectTrigger id="rep">
-                <SelectValue placeholder="Select a rep" />
-              </SelectTrigger>
-              <SelectContent>
-                {reps.map((rep: { _id: string; name: string }) => (
-                  <SelectItem key={rep._id} value={rep._id}>
-                    {rep.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Assigned Rep - Only show for admin, auto-assign for rep */}
+          {!isRepView && (
+            <div>
+              <Label htmlFor="rep">Assigned Rep *</Label>
+              <Select value={repId} onValueChange={setRepId}>
+                <SelectTrigger id="rep">
+                  <SelectValue placeholder="Select a rep" />
+                </SelectTrigger>
+                <SelectContent>
+                  {reps.map((rep: { _id: string; name: string }) => (
+                    <SelectItem key={rep._id} value={rep._id}>
+                      {rep.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Recurring Schedule Section */}
           <div className="space-y-2 p-4 border rounded-md">

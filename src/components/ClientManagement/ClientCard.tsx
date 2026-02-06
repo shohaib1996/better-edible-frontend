@@ -9,9 +9,10 @@ import { Card } from "@/components/ui/card";
 
 interface ClientCardProps {
   client: IPrivateLabelClient;
+  isRepView?: boolean;
 }
 
-export const ClientCard = ({ client }: ClientCardProps) => {
+export const ClientCard = ({ client, isRepView = false }: ClientCardProps) => {
   const router = useRouter();
 
   const statusColor =
@@ -20,7 +21,8 @@ export const ClientCard = ({ client }: ClientCardProps) => {
       : "bg-yellow-500 text-white";
 
   const handleViewClient = () => {
-    router.push(`/admin/manage-clients/${client._id}`);
+    const basePath = isRepView ? "/rep/manage-clients" : "/admin/manage-clients";
+    router.push(`${basePath}/${client._id}`);
   };
 
   return (

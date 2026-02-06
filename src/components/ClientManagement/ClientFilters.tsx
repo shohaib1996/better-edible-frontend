@@ -23,6 +23,7 @@ interface ClientFiltersProps {
   repFilter: string;
   onRepFilterChange: (value: string) => void;
   allReps: Rep[];
+  hideRepFilter?: boolean;
 }
 
 export const ClientFilters = ({
@@ -33,9 +34,10 @@ export const ClientFilters = ({
   repFilter,
   onRepFilterChange,
   allReps,
+  hideRepFilter = false,
 }: ClientFiltersProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className={`grid grid-cols-1 gap-4 ${hideRepFilter ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
       {/* Search */}
       <div>
         <Label htmlFor="search">Search Stores</Label>
@@ -63,23 +65,25 @@ export const ClientFilters = ({
         </Select>
       </div>
 
-      {/* Rep Filter */}
-      <div>
-        <Label htmlFor="rep">Assigned Rep</Label>
-        <Select value={repFilter || "all"} onValueChange={(val) => onRepFilterChange(val === "all" ? "" : val)}>
-          <SelectTrigger id="rep">
-            <SelectValue placeholder="All Reps" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Reps</SelectItem>
-            {allReps.map((rep) => (
-              <SelectItem key={rep._id} value={rep._id}>
-                {rep.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Rep Filter - Hidden for rep view */}
+      {!hideRepFilter && (
+        <div>
+          <Label htmlFor="rep">Assigned Rep</Label>
+          <Select value={repFilter || "all"} onValueChange={(val) => onRepFilterChange(val === "all" ? "" : val)}>
+            <SelectTrigger id="rep">
+              <SelectValue placeholder="All Reps" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Reps</SelectItem>
+              {allReps.map((rep) => (
+                <SelectItem key={rep._id} value={rep._id}>
+                  {rep.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 };
