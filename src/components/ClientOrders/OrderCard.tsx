@@ -9,8 +9,8 @@ import {
   Trash2,
   FileText,
   ClipboardList,
+  User,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   useUpdateClientOrderStatusMutation,
   usePushOrderToPPSMutation,
@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ORDER_STATUS_LABELS,
-  ORDER_STATUS_COLORS,
   canEditOrder,
   isOrderInProduction,
 } from "@/constants/privateLabel";
@@ -161,14 +160,6 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
-              <Badge
-                className={cn(
-                  ORDER_STATUS_COLORS[order.status],
-                  "rounded-xs px-2.5 py-0.5 border",
-                )}
-              >
-                {ORDER_STATUS_LABELS[order.status]}
-              </Badge>
               {order.shipASAP && (
                 <Badge
                   variant="destructive"
@@ -190,10 +181,21 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="text-sm font-medium text-foreground mb-1 cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+              className="text-lg font-bold text-foreground mb-1 cursor-pointer text-left relative hover:text-primary transition-colors duration-200"
             >
               {order.client?.store?.name || "Unknown Store"}
             </button>
+
+            {/* Assigned Rep */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+              <User className="h-3.5 w-3.5" />
+              <span>
+                Rep:{" "}
+                <span className="font-medium text-foreground">
+                  {order.assignedRep?.name || "Unassigned"}
+                </span>
+              </span>
+            </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
               <span className="flex items-center gap-1">
