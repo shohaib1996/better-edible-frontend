@@ -20,10 +20,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useGetClientsWithApprovedLabelsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetApprovedLabelsByClientQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { useCreateClientOrderMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
-import { Loader2, ImageIcon } from "lucide-react";
+import { Loader2, ImageIcon, CalendarIcon, ChevronsUpDown, Check } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
 import { ILabel, DiscountType } from "@/types";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
@@ -51,7 +67,7 @@ export const CreateOrderModal = ({
 }: CreateOrderModalProps) => {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedLabels, setSelectedLabels] = useState<OrderItem[]>([]);
-  const [deliveryDate, setDeliveryDate] = useState<string>("");
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [discount, setDiscount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
   const [note, setNote] = useState<string>("");
@@ -60,8 +76,13 @@ export const CreateOrderModal = ({
     url: string;
     filename: string;
   } | null>(null);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
 
-  const { data: clients } = useGetClientsWithApprovedLabelsQuery();
+  const { data: clients, isLoading: clientsLoading } = useGetClientsWithApprovedLabelsQuery({
+    search: clientSearchQuery || undefined,
+    limit: 10,
+  });
   const { data: labels, isLoading: labelsLoading } =
     useGetApprovedLabelsByClientQuery(selectedClientId, {
       skip: !selectedClientId,
@@ -151,7 +172,7 @@ export const CreateOrderModal = ({
     try {
       await createOrder({
         clientId: selectedClientId,
-        deliveryDate,
+        deliveryDate: deliveryDate?.toISOString(),
         items: selectedLabels.map((item) => ({
           labelId: item.labelId,
           quantity: item.quantity,
@@ -176,16 +197,17 @@ export const CreateOrderModal = ({
   const resetForm = () => {
     setSelectedClientId("");
     setSelectedLabels([]);
-    setDeliveryDate("");
+    setDeliveryDate(undefined);
     setDiscount(0);
     setDiscountType("flat");
     setNote("");
     setShipASAP(false);
+    setClientSearchQuery("");
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-xs border-border bg-card">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Create New Order</DialogTitle>
         </DialogHeader>
@@ -194,27 +216,69 @@ export const CreateOrderModal = ({
           {/* Client Selection */}
           <div>
             <Label htmlFor="client">Select Client *</Label>
-            <Select
-              value={selectedClientId}
-              onValueChange={(value) => {
-                setSelectedClientId(value);
-              }}
-            >
-              <SelectTrigger id="client" className="rounded-xs border-border">
-                <SelectValue placeholder="Choose a client with approved labels..." />
-              </SelectTrigger>
-              <SelectContent className="rounded-xs">
-                {clients?.map((client) => (
-                  <SelectItem
-                    key={client._id}
-                    value={client._id}
-                    className="rounded-xs cursor-pointer focus:bg-accent/50"
-                  >
-                    {client.store?.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={clientSearchOpen}
+                  className="w-full justify-between rounded-xs border-border dark:border-white/20 bg-card hover:bg-muted/50 hover:text-foreground font-normal"
+                >
+                  {selectedClientId
+                    ? clients?.find((c) => c._id === selectedClientId)?.store?.name ||
+                      "Selected client"
+                    : "Search for a client..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="p-0 rounded-xs border-border dark:border-white/20 bg-card"
+                align="start"
+                style={{ width: "var(--radix-popover-trigger-width)" }}
+              >
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Search clients..."
+                    value={clientSearchQuery}
+                    onValueChange={setClientSearchQuery}
+                    className="border-none focus:ring-0"
+                  />
+                  <CommandList>
+                    {clientsLoading ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : clients && clients.length === 0 ? (
+                      <CommandEmpty>No clients found.</CommandEmpty>
+                    ) : (
+                      <CommandGroup>
+                        {clients?.map((client) => (
+                          <CommandItem
+                            key={client._id}
+                            value={client._id}
+                            onSelect={(value) => {
+                              setSelectedClientId(value === selectedClientId ? "" : value);
+                              setClientSearchOpen(false);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedClientId === client._id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {client.store?.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Label Selection */}
@@ -230,7 +294,7 @@ export const CreateOrderModal = ({
             labels.length > 0 && (
               <div>
                 <Label>Select Labels *</Label>
-                <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border rounded-xs p-2 scrollbar-thin">
+                <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border border-border dark:border-white/20 rounded-xs p-2 scrollbar-thin bg-card">
                   {labels.map((label: ILabel) => (
                     <div
                       key={label._id}
@@ -307,29 +371,36 @@ export const CreateOrderModal = ({
                 {selectedLabels.map((item) => (
                   <div
                     key={item.labelId}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-xs bg-card"
+                    className="p-3 border border-border dark:border-white/20 rounded-xs bg-card"
                   >
-                    {/* Label Image Thumbnail */}
-                    <div className="w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted border border-border">
-                      {item.labelImageUrl ? (
-                        <img
-                          src={item.labelImageUrl}
-                          alt={item.flavorName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                    {/* Top row: Image + Label Info + Price */}
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* Label Image Thumbnail */}
+                      <div className="w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted border border-border">
+                        {item.labelImageUrl ? (
+                          <img
+                            src={item.labelImageUrl}
+                            alt={item.flavorName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.flavorName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.productType} - ${item.unitPrice.toFixed(2)}/unit
+                        </p>
+                      </div>
+                      <span className="text-right font-medium shrink-0">
+                        ${item.lineTotal.toFixed(2)}
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{item.flavorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.productType} - ${item.unitPrice.toFixed(2)}/unit
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    {/* Bottom row: Buttons + Input */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
                         variant={
@@ -356,22 +427,19 @@ export const CreateOrderModal = ({
                       >
                         Full (1248)
                       </Button>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(
+                            item.labelId,
+                            Number(e.target.value),
+                          )
+                        }
+                        min={1}
+                        className="w-24 rounded-xs border-border dark:border-white/20 bg-card"
+                      />
                     </div>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(
-                          item.labelId,
-                          Number(e.target.value),
-                        )
-                      }
-                      min={1}
-                      className="w-24 rounded-xs border-border"
-                    />
-                    <span className="w-24 text-right font-medium">
-                      ${item.lineTotal.toFixed(2)}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -380,14 +448,32 @@ export const CreateOrderModal = ({
 
           {/* Delivery Date */}
           <div>
-            <Label htmlFor="deliveryDate">Delivery Date *</Label>
-            <Input
-              id="deliveryDate"
-              type="date"
-              value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
-              className="rounded-xs border-border"
-            />
+            <Label>Delivery Date *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal rounded-xs border-border dark:border-white/20 bg-card hover:bg-muted/50 hover:text-foreground",
+                    !deliveryDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deliveryDate ? format(deliveryDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0 rounded-xs border-border dark:border-white/20 bg-card"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={deliveryDate}
+                  onSelect={setDeliveryDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Discount */}
@@ -398,10 +484,10 @@ export const CreateOrderModal = ({
                 value={discountType}
                 onValueChange={(value: DiscountType) => setDiscountType(value)}
               >
-                <SelectTrigger className="w-[140px] rounded-xs border-border">
+                <SelectTrigger className="w-[140px] rounded-xs border-border dark:border-white/20 bg-card">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xs">
+                <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                   <SelectItem
                     value="flat"
                     className="rounded-xs cursor-pointer focus:bg-accent/50"
@@ -422,13 +508,13 @@ export const CreateOrderModal = ({
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 min={0}
                 max={discountType === "percentage" ? 100 : undefined}
-                className="flex-1 rounded-xs border-border"
+                className="flex-1 rounded-xs border-border dark:border-white/20 bg-card"
               />
             </div>
           </div>
 
           {/* Ship ASAP Checkbox */}
-          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-muted/30 border-border">
+          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-card border-border dark:border-white/20">
             <Checkbox
               id="shipASAP"
               checked={shipASAP}
@@ -454,13 +540,13 @@ export const CreateOrderModal = ({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add any notes for this order..."
               rows={3}
-              className="rounded-xs border-border"
+              className="rounded-xs border-border dark:border-white/20 bg-card"
             />
           </div>
 
           {/* Order Summary */}
           {selectedLabels.length > 0 && (
-            <div className="p-4 border rounded-xs bg-muted/30 border-border">
+            <div className="p-4 border rounded-xs bg-card border-border dark:border-white/20">
               <h4 className="font-semibold mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -493,7 +579,7 @@ export const CreateOrderModal = ({
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="rounded-xs border-border hover:bg-accent/50 text-foreground"
+              className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50 text-foreground"
             >
               Cancel
             </Button>

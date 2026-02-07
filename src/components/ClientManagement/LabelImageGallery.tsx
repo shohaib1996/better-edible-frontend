@@ -53,7 +53,7 @@ export const LabelImageGallery = ({
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-4xl p-0 overflow-hidden"
+        className="max-w-4xl p-0 overflow-hidden rounded-xs border-border dark:border-white/20"
         onKeyDown={handleKeyDown}
       >
         <div className="relative bg-black">
@@ -61,7 +61,7 @@ export const LabelImageGallery = ({
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-2 z-10 text-white hover:bg-white/20"
+            className="absolute top-2 right-2 z-10 text-white hover:bg-white/20 rounded-xs"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
@@ -71,7 +71,7 @@ export const LabelImageGallery = ({
           <Button
             variant="ghost"
             size="sm"
-            className="absolute top-2 right-12 z-10 text-white hover:bg-white/20"
+            className="absolute top-2 right-12 z-10 text-white hover:bg-white/20 rounded-xs"
             onClick={handleDownload}
           >
             <Download className="h-5 w-5" />
@@ -92,7 +92,7 @@ export const LabelImageGallery = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute left-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-xs"
                 onClick={goToPrevious}
               >
                 <ChevronLeft className="h-8 w-8" />
@@ -100,7 +100,7 @@ export const LabelImageGallery = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/20"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 rounded-xs"
                 onClick={goToNext}
               >
                 <ChevronRight className="h-8 w-8" />
@@ -123,7 +123,7 @@ export const LabelImageGallery = ({
               <button
                 key={img.publicId}
                 onClick={() => setCurrentIndex(index)}
-                className={`shrink-0 rounded-md overflow-hidden border-2 transition-all ${
+                className={`shrink-0 rounded-xs overflow-hidden border-2 transition-all ${
                   index === currentIndex
                     ? "border-primary"
                     : "border-transparent opacity-60 hover:opacity-100"

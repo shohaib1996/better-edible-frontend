@@ -39,7 +39,7 @@ export const EditLabelModal = ({
   const [flavorName, setFlavorName] = useState(label.flavorName);
   const [productType, setProductType] = useState(label.productType);
   const [existingImages, setExistingImages] = useState<string[]>(
-    label.labelImages.map((img) => img.publicId)
+    label.labelImages.map((img) => img.publicId),
   );
   const [newFiles, setNewFiles] = useState<File[]>([]);
 
@@ -111,12 +111,12 @@ export const EditLabelModal = ({
   };
 
   const selectedProduct = products.find(
-    (p: { name: string }) => p.name === productType
+    (p: { name: string }) => p.name === productType,
   );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Edit Label</DialogTitle>
         </DialogHeader>
@@ -130,6 +130,7 @@ export const EditLabelModal = ({
               placeholder="e.g., Mango Blast"
               value={flavorName}
               onChange={(e) => setFlavorName(e.target.value)}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
             />
           </div>
 
@@ -137,16 +138,23 @@ export const EditLabelModal = ({
           <div>
             <Label htmlFor="productType">Product Type *</Label>
             <Select value={productType} onValueChange={setProductType}>
-              <SelectTrigger id="productType">
+              <SelectTrigger
+                id="productType"
+                className="rounded-xs border-border dark:border-white/20 bg-card"
+              >
                 <SelectValue placeholder="Select product type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                 {products.map(
-                  (product: { _id: string; name: string; unitPrice: number }) => (
+                  (product: {
+                    _id: string;
+                    name: string;
+                    unitPrice: number;
+                  }) => (
                     <SelectItem key={product._id} value={product.name}>
                       {product.name} - ${product.unitPrice.toFixed(2)}/unit
                     </SelectItem>
-                  )
+                  ),
                 )}
               </SelectContent>
             </Select>
@@ -192,7 +200,7 @@ export const EditLabelModal = ({
           <div>
             <Label>Add New Images</Label>
             <div className="mt-2">
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xs cursor-pointer bg-muted hover:bg-muted/80 border-border dark:border-white/20">
                 <div className="flex flex-col items-center justify-center py-4">
                   <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">
@@ -234,10 +242,19 @@ export const EditLabelModal = ({
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="rounded-xs"
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Label
             </Button>

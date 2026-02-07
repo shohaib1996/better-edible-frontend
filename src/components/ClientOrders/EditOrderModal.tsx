@@ -22,7 +22,15 @@ import {
 } from "@/components/ui/select";
 import { useGetApprovedLabelsByClientQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { useUpdateClientOrderMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon, ImageIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
 import { ILabel, DiscountType, IClientOrder } from "@/types";
 
@@ -40,6 +48,7 @@ interface OrderItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  labelImageUrl?: string;
 }
 
 export const EditOrderModal = ({
@@ -49,7 +58,7 @@ export const EditOrderModal = ({
   onSuccess,
 }: EditOrderModalProps) => {
   const [selectedLabels, setSelectedLabels] = useState<OrderItem[]>([]);
-  const [deliveryDate, setDeliveryDate] = useState<string>("");
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [discount, setDiscount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
   const [note, setNote] = useState<string>("");
@@ -67,19 +76,26 @@ export const EditOrderModal = ({
   useEffect(() => {
     if (open && order) {
       // Map order items to the local state format
-      const mappedItems: OrderItem[] = order.items.map((item) => ({
-        labelId: typeof item.label === "string" ? item.label : item.label._id,
-        flavorName: item.flavorName,
-        productType: item.productType,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        lineTotal: item.lineTotal,
-      }));
+      const mappedItems: OrderItem[] = order.items.map((item) => {
+        const label = typeof item.label === "string" ? null : item.label;
+        const labelImageUrl =
+          label?.labelImages && label.labelImages.length > 0
+            ? label.labelImages[0].secureUrl || label.labelImages[0].url
+            : undefined;
+        return {
+          labelId: typeof item.label === "string" ? item.label : item.label._id,
+          flavorName: item.flavorName,
+          productType: item.productType,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.lineTotal,
+          labelImageUrl,
+        };
+      });
       setSelectedLabels(mappedItems);
 
-      // Format date for input
-      const date = new Date(order.deliveryDate);
-      setDeliveryDate(date.toISOString().split("T")[0]);
+      // Set date as Date object
+      setDeliveryDate(new Date(order.deliveryDate));
 
       setDiscount(order.discount || 0);
       setDiscountType(order.discountType || "flat");
@@ -95,6 +111,10 @@ export const EditOrderModal = ({
       setSelectedLabels(selectedLabels.filter((l) => l.labelId !== label._id));
     } else {
       const unitPrice = label.unitPrice || 0;
+      const labelImageUrl =
+        label.labelImages && label.labelImages.length > 0
+          ? label.labelImages[0].secureUrl || label.labelImages[0].url
+          : undefined;
       setSelectedLabels([
         ...selectedLabels,
         {
@@ -104,6 +124,7 @@ export const EditOrderModal = ({
           quantity: PRODUCTION_QUANTITIES.HALF_BATCH,
           unitPrice,
           lineTotal: PRODUCTION_QUANTITIES.HALF_BATCH * unitPrice,
+          labelImageUrl,
         },
       ]);
     }
@@ -157,7 +178,7 @@ export const EditOrderModal = ({
     try {
       await updateOrder({
         id: order._id,
-        deliveryDate,
+        deliveryDate: deliveryDate?.toISOString(),
         items: selectedLabels.map((item) => ({
           labelId: item.labelId,
           quantity: item.quantity,
@@ -180,7 +201,7 @@ export const EditOrderModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-xs border-border bg-card">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Edit Order - {order.orderNumber}</DialogTitle>
         </DialogHeader>
@@ -204,7 +225,7 @@ export const EditOrderModal = ({
           {!labelsLoading && labels && labels.length > 0 && (
             <div>
               <Label>Select Labels *</Label>
-              <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-xs p-2 scrollbar-thin">
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border border-border dark:border-white/20 rounded-xs p-2 scrollbar-thin bg-card">
                 {labels.map((label: ILabel) => (
                   <div
                     key={label._id}
@@ -217,10 +238,30 @@ export const EditOrderModal = ({
                       onCheckedChange={() => handleLabelToggle(label)}
                       className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
                     />
-                    <span className="flex-1">
-                      {label.flavorName} - {label.productType} - $
-                      {(label.unitPrice || 0).toFixed(2)}/unit
-                    </span>
+                    {/* Label Image Thumbnail */}
+                    <div className="relative w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted border border-border">
+                      {label.labelImages && label.labelImages.length > 0 ? (
+                        <img
+                          src={
+                            label.labelImages[0].secureUrl ||
+                            label.labelImages[0].url
+                          }
+                          alt={label.flavorName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{label.flavorName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {label.productType} - $
+                        {(label.unitPrice || 0).toFixed(2)}/unit
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -241,15 +282,38 @@ export const EditOrderModal = ({
                 {selectedLabels.map((item) => (
                   <div
                     key={item.labelId}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 border rounded-xs bg-card"
+                    className="p-3 border border-border dark:border-white/20 rounded-xs bg-card"
                   >
-                    <div className="flex-1">
-                      <p className="font-medium">{item.flavorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.productType} - ${item.unitPrice.toFixed(2)}/unit
-                      </p>
+                    {/* Top row: Image + Label Info + Price */}
+                    <div className="flex items-center gap-3 mb-3">
+                      {/* Label Image Thumbnail */}
+                      <div className="w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted border border-border">
+                        {item.labelImageUrl ? (
+                          <img
+                            src={item.labelImageUrl}
+                            alt={item.flavorName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {item.flavorName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.productType} - ${item.unitPrice.toFixed(2)}/unit
+                        </p>
+                      </div>
+                      <span className="text-right font-medium shrink-0">
+                        ${item.lineTotal.toFixed(2)}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Bottom row: Buttons + Input */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         type="button"
                         variant={
@@ -276,22 +340,19 @@ export const EditOrderModal = ({
                       >
                         Full (1248)
                       </Button>
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(
+                            item.labelId,
+                            Number(e.target.value),
+                          )
+                        }
+                        min={1}
+                        className="w-24 rounded-xs border-border dark:border-white/20 bg-card"
+                      />
                     </div>
-                    <Input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(
-                          item.labelId,
-                          Number(e.target.value),
-                        )
-                      }
-                      min={1}
-                      className="w-24 rounded-xs border-border"
-                    />
-                    <span className="w-24 text-right font-medium">
-                      ${item.lineTotal.toFixed(2)}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -300,14 +361,32 @@ export const EditOrderModal = ({
 
           {/* Delivery Date */}
           <div>
-            <Label htmlFor="editDeliveryDate">Delivery Date *</Label>
-            <Input
-              id="editDeliveryDate"
-              type="date"
-              value={deliveryDate}
-              onChange={(e) => setDeliveryDate(e.target.value)}
-              className="rounded-xs border-border"
-            />
+            <Label>Delivery Date *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal rounded-xs border-border dark:border-white/20 bg-card hover:bg-muted/50 hover:text-foreground",
+                    !deliveryDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deliveryDate ? format(deliveryDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0 rounded-xs border-border dark:border-white/20 bg-card"
+                align="start"
+              >
+                <Calendar
+                  mode="single"
+                  selected={deliveryDate}
+                  onSelect={setDeliveryDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Discount */}
@@ -318,10 +397,10 @@ export const EditOrderModal = ({
                 value={discountType}
                 onValueChange={(value: DiscountType) => setDiscountType(value)}
               >
-                <SelectTrigger className="w-[140px] rounded-xs border-border">
+                <SelectTrigger className="w-[140px] rounded-xs border-border dark:border-white/20 bg-card">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xs">
+                <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                   <SelectItem
                     value="flat"
                     className="rounded-xs cursor-pointer focus:bg-accent/50"
@@ -342,13 +421,13 @@ export const EditOrderModal = ({
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 min={0}
                 max={discountType === "percentage" ? 100 : undefined}
-                className="flex-1 rounded-xs border-border"
+                className="flex-1 rounded-xs border-border dark:border-white/20 bg-card"
               />
             </div>
           </div>
 
           {/* Ship ASAP Checkbox */}
-          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-muted/30 border-border">
+          <div className="flex items-center space-x-2 p-4 border rounded-xs bg-card border-border dark:border-white/20">
             <Checkbox
               id="editShipASAP"
               checked={shipASAP}
@@ -377,13 +456,13 @@ export const EditOrderModal = ({
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add any notes for this order..."
               rows={3}
-              className="rounded-xs border-border"
+              className="rounded-xs border-border dark:border-white/20 bg-card"
             />
           </div>
 
           {/* Order Summary */}
           {selectedLabels.length > 0 && (
-            <div className="p-4 border rounded-xs bg-muted/30 border-border">
+            <div className="p-4 border rounded-xs bg-card border-border dark:border-white/20">
               <h4 className="font-semibold mb-2">Order Summary</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
@@ -416,7 +495,7 @@ export const EditOrderModal = ({
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="rounded-xs border-border hover:bg-accent/50 text-foreground"
+              className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50 text-foreground"
             >
               Cancel
             </Button>

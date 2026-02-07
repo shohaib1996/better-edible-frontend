@@ -122,7 +122,7 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
         className={cn(
           "flex h-9 w-full items-center justify-between rounded-xs border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors text-foreground",
           "focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
-          !selectedStore && "text-muted-foreground"
+          !selectedStore && "text-muted-foreground",
         )}
       >
         <span className="truncate">
@@ -131,14 +131,14 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
         <ChevronDown
           className={cn(
             "h-4 w-4 opacity-50 transition-transform",
-            open && "rotate-180"
+            open && "rotate-180",
           )}
         />
       </button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+        <div className="absolute z-50 mt-1 w-full rounded-xs border border-border dark:border-white/20 bg-popover shadow-lg">
           {/* Search Input */}
           <div className="sticky top-0 bg-popover border-b border-border p-2">
             <div className="relative">
@@ -147,7 +147,7 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search stores..."
-                className="pl-8 text-sm h-8"
+                className="pl-8 text-sm h-8 rounded-xs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
@@ -169,9 +169,9 @@ export const StoreSelect: React.FC<StoreSelectProps> = ({
                     type="button"
                     onClick={() => handleStoreSelect(store._id)}
                     className={cn(
-                      "relative flex w-full cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors text-popover-foreground group",
+                      "relative flex w-full cursor-pointer items-center rounded-xs px-2 py-2 text-sm outline-none transition-colors text-popover-foreground group",
                       "hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                      value === store._id && "bg-primary/10"
+                      value === store._id && "bg-primary/10",
                     )}
                   >
                     <div className="flex flex-col flex-1 items-start">

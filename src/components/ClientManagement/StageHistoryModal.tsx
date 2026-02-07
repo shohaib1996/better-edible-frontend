@@ -10,6 +10,7 @@ import { ILabel, IStageHistoryEntry } from "@/types";
 import {
   STAGE_LABELS,
   STAGE_COLORS,
+  STAGE_DOT_COLORS,
   LabelStage,
 } from "@/constants/privateLabel";
 
@@ -35,19 +36,19 @@ export const StageHistoryModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Stage History - {label.flavorName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Current Stage */}
-          <div className="p-3 bg-muted rounded-md">
+          <div className="p-3 bg-muted rounded-xs border border-border dark:border-white/20">
             <p className="text-sm text-muted-foreground">Current Stage</p>
             <div className="flex items-center gap-2 mt-1">
               <div
                 className={`h-3 w-3 rounded-full ${
-                  STAGE_COLORS[label.currentStage as LabelStage] ||
+                  STAGE_DOT_COLORS[label.currentStage as LabelStage] ||
                   "bg-gray-500"
                 }`}
               />
@@ -76,7 +77,7 @@ export const StageHistoryModal = ({
                       {/* Dot */}
                       <div
                         className={`w-6 h-6 rounded-full shrink-0 ${
-                          STAGE_COLORS[entry.stage as LabelStage] ||
+                          STAGE_DOT_COLORS[entry.stage as LabelStage] ||
                           "bg-gray-500"
                         } border-2 border-background z-10 flex items-center justify-center`}
                       >
@@ -93,7 +94,9 @@ export const StageHistoryModal = ({
                           {new Date(entry.changedAt).toLocaleString()}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {entry.notes === "Label created" ? "Created by:" : "Changed by:"}{" "}
+                          {entry.notes === "Label created"
+                            ? "Created by:"
+                            : "Changed by:"}{" "}
                           {entry.changedBy?.name
                             ? `${entry.changedBy.name}${entry.changedBy.email ? ` (${entry.changedBy.email})` : ""}`
                             : entry.stage === "store_approved"
@@ -101,7 +104,7 @@ export const StageHistoryModal = ({
                               : "Unknown"}
                         </p>
                         {entry.notes && (
-                          <p className="text-sm mt-2 p-2 bg-muted rounded-md italic">
+                          <p className="text-sm mt-2 p-2 bg-muted rounded-xs italic border border-border dark:border-white/20">
                             &ldquo;{entry.notes}&rdquo;
                           </p>
                         )}

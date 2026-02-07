@@ -69,7 +69,7 @@ export const ManageClientsPage = ({
             Total Clients: <span className="font-medium">{totalClients}</span>
           </p>
         </div>
-        <Button onClick={() => setAddModalOpen(true)}>+ Add New Client</Button>
+        <Button className="rounded-xs" onClick={() => setAddModalOpen(true)}>+ Add New Client</Button>
       </div>
 
       {/* Filters */}

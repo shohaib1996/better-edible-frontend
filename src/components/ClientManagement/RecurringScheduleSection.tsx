@@ -73,7 +73,7 @@ export const RecurringScheduleSection = ({
   };
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 rounded-xs border-border dark:border-white/20">
       <h3 className="text-lg font-semibold mb-4">Recurring Order Schedule</h3>
 
       <div className="space-y-6">
@@ -104,10 +104,13 @@ export const RecurringScheduleSection = ({
                 setInterval(val)
               }
             >
-              <SelectTrigger id="interval" className="w-full max-w-xs">
+              <SelectTrigger
+                id="interval"
+                className="w-full max-w-xs rounded-xs border-border dark:border-white/20"
+              >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xs border-border dark:border-white/20">
                 <SelectItem value="monthly">Once per month</SelectItem>
                 <SelectItem value="bimonthly">Every 2 months</SelectItem>
                 <SelectItem value="quarterly">Every 3 months</SelectItem>
@@ -117,7 +120,7 @@ export const RecurringScheduleSection = ({
         )}
 
         {/* Current Status */}
-        <div className="p-4 bg-muted rounded-md">
+        <div className="p-4 bg-muted rounded-xs border border-border dark:border-white/20">
           <p className="text-sm">
             <span className="font-medium">Current Status: </span>
             {client.recurringSchedule?.enabled ? (
@@ -135,7 +138,11 @@ export const RecurringScheduleSection = ({
 
         {/* Save Button */}
         {hasChanges && (
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="rounded-xs"
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>

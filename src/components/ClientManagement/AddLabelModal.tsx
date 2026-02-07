@@ -130,7 +130,7 @@ export const AddLabelModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Add New Label</DialogTitle>
         </DialogHeader>
@@ -144,6 +144,7 @@ export const AddLabelModal = ({
               placeholder="e.g., Mango Blast"
               value={flavorName}
               onChange={(e) => setFlavorName(e.target.value)}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
             />
           </div>
 
@@ -151,10 +152,13 @@ export const AddLabelModal = ({
           <div>
             <Label htmlFor="productType">Product Type *</Label>
             <Select value={productType} onValueChange={setProductType}>
-              <SelectTrigger id="productType">
+              <SelectTrigger
+                id="productType"
+                className="rounded-xs border-border dark:border-white/20 bg-card"
+              >
                 <SelectValue placeholder="Select product type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                 {products.map(
                   (product: {
                     _id: string;
@@ -174,7 +178,7 @@ export const AddLabelModal = ({
           <div>
             <Label>Label Images</Label>
             <div className="mt-2">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xs cursor-pointer bg-muted hover:bg-muted/80 border-border dark:border-white/20">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
@@ -199,7 +203,7 @@ export const AddLabelModal = ({
                     <img
                       src={URL.createObjectURL(file)}
                       alt={`Preview ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-md"
+                      className="w-full h-20 object-cover rounded-xs"
                     />
                     <button
                       type="button"
@@ -216,10 +220,19 @@ export const AddLabelModal = ({
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="rounded-xs"
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Label
             </Button>

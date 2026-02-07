@@ -42,7 +42,10 @@ export const EditClientInfoModal = ({
   const [assignedRepId, setAssignedRepId] = useState(client.assignedRep._id);
   const [status, setStatus] = useState<PrivateLabelClientStatus>(client.status);
 
-  const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({}, { skip: isRepView });
+  const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery(
+    {},
+    { skip: isRepView },
+  );
   const [updateClient, { isLoading: updating }] =
     useUpdatePrivateLabelClientMutation();
 
@@ -82,7 +85,7 @@ export const EditClientInfoModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
           <DialogTitle>Edit Client Info</DialogTitle>
         </DialogHeader>
@@ -91,7 +94,11 @@ export const EditClientInfoModal = ({
           {/* Store Name (read-only) */}
           <div className="space-y-2">
             <Label>Store Name</Label>
-            <Input value={client.store?.name || ""} disabled />
+            <Input
+              value={client.store?.name || ""}
+              disabled
+              className="rounded-xs border-border dark:border-white/20 bg-muted"
+            />
             <p className="text-xs text-muted-foreground">
               Store info cannot be changed here
             </p>
@@ -107,6 +114,7 @@ export const EditClientInfoModal = ({
               onChange={(e) => setContactEmail(e.target.value)}
               placeholder="contact@store.com"
               required
+              className="rounded-xs border-border dark:border-white/20 bg-card"
             />
           </div>
 
@@ -115,7 +123,11 @@ export const EditClientInfoModal = ({
             <Label htmlFor="assignedRep">Assigned Rep</Label>
             {isRepView ? (
               <>
-                <Input value={client.assignedRep?.name || ""} disabled />
+                <Input
+                  value={client.assignedRep?.name || ""}
+                  disabled
+                  className="rounded-xs border-border dark:border-white/20 bg-muted"
+                />
                 <p className="text-xs text-muted-foreground">
                   Assigned rep cannot be changed
                 </p>
@@ -127,10 +139,10 @@ export const EditClientInfoModal = ({
               </div>
             ) : (
               <Select value={assignedRepId} onValueChange={setAssignedRepId}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card">
                   <SelectValue placeholder="Select a rep" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                   {reps.map((rep: { _id: string; name: string }) => (
                     <SelectItem key={rep._id} value={rep._id}>
                       {rep.name}
@@ -150,10 +162,10 @@ export const EditClientInfoModal = ({
                 setStatus(value as PrivateLabelClientStatus)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
                 <SelectItem value="onboarding">Onboarding</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
               </SelectContent>
@@ -162,10 +174,15 @@ export const EditClientInfoModal = ({
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={updating}>
+            <Button type="submit" disabled={updating} className="rounded-xs">
               {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>

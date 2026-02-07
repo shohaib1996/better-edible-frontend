@@ -119,39 +119,40 @@ export const AddClientModal = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs">
         <DialogHeader>
-          <DialogTitle>Add New Client</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Add New Client</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Store Selection */}
-          <div>
-            <Label htmlFor="store">Store *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="store" className="text-sm font-medium">Store *</Label>
             <StoreSelect value={storeId} onChange={setStoreId} />
           </div>
 
           {/* Contact Email */}
-          <div>
-            <Label htmlFor="email">Contact Email *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-sm font-medium">Contact Email *</Label>
             <Input
               id="email"
               type="email"
               placeholder="contact@store.com"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
+              className="rounded-xs"
             />
           </div>
 
           {/* Assigned Rep - Only show for admin, auto-assign for rep */}
           {!isRepView && (
-            <div>
-              <Label htmlFor="rep">Assigned Rep *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="rep" className="text-sm font-medium">Assigned Rep *</Label>
               <Select value={repId} onValueChange={setRepId}>
-                <SelectTrigger id="rep">
+                <SelectTrigger id="rep" className="w-full rounded-xs">
                   <SelectValue placeholder="Select a rep" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xs scrollbar-hidden">
                   {reps.map((rep: { _id: string; name: string }) => (
                     <SelectItem key={rep._id} value={rep._id}>
                       {rep.name}
@@ -163,31 +164,32 @@ export const AddClientModal = ({
           )}
 
           {/* Recurring Schedule Section */}
-          <div className="space-y-2 p-4 border rounded-md">
+          <div className="space-y-3 p-4 border border-border bg-muted/30 rounded-xs">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="recurringSchedule"
                 checked={recurringEnabled}
                 onCheckedChange={(checked) => setRecurringEnabled(!!checked)}
+                className="rounded-xs"
               />
-              <Label htmlFor="recurringSchedule" className="cursor-pointer">
+              <Label htmlFor="recurringSchedule" className="cursor-pointer text-sm font-medium">
                 Enable Recurring Schedule
               </Label>
             </div>
 
             {recurringEnabled && (
-              <div>
-                <Label htmlFor="interval">Interval</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="interval" className="text-sm font-medium">Interval</Label>
                 <Select
                   value={interval}
                   onValueChange={(val: "monthly" | "bimonthly" | "quarterly") =>
                     setInterval(val)
                   }
                 >
-                  <SelectTrigger id="interval">
+                  <SelectTrigger id="interval" className="w-full rounded-xs">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xs">
                     <SelectItem value="monthly">Once per month</SelectItem>
                     <SelectItem value="bimonthly">Every 2 months</SelectItem>
                     <SelectItem value="quarterly">Every 3 months</SelectItem>
@@ -198,11 +200,11 @@ export const AddClientModal = ({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={isLoading} className="rounded-xs">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading}>
+            <Button onClick={handleSubmit} disabled={isLoading} className="rounded-xs">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Client
             </Button>

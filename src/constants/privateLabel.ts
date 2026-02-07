@@ -30,23 +30,33 @@ export const STAGE_COLORS: Record<LabelStage, string> = {
   awaiting_store_approval:
     "bg-secondary/20 border-secondary/30 text-secondary-foreground",
   store_approved: "bg-primary/10 border-primary/20 text-primary",
-  submitted_to_olcc: "bg-primary/20 border-primary/30 text-primary-foreground",
+  submitted_to_olcc: "bg-primary/20 border-primary/30 text-primary",
   olcc_approved:
     "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400",
   print_order_submitted:
     "bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400",
   ready_for_production:
-    "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
+    "bg-green-600/15 border-green-600/20 text-green-700 dark:text-green-400",
 };
 
 export const STAGE_TEXT_COLORS: Record<LabelStage, string> = {
   design_in_progress: "text-secondary-foreground",
   awaiting_store_approval: "text-secondary-foreground",
   store_approved: "text-primary",
-  submitted_to_olcc: "text-primary-foreground",
+  submitted_to_olcc: "text-primary",
   olcc_approved: "text-blue-600 dark:text-blue-400",
   print_order_submitted: "text-purple-600 dark:text-purple-400",
-  ready_for_production: "text-green-600 dark:text-green-400",
+  ready_for_production: "text-green-700 dark:text-green-400",
+};
+
+export const STAGE_DOT_COLORS: Record<LabelStage, string> = {
+  design_in_progress: "bg-secondary",
+  awaiting_store_approval: "bg-secondary",
+  store_approved: "bg-primary",
+  submitted_to_olcc: "bg-primary",
+  olcc_approved: "bg-blue-500",
+  print_order_submitted: "bg-purple-500",
+  ready_for_production: "bg-green-600",
 };
 
 // ─────────────────────────────

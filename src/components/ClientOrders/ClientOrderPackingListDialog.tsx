@@ -67,16 +67,16 @@ export const ClientOrderPackingListDialog: React.FC<
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] rounded-xs w-[95vw] sm:w-full flex flex-col gap-4">
+      <DialogContent className="max-w-4xl max-h-[80vh] rounded-xs w-[95vw] sm:w-full flex flex-col gap-4 border-border dark:border-white/20 bg-secondary dark:bg-card">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <span>📦</span> Client Order Packing List
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
+        <div className="space-y-3 sm:space-y-4 overflow-y-auto scrollbar-hidden flex-1 min-h-0">
           {/* Order Info */}
-          <div className="bg-muted p-3 sm:p-4 rounded-xs border border-border">
+          <div className="bg-card p-3 sm:p-4 rounded-xs border border-border dark:border-white/20">
             <h3 className="font-bold text-base sm:text-lg text-foreground">
               {order.client?.store?.name || "Unknown Store"}
             </h3>
@@ -104,7 +104,7 @@ export const ClientOrderPackingListDialog: React.FC<
           </div>
 
           {/* Items Table */}
-          <div className="border border-border rounded-xs overflow-hidden overflow-x-auto">
+          <div className="border border-border dark:border-white/20 rounded-xs overflow-hidden overflow-x-auto bg-card">
             <table className="w-full min-w-[600px]">
               <thead className="bg-primary/10 border-b border-border">
                 <tr>
@@ -184,7 +184,7 @@ export const ClientOrderPackingListDialog: React.FC<
 
           {/* Note */}
           {order.note && (
-            <div className="bg-muted p-2 sm:p-3 rounded-xs border border-border">
+            <div className="bg-card p-2 sm:p-3 rounded-xs border border-border dark:border-white/20">
               <p className="text-xs sm:text-sm text-foreground">
                 <span className="font-semibold">Note:</span> {order.note}
               </p>
@@ -196,7 +196,7 @@ export const ClientOrderPackingListDialog: React.FC<
             <Button
               variant="outline"
               onClick={onClose}
-              className="rounded-xs text-xs sm:text-sm px-3 sm:px-4"
+              className="rounded-xs text-xs sm:text-sm px-3 sm:px-4 border-border dark:border-white/20 bg-card hover:bg-accent/50"
             >
               Close
             </Button>

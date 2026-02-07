@@ -374,7 +374,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="rounded-xs border-border bg-card">
+        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-secondary dark:bg-card">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order</AlertDialogTitle>
             <AlertDialogDescription>
@@ -383,11 +383,11 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-xs"
+              className="bg-destructive hover:bg-destructive/90 text-white rounded-xs"
             >
               {deleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
@@ -397,7 +397,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
       {/* Mark as Shipped Dialog */}
       <AlertDialog open={showShippedDialog} onOpenChange={setShowShippedDialog}>
-        <AlertDialogContent className="rounded-xs border-border bg-card">
+        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-secondary dark:bg-card">
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Order as Shipped</AlertDialogTitle>
             <AlertDialogDescription>
@@ -406,7 +406,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmShipped}
               disabled={updatingStatus}

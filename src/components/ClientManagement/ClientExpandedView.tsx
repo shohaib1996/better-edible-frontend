@@ -27,7 +27,7 @@ export const ClientExpandedView = ({
       clientId: client._id,
       limit: 100,
     },
-    { refetchOnMountOrArgChange: true }
+    { refetchOnMountOrArgChange: true },
   );
 
   const labels = data?.labels || [];
@@ -36,7 +36,7 @@ export const ClientExpandedView = ({
     <div className="space-y-6">
       {/* Tabs for different sections */}
       <Tabs defaultValue="labels" className="w-full">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto scrollbar-hidden">
           <TabsTrigger value="labels">Labels</TabsTrigger>
           <TabsTrigger value="schedule">Recurring Schedule</TabsTrigger>
           <TabsTrigger value="info">Store Info</TabsTrigger>
@@ -46,7 +46,10 @@ export const ClientExpandedView = ({
         <TabsContent value="labels" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Labels ({labels.length})</h3>
-            <Button onClick={() => setAddLabelModalOpen(true)}>
+            <Button
+              onClick={() => setAddLabelModalOpen(true)}
+              className="rounded-xs"
+            >
               + Add New Label
             </Button>
           </div>

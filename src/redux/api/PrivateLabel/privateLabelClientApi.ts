@@ -35,8 +35,14 @@ export const privateLabelClientApi = baseApi.injectEndpoints({
     }),
 
     // Get clients with approved labels (for order creation dropdown)
-    getClientsWithApprovedLabels: builder.query<IPrivateLabelClient[], void>({
-      query: () => "/private-label-clients/with-approved-labels",
+    getClientsWithApprovedLabels: builder.query<
+      IPrivateLabelClient[],
+      { search?: string; limit?: number } | void
+    >({
+      query: (params) => ({
+        url: "/private-label-clients/with-approved-labels",
+        params: params || {},
+      }),
       providesTags: [tagTypes.privateLabelClients, tagTypes.labels],
     }),
 

@@ -22,13 +22,17 @@ import {
 } from "@/constants/privateLabel";
 
 // Helper to get user info from localStorage
-const getUserFromStorage = (): { userId: string; userType: "admin" | "rep" } | null => {
+const getUserFromStorage = (): {
+  userId: string;
+  userType: "admin" | "rep";
+} | null => {
   if (typeof window === "undefined") return null;
   try {
     const storedUser = localStorage.getItem("better-user");
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      const userType = user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
+      const userType =
+        user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
       return { userId: user.id, userType };
     }
   } catch {
@@ -76,7 +80,9 @@ export const BulkStageUpdateSection = ({
         userType: userInfo?.userType,
       }).unwrap();
 
-      toast.success(`${result.updatedCount} labels updated to ${STAGE_LABELS[selectedStage]}`);
+      toast.success(
+        `${result.updatedCount} labels updated to ${STAGE_LABELS[selectedStage]}`,
+      );
       setSelectedStage("");
       onUpdate();
     } catch (error: unknown) {
@@ -91,7 +97,7 @@ export const BulkStageUpdateSection = ({
   }
 
   return (
-    <Card className="p-4 bg-muted/50">
+    <Card className="p-4 bg-muted/50 rounded-xs border-border dark:border-white/20">
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex-1 min-w-[200px]">
           <Label className="text-sm font-medium">
@@ -104,10 +110,10 @@ export const BulkStageUpdateSection = ({
             value={selectedStage}
             onValueChange={(val) => setSelectedStage(val as LabelStage)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-background">
               <SelectValue placeholder="Select next stage" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xs border-border dark:border-white/20">
               {availableStages.map((stage) => (
                 <SelectItem key={stage} value={stage}>
                   {STAGE_LABELS[stage]}
@@ -120,7 +126,7 @@ export const BulkStageUpdateSection = ({
         <Button
           onClick={handleBulkUpdate}
           disabled={isLoading || !selectedStage}
-          className="whitespace-nowrap"
+          className="whitespace-nowrap rounded-xs"
         >
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -26,22 +26,22 @@ export const ClientCard = ({ client, isRepView = false }: ClientCardProps) => {
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{client.store?.name}</h3>
-              <Badge className={statusColor}>
+    <Card className="p-4 rounded-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base sm:text-lg font-semibold truncate">{client.store?.name}</h3>
+              <Badge className={`${statusColor} rounded-xs`}>
                 {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
               </Badge>
               {client.recurringSchedule?.enabled && (
                 <span title="Recurring Schedule">
-                  <Repeat className="h-4 w-4 text-blue-600" />
+                  <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
               {[
                 client.store?.address,
                 client.store?.city,
@@ -53,7 +53,7 @@ export const ClientCard = ({ client, isRepView = false }: ClientCardProps) => {
             </p>
           </div>
 
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap gap-4 sm:gap-6 text-xs sm:text-sm">
             <div>
               <span className="text-muted-foreground">Rep: </span>
               <span className="font-medium">
@@ -61,21 +61,21 @@ export const ClientCard = ({ client, isRepView = false }: ClientCardProps) => {
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">Approved Labels: </span>
-              <span className="font-medium">
+              <span className="text-muted-foreground">Approved: </span>
+              <span className="font-medium text-green-600 dark:text-green-400">
                 {client.labelCounts?.approved || 0}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground">In Progress: </span>
-              <span className="font-medium">
+              <span className="font-medium text-yellow-600 dark:text-yellow-400">
                 {client.labelCounts?.inProgress || 0}
               </span>
             </div>
           </div>
         </div>
 
-        <Button variant="outline" size="sm" onClick={handleViewClient}>
+        <Button variant="outline" size="sm" className="rounded-xs self-start lg:self-center" onClick={handleViewClient}>
           <Eye className="mr-2 h-4 w-4" />
           View
         </Button>

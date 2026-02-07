@@ -58,7 +58,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   return (
     <>
       <Dialog open={!!order} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6 border-border bg-card">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6 border-border dark:border-white/20 bg-secondary dark:bg-card">
           <DialogHeader>
             <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -240,7 +240,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             {/* Note */}
             {order.note && (
               <>
-                <div className="bg-muted rounded-xs p-3 border border-border">
+                <div className="bg-card rounded-xs p-3 border border-border dark:border-white/20">
                   <h3 className="font-semibold mb-2 text-foreground">Note</h3>
                   <p className="text-sm text-foreground">{order.note}</p>
                 </div>
@@ -279,7 +279,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             <Button
               variant="outline"
               onClick={onClose}
-              className="rounded-xs w-full sm:w-auto"
+              className="rounded-xs w-full sm:w-auto border-border dark:border-white/20 bg-card hover:bg-accent/50"
             >
               Close
             </Button>
