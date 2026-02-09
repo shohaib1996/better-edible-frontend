@@ -58,7 +58,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   return (
     <>
       <Dialog open={!!order} onOpenChange={handleModalClose}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6 border-border dark:border-white/20 bg-secondary dark:bg-card">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs p-4 sm:p-6 border-border dark:border-white/20 dark:bg-card">
           <DialogHeader>
             <DialogTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">

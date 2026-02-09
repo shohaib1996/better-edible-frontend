@@ -67,7 +67,7 @@ export const ClientOrderPackingListDialog: React.FC<
 
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] rounded-xs w-[95vw] sm:w-full flex flex-col gap-4 border-border dark:border-white/20 bg-secondary dark:bg-card">
+      <DialogContent className="max-w-4xl max-h-[80vh] rounded-xs w-[95vw] sm:w-full flex flex-col gap-4 border-border dark:border-white/20 dark:bg-card">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
             <span>📦</span> Client Order Packing List
@@ -127,6 +127,7 @@ export const ClientOrderPackingListDialog: React.FC<
                         checked={selectAll}
                         onCheckedChange={handleSelectAll}
                         aria-label="Select all"
+                        className="border-border dark:border-white/20"
                       />
                     </div>
                   </th>
@@ -161,6 +162,7 @@ export const ClientOrderPackingListDialog: React.FC<
                           checked={isChecked}
                           onCheckedChange={() => handleCheckChange(key)}
                           aria-label={`QA for ${item.productType} - ${item.flavorName}`}
+                          className="border-border dark:border-white/20"
                         />
                       </td>
                     </tr>

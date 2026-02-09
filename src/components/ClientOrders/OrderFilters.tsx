@@ -1,7 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
-
 import {
   Select,
   SelectContent,
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ReUsableComponents/SearchableSelect";
 import { ORDER_STATUS_LABELS } from "@/constants/privateLabel";
 import { IPrivateLabelClient } from "@/types";
 
@@ -33,6 +34,16 @@ export const OrderFilters = ({
   allClients,
   hideStatusFilter = false,
 }: OrderFiltersProps) => {
+  const clientOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All Clients" },
+      ...allClients.map((client) => ({
+        value: client._id,
+        label: client.store?.name || "Unknown Store",
+      })),
+    ];
+  }, [allClients]);
+
   return (
     <div
       className={`grid grid-cols-1 gap-4 ${hideStatusFilter ? "md:grid-cols-5" : "md:grid-cols-6"}`}
@@ -82,36 +93,16 @@ export const OrderFilters = ({
 
       {/* Client Filter */}
       <div className="md:col-span-2">
-        <Select
+        <SearchableSelect
+          options={clientOptions}
           value={clientFilter || "all"}
-          onValueChange={(value) =>
+          onChange={(value) =>
             onClientFilterChange(value === "all" ? "" : value)
           }
-        >
-          <SelectTrigger
-            id="client"
-            className="w-full rounded-xs border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 transition-all duration-200"
-          >
-            <SelectValue placeholder="All Clients" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xs border-border dark:border-white/20">
-            <SelectItem
-              value="all"
-              className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
-            >
-              All Clients
-            </SelectItem>
-            {allClients.map((client) => (
-              <SelectItem
-                key={client._id}
-                value={client._id}
-                className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
-              >
-                {client.store?.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="All Clients"
+          searchPlaceholder="Search clients..."
+          emptyMessage="No clients found."
+        />
       </div>
     </div>
   );
