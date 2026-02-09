@@ -10,7 +10,6 @@ export const tagTypes = {
   samples: "samples",
   contacts: "contacts",
   followups: "followups",
-  privateLabelOrders: "privateLabelOrders",
   privateLabelProducts: "privateLabelProducts",
   privateLabelClients: "privateLabelClients",
   labels: "labels",

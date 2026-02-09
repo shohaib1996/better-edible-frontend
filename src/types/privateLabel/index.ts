@@ -1,4 +1,4 @@
-// Legacy Private Label types (products & orders)
+// Private Label Product types
 export * from "./privateLabel";
 
 // Private Label Client types

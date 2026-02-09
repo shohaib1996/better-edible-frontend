@@ -1,15 +1,15 @@
 // Re-export all private label related APIs and types
 
-// Private Label Products & Legacy Orders (existing)
+// Private Label Products
 export * from "./privateLabelApi";
 
-// Private Label Clients (new)
+// Private Label Clients
 export * from "./privateLabelClientApi";
 
-// Labels - 7-stage pipeline (new)
+// Labels - 7-stage pipeline
 export * from "./labelApi";
 
-// Client Orders (new)
+// Client Orders
 export * from "./clientOrderApi";
 
 // Re-export types from @/types for convenience

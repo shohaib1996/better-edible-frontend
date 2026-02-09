@@ -87,7 +87,7 @@ export const PrivateLabelProductsPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    router.push("/admin/private-label-orders");
+    router.push("/admin/client-orders");
   };
 
   if (isLoading) {
