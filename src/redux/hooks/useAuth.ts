@@ -7,6 +7,7 @@ interface User {
   repType: string;
   territory: string;
   role?: "superadmin" | "rep";
+  email: string;
 }
 
 // ✅ Now returns undefined while still checking

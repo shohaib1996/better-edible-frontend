@@ -94,6 +94,8 @@ export function AppSidebar() {
 
   const menuItems = user.role === "superadmin" ? adminItems : repItems;
 
+  console.log(user);
+
   return (
     <Sidebar collapsible="icon">
       {/* ---------------- HEADER ---------------- */}
