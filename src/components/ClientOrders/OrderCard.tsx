@@ -155,12 +155,11 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
   return (
     <>
-      <Card className="p-4 rounded-xs border-border/60 bg-card hover:border-primary/20 transition-all duration-300 shadow-xs hover:shadow-md">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-          {/* Order Info */}
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
+      <Card className="p-0 gap-0 rounded-xs border-l-4 border-l-primary bg-card transition-all duration-300 shadow-xs overflow-hidden">
+        {/* Top Section - Store, Order#, Rep, Badges + Actions */}
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-2 p-3">
+          <div className="lg:min-w-[250px] shrink-0">
+            <div className="flex flex-wrap items-center gap-3">
               {order.shipASAP && (
                 <Badge
                   variant="destructive"
@@ -182,13 +181,14 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
 
             <button
               onClick={() => setShowDetailsModal(true)}
-              className="text-lg font-bold text-foreground mb-1 cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+              className="text-lg font-bold text-foreground cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
             >
               {order.client?.store?.name || "Unknown Store"}
             </button>
+            <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
 
             {/* Assigned Rep */}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <User className="h-3.5 w-3.5" />
               <span>
                 Rep:{" "}
@@ -197,138 +197,91 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 </span>
               </span>
             </div>
-
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Delivery: {new Date(order.deliveryDate).toLocaleDateString()}
-              </span>
-              <span>Items: {order.items.length}</span>
-            </div>
-
-            {/* Items Summary */}
-            <div className="text-sm mb-2">
-              {order.items.map((item, idx) => (
-                <span key={idx}>
-                  {item.flavorName} ({item.quantity})
-                  {idx < order.items.length - 1 ? ", " : ""}
-                </span>
-              ))}
-            </div>
-
-            {/* Pricing */}
-            <div className="flex flex-wrap gap-4 text-sm">
-              <span>Subtotal: ${order.subtotal.toFixed(2)}</span>
-              {order.discountAmount > 0 && (
-                <span className="text-green-600">
-                  Discount: -${order.discountAmount.toFixed(2)}
-                </span>
-              )}
-              <span className="font-semibold">
-                Total: ${order.total.toFixed(2)}
-              </span>
-            </div>
-
-            {/* Notes */}
-            {order.note && (
-              <p className="text-sm text-muted-foreground mt-2 italic">
-                Note: {order.note}
-              </p>
-            )}
           </div>
 
-          {/* Actions - Two Rows (hide most actions for shipped orders) */}
-          <div className="flex flex-col gap-2 items-end">
-            {/* Row 1: Delivery, Packing List, Invoice, Status Selector */}
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {/* Delivery Button - Only for non-shipped */}
-              {order.status !== "shipped" && (
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            {/* Delivery, Packing List, Invoice - Only for non-shipped */}
+            {order.status !== "shipped" && (
+              <>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setShowDeliveryModal(true)}
-                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
-                  <Truck className="h-4 w-4 mr-1" />
-                  Delivery
+                  <Truck className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Delivery</span>
                 </Button>
-              )}
 
-              {/* Packing List Button - Only for non-shipped */}
-              {order.status !== "shipped" && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setShowPackingListDialog(true)}
-                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
-                  <ClipboardList className="h-4 w-4 mr-1" />
-                  Packing List
+                  <ClipboardList className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Packing List</span>
                 </Button>
-              )}
 
-              {/* Invoice Button - Only for non-shipped */}
-              {order.status !== "shipped" && (
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  size="icon"
+                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   onClick={() => generateClientOrderInvoice(order)}
                 >
-                  <FileText className="h-4 w-4 mr-1" />
-                  Invoice
+                  <FileText className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Invoice</span>
                 </Button>
-              )}
+              </>
+            )}
 
-              {/* Status Selector - Always visible */}
-              <Select
-                value={order.status}
-                onValueChange={(value) =>
-                  handleStatusChange(value as ClientOrderStatus)
-                }
-                disabled={updatingStatus}
-              >
-                <SelectTrigger className="h-8.5 w-[140px] rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xs border-border dark:border-white/20">
-                  {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-                    <SelectItem
-                      key={value}
-                      value={value}
-                      className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Status Selector - Always visible */}
+            <Select
+              value={order.status}
+              onValueChange={(value) =>
+                handleStatusChange(value as ClientOrderStatus)
+              }
+              disabled={updatingStatus}
+            >
+              <SelectTrigger className="h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xs border-border dark:border-white/20">
+                {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
+                  >
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Row 2: Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
+            {/* Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
             {order.status !== "shipped" && (
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                {/* Push to PPS Button */}
+              <>
                 {canPushToPPS && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handlePushToPPS}
                     disabled={pushing}
-                    className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                    className="h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                   >
                     {pushing ? "Pushing..." : "Push to PPS"}
                   </Button>
                 )}
 
-                {/* Ship ASAP Toggle */}
                 <Button
                   variant={order.shipASAP ? "destructive" : "outline"}
                   size="sm"
                   onClick={handleToggleShipASAP}
                   disabled={toggling}
                   className={cn(
-                    "h-8.5 rounded-xs transition-all duration-200",
+                    "h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs transition-all duration-200",
                     !order.shipASAP &&
                       "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
                   )}
@@ -337,27 +290,25 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                   {order.shipASAP ? "ASAP On" : "Ship ASAP"}
                 </Button>
 
-                {/* Edit Button */}
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setShowEditModal(true)}
                   disabled={!canEdit}
                   title={
                     canEdit ? "Edit Order" : "Cannot edit order in production"
                   }
-                  className="h-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                  className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
 
-                {/* Delete Button */}
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={inProduction}
-                  className="h-8.5 rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                  className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                   title={
                     inProduction
                       ? "Cannot delete order in production"
@@ -366,9 +317,50 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-              </div>
+              </>
             )}
           </div>
+        </div>
+
+        {/* Middle Section - Details, Items, Pricing, Notes (full width) */}
+        <div className="bg-primary/20 dark:bg-primary/10 px-3 py-2">
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-2">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              Delivery: {new Date(order.deliveryDate).toLocaleDateString()}
+            </span>
+            <span>Items: {order.items.length}</span>
+          </div>
+
+          {/* Items Summary */}
+          <div className="text-sm mb-2">
+            {order.items.map((item, idx) => (
+              <span key={idx}>
+                {item.flavorName} ({item.quantity})
+                {idx < order.items.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </div>
+
+          {/* Pricing */}
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span>Subtotal: ${order.subtotal.toFixed(2)}</span>
+            {order.discountAmount > 0 && (
+              <span className="text-green-600">
+                Discount: -${order.discountAmount.toFixed(2)}
+              </span>
+            )}
+            <span className="font-semibold">
+              Total: ${order.total.toFixed(2)}
+            </span>
+          </div>
+
+          {/* Notes */}
+          {order.note && (
+            <p className="text-sm text-muted-foreground mt-2 italic">
+              Note: {order.note}
+            </p>
+          )}
         </div>
       </Card>
 
@@ -383,7 +375,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
@@ -406,7 +400,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmShipped}
               disabled={updatingStatus}
