@@ -57,6 +57,7 @@ export const AddLabelModal = ({
 }: AddLabelModalProps) => {
   const [flavorName, setFlavorName] = useState("");
   const [productType, setProductType] = useState("");
+  const [specialInstructions, setSpecialInstructions] = useState("");
   const [files, setFiles] = useState<File[]>([]);
 
   const { data: productsData } = useGetPrivateLabelProductsQuery({
@@ -94,6 +95,9 @@ export const AddLabelModal = ({
       formData.append("clientId", clientId);
       formData.append("flavorName", flavorName.trim());
       formData.append("productType", productType);
+      if (specialInstructions.trim()) {
+        formData.append("specialInstructions", specialInstructions.trim());
+      }
 
       if (userInfo) {
         formData.append("userId", userInfo.userId);
@@ -119,6 +123,7 @@ export const AddLabelModal = ({
   const resetForm = () => {
     setFlavorName("");
     setProductType("");
+    setSpecialInstructions("");
     setFiles([]);
   };
 
@@ -174,15 +179,15 @@ export const AddLabelModal = ({
             </Select>
           </div>
 
-          {/* Label Images */}
+          {/* Upload Logo */}
           <div>
-            <Label>Label Images</Label>
+            <Label>Upload Logo</Label>
             <div className="mt-2">
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xs cursor-pointer bg-muted hover:bg-muted/80 border-border dark:border-white/20">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Click to upload label images
+                    Click to upload logo
                   </p>
                 </div>
                 <input
@@ -216,6 +221,19 @@ export const AddLabelModal = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Special Instructions */}
+          <div>
+            <Label htmlFor="specialInstructions">Special Instructions</Label>
+            <textarea
+              id="specialInstructions"
+              placeholder="Enter any special instructions for this label..."
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              rows={3}
+              className="flex w-full rounded-xs border border-border dark:border-white/20 bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1 resize-none"
+            />
           </div>
 
           {/* Actions */}

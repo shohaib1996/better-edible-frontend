@@ -38,6 +38,7 @@ export const EditLabelModal = ({
 }: EditLabelModalProps) => {
   const [flavorName, setFlavorName] = useState(label.flavorName);
   const [productType, setProductType] = useState(label.productType);
+  const [specialInstructions, setSpecialInstructions] = useState(label.specialInstructions || "");
   const [existingImages, setExistingImages] = useState<string[]>(
     label.labelImages.map((img) => img.publicId),
   );
@@ -83,6 +84,7 @@ export const EditLabelModal = ({
       const formData = new FormData();
       formData.append("flavorName", flavorName.trim());
       formData.append("productType", productType);
+      formData.append("specialInstructions", specialInstructions.trim());
       formData.append("keepExistingImages", JSON.stringify(existingImages));
 
       newFiles.forEach((file) => {
@@ -165,10 +167,10 @@ export const EditLabelModal = ({
             )}
           </div>
 
-          {/* Existing Images */}
+          {/* Existing Logo */}
           {label.labelImages.length > 0 && (
             <div>
-              <Label>Existing Images</Label>
+              <Label>Existing Logo</Label>
               <div className="grid grid-cols-4 gap-2 mt-2">
                 {label.labelImages.map((img) => (
                   <div key={img.publicId} className="relative group">
@@ -196,15 +198,15 @@ export const EditLabelModal = ({
             </div>
           )}
 
-          {/* Upload New Images */}
+          {/* Upload New Logo */}
           <div>
-            <Label>Add New Images</Label>
+            <Label>Upload Logo</Label>
             <div className="mt-2">
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xs cursor-pointer bg-muted hover:bg-muted/80 border-border dark:border-white/20">
                 <div className="flex flex-col items-center justify-center py-4">
                   <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">
-                    Click to upload additional images
+                    Click to upload logo
                   </p>
                 </div>
                 <input
@@ -238,6 +240,19 @@ export const EditLabelModal = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Special Instructions */}
+          <div>
+            <Label htmlFor="specialInstructions">Special Instructions</Label>
+            <textarea
+              id="specialInstructions"
+              placeholder="Enter any special instructions for this label..."
+              value={specialInstructions}
+              onChange={(e) => setSpecialInstructions(e.target.value)}
+              rows={3}
+              className="flex w-full rounded-xs border border-border dark:border-white/20 bg-card px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring mt-1 resize-none"
+            />
           </div>
 
           {/* Actions */}

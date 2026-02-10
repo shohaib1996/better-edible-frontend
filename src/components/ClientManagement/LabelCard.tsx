@@ -192,6 +192,12 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
               <Badge className={`${stageColor} mt-1 rounded-xs`}>
                 {stageLabel}
               </Badge>
+              {label.specialInstructions && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                  <span className="font-medium">Instructions:</span>{" "}
+                  {label.specialInstructions}
+                </p>
+              )}
             </div>
 
             {/* Actions Menu (Desktop hidden, Mobile visible) - Actually, let's keep it consistent.

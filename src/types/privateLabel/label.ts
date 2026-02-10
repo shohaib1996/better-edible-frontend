@@ -55,6 +55,7 @@ export interface ILabel {
   };
   flavorName: string;
   productType: string;
+  specialInstructions?: string;
   currentStage: LabelStage;
   stageHistory: IStageHistoryEntry[];
   labelImages: ILabelImage[];
