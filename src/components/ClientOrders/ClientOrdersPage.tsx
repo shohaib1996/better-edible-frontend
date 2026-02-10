@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Package, Users, ShoppingCart } from "lucide-react";
 import { useGetAllClientOrdersQuery } from "@/redux/api/PrivateLabel/clientOrderApi";
@@ -30,6 +31,7 @@ export const ClientOrdersPage = ({
   // Default tab: "all" for rep view, "active" for admin
   const [activeTab, setActiveTab] = useState(isRepView ? "all" : "active");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 1000);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [clientFilter, setClientFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,7 +55,7 @@ export const ClientOrdersPage = ({
   const getQueryParams = () => {
     const baseParams: any = {
       clientId: clientFilter || undefined,
-      search: searchQuery || undefined,
+      search: debouncedSearch || undefined,
     };
 
     if (isAdmin) {
@@ -116,7 +118,7 @@ export const ClientOrdersPage = ({
   // Reset page when tab, search, or filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, searchQuery, clientFilter, statusFilter]);
+  }, [activeTab, debouncedSearch, clientFilter, statusFilter]);
 
   // Calculate total value (exclude any cancelled if we had them)
   const totalValue = useMemo(() => {
