@@ -12,6 +12,12 @@ import {
   User,
 } from "lucide-react";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   useUpdateClientOrderStatusMutation,
   usePushOrderToPPSMutation,
   useToggleShipASAPMutation,
@@ -200,126 +206,164 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-            {/* Delivery, Packing List, Invoice - Only for non-shipped */}
-            {order.status !== "shipped" && (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowDeliveryModal(true)}
-                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                >
-                  <Truck className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Delivery</span>
-                </Button>
+          <TooltipProvider>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              {/* Delivery, Packing List, Invoice - Only for non-shipped */}
+              {order.status !== "shipped" && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowDeliveryModal(true)}
+                        className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                      >
+                        <Truck className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Schedule delivery</TooltipContent>
+                  </Tooltip>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowPackingListDialog(true)}
-                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                >
-                  <ClipboardList className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Packing List</span>
-                </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowPackingListDialog(true)}
+                        className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>View packing list</TooltipContent>
+                  </Tooltip>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 sm:h-8.5 sm:w-auto sm:px-3 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                  onClick={() => generateClientOrderInvoice(order)}
-                >
-                  <FileText className="h-4 w-4 sm:mr-1" />
-                  <span className="hidden sm:inline">Invoice</span>
-                </Button>
-              </>
-            )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                        onClick={() => generateClientOrderInvoice(order)}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Generate invoice</TooltipContent>
+                  </Tooltip>
+                </>
+              )}
 
-            {/* Status Selector - Always visible */}
-            <Select
-              value={order.status}
-              onValueChange={(value) =>
-                handleStatusChange(value as ClientOrderStatus)
-              }
-              disabled={updatingStatus}
-            >
-              <SelectTrigger className="h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xs border-border dark:border-white/20">
-                {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
-                  <SelectItem
-                    key={value}
-                    value={value}
-                    className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {/* Status Selector - Always visible */}
+              <Select
+                value={order.status}
+                onValueChange={(value) =>
+                  handleStatusChange(value as ClientOrderStatus)
+                }
+                disabled={updatingStatus}
+              >
+                <SelectTrigger className="h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xs border-border dark:border-white/20">
+                  {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {/* Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
-            {order.status !== "shipped" && (
-              <>
-                {canPushToPPS && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePushToPPS}
-                    disabled={pushing}
-                    className="h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                  >
-                    {pushing ? "Pushing..." : "Push to PPS"}
-                  </Button>
-                )}
-
-                <Button
-                  variant={order.shipASAP ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={handleToggleShipASAP}
-                  disabled={toggling}
-                  className={cn(
-                    "h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs transition-all duration-200",
-                    !order.shipASAP &&
-                      "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
+              {/* Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
+              {order.status !== "shipped" && (
+                <>
+                  {canPushToPPS && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePushToPPS}
+                          disabled={pushing}
+                          className="h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                        >
+                          {pushing ? "Pushing..." : "Push to PPS"}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Push order to production</TooltipContent>
+                    </Tooltip>
                   )}
-                >
-                  <Truck className="h-4 w-4 mr-1" />
-                  {order.shipASAP ? "ASAP On" : "Ship ASAP"}
-                </Button>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowEditModal(true)}
-                  disabled={!canEdit}
-                  title={
-                    canEdit ? "Edit Order" : "Cannot edit order in production"
-                  }
-                  className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={order.shipASAP ? "destructive" : "outline"}
+                        size="sm"
+                        onClick={handleToggleShipASAP}
+                        disabled={toggling}
+                        className={cn(
+                          "h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs transition-all duration-200",
+                          !order.shipASAP &&
+                            "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
+                        )}
+                      >
+                        <Truck className="h-4 w-4 mr-1" />
+                        {order.shipASAP ? "ASAP On" : "Ship ASAP"}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {order.shipASAP
+                        ? "Disable ship ASAP"
+                        : "Mark for immediate shipping"}
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={inProduction}
-                  className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xs border border-red-200 dark:border-red-900/50 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                  title={
-                    inProduction
-                      ? "Cannot delete order in production"
-                      : "Delete Order"
-                  }
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowEditModal(true)}
+                        disabled={!canEdit}
+                        className="h-8 w-8 rounded-xs border-none bg-secondary text-secondary-foreground hover:bg-primary hover:text-white dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {canEdit
+                        ? "Edit order"
+                        : "Cannot edit order in production"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowDeleteDialog(true)}
+                        disabled={inProduction}
+                        className="h-8 w-8 rounded-xs text-white border-none bg-accent hover:bg-destructive hover:text-white dark:bg-accent dark:text-white dark:hover:bg-destructive dark:hover:text-white transition-all duration-200"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {inProduction
+                        ? "Cannot delete order in production"
+                        : "Delete order"}
+                    </TooltipContent>
+                  </Tooltip>
+                </>
+              )}
+            </div>
+          </TooltipProvider>
         </div>
 
         {/* Middle Section - Details, Items, Pricing, Notes (full width) */}
