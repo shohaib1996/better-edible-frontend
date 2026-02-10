@@ -12,6 +12,7 @@ import type { IOrder } from "@/types/order/order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Store, Calendar, Package, FileText, X } from "lucide-react";
+import { sortCannaCrispyItems } from "@/utils/productOrdering";
 
 interface OrderDetailsDialogProps {
   order: IOrder | null;
@@ -123,7 +124,7 @@ export const OrderDetailsDialog = ({
 
                 {/* Rows */}
                 <div className="mt-1">
-                  {order.items.map((item, idx) => {
+                  {sortCannaCrispyItems(order.items).map((item, idx) => {
                     const lineTotal = item.qty * item.unitPrice;
                     return (
                       <div

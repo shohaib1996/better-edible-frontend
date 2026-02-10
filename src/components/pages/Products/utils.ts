@@ -1,11 +1,12 @@
 import type { IProductLine } from "@/redux/api/ProductLines/productLinesApi";
+import { sortCannaCrispyProducts } from "@/utils/productOrdering";
 
 /**
  * Groups products by product line and applies custom sorting
  */
 export const groupProductsByLine = (
   products: any[],
-  productLines: IProductLine[]
+  productLines: IProductLine[],
 ): Record<string, any[]> => {
   const groups: Record<string, any[]> = {};
 
@@ -15,23 +16,9 @@ export const groupProductsByLine = (
     groups[productLineName].push(p);
   });
 
-  // Custom sort for Cannacrispy
+  // Custom sort for Cannacrispy using shared utility
   if (groups["Cannacrispy"]) {
-    const cannacrispyOrder = [
-      "Original",
-      "Fruity",
-      "Chocolate",
-      "Cookies & Cream",
-      "Peanut Butter & Chocolate",
-      "Strawberry",
-    ];
-    groups["Cannacrispy"].sort((a, b) => {
-      const indexA = cannacrispyOrder.indexOf(a.subProductLine);
-      const indexB = cannacrispyOrder.indexOf(b.subProductLine);
-      const valA = indexA === -1 ? 999 : indexA;
-      const valB = indexB === -1 ? 999 : indexB;
-      return valA - valB;
-    });
+    groups["Cannacrispy"] = sortCannaCrispyProducts(groups["Cannacrispy"]);
   }
 
   // Return groups ordered by productLines displayOrder

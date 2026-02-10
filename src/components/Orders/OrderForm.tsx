@@ -15,6 +15,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  sortCannaCrispyProducts,
+  isCannaCrispy,
+} from "@/utils/productOrdering";
 
 interface OrderFormProps {
   initialItems?: any[];
@@ -31,7 +35,7 @@ interface OrderFormProps {
       discountType?: "flat" | "percent";
       discountValue?: number;
       note?: string;
-    }
+    },
   ) => void;
 }
 
@@ -62,15 +66,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
   // Helper to get product line configuration
   const getProductLineConfig = (product: any) => {
-    const productLine = typeof product.productLine === 'string'
-      ? null
-      : product.productLine;
+    const productLine =
+      typeof product.productLine === "string" ? null : product.productLine;
 
     return {
-      name: typeof product.productLine === 'string'
-        ? product.productLine
-        : productLine?.name || '',
-      pricingType: productLine?.pricingStructure?.type || 'simple',
+      name:
+        typeof product.productLine === "string"
+          ? product.productLine
+          : productLine?.name || "",
+      pricingType: productLine?.pricingStructure?.type || "simple",
       variantLabels: productLine?.pricingStructure?.variantLabels || [],
       typeLabels: productLine?.pricingStructure?.typeLabels || [],
     };
@@ -80,33 +84,41 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   useEffect(() => {
     if (initialItems?.length && products.length) {
       // Quantities map
-      const newQuantities = initialItems.reduce((acc, item) => {
-        const rawProd = item.product;
-        const productId = String(
-          (rawProd && (rawProd._id ?? rawProd)) ?? rawProd
-        );
-        const product = products.find((p: any) => String(p._id) === productId);
-        if (!product) return acc;
+      const newQuantities = initialItems.reduce(
+        (acc, item) => {
+          const rawProd = item.product;
+          const productId = String(
+            (rawProd && (rawProd._id ?? rawProd)) ?? rawProd,
+          );
+          const product = products.find(
+            (p: any) => String(p._id) === productId,
+          );
+          if (!product) return acc;
 
-        const config = getProductLineConfig(product);
-        let key = "qty";
+          const config = getProductLineConfig(product);
+          let key = "qty";
 
-        if (item.unitLabel) {
-          key = normKey(item.unitLabel);
-        } else if (config.pricingType === "multi-type" && config.typeLabels.length > 0) {
-          // For multi-type products, try to infer the type from the item name
-          for (const t of config.typeLabels) {
-            if (item.name?.toLowerCase()?.includes(t.toLowerCase())) {
-              key = normKey(t);
-              break;
+          if (item.unitLabel) {
+            key = normKey(item.unitLabel);
+          } else if (
+            config.pricingType === "multi-type" &&
+            config.typeLabels.length > 0
+          ) {
+            // For multi-type products, try to infer the type from the item name
+            for (const t of config.typeLabels) {
+              if (item.name?.toLowerCase()?.includes(t.toLowerCase())) {
+                key = normKey(t);
+                break;
+              }
             }
           }
-        }
 
-        if (!acc[productId]) acc[productId] = {};
-        acc[productId][key] = Number(item.qty || 0);
-        return acc;
-      }, {} as Record<string, any>);
+          if (!acc[productId]) acc[productId] = {};
+          acc[productId][key] = Number(item.qty || 0);
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
 
       setQuantities(newQuantities);
 
@@ -114,7 +126,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       const newToggles: Record<string, boolean> = {};
       for (const it of initialItems) {
         const pid = String(
-          (it.product && (it.product._id ?? it.product)) ?? it.product
+          (it.product && (it.product._id ?? it.product)) ?? it.product,
         );
         // If the backend saved appliedDiscount for that item, honor it.
         if (typeof it.appliedDiscount === "boolean") {
@@ -127,7 +139,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           const inferred =
             Math.abs(
               Number(it.lineTotal || 0) -
-                Number(it.qty || 0) * Number(it.discountPrice)
+                Number(it.qty || 0) * Number(it.discountPrice),
             ) < 0.01;
           newToggles[pid] = newToggles[pid] || inferred;
         }
@@ -159,12 +171,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     const map: Record<string, any[]> = {};
     for (const p of products) {
       // Handle both populated productLine object and string
-      const lineName = typeof p.productLine === 'string'
-        ? p.productLine
-        : p.productLine?.name || 'Uncategorized';
+      const lineName =
+        typeof p.productLine === "string"
+          ? p.productLine
+          : p.productLine?.name || "Uncategorized";
       if (!map[lineName]) map[lineName] = [];
       map[lineName].push(p);
     }
+
+    // Apply CannaCrispy ordering
+    if (map["Cannacrispy"]) {
+      map["Cannacrispy"] = sortCannaCrispyProducts(map["Cannacrispy"]);
+    }
+
     return map;
   }, [products]);
 
@@ -201,7 +220,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     // variant
     if (product.variants?.length) {
       const v = product.variants.find(
-        (x: any) => norm && x.label && x.label.trim().toLowerCase() === norm
+        (x: any) => norm && x.label && x.label.trim().toLowerCase() === norm,
       );
       if (v) {
         return {
@@ -277,7 +296,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           if (qty > 0) {
             const { unitPrice, discountPrice } = pickPrice(
               product,
-              variant.label
+              variant.label,
             );
             const effective = (discountPrice ?? unitPrice) as number;
             itemsForParent.push({
@@ -292,7 +311,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         }
       }
       // Multi-type pricing (e.g., Cannacrispy with hybrid/indica/sativa)
-      else if (config.pricingType === "multi-type" && config.typeLabels.length > 0) {
+      else if (
+        config.pricingType === "multi-type" &&
+        config.typeLabels.length > 0
+      ) {
         for (const type of config.typeLabels) {
           const qty = Number((val as any)[normKey(type)] || 0);
           if (qty > 0) {
@@ -337,7 +359,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     const roundedSubtotal = Number(totalPrice.toFixed(2));
     const roundedDiscount = Number(discountAmount.toFixed(2));
     const finalTotal = Number(
-      Math.max(roundedSubtotal - roundedDiscount, 0).toFixed(2)
+      Math.max(roundedSubtotal - roundedDiscount, 0).toFixed(2),
     );
 
     setTotals({
@@ -404,13 +426,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
     // Simple pricing - check product-level discount
     if (config.pricingType === "simple") {
-      return !!product.applyDiscount || (product.discountPrice && product.discountPrice < product.price);
+      return (
+        !!product.applyDiscount ||
+        (product.discountPrice && product.discountPrice < product.price)
+      );
     }
 
     // Variants pricing - check if any variant has discount
     if (config.pricingType === "variants" && product.variants?.length) {
       return product.variants.some(
-        (v: any) => v.discountPrice && v.discountPrice < v.price
+        (v: any) => v.discountPrice && v.discountPrice < v.price,
       );
     }
 
@@ -418,7 +443,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     if (config.pricingType === "multi-type" && product.prices) {
       const priceValues = Object.values(product.prices || {});
       return priceValues.some(
-        (p: any) => p.discountPrice && p.discountPrice < p.price
+        (p: any) => p.discountPrice && p.discountPrice < p.price,
       );
     }
 
@@ -437,7 +462,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       {/* Products Table */}
       <div className="space-y-2">
         {Object.entries(groupedProducts).map(([line, items]) => (
-          <Card key={line} className="p-2 bg-muted/30 border-border rounded-xs shadow-sm">
+          <Card
+            key={line}
+            className="p-2 bg-muted/30 border-border rounded-xs shadow-sm"
+          >
             <div className="bg-card px-2 py-1 rounded-xs mb-2 border-l-4 border-primary">
               <h2 className="font-bold text-sm text-foreground">{line}</h2>
             </div>
@@ -461,7 +489,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               "flex-1 truncate text-xs sm:text-sm cursor-help",
                               hasDiscount(product)
                                 ? "text-primary font-bold"
-                                : "text-muted-foreground"
+                                : "text-muted-foreground",
                             )}
                           >
                             {product.subProductLine || product.itemName}
@@ -504,7 +532,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                     </div>
 
                     {/* Variants pricing */}
-                    {config.pricingType === "variants" && product.variants?.length ? (
+                    {config.pricingType === "variants" &&
+                    product.variants?.length ? (
                       <div className="sm:col-span-9 grid grid-cols-3 gap-2">
                         {product.variants.map((variant: any) => {
                           const key = normKey(variant.label);
@@ -514,13 +543,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               ? Number(variant.discountPrice)
                               : undefined;
                           return (
-                            <div key={variant.label} className="flex flex-col gap-0.5">
+                            <div
+                              key={variant.label}
+                              className="flex flex-col gap-0.5"
+                            >
                               <Label className="text-[10px] sm:text-xs text-muted-foreground font-medium">
                                 {variant.label}
                               </Label>
                               {renderPrice(
                                 regular,
-                                isChecked ? discount : undefined
+                                isChecked ? discount : undefined,
                               )}
                               <Input
                                 type="number"
@@ -531,7 +563,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                   handleQtyChange(
                                     pid,
                                     key,
-                                    parseFloat(e.target.value || "0") || 0
+                                    parseFloat(e.target.value || "0") || 0,
                                   )
                                 }
                               />
@@ -539,12 +571,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                           );
                         })}
                       </div>
-                    ) : config.pricingType === "multi-type" && config.typeLabels.length > 0 ? (
+                    ) : config.pricingType === "multi-type" &&
+                      config.typeLabels.length > 0 ? (
                       <div className="sm:col-span-9 grid grid-cols-3 gap-2">
                         {config.typeLabels.map((type: string) => {
                           const { unitPrice, discountPrice } = pickPrice(
                             product,
-                            type
+                            type,
                           );
                           const regular = unitPrice;
                           const discount =
@@ -558,7 +591,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               </Label>
                               {renderPrice(
                                 regular,
-                                isChecked ? discount : undefined
+                                isChecked ? discount : undefined,
                               )}
                               <Input
                                 type="number"
@@ -569,7 +602,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                   handleQtyChange(
                                     pid,
                                     normKey(type),
-                                    parseFloat(e.target.value || "0") || 0
+                                    parseFloat(e.target.value || "0") || 0,
                                   )
                                 }
                               />
@@ -586,7 +619,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                           Number(product.price ?? 0),
                           isChecked && product.discountPrice != null
                             ? Number(product.discountPrice)
-                            : undefined
+                            : undefined,
                         )}
                         <Input
                           type="number"
@@ -597,7 +630,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                             handleQtyChange(
                               pid,
                               "qty",
-                              parseFloat(e.target.value || "0") || 0
+                              parseFloat(e.target.value || "0") || 0,
                             )
                           }
                         />
@@ -621,14 +654,20 @@ export const OrderForm: React.FC<OrderFormProps> = ({
         <div className="space-y-2">
           {/* Total Cases */}
           <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-muted/20 rounded-xs">
-            <span className="text-muted-foreground font-medium">Total Cases:</span>
-            <span className="font-bold text-foreground">{totals.totalCases}</span>
+            <span className="text-muted-foreground font-medium">
+              Total Cases:
+            </span>
+            <span className="font-bold text-foreground">
+              {totals.totalCases}
+            </span>
           </div>
 
           {/* Subtotal */}
           <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-muted/20 rounded-xs">
             <span className="text-muted-foreground font-medium">Subtotal:</span>
-            <span className="font-bold text-foreground">${totals.totalPrice.toFixed(2)}</span>
+            <span className="font-bold text-foreground">
+              ${totals.totalPrice.toFixed(2)}
+            </span>
           </div>
 
           {/* Discount Section */}
@@ -660,18 +699,25 @@ export const OrderForm: React.FC<OrderFormProps> = ({
           {/* Discount Amount */}
           <div className="flex justify-between items-center text-xs sm:text-sm px-2 py-1 bg-accent/10 rounded-xs border border-accent/30">
             <span className="text-muted-foreground font-medium">Discount:</span>
-            <span className="font-bold text-accent">- ${totals.discountAmount.toFixed(2)}</span>
+            <span className="font-bold text-accent">
+              - ${totals.discountAmount.toFixed(2)}
+            </span>
           </div>
 
           {/* Final Total */}
           <div className="flex justify-between items-center text-sm sm:text-base px-3 py-2 bg-linear-to-r from-primary/20 to-secondary/20 rounded-xs border-2 border-primary">
             <span className="font-bold text-foreground">FINAL TOTAL:</span>
-            <span className="font-bold text-xl text-primary">${totals.finalTotal.toFixed(2)}</span>
+            <span className="font-bold text-xl text-primary">
+              ${totals.finalTotal.toFixed(2)}
+            </span>
           </div>
 
           {/* Notes Section */}
           <div className="pt-2">
-            <Label htmlFor="order-note" className="text-xs text-muted-foreground font-medium mb-1 block">
+            <Label
+              htmlFor="order-note"
+              className="text-xs text-muted-foreground font-medium mb-1 block"
+            >
               Order Notes
             </Label>
             <Textarea

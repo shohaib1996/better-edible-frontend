@@ -21,6 +21,7 @@ import {
 import { Truck, Eye, ImageIcon } from "lucide-react";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 import Image from "next/image";
+import { sortCannaCrispyItems } from "@/utils/productOrdering";
 
 interface OrderDetailsModalProps {
   order: IClientOrder | null;
@@ -160,7 +161,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               </h3>
               <div className="space-y-3">
                 {order.items && order.items.length > 0 ? (
-                  order.items.map((item, idx) => {
+                  sortCannaCrispyItems(order.items).map((item, idx) => {
                     // Get label images from the populated label field
                     const labelImages = item.label?.labelImages || [];
 
