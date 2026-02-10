@@ -74,6 +74,23 @@ export const deliveriesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.deliveries],
     }),
+
+    // 🔹 Delivery order sequence
+    getDeliveryOrder: builder.query({
+      query: ({ repId, date }: { repId: string; date: string }) => ({
+        url: "/delivery-order",
+        params: { repId, date },
+      }),
+      providesTags: [tagTypes.deliveryOrder],
+    }),
+    saveDeliveryOrder: builder.mutation({
+      query: (body: { repId: string; date: string; order: string[] }) => ({
+        url: "/delivery-order",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: [tagTypes.deliveryOrder],
+    }),
   }),
 });
 
@@ -84,4 +101,6 @@ export const {
   useUpdateDeliveryStatusMutation,
   useDeleteDeliveryMutation,
   useUpdateDeliveryMutation,
+  useGetDeliveryOrderQuery,
+  useSaveDeliveryOrderMutation,
 } = deliveriesApi;

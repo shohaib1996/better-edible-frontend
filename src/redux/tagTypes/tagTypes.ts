@@ -14,4 +14,5 @@ export const tagTypes = {
   privateLabelClients: "privateLabelClients",
   labels: "labels",
   clientOrders: "clientOrders",
+  deliveryOrder: "deliveryOrder",
 };

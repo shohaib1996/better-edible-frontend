@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useGetAllDeliveriesQuery } from "@/redux/api/Deliveries/deliveryApi";
+import {
+  useGetAllDeliveriesQuery,
+  useGetDeliveryOrderQuery,
+  useSaveDeliveryOrderMutation,
+} from "@/redux/api/Deliveries/deliveryApi";
 import { useUser } from "@/redux/hooks/useAuth";
 import {
   useGetRepByIdQuery,
@@ -30,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 
 // ---------- COMPONENT ----------
-const EXPIRATION_DAYS = 7;
 const TodayContact = () => {
   const user = useUser();
   const { data: repData } = useGetRepByIdQuery(user?.id, {
@@ -82,7 +85,13 @@ const TodayContact = () => {
   const deliveries = deliveriesData?.deliveries || [];
   const [orderedDeliveries, setOrderedDeliveries] = useState<Delivery[]>([]);
   const prevDeliveriesRef = useRef<string>("");
-  const ORDER_STORAGE_KEY = `delivery_order_${user?.id}_${date}`;
+
+  const { data: savedOrderData } = useGetDeliveryOrderQuery(
+    { repId: user?.id!, date },
+    { skip: !user?.id || !date }
+  );
+  const [saveDeliveryOrder] = useSaveDeliveryOrderMutation();
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onOrderFormChange = useCallback((items: any[], totals: any) => {
     setOrderItems(items);
@@ -201,28 +210,7 @@ const TodayContact = () => {
     },
   ];
 
-  // 🔹 Cleanup old localStorage entries (runs once per mount)
-  useEffect(() => {
-    const now = Date.now();
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("delivery_order_")) {
-        try {
-          const stored = JSON.parse(localStorage.getItem(key)!);
-          if (stored?.savedAt) {
-            const savedTime = new Date(stored.savedAt).getTime();
-            const ageInDays = (now - savedTime) / (1000 * 60 * 60 * 24);
-            if (ageInDays > EXPIRATION_DAYS) {
-              localStorage.removeItem(key);
-            }
-          }
-        } catch {
-          // Ignore bad JSON data
-        }
-      }
-    });
-  }, []);
-
-  // 🔹 Load saved order from localStorage (or default)
+  // 🔹 Load saved order from database (or default)
   useEffect(() => {
     const deliveriesStr = JSON.stringify(deliveries);
 
@@ -239,23 +227,18 @@ const TodayContact = () => {
         delivery.status !== "completed" && delivery.status !== "cancelled"
     );
 
-    const stored = localStorage.getItem(ORDER_STORAGE_KEY);
-    if (stored) {
-      try {
-        const { order } = JSON.parse(stored);
-        const sorted = [...activeDeliveries].sort(
-          (a, b) => order.indexOf(a._id) - order.indexOf(b._id)
-        );
-        setOrderedDeliveries(sorted);
-      } catch {
-        setOrderedDeliveries(activeDeliveries);
-      }
+    const savedOrder = savedOrderData?.order;
+    if (savedOrder?.length) {
+      const sorted = [...activeDeliveries].sort(
+        (a, b) => savedOrder.indexOf(a._id) - savedOrder.indexOf(b._id)
+      );
+      setOrderedDeliveries(sorted);
     } else {
       setOrderedDeliveries(activeDeliveries);
     }
-  }, [deliveries, ORDER_STORAGE_KEY]);
+  }, [deliveries, savedOrderData]);
 
-  // 🔹 Move Up/Down & Save order with timestamp
+  // 🔹 Move Up/Down & Save order to database (debounced)
   const moveDelivery = (index: number, direction: "up" | "down") => {
     setOrderedDeliveries((prev) => {
       const newList = [...prev];
@@ -266,13 +249,17 @@ const TodayContact = () => {
         newList[index],
       ];
 
-      localStorage.setItem(
-        ORDER_STORAGE_KEY,
-        JSON.stringify({
-          savedAt: new Date().toISOString(),
-          order: newList.map((d) => d._id),
-        })
-      );
+      // Debounce the save to avoid excessive API calls on rapid clicks
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        if (user?.id) {
+          saveDeliveryOrder({
+            repId: user.id,
+            date,
+            order: newList.map((d) => d._id),
+          });
+        }
+      }, 500);
 
       return newList;
     });
