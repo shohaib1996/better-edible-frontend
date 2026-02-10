@@ -43,6 +43,7 @@ export const EditLabelModal = ({
     label.labelImages.map((img) => img.publicId),
   );
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: productsData } = useGetPrivateLabelProductsQuery({
     activeOnly: true,
@@ -55,6 +56,27 @@ export const EditLabelModal = ({
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       setNewFiles((prev) => [...prev, ...filesArray]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    if (droppedFiles.length > 0) {
+      setNewFiles((prev) => [...prev, ...droppedFiles]);
     }
   };
 
@@ -201,12 +223,23 @@ export const EditLabelModal = ({
           {/* Upload New Logo */}
           <div>
             <Label>Upload Logo</Label>
-            <div className="mt-2">
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xs cursor-pointer bg-muted hover:bg-muted/80 border-border dark:border-white/20">
+            <div
+              className="mt-2"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <label
+                className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xs cursor-pointer transition-colors ${
+                  isDragging
+                    ? "border-primary bg-primary/10"
+                    : "bg-muted hover:bg-muted/80 border-border dark:border-white/20"
+                }`}
+              >
                 <div className="flex flex-col items-center justify-center py-4">
-                  <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">
-                    Click to upload logo
+                  <Upload className={`w-6 h-6 mb-1 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+                  <p className={`text-xs ${isDragging ? "text-primary" : "text-muted-foreground"}`}>
+                    {isDragging ? "Drop your logo here" : "Click or drag & drop to upload logo"}
                   </p>
                 </div>
                 <input
