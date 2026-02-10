@@ -87,7 +87,7 @@ const TodayContact = () => {
   const prevDeliveriesRef = useRef<string>("");
 
   const { data: savedOrderData } = useGetDeliveryOrderQuery(
-    { repId: user?.id!, date },
+    { repId: user?.id ?? "", date },
     { skip: !user?.id || !date }
   );
   const [saveDeliveryOrder] = useSaveDeliveryOrderMutation();
