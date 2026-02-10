@@ -594,6 +594,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
             ? selectedOrderForDelivery?._id
             : null
         }
+        orderAmount={selectedOrderForDelivery?.total || null}
       />
     </TooltipProvider>
   );

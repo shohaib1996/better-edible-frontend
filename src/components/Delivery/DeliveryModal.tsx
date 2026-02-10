@@ -33,7 +33,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { useCreateDeliveryMutation } from "@/redux/api/Deliveries/deliveryApi";
 import { toast } from "sonner";
@@ -51,6 +51,7 @@ interface DeliveryModalProps {
   sampleId?: string | null;
   orderId?: string | null;
   privateLabelOrderId?: string | null;
+  orderAmount?: number | null;
   onSuccess?: () => void;
 }
 
@@ -62,6 +63,7 @@ export const DeliveryModal = ({
   sampleId,
   orderId,
   privateLabelOrderId,
+  orderAmount,
   onSuccess,
 }: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
@@ -73,7 +75,7 @@ export const DeliveryModal = ({
     assignedTo: "",
     disposition: sampleId ? "sample_drop" : "delivery",
     paymentAction: "",
-    amount: "",
+    amount: orderAmount ? String(orderAmount) : "",
     scheduledAt: new Date(),
     notes: "",
   });
@@ -91,7 +93,13 @@ export const DeliveryModal = ({
         disposition: "sample_drop",
       }));
     }
-  }, [repProp, sampleId]);
+    if (orderAmount) {
+      setFormData((prev) => ({
+        ...prev,
+        amount: String(orderAmount),
+      }));
+    }
+  }, [repProp, sampleId, orderAmount]);
 
   const handleChange = (key: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -279,30 +287,42 @@ export const DeliveryModal = ({
               <CalendarIcon className="h-3.5 w-3.5 text-primary" />
               Scheduled Date
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal border-border rounded-xs bg-input text-foreground hover:bg-muted/50 hover:text-foreground focus:ring-0 focus:border-primary",
-                    !formData.scheduledAt && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.scheduledAt
-                    ? format(formData.scheduledAt, "PPP")
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-xs">
-                <Calendar
-                  mode="single"
-                  selected={formData.scheduledAt}
-                  onSelect={(date) => handleChange("scheduledAt", date!)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "flex-1 justify-start text-left font-normal border-border rounded-xs bg-input text-foreground hover:bg-muted/50 hover:text-foreground focus:ring-0 focus:border-primary",
+                      !formData.scheduledAt && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.scheduledAt
+                      ? format(formData.scheduledAt, "PPP")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-xs">
+                  <Calendar
+                    mode="single"
+                    selected={formData.scheduledAt}
+                    onSelect={(date) => handleChange("scheduledAt", date!)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xs bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold whitespace-nowrap px-3 dark:bg-primary dark:text-white"
+                onClick={() =>
+                  handleChange("scheduledAt", addDays(new Date(), 1))
+                }
+              >
+                Tomorrow
+              </Button>
+            </div>
           </div>
 
           {/* Notes */}

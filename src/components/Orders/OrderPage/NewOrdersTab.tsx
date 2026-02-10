@@ -63,6 +63,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   isRepView = false,
 }) => {
   const [updateSample] = useUpdateSampleMutation();
+  const [hideSamples, setHideSamples] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
@@ -81,7 +82,16 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     toast.error("You are not authorized to change it. This is not your order.");
   };
 
-  const newOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const filteredOrders = hideSamples
+    ? orders.filter((o) => !(o as any).isSample)
+    : orders;
+
+  const regularOrders = filteredOrders.filter((o) => !(o as any).isSample);
+  const sampleOrders = filteredOrders.filter((o) => (o as any).isSample);
+
+  const ordersValue = regularOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const orderCount = regularOrders.length;
+  const sampleCount = sampleOrders.length;
 
   if (!orders.length) {
     return <p className="text-gray-500 mt-4">No new orders found.</p>;
@@ -127,16 +137,38 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   return (
     <TooltipProvider>
       <div className="space-y-3">
-        <div className="text-right font-semibold text-emerald-600 pr-2">
-          Total New Orders Value: $
-          {newOrdersValue.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
+        <div className="flex items-center justify-between pr-2">
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={hideSamples}
+              onChange={(e) => setHideSamples(e.target.checked)}
+              className="h-4 w-4 rounded-xs accent-primary cursor-pointer"
+            />
+            <span className="text-muted-foreground font-medium">Hide Samples</span>
+          </label>
+          <div className="text-right">
+            <span className="font-semibold text-emerald-600">
+              {orderCount} Orders = $
+              {ordersValue.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </span>
+            {sampleCount > 0 && (
+              <span className="font-semibold text-purple-600 ml-4">
+                {sampleCount} Samples
+              </span>
+            )}
+          </div>
         </div>
 
-        {orders.map((order) => {
+        {(() => {
+          let orderIndex = 0;
+          let sampleIndex = 0;
+          return filteredOrders.map((order) => {
           const isSample = (order as any).isSample === true;
+          const displayNumber = isSample ? ++sampleIndex : ++orderIndex;
           const isOwnOrder = isRepView
             ? order.rep?._id === currentRep?._id
             : true;
@@ -158,6 +190,14 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-3 py-1 bg-card gap-2 rounded-xs">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <span className={cn(
+                      "text-xs font-bold rounded-xs px-1.5 py-0.5 min-w-[24px] text-center",
+                      isSample
+                        ? "bg-purple-600 text-white"
+                        : "bg-primary text-white"
+                    )}>
+                      {displayNumber}
+                    </span>
                     {!isSample ? (
                       <button
                         onClick={() => handleOpenDialog(order)}
@@ -565,7 +605,8 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
               </div>
             </Card>
           );
-        })}
+        });
+        })()}
       </div>
 
       {/* Modals */}
@@ -594,6 +635,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
             name: selectedOrderForDelivery.store?.name || "",
             address: selectedOrderForDelivery.store?.address || "",
           }}
+          orderAmount={selectedOrderForDelivery.total || null}
           onClose={() => {
             setDeliveryModalOpen(false);
             setSelectedOrderForDelivery(null);

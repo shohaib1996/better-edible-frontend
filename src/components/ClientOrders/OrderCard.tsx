@@ -447,8 +447,8 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               }
             : null
         }
-        rep={order.assignedRep}
         orderId={order._id}
+        orderAmount={order.total}
         onSuccess={onUpdate}
       />
     </>
