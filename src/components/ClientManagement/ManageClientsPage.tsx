@@ -36,7 +36,7 @@ export const ManageClientsPage = ({
   const { data, isLoading } = useGetAllPrivateLabelClientsQuery(
     {
       status: statusFilter !== "all" ? statusFilter : undefined,
-      repId: isRepView ? currentRepId : (repFilter || undefined),
+      repId: repFilter || undefined,
       search: searchQuery || undefined,
       page: currentPage,
       limit: limit,

@@ -87,6 +87,7 @@ export const ImagePreviewModal = ({
             className="object-contain"
             sizes="100vw"
             priority
+            unoptimized
           />
         </div>
 
