@@ -105,7 +105,7 @@ export function AppSidebar() {
             alt="Logo"
             width={100}
             height={100}
-            className="rounded-sm object-contain w-full h-full"
+            className="rounded-sm object-contain w-full h-full dark:invert"
           />
         </div>
 
