@@ -28,8 +28,18 @@ import {
   useUpdateNoteMutation,
 } from "@/redux/api/Notes/notes";
 import { useGetAllContactsQuery } from "@/redux/api/Contacts/contactsApi";
+import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
+import {
+  useChangeOrderStatusMutation,
+  useUpdateOrderMutation,
+} from "@/redux/api/orders/orders";
+import {
+  useUpdateSampleStatusMutation,
+  useUpdateSampleMutation,
+} from "@/redux/api/Samples/samplesApi";
 import { toast } from "sonner";
 import { Loader2, FileText, Users } from "lucide-react";
+import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { INote } from "@/types/note/note";
 import { ContactTab } from "./ContactTab";
@@ -43,6 +53,14 @@ interface AddNoteModalProps {
   storeId: string; // required store id
   repId: string;
   note?: INote | null;
+  /** When provided, shows delivery status checkboxes (delivered/cancelled) and triggers status update on submit */
+  deliveryId?: string;
+  /** Delivery object needed to update linked order/sample */
+  deliveryData?: {
+    orderId?: string;
+    sampleId?: string;
+    scheduledAt?: string;
+  };
 }
 
 type NoteFormData = z.infer<typeof noteSchema>;
@@ -56,6 +74,7 @@ const noteSchema = z.object({
   content: z.string().optional(),
   sample: z.boolean().default(false),
   delivery: z.boolean().default(false),
+  deliveryStatus: z.enum(["completed", "cancelled"]).optional(),
   payment: z
     .object({
       cash: z.boolean().default(false),
@@ -85,11 +104,22 @@ export const AddNoteModal = ({
   storeId,
   repId,
   note,
+  deliveryId,
+  deliveryData,
 }: AddNoteModalProps) => {
   // Notes
   const [createNote, { isLoading: isCreating }] = useCreateNoteMutation();
   const [updateNote, { isLoading: isUpdating }] = useUpdateNoteMutation();
-  const isNoteLoading = isCreating || isUpdating;
+
+  // Delivery status mutations (only used when deliveryId is provided)
+  const [updateDeliveryStatus, { isLoading: isUpdatingDelivery }] =
+    useUpdateDeliveryStatusMutation();
+  const [changeOrderStatus] = useChangeOrderStatusMutation();
+  const [updateOrder] = useUpdateOrderMutation();
+  const [updateSampleStatus] = useUpdateSampleStatusMutation();
+  const [updateSample] = useUpdateSampleMutation();
+
+  const isNoteLoading = isCreating || isUpdating || isUpdatingDelivery;
 
   // Contacts RTK hook for getting the count
   const { data: contactsData } = useGetAllContactsQuery(storeId, {
@@ -112,6 +142,7 @@ export const AddNoteModal = ({
         content: note.content || "",
         sample: note.sample || false,
         delivery: note.delivery || false,
+        deliveryStatus: deliveryId ? "completed" : undefined,
         payment: {
           cash: note.payment?.cash || false,
           check: note.payment?.check || false,
@@ -125,7 +156,8 @@ export const AddNoteModal = ({
         visitType: "",
         content: "",
         sample: false,
-        delivery: false,
+        delivery: deliveryId ? true : false,
+        deliveryStatus: deliveryId ? "completed" : undefined,
         payment: {
           cash: false,
           check: false,
@@ -134,7 +166,7 @@ export const AddNoteModal = ({
         },
       });
     }
-  }, [note, reset]);
+  }, [note, reset, deliveryId]);
 
   // reset when modal closes
   useEffect(() => {
@@ -149,8 +181,10 @@ export const AddNoteModal = ({
      ----------------------- */
   const onSubmit = async (data: NoteFormData) => {
     try {
+      const { deliveryStatus, ...noteFields } = data;
+
       if (note) {
-        await updateNote({ id: note._id, ...data }).unwrap();
+        await updateNote({ id: note._id, ...noteFields }).unwrap();
         toast.success("Note updated successfully!");
       } else {
         // Get current time in PST/PDT (America/Los_Angeles timezone)
@@ -174,7 +208,7 @@ export const AddNoteModal = ({
         const dateString = `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hour}:${dateParts.minute}`;
 
         const noteData = {
-          ...data,
+          ...noteFields,
           entityId: storeId,
           author: repId,
           date: dateString,
@@ -182,6 +216,63 @@ export const AddNoteModal = ({
         await createNote(noteData).unwrap();
         toast.success("Note created successfully!");
       }
+
+      // If deliveryId is provided, update delivery + linked order/sample status
+      if (deliveryId && deliveryStatus) {
+        try {
+          await updateDeliveryStatus({ id: deliveryId, status: deliveryStatus }).unwrap();
+
+          const today = format(new Date(), "yyyy-MM-dd");
+
+          if (deliveryStatus === "completed") {
+            if (deliveryData?.orderId) {
+              await updateOrder({
+                id: deliveryData.orderId,
+                deliveryDate: deliveryData.scheduledAt
+                  ? format(new Date(deliveryData.scheduledAt), "yyyy-MM-dd")
+                  : today,
+                shippedDate: today,
+              }).unwrap();
+              await changeOrderStatus({
+                id: deliveryData.orderId,
+                status: "shipped",
+              }).unwrap();
+              toast.success("Linked order marked as shipped");
+            } else if (deliveryData?.sampleId) {
+              await updateSample({
+                id: deliveryData.sampleId,
+                deliveryDate: deliveryData.scheduledAt
+                  ? format(new Date(deliveryData.scheduledAt), "yyyy-MM-dd")
+                  : today,
+                shippedDate: today,
+              }).unwrap();
+              await updateSampleStatus({
+                id: deliveryData.sampleId,
+                status: "shipped",
+              }).unwrap();
+              toast.success("Linked sample marked as shipped");
+            }
+          } else if (deliveryStatus === "cancelled") {
+            if (deliveryData?.orderId) {
+              await changeOrderStatus({
+                id: deliveryData.orderId,
+                status: "cancelled",
+              }).unwrap();
+              toast.success("Linked order marked as cancelled");
+            } else if (deliveryData?.sampleId) {
+              await updateSampleStatus({
+                id: deliveryData.sampleId,
+                status: "cancelled",
+              }).unwrap();
+              toast.success("Linked sample marked as cancelled");
+            }
+          }
+        } catch (error) {
+          toast.error("Note saved, but failed to update delivery status");
+          console.error(error);
+        }
+      }
+
       reset();
       onClose();
     } catch (error) {
@@ -324,24 +415,74 @@ export const AddNoteModal = ({
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              {!deliveryId && (
+                <div className="flex items-center space-x-2">
+                  <Controller
+                    name="delivery"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        id="delivery"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="border-accent"
+                      />
+                    )}
+                  />
+                  <Label htmlFor="delivery" className="text-sm font-medium text-foreground cursor-pointer">
+                    Delivery
+                  </Label>
+                </div>
+              )}
+            </div>
+
+            {deliveryId && (
+              <div className="space-y-2 border border-border rounded-xs p-3 bg-secondary/20">
+                <Label className="text-xs font-semibold text-foreground">
+                  Delivery Status
+                </Label>
                 <Controller
-                  name="delivery"
+                  name="deliveryStatus"
                   control={control}
                   render={({ field }) => (
-                    <Checkbox
-                      id="delivery"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      className="border-accent"
-                    />
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="deliveryStatus-completed"
+                          checked={field.value === "completed"}
+                          onCheckedChange={(checked) =>
+                            field.onChange(checked ? "completed" : undefined)
+                          }
+                          className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                        />
+                        <Label
+                          htmlFor="deliveryStatus-completed"
+                          className="text-sm font-medium text-foreground cursor-pointer"
+                        >
+                          Delivered
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="deliveryStatus-cancelled"
+                          checked={field.value === "cancelled"}
+                          onCheckedChange={(checked) =>
+                            field.onChange(checked ? "cancelled" : undefined)
+                          }
+                          className="border-red-500 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                        />
+                        <Label
+                          htmlFor="deliveryStatus-cancelled"
+                          className="text-sm font-medium text-foreground cursor-pointer"
+                        >
+                          Cancelled
+                        </Label>
+                      </div>
+                    </div>
                   )}
                 />
-                <Label htmlFor="delivery" className="text-sm font-medium text-foreground cursor-pointer">
-                  Delivery
-                </Label>
               </div>
-            </div>
+            )}
 
             <div className="space-y-3 border-t border-border pt-4">
               <h4 className="text-base font-semibold text-foreground">Payment</h4>

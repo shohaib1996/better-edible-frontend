@@ -38,7 +38,7 @@ export const notesApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: [tagTypes.notes],
+      invalidatesTags: [tagTypes.notes, tagTypes.deliveries],
     }),
 
     updateNote: builder.mutation({

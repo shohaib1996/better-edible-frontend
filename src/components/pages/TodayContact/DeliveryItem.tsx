@@ -26,22 +26,6 @@ import { NotesModal } from "@/components/Notes/NotesModal";
 import { SampleModal } from "@/components/Sample/SampleModal";
 import type { Delivery } from "@/types";
 import { ManageFollowUpModal } from "../../Followup/ManageFollowUpModal";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
-import {
-  useChangeOrderStatusMutation,
-  useUpdateOrderMutation,
-} from "@/redux/api/orders/orders";
-import {
-  useUpdateSampleStatusMutation,
-  useUpdateSampleMutation,
-} from "@/redux/api/Samples/samplesApi";
 import { format } from "date-fns";
 import {
   Tooltip,
@@ -90,73 +74,6 @@ export const DeliveryItem = ({
 
   const [deleteDelivery, { isLoading: isDeleting }] =
     useDeleteDeliveryMutation();
-
-  const [updateStatus, { isLoading: isUpdatingStatus }] =
-    useUpdateDeliveryStatusMutation();
-  const [changeOrderStatus] = useChangeOrderStatusMutation();
-  const [updateSampleStatus] = useUpdateSampleStatusMutation();
-  const [updateOrder] = useUpdateOrderMutation();
-  const [updateSample] = useUpdateSampleMutation();
-
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      await updateStatus({ id: delivery._id, status: newStatus }).unwrap();
-
-      if (newStatus === "completed") {
-        const today = format(new Date(), "yyyy-MM-dd");
-
-        if (delivery.orderId) {
-          await updateOrder({
-            id: delivery.orderId,
-            deliveryDate: delivery.scheduledAt
-              ? format(new Date(delivery.scheduledAt), "yyyy-MM-dd")
-              : today,
-            shippedDate: today,
-          }).unwrap();
-
-          await changeOrderStatus({
-            id: delivery.orderId,
-            status: "shipped",
-          }).unwrap();
-          toast.success("Linked order marked as shipped");
-        } else if (delivery.sampleId) {
-          await updateSample({
-            id: delivery.sampleId,
-            deliveryDate: delivery.scheduledAt
-              ? format(new Date(delivery.scheduledAt), "yyyy-MM-dd")
-              : today,
-            shippedDate: today,
-          }).unwrap();
-
-          await updateSampleStatus({
-            id: delivery.sampleId,
-            status: "shipped",
-          }).unwrap();
-          toast.success("Linked sample marked as shipped");
-        }
-      }
-
-      if (newStatus === "cancelled") {
-        if (delivery.orderId) {
-          await changeOrderStatus({
-            id: delivery.orderId,
-            status: "cancelled",
-          }).unwrap();
-          toast.success("Linked order marked as cancelled");
-        } else if (delivery.sampleId) {
-          await updateSampleStatus({
-            id: delivery.sampleId,
-            status: "cancelled",
-          }).unwrap();
-          toast.success("Linked sample marked as cancelled");
-        }
-      }
-
-      toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
-    } catch (error) {
-      toast.error("Failed to update status");
-    }
-  };
 
   const handleDelete = async () => {
     try {
@@ -275,25 +192,13 @@ export const DeliveryItem = ({
           )}
         </div>
 
-        {/* Status Select */}
-        <Select
-          value={delivery.status}
-          onValueChange={handleStatusChange}
-          disabled={isUpdatingStatus}
+        <span
+          className={`text-xs px-2 py-0.5 rounded-xs ${getStatusColor(
+            delivery.status
+          )}`}
         >
-          <SelectTrigger
-            className={`h-7 w-28 rounded-xs text-xs gap-1 [&>svg]:ml-0 ${getStatusColor(
-              delivery.status
-            )}`}
-          >
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xs">
-            <SelectItem value="in_transit">In Transit</SelectItem>
-            <SelectItem value="completed">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+          {delivery.status.replace("_", " ")}
+        </span>
       </div>
 
       {/* Actions */}
@@ -394,6 +299,12 @@ export const DeliveryItem = ({
         onClose={() => setAddNoteModalOpen(false)}
         storeId={delivery.storeId._id}
         repId={delivery.assignedTo._id}
+        deliveryId={delivery._id}
+        deliveryData={{
+          orderId: delivery.orderId,
+          sampleId: delivery.sampleId,
+          scheduledAt: delivery.scheduledAt,
+        }}
       />
       <NotesModal
         open={isViewNotesModalOpen}
