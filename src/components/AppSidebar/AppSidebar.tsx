@@ -94,8 +94,6 @@ export function AppSidebar() {
 
   const menuItems = user.role === "superadmin" ? adminItems : repItems;
 
-  console.log(user);
-
   return (
     <Sidebar collapsible="icon">
       {/* ---------------- HEADER ---------------- */}
@@ -103,7 +101,7 @@ export function AppSidebar() {
         {/* Full logo - shown when expanded */}
         <div className="gap-3 px-4 py-2 w-full h-[100px] group-data-[collapsible=icon]:hidden">
           <Image
-            src="https://res.cloudinary.com/dsn66l0iv/image/upload/v1766512506/Better_Edibles_logo_tqs1pm.png"
+            src="https://www.better-edibles.com/assets/logo.png"
             alt="Logo"
             width={100}
             height={100}
