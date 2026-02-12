@@ -41,7 +41,9 @@ export const AddClientModal = ({
 }: AddClientModalProps) => {
   const [storeId, setStoreId] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [repId, setRepId] = useState(isRepView && currentRepId ? currentRepId : "");
+  const [repId, setRepId] = useState(
+    isRepView && currentRepId ? currentRepId : "",
+  );
   const [recurringEnabled, setRecurringEnabled] = useState(false);
   const [interval, setInterval] = useState<
     "monthly" | "bimonthly" | "quarterly"
@@ -121,19 +123,25 @@ export const AddClientModal = ({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Add New Client</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
+            Add New Client
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Store Selection */}
           <div className="space-y-1.5">
-            <Label htmlFor="store" className="text-sm font-medium">Store *</Label>
+            <Label htmlFor="store" className="text-sm font-medium">
+              Store *
+            </Label>
             <StoreSelect value={storeId} onChange={setStoreId} />
           </div>
 
           {/* Contact Email */}
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-sm font-medium">Contact Email *</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Contact Email *
+            </Label>
             <Input
               id="email"
               type="email"
@@ -147,7 +155,9 @@ export const AddClientModal = ({
           {/* Assigned Rep - Only show for admin, auto-assign for rep */}
           {!isRepView && (
             <div className="space-y-1.5">
-              <Label htmlFor="rep" className="text-sm font-medium">Assigned Rep *</Label>
+              <Label htmlFor="rep" className="text-sm font-medium">
+                Assigned Rep *
+              </Label>
               <Select value={repId} onValueChange={setRepId}>
                 <SelectTrigger id="rep" className="w-full rounded-xs">
                   <SelectValue placeholder="Select a rep" />
@@ -170,16 +180,21 @@ export const AddClientModal = ({
                 id="recurringSchedule"
                 checked={recurringEnabled}
                 onCheckedChange={(checked) => setRecurringEnabled(!!checked)}
-                className="rounded-xs"
+                className="rounded-xs border-2 border-primary/50 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
               />
-              <Label htmlFor="recurringSchedule" className="cursor-pointer text-sm font-medium">
+              <Label
+                htmlFor="recurringSchedule"
+                className="cursor-pointer text-sm font-medium text-foreground"
+              >
                 Enable Recurring Schedule
               </Label>
             </div>
 
             {recurringEnabled && (
               <div className="space-y-1.5">
-                <Label htmlFor="interval" className="text-sm font-medium">Interval</Label>
+                <Label htmlFor="interval" className="text-sm font-medium">
+                  Interval
+                </Label>
                 <Select
                   value={interval}
                   onValueChange={(val: "monthly" | "bimonthly" | "quarterly") =>
@@ -201,10 +216,19 @@ export const AddClientModal = ({
 
           {/* Actions */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose} disabled={isLoading} className="rounded-xs">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="rounded-xs"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isLoading} className="rounded-xs">
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="rounded-xs"
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Client
             </Button>
