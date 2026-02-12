@@ -16,15 +16,7 @@ import { format } from "date-fns";
 import { useGetAllSamplesQuery } from "@/redux/api/Samples/samplesApi";
 import type { ISample } from "@/types";
 import { RepSelect } from "@/components/Shared/RepSelect";
-import {
-  Package,
-  Store,
-  User,
-  Calendar,
-  FileText,
-  Search,
-  ClipboardList,
-} from "lucide-react";
+import { Package, Search, ClipboardList } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -169,7 +161,7 @@ export default function SamplesListContent() {
       render: (sample) => (
         <span
           className={`px-2.5 py-1 rounded-xs text-xs font-medium capitalize ${getStatusStyles(
-            sample.status
+            sample.status,
           )}`}
         >
           {sample.status}
