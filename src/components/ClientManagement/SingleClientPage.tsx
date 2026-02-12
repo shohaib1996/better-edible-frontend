@@ -240,7 +240,7 @@ export const SingleClientPage = ({
               variant="outline"
               size="sm"
               onClick={() => setEditInfoModalOpen(true)}
-              className="rounded-xs"
+              className="rounded-xs bg-accent text-accent-foreground dark:bg-primary dark:text-white dark:hover:bg-primary/80"
             >
               <Pencil className="mr-2 h-4 w-4" />
               Edit Info

@@ -205,6 +205,23 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 </span>
               </span>
             </div>
+
+            {/* Rep and Created By Info - Show on left for small screens */}
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-2 lg:hidden">
+              <span className="flex items-center gap-1">
+                <User className="h-3.5 w-3.5" />
+                Rep:{" "}
+                <span className="font-medium text-foreground">
+                  {order.assignedRep?.name || "Unassigned"}
+                </span>
+              </span>
+              <span>
+                <span className="font-semibold text-primary">Created by:</span>{" "}
+                <span className="font-medium text-foreground">
+                  {order.createdBy?.user?.name || "N/A"}
+                </span>
+              </span>
+            </div>
           </div>
 
           {/* Right - Actions */}
@@ -371,8 +388,8 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 )}
               </div>
 
-              {/* Rep and Created By Info */}
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-1">
+              {/* Rep and Created By Info - Show on right for large screens */}
+              <div className="hidden lg:flex flex-col gap-1 text-xs text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
                   Rep:{" "}
