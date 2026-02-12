@@ -67,6 +67,10 @@ export interface IClientOrder {
     readyToShipNotification: boolean;
     shippedNotification: boolean;
   };
+  createdBy?: {
+    user: { _id: string; name: string };
+    userType: "admin" | "rep";
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,6 +105,8 @@ export interface ICreateOrderRequest {
   discountType?: DiscountType;
   note?: string;
   shipASAP?: boolean;
+  userId?: string;
+  userType?: "admin" | "rep";
 }
 
 export interface IUpdateOrderRequest {

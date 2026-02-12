@@ -414,6 +414,14 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                               {order.rep?.name || "N/A"}
                             </span>
                           </p>
+                          <p>
+                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                              Created by:
+                            </span>{" "}
+                            <span className="text-foreground">
+                              {order.createdBy?.user?.name || "N/A"}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     ) : (
@@ -448,7 +456,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                             </span>
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-0.5">
                           <p className="text-emerald-600 dark:text-emerald-400 font-bold">
                             Amount: $
                             {(Number(order.total) || 0).toLocaleString(
@@ -458,6 +466,14 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                                 maximumFractionDigits: 2,
                               }
                             )}
+                          </p>
+                          <p>
+                            <span className="text-primary font-semibold">
+                              Created by:
+                            </span>{" "}
+                            <span className="text-foreground">
+                              {order.createdBy?.user?.name || "N/A"}
+                            </span>
                           </p>
                         </div>
                       </div>

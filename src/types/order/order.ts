@@ -52,5 +52,9 @@ export interface IOrder {
   createdAt: string | Date;
 
   orderNumber: number;
-  note: string     // human-readable sequence
+  note: string;     // human-readable sequence
+  createdBy?: {
+    user: { _id: string; name: string };
+    userType: "admin" | "rep";
+  } | null;
 }

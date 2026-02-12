@@ -170,6 +170,23 @@ export const CreateOrderModal = ({
     }
 
     try {
+      // Get logged-in user info for createdBy tracking
+      let userId: string | undefined;
+      let userType: "admin" | "rep" | undefined;
+      try {
+        const storedUser = localStorage.getItem("better-user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          userId = user.id;
+          userType =
+            user.role === "superadmin" || user.role === "manager"
+              ? "admin"
+              : "rep";
+        }
+      } catch {
+        console.error("Failed to parse user from localStorage");
+      }
+
       await createOrder({
         clientId: selectedClientId,
         deliveryDate: deliveryDate?.toISOString(),
@@ -181,6 +198,8 @@ export const CreateOrderModal = ({
         discountType,
         note: note || undefined,
         shipASAP,
+        userId,
+        userType,
       }).unwrap();
 
       toast.success("Order created successfully!");

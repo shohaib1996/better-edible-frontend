@@ -458,6 +458,14 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                           {order.rep?.name || "N/A"}
                         </span>
                       </p>
+                      <p>
+                        <span className="font-semibold text-purple-700 dark:text-purple-400">
+                          Created by:
+                        </span>{" "}
+                        <span className="text-foreground">
+                          {order.createdBy?.user?.name || "N/A"}
+                        </span>
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -554,6 +562,12 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-semibold text-primary">Created by:</span>{" "}
+                        <span className="text-foreground">
+                          {order.createdBy?.user?.name || "N/A"}
                         </span>
                       </p>
                     </div>

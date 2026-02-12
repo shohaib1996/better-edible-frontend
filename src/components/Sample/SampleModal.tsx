@@ -42,12 +42,28 @@ export const SampleModal = ({
       return toast.error("Please enter sample description.");
 
     try {
-      const payload = {
+      const payload: any = {
         storeId,
         repId,
         status: "submitted",
         description,
       };
+
+      // Attach createdBy info from logged-in user
+      try {
+        const storedUser = localStorage.getItem("better-user");
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          const uType =
+            user.role === "superadmin" || user.role === "manager"
+              ? "admin"
+              : "rep";
+          payload.userId = user.id;
+          payload.userType = uType;
+        }
+      } catch {
+        // ignore parse errors
+      }
 
       await createSample(payload).unwrap();
       toast.success("Sample record created successfully!");

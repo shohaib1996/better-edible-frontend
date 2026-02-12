@@ -11,6 +11,10 @@ export interface ISample {
   notes?: string;
   deliveryDate?: string;
   shippedDate?: string;
+  createdBy?: {
+    user: { _id: string; name: string };
+    userType: "admin" | "rep";
+  } | null;
   createdAt: string;
   updatedAt: string;
 }

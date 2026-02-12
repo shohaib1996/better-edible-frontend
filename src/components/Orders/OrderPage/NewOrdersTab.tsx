@@ -502,6 +502,14 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                             {order.rep?.name || "N/A"}
                           </span>
                         </p>
+                        <p className="flex items-center gap-1.5 text-xs">
+                          <span className="font-bold text-purple-700 dark:text-purple-400">
+                            Created by:
+                          </span>
+                          <span className="text-foreground">
+                            {order.createdBy?.user?.name || "N/A"}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -590,6 +598,10 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                       </p>
                       <p className="text-primary font-medium">
                         Rep: {order.rep?.name || "N/A"}
+                      </p>
+                      <p className="text-foreground">
+                        <span className="font-semibold text-primary">Created by:</span>{" "}
+                        {order.createdBy?.user?.name || "N/A"}
                       </p>
                     </div>
                   </div>

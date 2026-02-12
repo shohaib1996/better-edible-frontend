@@ -177,6 +177,15 @@ export default function SamplesListContent() {
       ),
     },
     {
+      key: "createdBy",
+      header: "Created By",
+      render: (sample) => (
+        <span className="text-foreground font-medium">
+          {sample.createdBy?.user?.name || "N/A"}
+        </span>
+      ),
+    },
+    {
       key: "createdAt",
       header: "Created Date",
       render: (sample) => (

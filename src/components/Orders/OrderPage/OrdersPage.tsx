@@ -118,7 +118,7 @@ const OrdersPage = ({
 
   const handleCreateOrUpdate = async (values: any) => {
     try {
-      const orderData = {
+      const orderData: any = {
         ...values,
         items: orderItems,
         subtotal: orderTotals.totalPrice,
@@ -132,6 +132,21 @@ const OrdersPage = ({
         await updateOrder({ id: editingOrder._id, ...orderData }).unwrap();
         toast.success("Order updated successfully");
       } else {
+        // Attach createdBy info from logged-in user
+        try {
+          const storedUser = localStorage.getItem("better-user");
+          if (storedUser) {
+            const user = JSON.parse(storedUser);
+            const userType =
+              user.role === "superadmin" || user.role === "manager"
+                ? "admin"
+                : "rep";
+            orderData.userId = user.id;
+            orderData.userType = userType;
+          }
+        } catch {
+          // ignore parse errors
+        }
         await createOrder(orderData).unwrap();
         toast.success("Order created successfully");
       }
