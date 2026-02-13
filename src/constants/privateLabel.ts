@@ -71,6 +71,7 @@ export const ORDER_STATUSES = [
   "stage_4",
   "ready_to_ship",
   "shipped",
+  "cancelled",
 ] as const;
 
 export type ClientOrderStatus = (typeof ORDER_STATUSES)[number];
@@ -83,6 +84,7 @@ export const ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
   stage_4: "Stage 4",
   ready_to_ship: "Ready to Ship",
   shipped: "Shipped",
+  cancelled: "Cancelled",
 };
 
 export const ORDER_STATUS_COLORS: Record<ClientOrderStatus, string> = {
@@ -95,6 +97,8 @@ export const ORDER_STATUS_COLORS: Record<ClientOrderStatus, string> = {
     "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
   shipped:
     "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+  cancelled:
+    "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
 };
 
 export const ORDER_STATUS_TEXT_COLORS: Record<ClientOrderStatus, string> = {
@@ -105,6 +109,7 @@ export const ORDER_STATUS_TEXT_COLORS: Record<ClientOrderStatus, string> = {
   stage_4: "text-primary-foreground",
   ready_to_ship: "text-blue-600 dark:text-blue-400",
   shipped: "text-green-600 dark:text-green-400",
+  cancelled: "text-red-600 dark:text-red-400",
 };
 
 // ─────────────────────────────

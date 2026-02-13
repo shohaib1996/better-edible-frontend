@@ -529,7 +529,7 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               }
             : null
         }
-        orderId={order._id}
+        clientOrderId={order._id}
         orderAmount={order.total}
         onSuccess={onUpdate}
       />

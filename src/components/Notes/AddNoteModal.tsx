@@ -37,6 +37,7 @@ import {
   useUpdateSampleStatusMutation,
   useUpdateSampleMutation,
 } from "@/redux/api/Samples/samplesApi";
+import { useUpdateClientOrderStatusMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
 import { toast } from "sonner";
 import { Loader2, FileText, Users } from "lucide-react";
 import { format } from "date-fns";
@@ -59,6 +60,7 @@ interface AddNoteModalProps {
   deliveryData?: {
     orderId?: string;
     sampleId?: string;
+    clientOrderId?: string;
     scheduledAt?: string;
   };
 }
@@ -118,6 +120,7 @@ export const AddNoteModal = ({
   const [updateOrder] = useUpdateOrderMutation();
   const [updateSampleStatus] = useUpdateSampleStatusMutation();
   const [updateSample] = useUpdateSampleMutation();
+  const [updateClientOrderStatus] = useUpdateClientOrderStatusMutation();
 
   const isNoteLoading = isCreating || isUpdating || isUpdatingDelivery;
 
@@ -251,6 +254,12 @@ export const AddNoteModal = ({
                 status: "shipped",
               }).unwrap();
               toast.success("Linked sample marked as shipped");
+            } else if (deliveryData?.clientOrderId) {
+              await updateClientOrderStatus({
+                id: deliveryData.clientOrderId,
+                status: "shipped",
+              }).unwrap();
+              toast.success("Linked client order marked as shipped");
             }
           } else if (deliveryStatus === "cancelled") {
             if (deliveryData?.orderId) {
@@ -265,6 +274,12 @@ export const AddNoteModal = ({
                 status: "cancelled",
               }).unwrap();
               toast.success("Linked sample marked as cancelled");
+            } else if (deliveryData?.clientOrderId) {
+              await updateClientOrderStatus({
+                id: deliveryData.clientOrderId,
+                status: "cancelled",
+              }).unwrap();
+              toast.success("Linked client order marked as cancelled");
             }
           }
         } catch (error) {

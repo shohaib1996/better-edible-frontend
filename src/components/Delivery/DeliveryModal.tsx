@@ -51,6 +51,7 @@ interface DeliveryModalProps {
   sampleId?: string | null;
   orderId?: string | null;
   privateLabelOrderId?: string | null;
+  clientOrderId?: string | null;
   orderAmount?: number | null;
   onSuccess?: () => void;
 }
@@ -63,6 +64,7 @@ export const DeliveryModal = ({
   sampleId,
   orderId,
   privateLabelOrderId,
+  clientOrderId,
   orderAmount,
   onSuccess,
 }: DeliveryModalProps) => {
@@ -121,7 +123,7 @@ export const DeliveryModal = ({
         notes: formData.notes,
         ...(sampleId && { sampleId }),
         ...(orderId && { orderId }),
-        ...(privateLabelOrderId && { privateLabelOrderId }),
+        ...((clientOrderId || privateLabelOrderId) && { clientOrderId: clientOrderId || privateLabelOrderId }),
       }).unwrap();
 
       toast.success("✅ Delivery created successfully");

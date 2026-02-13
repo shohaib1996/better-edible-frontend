@@ -303,6 +303,7 @@ export const DeliveryItem = ({
         deliveryData={{
           orderId: delivery.orderId,
           sampleId: delivery.sampleId,
+          clientOrderId: delivery.clientOrderId,
           scheduledAt: delivery.scheduledAt,
         }}
       />

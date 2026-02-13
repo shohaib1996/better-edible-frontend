@@ -24,4 +24,5 @@ export interface Delivery {
   updatedAt?: string;
   orderId?: string;
   sampleId?: string;
+  clientOrderId?: string;
 }

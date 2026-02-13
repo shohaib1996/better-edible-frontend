@@ -13,7 +13,8 @@ export type ClientOrderStatus =
   | "stage_3"
   | "stage_4"
   | "ready_to_ship"
-  | "shipped";
+  | "shipped"
+  | "cancelled";
 
 // ─────────────────────────────
 // ORDER ITEM
