@@ -38,7 +38,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { format, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
 import { ILabel, DiscountType } from "@/types";
@@ -65,9 +75,10 @@ export const CreateOrderModal = ({
   onClose,
   onSuccess,
 }: CreateOrderModalProps) => {
+  const defaultDeliveryDate = addDays(startOfDay(new Date()), 14);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedLabels, setSelectedLabels] = useState<OrderItem[]>([]);
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
+  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(defaultDeliveryDate);
   const [discount, setDiscount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
   const [note, setNote] = useState<string>("");
@@ -78,6 +89,7 @@ export const CreateOrderModal = ({
   } | null>(null);
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [showEarlyDateWarning, setShowEarlyDateWarning] = useState(false);
 
   const { data: clients, isLoading: clientsLoading } = useGetClientsWithApprovedLabelsQuery({
     search: clientSearchQuery || undefined,
@@ -154,6 +166,13 @@ export const CreateOrderModal = ({
     discountType === "percentage" ? (subtotal * discount) / 100 : discount;
   const total = Math.max(0, subtotal - discountAmount);
 
+  // Check if delivery date is earlier than 2 weeks from today
+  const isEarlyDeliveryDate = (date: Date | undefined) => {
+    if (!date) return false;
+    const minDate = startOfDay(addDays(new Date(), 14));
+    return startOfDay(date) < minDate;
+  };
+
   // Submit order
   const handleSubmit = async () => {
     if (!selectedClientId) {
@@ -169,6 +188,16 @@ export const CreateOrderModal = ({
       return;
     }
 
+    // Show warning if delivery date is earlier than 2 weeks
+    if (isEarlyDeliveryDate(deliveryDate)) {
+      setShowEarlyDateWarning(true);
+      return;
+    }
+
+    await submitOrder();
+  };
+
+  const submitOrder = async () => {
     try {
       // Get logged-in user info for createdBy tracking
       let userId: string | undefined;
@@ -189,7 +218,7 @@ export const CreateOrderModal = ({
 
       await createOrder({
         clientId: selectedClientId,
-        deliveryDate: deliveryDate?.toISOString(),
+        deliveryDate: deliveryDate!.toISOString(),
         items: selectedLabels.map((item) => ({
           labelId: item.labelId,
           quantity: item.quantity,
@@ -216,7 +245,7 @@ export const CreateOrderModal = ({
   const resetForm = () => {
     setSelectedClientId("");
     setSelectedLabels([]);
-    setDeliveryDate(undefined);
+    setDeliveryDate(addDays(startOfDay(new Date()), 14));
     setDiscount(0);
     setDiscountType("flat");
     setNote("");
@@ -225,6 +254,7 @@ export const CreateOrderModal = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
@@ -537,7 +567,17 @@ export const CreateOrderModal = ({
             <Checkbox
               id="shipASAP"
               checked={shipASAP}
-              onCheckedChange={(checked) => setShipASAP(!!checked)}
+              onCheckedChange={(checked) => {
+                const isChecked = !!checked;
+                setShipASAP(isChecked);
+                if (isChecked) {
+                  const twoWeeksOut = addDays(startOfDay(new Date()), 14);
+                  setDeliveryDate(twoWeeksOut);
+                  toast.info(
+                    `Delivery date set to ${format(twoWeeksOut, "PPP")} (2 weeks). You can adjust it if needed.`,
+                  );
+                }
+              }}
               className="rounded-xs data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-primary"
             />
             <div>
@@ -625,5 +665,34 @@ export const CreateOrderModal = ({
         onClose={() => setPreviewImage(null)}
       />
     </Dialog>
+
+      {/* Early Delivery Date Warning */}
+      <AlertDialog open={showEarlyDateWarning} onOpenChange={setShowEarlyDateWarning}>
+        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-secondary dark:bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Early Delivery Date</AlertDialogTitle>
+            <AlertDialogDescription>
+              The selected delivery date is earlier than the standard 2-week
+              production window. This may affect production scheduling and
+              on-time delivery. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
+              Change Date
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowEarlyDateWarning(false);
+                submitOrder();
+              }}
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Proceed Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
