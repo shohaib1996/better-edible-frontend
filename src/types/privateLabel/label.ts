@@ -28,6 +28,15 @@ export interface ILabelImage {
 }
 
 // ─────────────────────────────
+// FORMULATION COMPONENT
+// ─────────────────────────────
+
+export interface IFormulationComponent {
+  name: string;
+  percentage: number;
+}
+
+// ─────────────────────────────
 // STAGE HISTORY
 // ─────────────────────────────
 
@@ -56,6 +65,10 @@ export interface ILabel {
   flavorName: string;
   productType: string;
   specialInstructions?: string;
+  cannabinoidMix?: string;
+  color?: string;
+  flavorComponents: IFormulationComponent[];
+  colorComponents: IFormulationComponent[];
   currentStage: LabelStage;
   stageHistory: IStageHistoryEntry[];
   labelImages: ILabelImage[];

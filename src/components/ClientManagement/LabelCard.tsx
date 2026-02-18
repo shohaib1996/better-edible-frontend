@@ -47,6 +47,11 @@ import {
   Pencil,
   Trash2,
   History,
+  Beaker,
+  Palette,
+  Droplets,
+  FileText,
+  Pill,
 } from "lucide-react";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 import { EditLabelModal } from "./EditLabelModal";
@@ -98,6 +103,13 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
   const stageLabel =
     STAGE_LABELS[label.currentStage as LabelStage] || label.currentStage;
 
+  const hasDetails =
+    label.cannabinoidMix ||
+    label.color ||
+    (label.flavorComponents && label.flavorComponents.length > 0) ||
+    (label.colorComponents && label.colorComponents.length > 0) ||
+    label.specialInstructions;
+
   const handleStageChange = async (newStage: string) => {
     if (newStage === label.currentStage) return;
 
@@ -134,140 +146,120 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
     }
   };
 
+  const ActionsMenu = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="rounded-xs h-8 w-8 p-0">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="rounded-xs border-border dark:border-white/20"
+      >
+        <DropdownMenuItem
+          onClick={() => setShowEdit(true)}
+          className="rounded-xs cursor-pointer"
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setShowHistory(true)}
+          className="rounded-xs cursor-pointer"
+        >
+          <History className="mr-2 h-4 w-4" />
+          View History
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setShowDeleteDialog(true)}
+          className="text-red-600 rounded-xs cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
-      <Card className="p-4 rounded-xs border-border dark:border-white/20">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {/* Top section on mobile: Image + Name + Actions */}
-          <div className="flex items-start gap-4 flex-1 w-full">
-            {/* Label Image Preview */}
-            <div
-              className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-xs bg-muted cursor-pointer group border border-border dark:border-white/20"
-              onClick={() => {
-                if (label.labelImages && label.labelImages.length > 0) {
-                  const img = label.labelImages[0];
-                  setPreviewImage({
-                    url: img.secureUrl || img.url,
-                    filename:
-                      img.originalFilename || `${label.flavorName}-label`,
-                  });
-                }
-              }}
-            >
-              {label.labelImages && label.labelImages.length > 0 ? (
-                <>
-                  <img
-                    src={
-                      label.labelImages[0].secureUrl || label.labelImages[0].url
-                    }
-                    alt={label.flavorName}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Eye className="h-6 w-6 text-white" />
-                  </div>
-                  {/* Image count badge */}
-                  {label.labelImages.length > 1 && (
-                    <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
-                      +{label.labelImages.length - 1}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+      <Card className="rounded-xs py-0 gap-0 border-border dark:border-white/20 overflow-hidden">
+        {/* Top row: Image + Info + Stage + Actions */}
+        <div className="flex items-start gap-4 p-4">
+          {/* Label Image */}
+          <div
+            className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] shrink-0 overflow-hidden rounded-lg bg-muted cursor-pointer group border border-border dark:border-white/20"
+            onClick={() => {
+              if (label.labelImages && label.labelImages.length > 0) {
+                const img = label.labelImages[0];
+                setPreviewImage({
+                  url: img.secureUrl || img.url,
+                  filename: img.originalFilename || `${label.flavorName}-label`,
+                });
+              }
+            }}
+          >
+            {label.labelImages && label.labelImages.length > 0 ? (
+              <>
+                <img
+                  src={
+                    label.labelImages[0].secureUrl || label.labelImages[0].url
+                  }
+                  alt={label.flavorName}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Eye className="h-5 w-5 text-white" />
                 </div>
-              )}
-            </div>
-
-            {/* Label Info */}
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold truncate text-base sm:text-lg">
-                {label.flavorName}
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                {label.productType}
-              </p>
-              <Badge className={`${stageColor} mt-1 rounded-xs`}>
-                {stageLabel}
-              </Badge>
-              {label.specialInstructions && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  <span className="font-medium">Instructions:</span>{" "}
-                  {label.specialInstructions}
-                </p>
-              )}
-            </div>
-
-            {/* Actions Menu (Desktop hidden, Mobile visible) - Actually, let's keep it consistent.
-                We'll just put the actions menu here or at the end.
-                Original structure was single row.
-                New structure:
-                Mobile:
-                [Image] [Title/Badge] [Menu]
-                [Dropdown]
-
-                Desktop:
-                [Image] [Title/Badge] [Dropdown] [Menu]
-            */}
-            {/* Mobile Actions Menu (Hidden on SM) */}
-            <div className="sm:hidden">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-xs h-8 w-8 p-0"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="rounded-xs border-border dark:border-white/20"
-                >
-                  <DropdownMenuItem
-                    onClick={() => setShowEdit(true)}
-                    className="rounded-xs cursor-pointer"
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowHistory(true)}
-                    className="rounded-xs cursor-pointer"
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    View History
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-600 rounded-xs cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                {label.labelImages.length > 1 && (
+                  <div className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium">
+                    +{label.labelImages.length - 1}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ImageIcon className="h-7 w-7 text-muted-foreground" />
+              </div>
+            )}
           </div>
 
-          {/* Bottom section on mobile: Stage Update */}
-          <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-            <div className="flex-1 sm:w-48">
-              <div className="sm:hidden text-xs text-muted-foreground mb-1">
-                Update Stage:
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h4 className="font-semibold truncate text-base leading-tight">
+                  {label.flavorName}
+                </h4>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {label.productType}
+                </p>
               </div>
+              {/* Mobile actions */}
+              <div className="sm:hidden shrink-0">
+                <ActionsMenu />
+              </div>
+            </div>
+            <Badge
+              className={`${stageColor} mt-1.5 rounded-xs text-[11px] px-2 py-0.5`}
+            >
+              {stageLabel}
+            </Badge>
+          </div>
+
+          {/* Desktop: Stage + Actions */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <div className="w-48">
               <Select
                 value={selectedStage}
                 onValueChange={handleStageChange}
                 disabled={updatingStage}
               >
-                <SelectTrigger className="w-full rounded-xs border-border dark:border-white/20">
+                <SelectTrigger className="w-full rounded-xs border-border dark:border-white/20 h-9 text-sm">
                   {updatingStage ? (
                     <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       <span>Updating...</span>
                     </div>
                   ) : (
@@ -283,44 +275,103 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
                 </SelectContent>
               </Select>
             </div>
+            <ActionsMenu />
+          </div>
+        </div>
 
-            {/* Desktop Actions Menu (Hidden on Mobile) */}
-            <div className="hidden sm:block">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-xs">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="rounded-xs border-border dark:border-white/20"
-                >
-                  <DropdownMenuItem
-                    onClick={() => setShowEdit(true)}
-                    className="rounded-xs cursor-pointer"
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowHistory(true)}
-                    className="rounded-xs cursor-pointer"
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    View History
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-600 rounded-xs cursor-pointer focus:bg-red-50 dark:focus:bg-red-950/30"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {/* Details section */}
+        {hasDetails && (
+          <div className="px-4 pb-4 pt-0">
+            <div className="border-t border-border dark:border-white/10 pt-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {label.cannabinoidMix && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Pill className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <span className="font-medium text-foreground">
+                      {label.cannabinoidMix}
+                    </span>
+                  </div>
+                )}
+                {label.color && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Palette className="h-3.5 w-3.5 shrink-0 text-pink-500" />
+                    <span className="font-medium text-foreground">
+                      {label.color}
+                    </span>
+                  </div>
+                )}
+                {label.flavorComponents &&
+                  label.flavorComponents.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Droplets className="h-3.5 w-3.5 shrink-0 text-orange-500" />
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {label.flavorComponents.map((c, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center bg-orange-500/10 text-orange-700 dark:text-orange-400 px-1.5 py-0.5 rounded text-[11px] font-medium"
+                          >
+                            {c.name} {c.percentage}%
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                {label.colorComponents && label.colorComponents.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Beaker className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {label.colorComponents.map((c, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center bg-violet-500/10 text-violet-700 dark:text-violet-400 px-1.5 py-0.5 rounded text-[11px] font-medium"
+                        >
+                          {c.name} {c.percentage}%
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {label.specialInstructions && (
+                <div className="flex items-start gap-1.5 mt-2 text-xs text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5 text-blue-500" />
+                  <p className="line-clamp-2 leading-relaxed">
+                    {label.specialInstructions}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+        )}
+
+        {/* Mobile: Stage selector */}
+        <div className="sm:hidden px-4 pb-4">
+          <div className="text-xs text-muted-foreground mb-1.5">
+            Update Stage:
+          </div>
+          <Select
+            value={selectedStage}
+            onValueChange={handleStageChange}
+            disabled={updatingStage}
+          >
+            <SelectTrigger className="w-full rounded-xs border-border dark:border-white/20 h-9 text-sm">
+              {updatingStage ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Updating...</span>
+                </div>
+              ) : (
+                <SelectValue />
+              )}
+            </SelectTrigger>
+            <SelectContent className="rounded-xs border-border dark:border-white/20">
+              {LABEL_STAGES.map((stage) => (
+                <SelectItem key={stage} value={stage}>
+                  {STAGE_LABELS[stage]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 

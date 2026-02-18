@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, Plus, Trash2 } from "lucide-react";
 
 // Helper to get user info from localStorage
 const getUserFromStorage = (): {
@@ -58,6 +58,10 @@ export const AddLabelModal = ({
   const [flavorName, setFlavorName] = useState("");
   const [productType, setProductType] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [cannabinoidMix, setCannabinoidMix] = useState("");
+  const [color, setColor] = useState("");
+  const [flavorComponents, setFlavorComponents] = useState<{ name: string; percentage: string }[]>([]);
+  const [colorComponents, setColorComponents] = useState<{ name: string; percentage: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -120,6 +124,29 @@ export const AddLabelModal = ({
       if (specialInstructions.trim()) {
         formData.append("specialInstructions", specialInstructions.trim());
       }
+      if (cannabinoidMix.trim()) {
+        formData.append("cannabinoidMix", cannabinoidMix.trim());
+      }
+      if (color.trim()) {
+        formData.append("color", color.trim());
+      }
+
+      if (flavorComponents.length > 0) {
+        formData.append(
+          "flavorComponents",
+          JSON.stringify(
+            flavorComponents.map((c) => ({ name: c.name.trim(), percentage: Number(c.percentage) }))
+          )
+        );
+      }
+      if (colorComponents.length > 0) {
+        formData.append(
+          "colorComponents",
+          JSON.stringify(
+            colorComponents.map((c) => ({ name: c.name.trim(), percentage: Number(c.percentage) }))
+          )
+        );
+      }
 
       if (userInfo) {
         formData.append("userId", userInfo.userId);
@@ -146,6 +173,10 @@ export const AddLabelModal = ({
     setFlavorName("");
     setProductType("");
     setSpecialInstructions("");
+    setCannabinoidMix("");
+    setColor("");
+    setFlavorComponents([]);
+    setColorComponents([]);
     setFiles([]);
   };
 
@@ -201,6 +232,30 @@ export const AddLabelModal = ({
             </Select>
           </div>
 
+          {/* Cannabinoid Mix */}
+          <div>
+            <Label htmlFor="cannabinoidMix">Cannabinoid Mix</Label>
+            <Input
+              id="cannabinoidMix"
+              placeholder="e.g., 10mg THC BIOMAX"
+              value={cannabinoidMix}
+              onChange={(e) => setCannabinoidMix(e.target.value)}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
+            />
+          </div>
+
+          {/* Color */}
+          <div>
+            <Label htmlFor="color">Color</Label>
+            <Input
+              id="color"
+              placeholder="e.g., Red/Pink"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="rounded-xs border-border dark:border-white/20 bg-card"
+            />
+          </div>
+
           {/* Upload Logo */}
           <div>
             <Label>Upload Logo</Label>
@@ -250,6 +305,114 @@ export const AddLabelModal = ({
                     >
                       <X className="w-3 h-3" />
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Flavor Components */}
+          <div>
+            <div className="flex items-center justify-between">
+              <Label>Flavor Components</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xs border-border dark:border-white/20 h-7 text-xs"
+                onClick={() => setFlavorComponents((prev) => [...prev, { name: "", percentage: "" }])}
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add
+              </Button>
+            </div>
+            {flavorComponents.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {flavorComponents.map((comp, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      placeholder="Name"
+                      value={comp.name}
+                      onChange={(e) => {
+                        const updated = [...flavorComponents];
+                        updated[idx].name = e.target.value;
+                        setFlavorComponents(updated);
+                      }}
+                      className="flex-1 rounded-xs border-border dark:border-white/20 bg-card h-9"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="%"
+                      value={comp.percentage}
+                      onChange={(e) => {
+                        const updated = [...flavorComponents];
+                        updated[idx].percentage = e.target.value;
+                        setFlavorComponents(updated);
+                      }}
+                      className="w-20 rounded-xs border-border dark:border-white/20 bg-card h-9"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+                      onClick={() => setFlavorComponents((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Color Components */}
+          <div>
+            <div className="flex items-center justify-between">
+              <Label>Color Components</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xs border-border dark:border-white/20 h-7 text-xs"
+                onClick={() => setColorComponents((prev) => [...prev, { name: "", percentage: "" }])}
+              >
+                <Plus className="h-3 w-3 mr-1" /> Add
+              </Button>
+            </div>
+            {colorComponents.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {colorComponents.map((comp, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      placeholder="Name"
+                      value={comp.name}
+                      onChange={(e) => {
+                        const updated = [...colorComponents];
+                        updated[idx].name = e.target.value;
+                        setColorComponents(updated);
+                      }}
+                      className="flex-1 rounded-xs border-border dark:border-white/20 bg-card h-9"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="%"
+                      value={comp.percentage}
+                      onChange={(e) => {
+                        const updated = [...colorComponents];
+                        updated[idx].percentage = e.target.value;
+                        setColorComponents(updated);
+                      }}
+                      className="w-20 rounded-xs border-border dark:border-white/20 bg-card h-9"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+                      onClick={() => setColorComponents((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
