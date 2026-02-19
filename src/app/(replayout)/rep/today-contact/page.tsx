@@ -39,7 +39,10 @@ const TodayContact = () => {
   const { data: repData } = useGetRepByIdQuery(user?.id, {
     skip: !user?.id,
   });
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
 

@@ -113,13 +113,19 @@ export const DeliveryModal = ({
       return toast.error("Please fill all required fields");
 
     try {
+      // Build UTC midnight version of selected date so it lands on the correct day
+      const d = new Date(formData.scheduledAt);
+      const utcMidnight = new Date(
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+      );
+
       await createDelivery({
         storeId: store._id,
         assignedTo: formData.assignedTo,
         disposition: formData.disposition,
         paymentAction: formData.paymentAction,
         amount: Number(formData.amount) || 0,
-        scheduledAt: formData.scheduledAt,
+        scheduledAt: utcMidnight.toISOString(),
         notes: formData.notes,
         ...(sampleId && { sampleId }),
         ...(orderId && { orderId }),

@@ -32,13 +32,13 @@ export const TodayContactControls = ({
           variant="outline"
           size="icon"
           className="h-9 w-9 rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:hover:bg-primary border-0 shrink-0"
-          onClick={() =>
+          onClick={() => {
+            const [y, m, d] = date.split("-").map(Number);
+            const prev = new Date(y, m - 1, d - 1);
             setDate(
-              new Date(new Date(date).setDate(new Date(date).getDate() - 1))
-                .toISOString()
-                .split("T")[0]
-            )
-          }
+              `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}-${String(prev.getDate()).padStart(2, "0")}`
+            );
+          }}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -50,13 +50,13 @@ export const TodayContactControls = ({
               variant="outline"
               className="flex-1 dark:hover:text-secondary dark:border-border justify-center font-normal rounded-xs border-border bg-transparent"
             >
-              {format(new Date(date), "MMM dd, yyyy")}
+              {format(new Date(date + "T00:00:00"), "MMM dd, yyyy")}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 rounded-xs" align="start">
             <Calendar
               mode="single"
-              selected={new Date(date)}
+              selected={new Date(date + "T00:00:00")}
               onSelect={(selectedDate) => {
                 if (selectedDate) {
                   const local = new Date(
@@ -78,13 +78,13 @@ export const TodayContactControls = ({
           variant="outline"
           size="icon"
           className="h-9 w-9 rounded-xs bg-accent text-white hover:bg-primary dark:bg-accent dark:hover:bg-primary border-0 shrink-0"
-          onClick={() =>
+          onClick={() => {
+            const [y, m, d] = date.split("-").map(Number);
+            const next = new Date(y, m - 1, d + 1);
             setDate(
-              new Date(new Date(date).setDate(new Date(date).getDate() + 1))
-                .toISOString()
-                .split("T")[0]
-            )
-          }
+              `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`
+            );
+          }}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

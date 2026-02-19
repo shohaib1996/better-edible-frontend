@@ -179,7 +179,13 @@ export default function DeliveryPage() {
       header: "Scheduled At",
       render: (delivery) => (
         <div className="text-foreground">
-          {format(new Date(delivery.scheduledAt), "MMM dd, yyyy")}
+          {(() => {
+            const d = new Date(delivery.scheduledAt);
+            return format(
+              new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
+              "MMM dd, yyyy"
+            );
+          })()}
         </div>
       ),
     },

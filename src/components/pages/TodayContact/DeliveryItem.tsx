@@ -101,11 +101,13 @@ export const DeliveryItem = ({
   const formatScheduledAt = (iso?: string) => {
     if (!iso) return "No schedule";
     try {
-      const date = new Date(iso);
-      return date.toLocaleDateString("en-US", {
+      // Use UTC values to avoid timezone shift (dates are stored as UTC midnight)
+      const d = new Date(iso);
+      return d.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
+        timeZone: "UTC",
       });
     } catch {
       return "Invalid date";
