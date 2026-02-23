@@ -65,7 +65,7 @@ export const ClientOrdersPage = ({
           baseParams.status = statusFilter;
         } else {
           baseParams.status =
-            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+            "waiting,molding,dehydrating,demolding_labeling,packaging_casing,ready_to_ship";
         }
         baseParams.limit = 999;
       } else {
@@ -82,7 +82,7 @@ export const ClientOrdersPage = ({
           baseParams.status = statusFilter;
         } else {
           baseParams.status =
-            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+            "waiting,molding,dehydrating,demolding_labeling,packaging_casing,ready_to_ship";
         }
         baseParams.limit = 999;
       } else if (activeTab === "my") {
@@ -92,7 +92,7 @@ export const ClientOrdersPage = ({
           baseParams.status = statusFilter;
         } else {
           baseParams.status =
-            "waiting,stage_1,stage_2,stage_3,stage_4,ready_to_ship";
+            "waiting,molding,dehydrating,demolding_labeling,packaging_casing,ready_to_ship";
         }
         baseParams.limit = 999;
       } else {

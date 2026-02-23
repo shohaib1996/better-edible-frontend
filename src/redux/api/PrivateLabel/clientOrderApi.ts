@@ -73,7 +73,7 @@ export const clientOrderApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.clientOrders],
     }),
 
-    // Push order to PPS (moves from "waiting" to "stage_1")
+    // Push order to PPS (moves from "waiting" to "molding")
     pushOrderToPPS: builder.mutation<
       { message: string; order: IClientOrder },
       string
