@@ -8,9 +8,9 @@ import { ILabelImage } from "./label";
 
 export type ClientOrderStatus =
   | "waiting"
-  | "molding"
+  | "cooking_molding"
   | "dehydrating"
-  | "demolding_labeling"
+  | "demolding"
   | "packaging_casing"
   | "ready_to_ship"
   | "shipped"

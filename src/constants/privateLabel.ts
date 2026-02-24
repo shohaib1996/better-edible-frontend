@@ -65,9 +65,9 @@ export const STAGE_DOT_COLORS: Record<LabelStage, string> = {
 
 export const ORDER_STATUSES = [
   "waiting",
-  "molding",
+  "cooking_molding",
   "dehydrating",
-  "demolding_labeling",
+  "demolding",
   "packaging_casing",
   "ready_to_ship",
   "shipped",
@@ -78,9 +78,9 @@ export type ClientOrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
   waiting: "Waiting",
-  molding: "Molding",
+  cooking_molding: "Cooking & Molding",
   dehydrating: "Dehydrating",
-  demolding_labeling: "Demolding & Labeling",
+  demolding: "Demolding",
   packaging_casing: "Packaging & Casing",
   ready_to_ship: "Ready to Ship",
   shipped: "Shipped",
@@ -89,9 +89,9 @@ export const ORDER_STATUS_LABELS: Record<ClientOrderStatus, string> = {
 
 export const ORDER_STATUS_COLORS: Record<ClientOrderStatus, string> = {
   waiting: "bg-muted text-muted-foreground border-muted-foreground/20",
-  molding: "bg-secondary/10 text-secondary-foreground border-secondary/20",
+  cooking_molding: "bg-secondary/10 text-secondary-foreground border-secondary/20",
   dehydrating: "bg-secondary/30 text-secondary-foreground border-secondary/40",
-  demolding_labeling: "bg-primary/10 text-primary border-primary/20",
+  demolding: "bg-primary/10 text-primary border-primary/20",
   packaging_casing: "bg-primary/30 text-primary-foreground border-primary/40",
   ready_to_ship:
     "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -103,9 +103,9 @@ export const ORDER_STATUS_COLORS: Record<ClientOrderStatus, string> = {
 
 export const ORDER_STATUS_TEXT_COLORS: Record<ClientOrderStatus, string> = {
   waiting: "text-muted-foreground",
-  molding: "text-secondary-foreground",
+  cooking_molding: "text-secondary-foreground",
   dehydrating: "text-secondary-foreground",
-  demolding_labeling: "text-primary",
+  demolding: "text-primary",
   packaging_casing: "text-primary-foreground",
   ready_to_ship: "text-blue-600 dark:text-blue-400",
   shipped: "text-green-600 dark:text-green-400",
@@ -174,7 +174,7 @@ export const canEditOrder = (status: ClientOrderStatus): boolean => {
  * Check if an order is in production
  */
 export const isOrderInProduction = (status: ClientOrderStatus): boolean => {
-  return ["molding", "dehydrating", "demolding_labeling", "packaging_casing"].includes(status);
+  return ["cooking_molding", "dehydrating", "demolding", "packaging_casing"].includes(status);
 };
 
 /**
