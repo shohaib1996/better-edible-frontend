@@ -74,7 +74,10 @@ export const EditDeliveryModal = ({
         paymentAction: delivery.paymentAction || "",
         amount: delivery.amount?.toString() || "",
         scheduledAt: delivery.scheduledAt
-          ? new Date(delivery.scheduledAt)
+          ? (() => {
+              const utc = new Date(delivery.scheduledAt);
+              return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
+            })()
           : new Date(),
         notes: delivery.notes || "",
       });
