@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import {
   CalendarIcon,
   ChevronLeft,
@@ -46,7 +46,12 @@ export default function DeliveriesContent() {
   const [storeName, setStoreName] = useState("");
   const [status, setStatus] = useState<string>("in_transit");
   const [selectedRep, setSelectedRep] = useState<string>("all");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  // Always work with UTC-normalized dates so the calendar day matches stored scheduledAt
+  const todayUTC = () => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  };
+  const [date, setDate] = useState<Date | undefined>(todayUTC());
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -63,8 +68,11 @@ export default function DeliveriesContent() {
   if (selectedRep && selectedRep !== "all")
     queryParams.assignedTo = selectedRep;
   if (date) {
-    queryParams.startDate = startOfDay(date).toISOString();
-    queryParams.endDate = endOfDay(date).toISOString();
+    // Use UTC day boundaries to match how scheduledAt is stored (UTC midnight)
+    const startUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+    const endUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+    queryParams.startDate = startUTC.toISOString();
+    queryParams.endDate = endUTC.toISOString();
   }
 
   const { data, isLoading, isError } = useGetAllDeliveriesQuery(queryParams);
@@ -93,7 +101,7 @@ export default function DeliveriesContent() {
   const handlePrevDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - 1);
+      newDate.setUTCDate(newDate.getUTCDate() - 1);
       setDate(newDate);
       setCurrentPage(1);
     }
@@ -102,7 +110,7 @@ export default function DeliveriesContent() {
   const handleNextDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() + 1);
+      newDate.setUTCDate(newDate.getUTCDate() + 1);
       setDate(newDate);
       setCurrentPage(1);
     }
@@ -112,15 +120,16 @@ export default function DeliveriesContent() {
     setStoreName("");
     setStatus("in_transit");
     setSelectedRep("all");
-    setDate(new Date());
+    setDate(todayUTC());
     setCurrentPage(1);
   };
 
+  const today = todayUTC();
   const showReset =
     storeName ||
     status !== "in_transit" ||
     selectedRep !== "all" ||
-    date?.toDateString() !== new Date().toDateString();
+    date?.toISOString().slice(0, 10) !== today.toISOString().slice(0, 10);
 
   const columns: Column<Delivery>[] = [
     {
@@ -292,7 +301,7 @@ export default function DeliveriesContent() {
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">
-                    {date ? format(date, "MMM dd, yyyy") : "Pick a date"}
+                    {date ? format(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()), "MMM dd, yyyy") : "Pick a date"}
                   </span>
                 </Button>
               </PopoverTrigger>
@@ -301,7 +310,9 @@ export default function DeliveriesContent() {
                   mode="single"
                   selected={date}
                   onSelect={(d) => {
-                    setDate(d);
+                    if (d) {
+                      setDate(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
+                    }
                     setCurrentPage(1);
                   }}
                   initialFocus
