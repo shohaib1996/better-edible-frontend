@@ -48,7 +48,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 }) => {
   const { data, isLoading } = useGetAllProductsQuery({});
   const products = useMemo(() => data?.products || [], [data]);
-  console.log(initialDiscountType);
 
   const [quantities, setQuantities] = useState<Record<string, any>>({});
   const [discountType, setDiscountType] = useState(initialDiscountType);
@@ -482,44 +481,20 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   >
                     {/* Product Name + Discount Toggle */}
                     <div className="sm:col-span-3 font-medium text-sm flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            className={cn(
-                              "flex-1 truncate text-xs sm:text-sm cursor-help",
-                              hasDiscount(product)
-                                ? "text-primary font-bold"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {product.subProductLine || product.itemName}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          className="bg-card text-foreground border border-border rounded-xs shadow-lg max-w-xs"
-                        >
-                          <div className="space-y-1">
-                            <p className="font-bold text-xs">
-                              {product.subProductLine || product.itemName}
-                            </p>
-                            {product.itemName && product.subProductLine && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {product.itemName}
-                              </p>
-                            )}
-                            {config.name && (
-                              <p className="text-[10px] text-muted-foreground">
-                                Product Line: {config.name}
-                              </p>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
+                      <span
+                        className={cn(
+                          "flex-1 wrap-break-word text-xs sm:text-sm",
+                          hasDiscount(product)
+                            ? "text-primary font-bold"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {product.subProductLine || product.itemName}
+                      </span>
 
-                      {hasDiscount(product) && (
+                      {!!hasDiscount(product) && (
                         <Checkbox
-                          className="border-2 border-primary cursor-pointer rounded-xs h-4 w-4 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                          className="border-2 border-primary cursor-pointer rounded-xs h-4 w-4 shrink-0 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                           checked={isChecked}
                           onCheckedChange={(checked) =>
                             setDiscountToggles((prev) => ({
@@ -531,7 +506,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                       )}
                     </div>
 
-                    {/* Variants pricing */}
+                    {/* Inputs */}
                     {config.pricingType === "variants" &&
                     product.variants?.length ? (
                       <div className="sm:col-span-9 grid grid-cols-3 gap-2">
@@ -557,8 +532,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               <Input
                                 type="number"
                                 min="0"
-                                className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
-                                value={quantities[pid]?.[key] ?? ""}
+                                className="h-6 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                value={quantities[pid]?.[key] || ""}
                                 onChange={(e) =>
                                   handleQtyChange(
                                     pid,
@@ -566,6 +541,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                     parseFloat(e.target.value || "0") || 0,
                                   )
                                 }
+                                onWheel={(e) => e.currentTarget.blur()}
                               />
                             </div>
                           );
@@ -596,8 +572,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               <Input
                                 type="number"
                                 min="0"
-                                className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2"
-                                value={quantities[pid]?.[normKey(type)] ?? ""}
+                                className="h-6 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                value={quantities[pid]?.[normKey(type)] || ""}
                                 onChange={(e) =>
                                   handleQtyChange(
                                     pid,
@@ -605,6 +581,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                                     parseFloat(e.target.value || "0") || 0,
                                   )
                                 }
+                                onWheel={(e) => e.currentTarget.blur()}
                               />
                             </div>
                           );
@@ -624,8 +601,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                         <Input
                           type="number"
                           min="0"
-                          className="h-7 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2 max-w-xs"
-                          value={quantities[pid]?.qty ?? ""}
+                          className="h-6 text-xs border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xs px-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          value={quantities[pid]?.qty || ""}
                           onChange={(e) =>
                             handleQtyChange(
                               pid,
@@ -633,6 +610,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                               parseFloat(e.target.value || "0") || 0,
                             )
                           }
+                          onWheel={(e) => e.currentTarget.blur()}
                         />
                       </div>
                     )}
