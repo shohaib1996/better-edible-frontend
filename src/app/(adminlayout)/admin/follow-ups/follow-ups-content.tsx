@@ -37,6 +37,7 @@ import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPaginati
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
 
 /** Helper: convert a YYYY-MM-DD string (or Date) into a local Date at local midnight */
+// this is the helper function to convert the date to local date
 function toLocalDate(value?: string | Date | null): Date | null {
   if (!value) return null;
 
@@ -58,9 +59,10 @@ function toLocalDate(value?: string | Date | null): Date | null {
 
 export default function FollowUpsContent() {
   const [selectedRepId, setSelectedRepId] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // this is the selected rep
   const [selectedRep, setSelectedRep] = useState<IRep | undefined>(undefined);
   const { data: repsData } = useGetAllRepsQuery({});
 
@@ -69,7 +71,7 @@ export default function FollowUpsContent() {
   const [showAll, setShowAll] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState<IFollowUp | null>(
-    null
+    null,
   );
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -259,7 +261,7 @@ export default function FollowUpsContent() {
                   className={cn(
                     "flex-1 justify-between bg-primary text-white rounded-xs border-border dark:border-gray-600 min-w-[160px] text-sm",
                     !selectedDate && "text-muted-foreground",
-                    showAll && "opacity-50"
+                    showAll && "opacity-50",
                   )}
                   disabled={showAll}
                 >
@@ -320,7 +322,7 @@ export default function FollowUpsContent() {
                 } else {
                   setSelectedRepId(val);
                   const selected = repsData?.data?.find(
-                    (r: any) => r._id === val
+                    (r: any) => r._id === val,
                   );
                   setSelectedRep(selected);
                 }
