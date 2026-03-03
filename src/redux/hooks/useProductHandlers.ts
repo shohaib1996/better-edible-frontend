@@ -59,7 +59,9 @@ export const useProductHandlers = (
         : productLines.find((pl) => pl._id === product.productLine);
     setSelectedLine(productLineObj || null);
 
-    const flatData: any = { ...product };
+    // Exclude nested pricing objects so they don't leak into form submission
+    const { hybridBreakdown: _hb, prices: _pr, discounts: _dc, variants: _va, ...rest } = product;
+    const flatData: any = { ...rest };
 
     if (!productLineObj) {
       setInitialModalData(flatData);
@@ -143,8 +145,15 @@ export const useProductHandlers = (
         const discountKey = `${type}Discount`;
         const normalizedUnitKey = `${type.toLowerCase()}Units`;
         const normalizedDiscountKey = `${type.toLowerCase()}Discount`;
-        payload[normalizedUnitKey] = values[unitKey] ? Number.parseFloat(values[unitKey]) : undefined;
-        payload[normalizedDiscountKey] = values[discountKey] ? Number.parseFloat(values[discountKey]) : undefined;
+        // Check both cased and lowercased versions of the key
+        const unitVal = values[unitKey] ?? values[normalizedUnitKey];
+        const discountVal = values[discountKey] ?? values[normalizedDiscountKey];
+        if (unitVal !== undefined && unitVal !== "") {
+          payload[normalizedUnitKey] = Number.parseFloat(unitVal);
+        }
+        if (discountVal !== undefined && discountVal !== "") {
+          payload[normalizedDiscountKey] = Number.parseFloat(discountVal);
+        }
       });
     }
 
