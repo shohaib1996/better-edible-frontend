@@ -117,11 +117,15 @@ export const ProductLineModal: React.FC<ProductLineModalProps> = ({
     setTypeLabels(updated);
   };
 
+  const getDefaultFieldName = () =>
+    pricingType === "simple" ? "itemName" : "subProductLine";
+
   const handleAddField = () => {
+    const isFirst = fields.length === 0;
     setFields([
       ...fields,
       {
-        name: "",
+        name: isFirst ? getDefaultFieldName() : "",
         label: "",
         type: "text",
         placeholder: "",
@@ -276,7 +280,17 @@ export const ProductLineModal: React.FC<ProductLineModalProps> = ({
               <Label htmlFor="pricingType">Pricing Type *</Label>
               <Select
                 value={pricingType}
-                onValueChange={(value: any) => setPricingType(value)}
+                onValueChange={(value: any) => {
+                  setPricingType(value);
+                  // Update the first field's name to match the new pricing type
+                  setFields((prev) => {
+                    if (prev.length === 0) return prev;
+                    const defaultName = value === "simple" ? "itemName" : "subProductLine";
+                    const updated = [...prev];
+                    updated[0] = { ...updated[0], name: defaultName };
+                    return updated;
+                  });
+                }}
               >
                 <SelectTrigger className="rounded-xs">
                   <SelectValue />
