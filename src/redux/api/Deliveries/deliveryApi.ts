@@ -50,10 +50,10 @@ export const deliveriesApi = baseApi.injectEndpoints({
 
     // 🟧 Update delivery status
     updateDeliveryStatus: builder.mutation({
-      query: ({ id, status }) => ({
+      query: ({ id, status, today }) => ({
         url: `/deliveries/${id}/status`,
         method: "PUT",
-        body: { status },
+        body: { status, today },
       }),
       invalidatesTags: [tagTypes.deliveries],
     }),

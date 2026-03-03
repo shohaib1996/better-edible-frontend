@@ -29,15 +29,6 @@ import {
 } from "@/redux/api/Notes/notes";
 import { useGetAllContactsQuery } from "@/redux/api/Contacts/contactsApi";
 import { useUpdateDeliveryStatusMutation } from "@/redux/api/Deliveries/deliveryApi";
-import {
-  useChangeOrderStatusMutation,
-  useUpdateOrderMutation,
-} from "@/redux/api/orders/orders";
-import {
-  useUpdateSampleStatusMutation,
-  useUpdateSampleMutation,
-} from "@/redux/api/Samples/samplesApi";
-import { useUpdateClientOrderStatusMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
 import { toast } from "sonner";
 import { Loader2, FileText, Users } from "lucide-react";
 import { format } from "date-fns";
@@ -116,11 +107,6 @@ export const AddNoteModal = ({
   // Delivery status mutations (only used when deliveryId is provided)
   const [updateDeliveryStatus, { isLoading: isUpdatingDelivery }] =
     useUpdateDeliveryStatusMutation();
-  const [changeOrderStatus] = useChangeOrderStatusMutation();
-  const [updateOrder] = useUpdateOrderMutation();
-  const [updateSampleStatus] = useUpdateSampleStatusMutation();
-  const [updateSample] = useUpdateSampleMutation();
-  const [updateClientOrderStatus] = useUpdateClientOrderStatusMutation();
 
   const isNoteLoading = isCreating || isUpdating || isUpdatingDelivery;
 
@@ -220,30 +206,17 @@ export const AddNoteModal = ({
         toast.success("Note created successfully!");
       }
 
-      // If deliveryId is provided, update delivery + linked order/sample status
+      // If deliveryId is provided, update delivery status
+      // The backend automatically updates the linked order/sample/clientOrder status
       if (deliveryId && deliveryStatus) {
         try {
-          await updateDeliveryStatus({ id: deliveryId, status: deliveryStatus }).unwrap();
-
           const today = format(new Date(), "yyyy-MM-dd");
-
-          if (deliveryStatus === "completed") {
-            if (deliveryData?.orderId) {
-              toast.success("Linked order marked as shipped");
-            } else if (deliveryData?.sampleId) {
-              toast.success("Linked sample marked as shipped");
-            } else if (deliveryData?.clientOrderId) {
-              toast.success("Linked client order marked as shipped");
-            }
-          } else if (deliveryStatus === "cancelled") {
-            if (deliveryData?.orderId) {
-              toast.success("Linked order marked as cancelled");
-            } else if (deliveryData?.sampleId) {
-              toast.success("Linked sample marked as cancelled");
-            } else if (deliveryData?.clientOrderId) {
-              toast.success("Linked client order marked as cancelled");
-            }
-          }
+          await updateDeliveryStatus({ id: deliveryId, status: deliveryStatus, today }).unwrap();
+          toast.success(
+            deliveryStatus === "completed"
+              ? "Delivery marked as completed"
+              : "Delivery marked as cancelled"
+          );
         } catch (error) {
           toast.error("Note saved, but failed to update delivery status");
           console.error(error);

@@ -168,7 +168,7 @@ const OrdersPage = ({
         const today = format(new Date(), "yyyy-MM-dd");
         const updateData: any = { id };
 
-        // Set delivery date to today if not already set, or use existing delivery date
+        // Set deliveryDate to today only if not already set
         if (!item?.deliveryDate) {
           updateData.deliveryDate = today;
         }
