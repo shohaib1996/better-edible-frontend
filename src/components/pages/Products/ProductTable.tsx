@@ -108,20 +108,23 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
               {/* Dynamic cells based on pricing structure */}
               {productLine.pricingStructure.type === "multi-type" &&
-                productLine.pricingStructure.typeLabels?.map((type) => (
-                  <React.Fragment key={type}>
-                    <td className="py-3 px-2 text-foreground">
-                      {item.prices?.[type]?.price ??
-                        item.hybridBreakdown?.[type] ??
-                        "-"}
-                    </td>
-                    <td className="py-3 px-2 text-primary font-medium">
-                      {item.prices?.[type]?.discountPrice
-                        ? `$${item.prices[type].discountPrice.toFixed(2)}`
-                        : "-"}
-                    </td>
-                  </React.Fragment>
-                ))}
+                productLine.pricingStructure.typeLabels?.map((type) => {
+                  const key = type.toLowerCase();
+                  return (
+                    <React.Fragment key={type}>
+                      <td className="py-3 px-2 text-foreground">
+                        {item.prices?.[key]?.price ??
+                          item.hybridBreakdown?.[key] ??
+                          "-"}
+                      </td>
+                      <td className="py-3 px-2 text-primary font-medium">
+                        {item.prices?.[key]?.discountPrice
+                          ? `$${item.prices[key].discountPrice.toFixed(2)}`
+                          : "-"}
+                      </td>
+                    </React.Fragment>
+                  );
+                })}
 
               {productLine.pricingStructure.type === "simple" && (
                 <>

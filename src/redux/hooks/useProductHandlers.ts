@@ -69,32 +69,25 @@ export const useProductHandlers = (
 
     // Handle multi-type pricing (e.g., Cannacrispy with hybrid/indica/sativa)
     if (productLineObj.pricingStructure.type === "multi-type") {
-      if (product.hybridBreakdown) {
-        flatData.hybridUnits = product.hybridBreakdown.hybrid ?? "";
-        flatData.indicaUnits = product.hybridBreakdown.indica ?? "";
-        flatData.sativaUnits = product.hybridBreakdown.sativa ?? "";
-      }
+      const typeLabels = productLineObj.pricingStructure.typeLabels ?? [];
+      typeLabels.forEach((type: string) => {
+        const lowerType = type.toLowerCase();
+        const unitKey = `${type}Units`;
+        const discountKey = `${type}Discount`;
 
-      if (product.prices) {
-        flatData.hybridUnits =
-          product.prices.hybrid?.price ?? flatData.hybridUnits;
-        flatData.hybridDiscount = product.prices.hybrid?.discountPrice ?? "";
-        flatData.indicaUnits =
-          product.prices.indica?.price ?? flatData.indicaUnits;
-        flatData.indicaDiscount = product.prices.indica?.discountPrice ?? "";
-        flatData.sativaUnits =
-          product.prices.sativa?.price ?? flatData.sativaUnits;
-        flatData.sativaDiscount = product.prices.sativa?.discountPrice ?? "";
-      }
+        if (product.hybridBreakdown) {
+          flatData[unitKey] = product.hybridBreakdown[lowerType] ?? "";
+        }
 
-      if (product.discounts) {
-        flatData.hybridDiscount =
-          product.discounts.hybrid ?? flatData.hybridDiscount;
-        flatData.indicaDiscount =
-          product.discounts.indica ?? flatData.indicaDiscount;
-        flatData.sativaDiscount =
-          product.discounts.sativa ?? flatData.sativaDiscount;
-      }
+        if (product.prices) {
+          flatData[unitKey] = product.prices[lowerType]?.price ?? flatData[unitKey] ?? "";
+          flatData[discountKey] = product.prices[lowerType]?.discountPrice ?? "";
+        }
+
+        if (product.discounts) {
+          flatData[discountKey] = product.discounts[lowerType] ?? flatData[discountKey] ?? "";
+        }
+      });
     }
 
     // Handle variants pricing (e.g., BLISS Cannabis Syrup)
@@ -145,24 +138,14 @@ export const useProductHandlers = (
     // 🔹 Multi-type pricing (e.g., Cannacrispy)
     if (selectedLine.pricingStructure.type === "multi-type") {
       payload.subProductLine = values.subProductLine;
-      payload.hybridUnits = values.hybridUnits
-        ? Number.parseFloat(values.hybridUnits)
-        : undefined;
-      payload.hybridDiscount = values.hybridDiscount
-        ? Number.parseFloat(values.hybridDiscount)
-        : undefined;
-      payload.indicaUnits = values.indicaUnits
-        ? Number.parseFloat(values.indicaUnits)
-        : undefined;
-      payload.indicaDiscount = values.indicaDiscount
-        ? Number.parseFloat(values.indicaDiscount)
-        : undefined;
-      payload.sativaUnits = values.sativaUnits
-        ? Number.parseFloat(values.sativaUnits)
-        : undefined;
-      payload.sativaDiscount = values.sativaDiscount
-        ? Number.parseFloat(values.sativaDiscount)
-        : undefined;
+      selectedLine.pricingStructure.typeLabels?.forEach((type) => {
+        const unitKey = `${type}Units`;
+        const discountKey = `${type}Discount`;
+        const normalizedUnitKey = `${type.toLowerCase()}Units`;
+        const normalizedDiscountKey = `${type.toLowerCase()}Discount`;
+        payload[normalizedUnitKey] = values[unitKey] ? Number.parseFloat(values[unitKey]) : undefined;
+        payload[normalizedDiscountKey] = values[discountKey] ? Number.parseFloat(values[discountKey]) : undefined;
+      });
     }
 
     // 🔹 Simple pricing (e.g., Fifty-One Fifty)

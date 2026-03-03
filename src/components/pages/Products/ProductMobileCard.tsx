@@ -72,23 +72,26 @@ export const ProductMobileCard: React.FC<ProductMobileCardProps> = ({
               {/* Dynamic mobile view based on pricing structure */}
               {productLine.pricingStructure.type === "multi-type" && (
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  {productLine.pricingStructure.typeLabels?.map((type) => (
-                    <div key={type} className="flex flex-col">
-                      <span className="text-muted-foreground font-medium">
-                        {type.charAt(0).toUpperCase() + type.slice(1)}:
-                      </span>
-                      <span className="text-foreground">
-                        {item.prices?.[type]?.price ??
-                          item.hybridBreakdown?.[type] ??
-                          "-"}
-                      </span>
-                      {item.prices?.[type]?.discountPrice && (
-                        <span className="text-primary font-medium">
-                          ${item.prices[type].discountPrice.toFixed(2)}
+                  {productLine.pricingStructure.typeLabels?.map((type) => {
+                    const key = type.toLowerCase();
+                    return (
+                      <div key={type} className="flex flex-col">
+                        <span className="text-muted-foreground font-medium">
+                          {type.charAt(0).toUpperCase() + type.slice(1)}:
                         </span>
-                      )}
-                    </div>
-                  ))}
+                        <span className="text-foreground">
+                          {item.prices?.[key]?.price ??
+                            item.hybridBreakdown?.[key] ??
+                            "-"}
+                        </span>
+                        {item.prices?.[key]?.discountPrice && (
+                          <span className="text-primary font-medium">
+                            ${item.prices[key].discountPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
