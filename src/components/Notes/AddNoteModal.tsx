@@ -229,56 +229,18 @@ export const AddNoteModal = ({
 
           if (deliveryStatus === "completed") {
             if (deliveryData?.orderId) {
-              await updateOrder({
-                id: deliveryData.orderId,
-                deliveryDate: deliveryData.scheduledAt
-                  ? format(new Date(deliveryData.scheduledAt), "yyyy-MM-dd")
-                  : today,
-                shippedDate: today,
-              }).unwrap();
-              await changeOrderStatus({
-                id: deliveryData.orderId,
-                status: "shipped",
-              }).unwrap();
               toast.success("Linked order marked as shipped");
             } else if (deliveryData?.sampleId) {
-              await updateSample({
-                id: deliveryData.sampleId,
-                deliveryDate: deliveryData.scheduledAt
-                  ? format(new Date(deliveryData.scheduledAt), "yyyy-MM-dd")
-                  : today,
-                shippedDate: today,
-              }).unwrap();
-              await updateSampleStatus({
-                id: deliveryData.sampleId,
-                status: "shipped",
-              }).unwrap();
               toast.success("Linked sample marked as shipped");
             } else if (deliveryData?.clientOrderId) {
-              await updateClientOrderStatus({
-                id: deliveryData.clientOrderId,
-                status: "shipped",
-              }).unwrap();
               toast.success("Linked client order marked as shipped");
             }
           } else if (deliveryStatus === "cancelled") {
             if (deliveryData?.orderId) {
-              await changeOrderStatus({
-                id: deliveryData.orderId,
-                status: "cancelled",
-              }).unwrap();
               toast.success("Linked order marked as cancelled");
             } else if (deliveryData?.sampleId) {
-              await updateSampleStatus({
-                id: deliveryData.sampleId,
-                status: "cancelled",
-              }).unwrap();
               toast.success("Linked sample marked as cancelled");
             } else if (deliveryData?.clientOrderId) {
-              await updateClientOrderStatus({
-                id: deliveryData.clientOrderId,
-                status: "cancelled",
-              }).unwrap();
               toast.success("Linked client order marked as cancelled");
             }
           }
