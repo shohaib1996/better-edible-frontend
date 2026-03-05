@@ -52,6 +52,7 @@ interface AllOrdersTabProps {
   currentRep?: Partial<IRep> | null;
 }
 
+// Maps each order status to the select trigger color treatment.
 const getStatusSelectBg = (status: string) => {
   switch (status) {
     case "submitted":
@@ -84,14 +85,17 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] =
     useState<IOrder | null>(null);
 
+  // Opens the order details dialog for the clicked order card.
   const handleOpenDialog = (order: IOrder) => {
     setSelectedOrder(order);
   };
 
+  // Closes the order details dialog by clearing selected order state.
   const handleCloseDialog = () => {
     setSelectedOrder(null);
   };
 
+  // Centralized feedback for actions blocked by ownership checks.
   const handleUnauthorizedAction = () => {
     toast.error("You are not authorized to change it. This is not your order.");
   };
@@ -102,6 +106,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
     return <p className="text-muted-foreground mt-4">No orders found.</p>;
   }
 
+  // Adds a left border accent on each card to reflect current status at a glance.
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "submitted":
@@ -119,6 +124,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
     }
   };
 
+  // Renders the compact status badge shown near the store name.
   const getStatusBadge = (status: string) => {
     const colorMap: Record<string, { bg: string; text: string }> = {
       submitted: { bg: "bg-blue-600", text: "text-white" },
