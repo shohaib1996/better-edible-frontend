@@ -1,10 +1,5 @@
-// ──────────────────────────────
-// Formulation Component
-// ──────────────────────────────
-export interface IFormulationComponent {
-  name: string;
-  percentage: number;
-}
+import type { IFormulationComponent } from "./label";
+export type { IFormulationComponent };
 
 // ──────────────────────────────
 // Cook Item Status
