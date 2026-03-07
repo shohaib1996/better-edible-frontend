@@ -12,6 +12,9 @@ export * from "./labelApi";
 // Client Orders
 export * from "./clientOrderApi";
 
+// PPS
+export * from "./ppsApi";
+
 // Re-export types from @/types for convenience
 export type {
   // Private Label Client types

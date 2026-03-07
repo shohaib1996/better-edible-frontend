@@ -212,3 +212,46 @@ export const PRODUCTION_QUANTITIES = {
   HALF_BATCH: 624,
   FULL_BATCH: 1248,
 } as const;
+
+// ─────────────────────────────
+// PPS COOK ITEM STATUSES
+// ─────────────────────────────
+
+export const COOK_ITEM_STATUSES = [
+  "pending",
+  "in-progress",
+  "cooking_molding_complete",
+  "dehydrating_complete",
+  "demolding_complete",
+  "packaging_casing_complete",
+] as const;
+
+export type CookItemStatusConst = (typeof COOK_ITEM_STATUSES)[number];
+
+export const COOK_ITEM_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  "in-progress": "In Progress",
+  cooking_molding_complete: "Molded",
+  dehydrating_complete: "Dehydrating",
+  demolding_complete: "Packed",
+  packaging_casing_complete: "Complete",
+};
+
+export const COOK_ITEM_STATUS_COLORS: Record<string, string> = {
+  pending: "bg-muted text-muted-foreground border-muted-foreground/20",
+  "in-progress": "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
+  cooking_molding_complete: "bg-primary/10 text-primary border-primary/20",
+  dehydrating_complete: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  demolding_complete: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  packaging_casing_complete:
+    "bg-green-500/10 text-green-600 border-green-500/20",
+};
+
+export const PPS_STAGE_LABELS = {
+  stage_1: "Stage 1: Cooking & Molding",
+  stage_2: "Stage 2: Demolding & Dehydrator",
+  stage_3: "Stage 3: Container & Label",
+  stage_4: "Stage 4: Packaging & Cases",
+} as const;
+
+export const UNITS_PER_CASE = 100;

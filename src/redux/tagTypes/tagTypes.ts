@@ -15,4 +15,8 @@ export const tagTypes = {
   labels: "labels",
   clientOrders: "clientOrders",
   deliveryOrder: "deliveryOrder",
+  ppsCookItems: "ppsCookItems",
+  ppsMolds: "ppsMolds",
+  ppsTrays: "ppsTrays",
+  ppsUnits: "ppsUnits",
 };
