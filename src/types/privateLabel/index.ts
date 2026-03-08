@@ -10,5 +10,5 @@ export * from "./label";
 // Client Order types
 export * from "./clientOrder";
 
-// PPS types
+// all pps types
 export * from "./pps";
