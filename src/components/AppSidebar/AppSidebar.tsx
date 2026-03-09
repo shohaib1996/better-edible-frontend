@@ -15,6 +15,7 @@ import {
   CalendarSync,
   Gift,
   Users,
+  Factory,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -61,6 +62,7 @@ const adminItems = [
   { title: "Follow Ups", url: "/admin/follow-ups", icon: CalendarSync },
   { title: "Samples List", url: "/admin/samples", icon: Gift },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
+  { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
 ];
 
 const repItems = [

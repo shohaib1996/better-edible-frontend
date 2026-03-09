@@ -194,3 +194,18 @@
   animation: none;
   mix-blend-mode: normal;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-label,
+  .print-label * {
+    visibility: visible;
+  }
+  .print-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
