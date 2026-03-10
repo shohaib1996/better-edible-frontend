@@ -59,7 +59,7 @@ function CookItemCard({ item }: { item: ICookItem }) {
     try {
       await completeStage1({ cookItemId: item.cookItemId }).unwrap();
     } catch {
-      // silent — toast handled globally
+      // silent — toast handled
     }
   };
 
