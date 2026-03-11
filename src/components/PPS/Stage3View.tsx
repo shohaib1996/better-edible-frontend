@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Thermometer, Check } from "lucide-react";
+import { Loader2, Thermometer, Check, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,12 +75,11 @@ interface CookItemCardProps {
   item: IStage3CookItem;
   isActive: boolean;
   onActivate: () => void;
+  onComplete: (cookItem: ICookItem) => void;
 }
 
-function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
+function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardProps) {
   const [trayScanValue, setTrayScanValue] = useState("");
-  const [showLabelPreview, setShowLabelPreview] = useState(false);
-  const [labelData, setLabelData] = useState<ICookItem | null>(null);
 
   const [removeTray, { isLoading: isRemoving }] = useRemoveTrayMutation();
   const [completeStage3, { isLoading: isCompleting }] = useCompleteStage3Mutation();
@@ -108,8 +107,7 @@ function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
     try {
       const result = await completeStage3({ cookItemId }).unwrap();
       toast.success("Stage 3 complete");
-      setLabelData(result.cookItem);
-      setShowLabelPreview(true);
+      onComplete(result.cookItem);
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 3");
     }
@@ -250,20 +248,6 @@ function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
         </CardContent>
       </Card>
 
-      {/* Label preview modal */}
-      {showLabelPreview && labelData && (
-        <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Production Label</DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center py-2">
-              <PrintLabel type="production" data={labelData} />
-            </div>
-            <Button onClick={() => window.print()}>Print</Button>
-          </DialogContent>
-        </Dialog>
-      )}
     </>
   );
 }
@@ -272,10 +256,40 @@ function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
 
 export default function Stage3View() {
   const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
+  const [labelData, setLabelData] = useState<ICookItem | null>(null);
+  const [showLabelPreview, setShowLabelPreview] = useState(false);
 
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
   });
+
+  const handleComplete = (cookItem: ICookItem) => {
+    setLabelData(cookItem);
+    setShowLabelPreview(true);
+  };
+
+  const downloadQR = (cookItemId: string) => {
+    const svg = document.querySelector(".print-label svg") as SVGSVGElement | null;
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const size = 300;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      const a = document.createElement("a");
+      a.download = `qr-${cookItemId}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
 
   if (isLoading) {
     return (
@@ -296,30 +310,58 @@ export default function Stage3View() {
 
   const cookItems = data?.cookItems ?? [];
 
-  if (cookItems.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-        <Thermometer className="w-10 h-10 opacity-40" />
-        <p className="text-sm">No items in the dehydrator removal queue.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">
-        {cookItems.length} item{cookItems.length !== 1 ? "s" : ""} in dehydrator
-      </p>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cookItems.map((item) => (
-          <CookItemCard
-            key={item._id}
-            item={item}
-            isActive={activeCookItemId === item.cookItemId}
-            onActivate={() => setActiveCookItemId(item.cookItemId)}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      {cookItems.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+          <Thermometer className="w-10 h-10 opacity-40" />
+          <p className="text-sm">No items in the dehydrator removal queue.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            {cookItems.length} item{cookItems.length !== 1 ? "s" : ""} in dehydrator
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {cookItems.map((item) => (
+              <CookItemCard
+                key={item._id}
+                item={item}
+                isActive={activeCookItemId === item.cookItemId}
+                onActivate={() => setActiveCookItemId(item.cookItemId)}
+                onComplete={handleComplete}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Label preview dialog — lives outside the card so it survives card unmount */}
+      {labelData && (
+        <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Production Label</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center py-2">
+              <PrintLabel type="production" data={labelData} />
+            </div>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => window.print()}>
+                Print Label
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => downloadQR(labelData.cookItemId)}
+              >
+                <Download className="w-4 h-4" />
+                Download QR
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
