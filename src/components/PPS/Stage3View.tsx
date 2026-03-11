@@ -78,7 +78,6 @@ interface CookItemCardProps {
 }
 
 function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
-  const [removedTrayIds, setRemovedTrayIds] = useState<Set<string>>(new Set());
   const [trayScanValue, setTrayScanValue] = useState("");
   const [showLabelPreview, setShowLabelPreview] = useState(false);
   const [labelData, setLabelData] = useState<ICookItem | null>(null);
@@ -90,13 +89,14 @@ function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
   const trayIds = item.dehydratorAssignments.map((a) => a.trayId);
+  // Derive removed trays from server data so it survives re-renders
+  const removedTrayIds = new Set(item.trayRemovalTimestamps.map((t) => t.trayId));
   const allTraysRemoved =
     trayIds.length > 0 && trayIds.every((id) => removedTrayIds.has(id));
 
   const handleRemoveTray = async (cookItemId: string, trayId: string) => {
     try {
       await removeTray({ cookItemId, trayId }).unwrap();
-      setRemovedTrayIds((prev) => new Set([...prev, trayId]));
       toast.success(`Tray ${trayId} removed`);
       setTrayScanValue("");
     } catch (err: any) {
@@ -110,7 +110,6 @@ function CookItemCard({ item, isActive, onActivate }: CookItemCardProps) {
       toast.success("Stage 3 complete");
       setLabelData(result.cookItem);
       setShowLabelPreview(true);
-      setRemovedTrayIds(new Set());
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 3");
     }
