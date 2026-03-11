@@ -92,6 +92,8 @@ export default function PrintLabel(props: PrintLabelProps) {
               JSON.stringify({ cookItemId: d.cookItemId })
             }
             size={120}
+            bgColor="#ffffff"
+            fgColor="#000000"
           />
         </div>
       </div>
@@ -111,7 +113,7 @@ export default function PrintLabel(props: PrintLabelProps) {
       <p className="text-xs">Case ID: {d.caseId}</p>
 
       <div className="mt-2 flex justify-center">
-        <QRCodeSVG value={JSON.stringify({ caseId: d.caseId })} size={100} />
+        <QRCodeSVG value={JSON.stringify({ caseId: d.caseId })} size={100} bgColor="#ffffff" fgColor="#000000" />
       </div>
     </div>
   );
