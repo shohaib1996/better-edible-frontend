@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, Thermometer, Check, Download } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -258,6 +259,7 @@ export default function Stage3View() {
   const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
   const [labelData, setLabelData] = useState<ICookItem | null>(null);
   const [showLabelPreview, setShowLabelPreview] = useState(false);
+  const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
@@ -269,26 +271,23 @@ export default function Stage3View() {
   };
 
   const downloadQR = (cookItemId: string) => {
-    const svg = document.querySelector(".print-label svg") as SVGSVGElement | null;
-    if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const size = 300;
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
+    const qrCanvas = qrCanvasRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
+    if (!qrCanvas) return;
+    const padding = 24;
+    const qrSize = qrCanvas.width;
+    const totalSize = qrSize + padding * 2;
+    const outputCanvas = document.createElement("canvas");
+    outputCanvas.width = totalSize;
+    outputCanvas.height = totalSize;
+    const ctx = outputCanvas.getContext("2d");
     if (!ctx) return;
-    const img = new Image();
-    img.onload = () => {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, size, size);
-      ctx.drawImage(img, 0, 0, size, size);
-      const a = document.createElement("a");
-      a.download = `qr-${cookItemId}.png`;
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, totalSize, totalSize);
+    ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
+    const a = document.createElement("a");
+    a.download = `qr-${cookItemId}.png`;
+    a.href = outputCanvas.toDataURL("image/png");
+    a.click();
   };
 
   if (isLoading) {
@@ -333,6 +332,18 @@ export default function Stage3View() {
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Hidden QR canvas used for download */}
+      {labelData && (
+        <div ref={qrCanvasRef} className="hidden">
+          <QRCodeCanvas
+            value={JSON.stringify({ cookItemId: labelData.cookItemId })}
+            size={300}
+            bgColor="#ffffff"
+            fgColor="#000000"
+          />
         </div>
       )}
 
