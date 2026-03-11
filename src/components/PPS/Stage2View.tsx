@@ -9,6 +9,7 @@ import {
   ChevronUp,
   CheckCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -70,8 +71,8 @@ function ProcessMoldForm({ cookItemId, moldIds, processedMoldIds }: ProcessMoldF
       setTrayId("");
       setDehydratorUnitId("");
       setShelfPosition("");
-    } catch {
-      // silent
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Mold, tray, or shelf already in use");
     }
   };
 

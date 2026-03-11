@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Loader2, ChefHat, ScanBarcode, CheckCircle2, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BarcodeScannerInput from "./BarcodeScannerInput";
@@ -45,8 +46,8 @@ function CookItemCard({ item }: { item: ICookItem }) {
       setBarcodeInput("");
       setScanning(false);
       inputRef.current?.blur();
-    } catch {
-      // error handled by RTK Query; keep input focused for retry
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Mold already in use or not found");
       inputRef.current?.focus();
     }
   };
@@ -58,8 +59,8 @@ function CookItemCard({ item }: { item: ICookItem }) {
   const handleCompleteStage1 = async () => {
     try {
       await completeStage1({ cookItemId: item.cookItemId }).unwrap();
-    } catch {
-      // silent — toast handled
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to complete Stage 1");
     }
   };
 
