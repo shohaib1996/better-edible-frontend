@@ -90,6 +90,7 @@ export default function RepsPage() {
             { label: "Rep", value: "rep" },
             { label: "Delivery", value: "delivery" },
             { label: "Both", value: "both" },
+            { label: "Production Staff (PPS)", value: "pps" },
           ],
         },
         {
@@ -118,6 +119,7 @@ export default function RepsPage() {
             { label: "Rep", value: "rep" },
             { label: "Delivery", value: "delivery" },
             { label: "Both", value: "both" },
+            { label: "Production Staff (PPS)", value: "pps" },
           ],
         },
         { name: "territory", label: "Territory", type: "text" as const },

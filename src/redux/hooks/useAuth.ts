@@ -4,7 +4,7 @@ interface User {
   id: string;
   name: string;
   loginName: string;
-  repType: string;
+  repType?: "rep" | "delivery" | "both" | "pps";
   territory: string;
   role?: "superadmin" | "rep";
   email: string;

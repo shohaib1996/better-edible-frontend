@@ -62,7 +62,8 @@ export function LoginForm() {
           JSON.stringify(result?.rep || result)
         );
         toast.success("Login successful!");
-        router.push("/rep/orders");
+        const repType = result?.rep?.repType || result?.repType;
+        router.push(repType === "pps" ? "/pps" : "/rep/orders");
         return;
       } catch (_) {
         // If rep fails, try admin

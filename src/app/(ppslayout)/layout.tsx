@@ -1,0 +1,25 @@
+import { AppSidebar } from "@/components/AppSidebar/AppSidebar";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar";
+import { cookies } from "next/headers";
+
+const PPSLayout = async ({ children }: { children: React.ReactNode }) => {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+  return (
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <div className="flex max-w-7xl mx-auto w-full min-h-screen" id="layout-container">
+        <AppSidebar />
+        <SidebarInset className="w-full">
+          <SidebarTrigger className="m-2" />
+          {children}
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+};
+
+export default PPSLayout;

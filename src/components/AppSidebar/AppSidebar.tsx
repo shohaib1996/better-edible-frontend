@@ -76,6 +76,10 @@ const repItems = [
   // { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
+const ppsItems = [
+  { title: "Production (PPS)", url: "/pps", icon: Factory },
+];
+
 // ---------------- SIDEBAR COMPONENT ---------------- //
 
 export function AppSidebar() {
@@ -94,7 +98,12 @@ export function AppSidebar() {
 
   if (user === null) return null;
 
-  const menuItems = user.role === "superadmin" ? adminItems : repItems;
+  const menuItems =
+    user.role === "superadmin"
+      ? adminItems
+      : user.repType === "pps"
+      ? ppsItems
+      : repItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -123,7 +132,11 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm uppercase tracking-wide">
-            {user.role === "superadmin" ? "Admin Panel" : "Rep Dashboard"}
+            {user.role === "superadmin"
+            ? "Admin Panel"
+            : user.repType === "pps"
+            ? "Production"
+            : "Rep Dashboard"}
           </SidebarGroupLabel>
 
           <SidebarGroupContent>
