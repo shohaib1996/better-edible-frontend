@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import CookItemHistory from "@/components/PPS/CookItemHistory";
 import {
   Dialog,
   DialogContent,
@@ -164,6 +165,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   sortCannaCrispyItems(order.items).map((item, idx) => {
                     // Get label images from the populated label field
                     const labelImages = item.label?.labelImages || [];
+                    const cookItemId = order.client?.store?._id && item.label?._id
+                      ? `${order.client.store._id}-${order.orderNumber}-${item.label._id}`
+                      : null;
 
                     return (
                       <div
@@ -225,6 +229,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                             </p>
                           </div>
                         </div>
+                        {cookItemId && (
+                          <CookItemHistory cookItemId={cookItemId} isAdmin={true} />
+                        )}
                       </div>
                     );
                   })

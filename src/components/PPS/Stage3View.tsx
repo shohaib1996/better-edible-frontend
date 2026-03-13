@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Thermometer, Check, Download } from "lucide-react";
+import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
+import CookItemHistory from "./CookItemHistory";
 import { QRCodeCanvas } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -75,11 +77,12 @@ function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
 interface CookItemCardProps {
   item: IStage3CookItem;
   isActive: boolean;
+  isAdmin: boolean;
   onActivate: () => void;
   onComplete: (cookItem: ICookItem) => void;
 }
 
-function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardProps) {
+function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookItemCardProps) {
   const [trayScanValue, setTrayScanValue] = useState("");
 
   const [removeTray, { isLoading: isRemoving }] = useRemoveTrayMutation();
@@ -96,7 +99,7 @@ function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardPr
 
   const handleRemoveTray = async (cookItemId: string, trayId: string) => {
     try {
-      await removeTray({ cookItemId, trayId }).unwrap();
+      await removeTray({ cookItemId, trayId, performedBy: getPPSUser() } as any).unwrap();
       toast.success(`Tray ${trayId} removed`);
       setTrayScanValue("");
     } catch (err: any) {
@@ -106,7 +109,7 @@ function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardPr
 
   const handleCompleteStage3 = async (cookItemId: string) => {
     try {
-      const result = await completeStage3({ cookItemId }).unwrap();
+      const result = await completeStage3({ cookItemId, performedBy: getPPSUser() } as any).unwrap();
       toast.success("Stage 3 complete");
       onComplete(result.cookItem);
     } catch (err: any) {
@@ -115,9 +118,8 @@ function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardPr
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-3">
+    <Card>
+      <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <CardTitle className="text-base truncate">{item.storeName}</CardTitle>
@@ -246,16 +248,16 @@ function CookItemCard({ item, isActive, onActivate, onComplete }: CookItemCardPr
               )}
             </div>
           )}
+          <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
         </CardContent>
-      </Card>
-
-    </>
+    </Card>
   );
 }
 
 // ─── Stage 3 View ─────────────────────────────────────────────────────────────
 
 export default function Stage3View() {
+  const isAdmin = isAdminUser();
   const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
   const [labelData, setLabelData] = useState<ICookItem | null>(null);
   const [showLabelPreview, setShowLabelPreview] = useState(false);
@@ -327,6 +329,7 @@ export default function Stage3View() {
                 key={item._id}
                 item={item}
                 isActive={activeCookItemId === item.cookItemId}
+                isAdmin={isAdmin}
                 onActivate={() => setActiveCookItemId(item.cookItemId)}
                 onComplete={handleComplete}
               />

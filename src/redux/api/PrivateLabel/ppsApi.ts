@@ -2,6 +2,7 @@ import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
 import type {
   ICookItem,
+  IHistoryEntry,
   IStage3CookItem,
   IMold,
   IDehydratorTray,
@@ -153,6 +154,15 @@ export const ppsApi = baseApi.injectEndpoints({
       }
     ),
 
+    // ─── History ──────────────────────────
+    getCookItemHistory: builder.query<
+      { cookItemId: string; history: IHistoryEntry[] },
+      string
+    >({
+      query: (cookItemId) => `/pps/cook-items/${cookItemId}/history`,
+      providesTags: [tagTypes.ppsCookItems],
+    }),
+
     // ─── Resources ──────────────────────────
     getMolds: builder.query<{ molds: IMold[] }, void>({
       query: () => "/pps/molds",
@@ -209,6 +219,7 @@ export const ppsApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetCookItemHistoryQuery,
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
   useCompleteStage1Mutation,

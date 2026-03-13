@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Loader2, ChevronUp, ChevronDown, Check } from "lucide-react";
 import { toast } from "sonner";
+import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
+import CookItemHistory from "./CookItemHistory";
 import { Button } from "@/components/ui/button";
 import BarcodeScannerInput from "./BarcodeScannerInput";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +19,7 @@ import PrintLabel from "./PrintLabel";
 type Step = "scan" | "info" | "count" | "result";
 
 export default function Stage4View() {
+  const isAdmin = isAdminUser();
   const [step, setStep] = useState<Step>("scan");
   const [qrScanValue, setQrScanValue] = useState("");
   const [scannedCookItem, setScannedCookItem] = useState<
@@ -30,7 +33,7 @@ export default function Stage4View() {
 
   const handleScanContainer = async (qrData: string) => {
     try {
-      const result = await scanContainer({ qrCodeData: qrData }).unwrap();
+      const result = await scanContainer({ qrCodeData: qrData, performedBy: getPPSUser() } as any).unwrap();
       setScannedCookItem(result.cookItem);
       setStep("info");
       setQrScanValue("");
@@ -42,7 +45,7 @@ export default function Stage4View() {
 
   const handleConfirmCount = async (cookItemId: string, actualCount: number) => {
     try {
-      const result = await confirmCount({ cookItemId, actualCount }).unwrap();
+      const result = await confirmCount({ cookItemId, actualCount, performedBy: getPPSUser() } as any).unwrap();
       setConfirmResult(result);
       setStep("result");
       toast.success("Count confirmed — cases created");
@@ -259,6 +262,13 @@ export default function Stage4View() {
                 </div>
               ))}
             </div>
+
+            {confirmResult.cookItem?.cookItemId && (
+              <CookItemHistory
+                cookItemId={confirmResult.cookItem.cookItemId}
+                isAdmin={isAdmin}
+              />
+            )}
 
             <Button className="w-full" onClick={() => window.print()}>
               Print Case Labels

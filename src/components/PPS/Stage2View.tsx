@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
+import CookItemHistory from "./CookItemHistory";
 import {
   Loader2,
   Wind,
@@ -39,6 +41,7 @@ interface ProcessMoldFormProps {
 }
 
 function ProcessMoldForm({ cookItemId, moldIds, processedMoldIds }: ProcessMoldFormProps) {
+  const performedBy = getPPSUser();
   const [moldId, setMoldId] = useState("");
   const [trayId, setTrayId] = useState("");
   const [dehydratorUnitId, setDehydratorUnitId] = useState("");
@@ -65,7 +68,8 @@ function ProcessMoldForm({ cookItemId, moldIds, processedMoldIds }: ProcessMoldF
         trayId: trayId.trim(),
         dehydratorUnitId: dehydratorUnitId.trim(),
         shelfPosition: pos,
-      }).unwrap();
+        performedBy,
+      } as any).unwrap();
       // Reset form
       setMoldId("");
       setTrayId("");
@@ -167,7 +171,7 @@ function ProcessMoldForm({ cookItemId, moldIds, processedMoldIds }: ProcessMoldF
 
 // ─── Cook Item Card ────────────────────────────────────────────────────────────
 
-function CookItemCard({ item }: { item: ICookItem }) {
+function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
   const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
@@ -265,6 +269,8 @@ function CookItemCard({ item }: { item: ICookItem }) {
             />
           </div>
         )}
+
+        <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
       </CardContent>
     </Card>
   );
@@ -273,6 +279,7 @@ function CookItemCard({ item }: { item: ICookItem }) {
 // ─── Stage 2 View ──────────────────────────────────────────────────────────────
 
 export default function Stage2View() {
+  const isAdmin = isAdminUser();
   const { data, isLoading, isError } = useGetStage2CookItemsQuery();
 
   if (isLoading) {
@@ -310,7 +317,7 @@ export default function Stage2View() {
       </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cookItems.map((item) => (
-          <CookItemCard key={item._id} item={item} />
+          <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
         ))}
       </div>
     </div>

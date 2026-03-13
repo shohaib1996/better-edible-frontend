@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import { Loader2, ChefHat, ScanBarcode, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
+import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
+import CookItemHistory from "./CookItemHistory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BarcodeScannerInput from "./BarcodeScannerInput";
@@ -26,7 +28,7 @@ import type { ICookItem } from "@/types/privateLabel/pps";
 
 // ─── Cook Item Card ────────────────────────────────────────────────────────────
 
-function CookItemCard({ item }: { item: ICookItem }) {
+function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
   const [barcodeInput, setBarcodeInput] = useState("");
   const [scanning, setScanning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +44,8 @@ function CookItemCard({ item }: { item: ICookItem }) {
       await assignMold({
         cookItemId: item.cookItemId,
         moldId: barcode,
-      }).unwrap();
+        performedBy: getPPSUser(),
+      } as any).unwrap();
       setBarcodeInput("");
       setScanning(false);
       inputRef.current?.blur();
@@ -58,7 +61,7 @@ function CookItemCard({ item }: { item: ICookItem }) {
 
   const handleCompleteStage1 = async () => {
     try {
-      await completeStage1({ cookItemId: item.cookItemId }).unwrap();
+      await completeStage1({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 1");
     }
@@ -238,6 +241,8 @@ function CookItemCard({ item }: { item: ICookItem }) {
             </span>
           </div>
         )}
+
+        <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
       </CardContent>
     </Card>
   );
@@ -246,6 +251,7 @@ function CookItemCard({ item }: { item: ICookItem }) {
 // ─── Stage 1 View ──────────────────────────────────────────────────────────────
 
 export default function Stage1View() {
+  const isAdmin = isAdminUser();
   const { data, isLoading, isError } = useGetStage1CookItemsQuery();
 
   if (isLoading) {
@@ -283,7 +289,7 @@ export default function Stage1View() {
       </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cookItems.map((item) => (
-          <CookItemCard key={item._id} item={item} />
+          <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
         ))}
       </div>
     </div>

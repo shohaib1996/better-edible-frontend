@@ -2,6 +2,16 @@ import type { IFormulationComponent } from "./label";
 export type { IFormulationComponent };
 
 // ──────────────────────────────
+// History Entry
+// ──────────────────────────────
+export interface IHistoryEntry {
+  action: string;
+  performedBy: { userId: string; userName: string; repType: string };
+  detail?: string;
+  timestamp: string;
+}
+
+// ──────────────────────────────
 // Cook Item Status
 // ──────────────────────────────
 export type CookItemStatus =
@@ -74,6 +84,7 @@ export interface ICookItem {
   totalCases?: number;
   caseIds: string[];
   packagingCompletionTimestamp?: string;
+  history: IHistoryEntry[];
   createdAt: string;
   updatedAt: string;
 }
