@@ -1,22 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
-import CookItemHistory from "./CookItemHistory";
-import {
-  Loader2,
-  Wind,
-  ScanLine,
-  ChevronDown,
-  ChevronUp,
-  CheckCircle2,
-} from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Loader2, Wind, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import BarcodeScannerInput from "./BarcodeScannerInput";
 import {
   Card,
   CardContent,
@@ -24,262 +10,114 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useGetStage2CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
-  useGetStage2CookItemsQuery,
-  useProcessMoldMutation,
-  useGetNextAvailableShelfQuery,
-} from "@/redux/api/PrivateLabel/ppsApi";
-import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
+  COOK_ITEM_STATUS_COLORS,
+  COOK_ITEM_STATUS_LABELS,
+} from "@/constants/privateLabel";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
-// ─── Process Mold Form ─────────────────────────────────────────────────────────
+// ─── Group cook items by orderId ──────────────────────────────────────────────
 
-interface ProcessMoldFormProps {
-  cookItemId: string;
-  moldIds: string[];
-  processedMoldIds: string[];
+function groupByOrder(items: ICookItem[]): Map<string, ICookItem[]> {
+  return items.reduce((map, item) => {
+    const existing = map.get(item.orderId) ?? [];
+    map.set(item.orderId, [...existing, item]);
+    return map;
+  }, new Map<string, ICookItem[]>());
 }
 
-function ProcessMoldForm({ cookItemId, moldIds, processedMoldIds }: ProcessMoldFormProps) {
-  const performedBy = getPPSUser();
-  const [moldId, setMoldId] = useState("");
-  const [trayId, setTrayId] = useState("");
-  const [dehydratorUnitId, setDehydratorUnitId] = useState("");
-  const [shelfPosition, setShelfPosition] = useState("");
+// ─── Order Card ───────────────────────────────────────────────────────────────
 
-  const { data: nextShelf } = useGetNextAvailableShelfQuery();
-  const [processMold, { isLoading }] = useProcessMoldMutation();
-
-  // Pre-fill dehydrator info from next available shelf suggestion
-  const prefillNextShelf = () => {
-    if (nextShelf) {
-      setDehydratorUnitId(nextShelf.dehydratorUnitId);
-      setShelfPosition(String(nextShelf.shelfPosition));
-    }
-  };
-
-  const handleSubmit = async () => {
-    const pos = parseInt(shelfPosition, 10);
-    if (!moldId || !trayId || !dehydratorUnitId || isNaN(pos)) return;
-    try {
-      await processMold({
-        cookItemId,
-        moldId: moldId.trim(),
-        trayId: trayId.trim(),
-        dehydratorUnitId: dehydratorUnitId.trim(),
-        shelfPosition: pos,
-        performedBy,
-      } as any).unwrap();
-      // Reset form
-      setMoldId("");
-      setTrayId("");
-      setDehydratorUnitId("");
-      setShelfPosition("");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Mold, tray, or shelf already in use");
-    }
-  };
-
-  const unprocessed = moldIds.filter((id) => !processedMoldIds.includes(id));
-
-  if (unprocessed.length === 0) return null;
-
-  return (
-    <div className="border rounded-lg p-3 bg-muted/30 flex flex-col gap-3">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        Process a Mold → Tray → Shelf
-      </p>
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="col-span-2">
-          <Label className="text-xs mb-1 block">Mold ID (barcode)</Label>
-          <BarcodeScannerInput
-            value={moldId}
-            onChange={setMoldId}
-            onSubmit={setMoldId}
-            placeholder="Scan or type mold ID…"
-            mode="barcode"
-          />
-        </div>
-        <div className="col-span-2">
-          <Label className="text-xs mb-1 block">Tray ID (QR code)</Label>
-          <BarcodeScannerInput
-            value={trayId}
-            onChange={setTrayId}
-            onSubmit={setTrayId}
-            placeholder="Scan or type tray ID…"
-            mode="qr"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Dehydrator Unit ID</Label>
-          <Input
-            value={dehydratorUnitId}
-            onChange={(e) => setDehydratorUnitId(e.target.value)}
-            placeholder="Unit ID…"
-            className="h-8 text-sm font-mono"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1 block">Shelf Position</Label>
-          <Input
-            type="number"
-            value={shelfPosition}
-            onChange={(e) => setShelfPosition(e.target.value)}
-            placeholder="1–20"
-            min={1}
-            max={20}
-            className="h-8 text-sm"
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-2">
-        {nextShelf && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={prefillNextShelf}
-            className="h-8 text-xs gap-1"
-          >
-            <ScanLine className="w-3.5 h-3.5" />
-            Use Next Available Shelf
-          </Button>
-        )}
-        <Button
-          size="sm"
-          onClick={handleSubmit}
-          disabled={
-            isLoading ||
-            !moldId.trim() ||
-            !trayId.trim() ||
-            !dehydratorUnitId.trim() ||
-            !shelfPosition
-          }
-          className="h-8 gap-1 ml-auto"
-        >
-          {isLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            "Load to Dehydrator"
-          )}
-        </Button>
-      </div>
-    </div>
+function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICookItem[]; basePath: string }) {
+  const router = useRouter();
+  const storeName = items[0]?.storeName ?? "Unknown Store";
+  const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalMolds = items.reduce((sum, i) => sum + i.assignedMoldIds.length, 0);
+  const processedMolds = items.reduce(
+    (sum, i) => sum + i.dehydratorAssignments.length,
+    0
   );
-}
 
-// ─── Cook Item Card ────────────────────────────────────────────────────────────
-
-function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-
-  const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
-  const allProcessed =
-    item.assignedMoldIds.length > 0 &&
-    item.assignedMoldIds.every((id) => processedMoldIds.includes(id));
-
-  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
-  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+  const statusCounts = items.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = (acc[item.status] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <Card>
+    <Card
+      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
+      onClick={() =>
+        router.push(`${basePath}/stage2/${encodeURIComponent(orderId)}`)
+      }
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle className="text-base truncate">{item.storeName}</CardTitle>
+            <CardTitle className="text-base">{storeName}</CardTitle>
             <CardDescription className="text-xs mt-0.5 font-mono">
-              {item.cookItemId}
+              Order {orderId}
             </CardDescription>
           </div>
-          <Badge variant="outline" className={`shrink-0 text-xs ${statusColor}`}>
-            {statusLabel}
-          </Badge>
+          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          {items.length} item{items.length !== 1 ? "s" : ""} &bull;{" "}
+          {totalUnits.toLocaleString()} units &bull;{" "}
+          {processedMolds}/{totalMolds} molds loaded
+        </p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
-        {/* Summary row */}
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Flavor</p>
-            <p className="font-medium truncate">{item.flavor}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Molds</p>
-            <p className="font-medium">
-              {processedMoldIds.length} / {item.assignedMoldIds.length}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Qty</p>
-            <p className="font-medium">{item.quantity.toLocaleString()}</p>
-          </div>
+        {/* Item list */}
+        <div className="flex flex-col gap-1.5">
+          {items.map((item) => {
+            const processed = item.dehydratorAssignments.length;
+            const total = item.assignedMoldIds.length;
+            return (
+              <div
+                key={item._id}
+                className="flex items-center justify-between text-sm gap-2"
+              >
+                <span className="truncate text-muted-foreground">
+                  {item.flavor}
+                </span>
+                <span className="shrink-0 font-medium tabular-nums text-xs">
+                  {processed}/{total} molds
+                </span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Already loaded assignments */}
-        {item.dehydratorAssignments.length > 0 && (
-          <div>
-            <button
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setExpanded((v) => !v)}
+        {/* Status summary */}
+        <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <Badge
+              key={status}
+              variant="outline"
+              className={`text-xs ${
+                COOK_ITEM_STATUS_COLORS[
+                  status as keyof typeof COOK_ITEM_STATUS_COLORS
+                ] ?? ""
+              }`}
             >
-              {expanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-              {item.dehydratorAssignments.length} tray assignment
-              {item.dehydratorAssignments.length !== 1 ? "s" : ""} loaded
-            </button>
-
-            {expanded && (
-              <div className="mt-2 flex flex-col gap-1.5">
-                {item.dehydratorAssignments.map((a) => (
-                  <div
-                    key={a.moldId}
-                    className="flex items-center gap-2 text-xs bg-muted rounded px-2 py-1.5 font-mono"
-                  >
-                    <span className="text-muted-foreground">Mold</span>
-                    <span>{a.moldId}</span>
-                    <span className="text-muted-foreground">→ Tray</span>
-                    <span>{a.trayId}</span>
-                    <span className="text-muted-foreground ml-auto">
-                      Unit {a.dehydratorUnitId} Shelf {a.shelfPosition}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* All processed */}
-        {allProcessed ? (
-          <div className="flex items-center gap-2 text-green-600 text-sm border-t pt-3">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>All molds loaded into dehydrator</span>
-          </div>
-        ) : (
-          <div className="border-t pt-3">
-            <ProcessMoldForm
-              cookItemId={item.cookItemId}
-              moldIds={item.assignedMoldIds}
-              processedMoldIds={processedMoldIds}
-            />
-          </div>
-        )}
-
-        <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
+              {count}{" "}
+              {COOK_ITEM_STATUS_LABELS[
+                status as keyof typeof COOK_ITEM_STATUS_LABELS
+              ] ?? status}
+            </Badge>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-// ─── Stage 2 View ──────────────────────────────────────────────────────────────
+// ─── Stage 2 View ─────────────────────────────────────────────────────────────
 
-export default function Stage2View() {
-  const isAdmin = isAdminUser();
+export default function Stage2View({ basePath = "/admin/pps" }: { basePath?: string }) {
   const { data, isLoading, isError } = useGetStage2CookItemsQuery();
 
   if (isLoading) {
@@ -310,14 +148,17 @@ export default function Stage2View() {
     );
   }
 
+  const orderGroups = groupByOrder(cookItems);
+
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        {cookItems.length} item{cookItems.length !== 1 ? "s" : ""} awaiting dehydrator loading
+        {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} awaiting
+        dehydrator loading
       </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cookItems.map((item) => (
-          <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
+        {Array.from(orderGroups.entries()).map(([orderId, items]) => (
+          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
         ))}
       </div>
     </div>

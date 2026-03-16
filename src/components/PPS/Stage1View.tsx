@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Loader2, ChefHat, ScanBarcode, CheckCircle2, X } from "lucide-react";
-import { toast } from "sonner";
-import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
-import CookItemHistory from "./CookItemHistory";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Loader2, ChefHat, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import BarcodeScannerInput from "./BarcodeScannerInput";
 import {
   Card,
   CardContent,
@@ -15,243 +10,94 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  useGetStage1CookItemsQuery,
-  useAssignMoldMutation,
-  useCompleteStage1Mutation,
-} from "@/redux/api/PrivateLabel/ppsApi";
+import { useGetStage1CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
 } from "@/constants/privateLabel";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
-// ─── Cook Item Card ────────────────────────────────────────────────────────────
+// ─── Group cook items by orderId ──────────────────────────────────────────────
 
-function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
-  const [barcodeInput, setBarcodeInput] = useState("");
-  const [scanning, setScanning] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+function groupByOrder(items: ICookItem[]): Map<string, ICookItem[]> {
+  return items.reduce((map, item) => {
+    const existing = map.get(item.orderId) ?? [];
+    map.set(item.orderId, [...existing, item]);
+    return map;
+  }, new Map<string, ICookItem[]>());
+}
 
-  const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
-  const [completeStage1, { isLoading: isCompleting }] =
-    useCompleteStage1Mutation();
+// ─── Order Card ───────────────────────────────────────────────────────────────
 
-  const handleAssignMold = async () => {
-    const barcode = barcodeInput.trim();
-    if (!barcode) return;
-    try {
-      await assignMold({
-        cookItemId: item.cookItemId,
-        moldId: barcode,
-        performedBy: getPPSUser(),
-      } as any).unwrap();
-      setBarcodeInput("");
-      setScanning(false);
-      inputRef.current?.blur();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Mold already in use or not found");
-      inputRef.current?.focus();
-    }
-  };
+function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICookItem[]; basePath: string }) {
+  const router = useRouter();
+  const storeName = items[0]?.storeName ?? "Unknown Store";
+  const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleAssignMold();
-  };
-
-  const handleCompleteStage1 = async () => {
-    try {
-      await completeStage1({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to complete Stage 1");
-    }
-  };
-
-  const isComplete = item.status === "cooking_molding_complete";
-  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
-  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+  // Collect unique statuses for summary badges
+  const statusCounts = items.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = (acc[item.status] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <Card className="flex flex-col gap-0">
+    <Card
+      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
+      onClick={() => router.push(`${basePath}/stage1/${encodeURIComponent(orderId)}`)}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle className="text-base truncate">
-              {item.storeName}
-            </CardTitle>
+            <CardTitle className="text-base">{storeName}</CardTitle>
             <CardDescription className="text-xs mt-0.5 font-mono">
-              {item.cookItemId}
+              Order {orderId}
             </CardDescription>
           </div>
-          <Badge
-            variant="outline"
-            className={`shrink-0 text-xs ${statusColor}`}
-          >
-            {statusLabel}
-          </Badge>
+          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          {items.length} item{items.length !== 1 ? "s" : ""} &bull;{" "}
+          {totalUnits.toLocaleString()} total units
+        </p>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
-        {/* Flavor / Color info */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-muted-foreground text-xs mb-1">Flavor</p>
-            <p className="font-medium truncate">{item.flavor}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs mb-1">Qty</p>
-            <p className="font-medium">
-              {item.quantity.toLocaleString()} units
-            </p>
-          </div>
+      <CardContent className="flex flex-col gap-3">
+        {/* Item list */}
+        <div className="flex flex-col gap-1.5">
+          {items.map((item) => (
+            <div
+              key={item._id}
+              className="flex items-center justify-between text-sm gap-2"
+            >
+              <span className="truncate text-muted-foreground">{item.flavor}</span>
+              <span className="shrink-0 font-medium tabular-nums">
+                {item.quantity.toLocaleString()} units
+              </span>
+            </div>
+          ))}
         </div>
 
-        {/* Flavor components */}
-        {item.flavorComponents.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Flavor Components
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {item.flavorComponents.map((fc) => (
-                <Badge key={fc.name} variant="secondary" className="text-xs">
-                  {fc.name} {fc.percentage}%
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Color components */}
-        {item.colorComponents.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Color Components
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {item.colorComponents.map((cc) => (
-                <Badge
-                  key={cc.name}
-                  variant="outline"
-                  className="text-xs border-violet-500/40 text-violet-600"
-                >
-                  {cc.name} {cc.percentage}%
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Assigned molds */}
-        {item.assignedMoldIds.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Assigned Molds ({item.assignedMoldIds.length})
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {item.assignedMoldIds.map((id) => (
-                <Badge key={id} variant="outline" className="text-xs font-mono">
-                  {id}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Barcode scanner section */}
-        {!isComplete && (
-          <div className="border-t pt-3 flex flex-col gap-2">
-            {scanning ? (
-              <div className="flex flex-col gap-2">
-                <BarcodeScannerInput
-                  value={barcodeInput}
-                  onChange={setBarcodeInput}
-                  onSubmit={(val) => {
-                    setBarcodeInput(val);
-                    handleAssignMold();
-                  }}
-                  placeholder="Scan or type mold barcode..."
-                  disabled={isAssigning}
-                  mode="barcode"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleAssignMold}
-                    disabled={!barcodeInput.trim() || isAssigning}
-                    className="h-9 flex-1"
-                  >
-                    {isAssigning ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      "Add"
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setScanning(false);
-                      setBarcodeInput("");
-                    }}
-                    className="h-9"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setScanning(true)}
-                className="w-full gap-2"
-              >
-                <ScanBarcode className="w-4 h-4" />
-                Scan Mold Barcode
-              </Button>
-            )}
-
-            {/* Complete Stage 1 — only if at least 1 mold assigned */}
-            {item.assignedMoldIds.length > 0 && (
-              <Button
-                size="sm"
-                onClick={handleCompleteStage1}
-                disabled={isCompleting}
-                className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isCompleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                Complete Stage 1
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Completed badge */}
-        {isComplete && (
-          <div className="border-t pt-3 flex items-center gap-2 text-green-600 text-sm">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>
-              Stage 1 complete — {item.assignedMoldIds.length} mold(s) assigned
-            </span>
-          </div>
-        )}
-
-        <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
+        {/* Status summary */}
+        <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <Badge
+              key={status}
+              variant="outline"
+              className={`text-xs ${COOK_ITEM_STATUS_COLORS[status as keyof typeof COOK_ITEM_STATUS_COLORS] ?? ""}`}
+            >
+              {count} {COOK_ITEM_STATUS_LABELS[status as keyof typeof COOK_ITEM_STATUS_LABELS] ?? status}
+            </Badge>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-// ─── Stage 1 View ──────────────────────────────────────────────────────────────
+// ─── Stage 1 View ─────────────────────────────────────────────────────────────
 
-export default function Stage1View() {
-  const isAdmin = isAdminUser();
+export default function Stage1View({ basePath = "/admin/pps" }: { basePath?: string }) {
   const { data, isLoading, isError } = useGetStage1CookItemsQuery();
 
   if (isLoading) {
@@ -282,14 +128,16 @@ export default function Stage1View() {
     );
   }
 
+  const orderGroups = groupByOrder(cookItems);
+
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        {cookItems.length} item{cookItems.length !== 1 ? "s" : ""} in queue
+        {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in queue
       </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cookItems.map((item) => (
-          <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
+        {Array.from(orderGroups.entries()).map(([orderId, items]) => (
+          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
         ))}
       </div>
     </div>

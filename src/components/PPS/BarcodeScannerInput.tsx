@@ -51,6 +51,13 @@ export default function BarcodeScannerInput({
     setCameraOpen(false);
   };
 
+  // Autofocus the text input when it first appears
+  useEffect(() => {
+    if (!cameraOpen) {
+      inputRef.current?.focus();
+    }
+  }, [cameraOpen]);
+
   // Mount scanner after the div is rendered
   useEffect(() => {
     if (!cameraOpen) return;

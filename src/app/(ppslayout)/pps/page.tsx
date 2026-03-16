@@ -31,13 +31,13 @@ export default function PPSStaffPage() {
         </TabsList>
 
         <TabsContent value="stage1">
-          <Stage1View />
+          <Stage1View basePath="/pps" />
         </TabsContent>
         <TabsContent value="stage2">
-          <Stage2View />
+          <Stage2View basePath="/pps" />
         </TabsContent>
         <TabsContent value="stage3">
-          <Stage3View />
+          <Stage3View basePath="/pps" />
         </TabsContent>
         <TabsContent value="stage4">
           <Stage4View />

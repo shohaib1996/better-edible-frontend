@@ -1,14 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Thermometer, Check, Download } from "lucide-react";
-import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
-import CookItemHistory from "./CookItemHistory";
-import { QRCodeCanvas } from "qrcode.react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Loader2, Thermometer, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import BarcodeScannerInput from "./BarcodeScannerInput";
 import {
   Card,
   CardContent,
@@ -16,287 +10,131 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  useGetStage3CookItemsQuery,
-  useRemoveTrayMutation,
-  useCompleteStage3Mutation,
-} from "@/redux/api/PrivateLabel/ppsApi";
-import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
-import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
-import PrintLabel from "./PrintLabel";
+  COOK_ITEM_STATUS_COLORS,
+  COOK_ITEM_STATUS_LABELS,
+} from "@/constants/privateLabel";
+import type { IStage3CookItem } from "@/types/privateLabel/pps";
 
-// ─── Live countdown timer ─────────────────────────────────────────────────────
+// ─── Group cook items by orderId ──────────────────────────────────────────────
 
-function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isReady, setIsReady] = useState(false);
+function groupByOrder(items: IStage3CookItem[]): Map<string, IStage3CookItem[]> {
+  return items.reduce((map, item) => {
+    const existing = map.get(item.orderId) ?? [];
+    map.set(item.orderId, [...existing, item]);
+    return map;
+  }, new Map<string, IStage3CookItem[]>());
+}
 
-  useEffect(() => {
-    const update = () => {
-      const end = new Date(expectedEndTime).getTime();
-      const diff = end - Date.now();
-      if (diff <= 0) {
-        setIsReady(true);
-        setTimeLeft("READY");
-      } else {
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(
-          `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-        );
-      }
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [expectedEndTime]);
+// ─── Order Card ───────────────────────────────────────────────────────────────
+
+function OrderCard({
+  orderId,
+  items,
+  basePath,
+}: {
+  orderId: string;
+  items: IStage3CookItem[];
+  basePath: string;
+}) {
+  const router = useRouter();
+  const storeName = items[0]?.storeName ?? "Unknown Store";
+  const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
+  const allReady = items.every((i) => i.allMoldsReady);
+
+  const statusCounts = items.reduce<Record<string, number>>((acc, item) => {
+    acc[item.status] = (acc[item.status] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
-    <Badge
-      variant="outline"
-      className={
-        isReady
-          ? "bg-green-500/10 text-green-600 border-green-500/20"
-          : "bg-orange-500/10 text-orange-600 border-orange-500/20"
+    <Card
+      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
+      onClick={() =>
+        router.push(`${basePath}/stage3/${encodeURIComponent(orderId)}`)
       }
     >
-      {timeLeft || "…"}
-    </Badge>
-  );
-}
-
-// ─── Cook Item Card ────────────────────────────────────────────────────────────
-
-interface CookItemCardProps {
-  item: IStage3CookItem;
-  isActive: boolean;
-  isAdmin: boolean;
-  onActivate: () => void;
-  onComplete: (cookItem: ICookItem) => void;
-}
-
-function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookItemCardProps) {
-  const [trayScanValue, setTrayScanValue] = useState("");
-
-  const [removeTray, { isLoading: isRemoving }] = useRemoveTrayMutation();
-  const [completeStage3, { isLoading: isCompleting }] = useCompleteStage3Mutation();
-
-  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
-  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
-
-  const trayIds = item.dehydratorAssignments.map((a) => a.trayId);
-  // Derive removed trays from server data so it survives re-renders
-  const removedTrayIds = new Set(item.trayRemovalTimestamps.map((t) => t.trayId));
-  const allTraysRemoved =
-    trayIds.length > 0 && trayIds.every((id) => removedTrayIds.has(id));
-
-  const handleRemoveTray = async (cookItemId: string, trayId: string) => {
-    try {
-      await removeTray({ cookItemId, trayId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success(`Tray ${trayId} removed`);
-      setTrayScanValue("");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to log tray removal");
-    }
-  };
-
-  const handleCompleteStage3 = async (cookItemId: string) => {
-    try {
-      const result = await completeStage3({ cookItemId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success("Stage 3 complete");
-      onComplete(result.cookItem);
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to complete Stage 3");
-    }
-  };
-
-  return (
-    <Card>
       <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <CardTitle className="text-base truncate">{item.storeName}</CardTitle>
-              <CardDescription className="text-xs mt-0.5 font-mono">
-                {item.cookItemId}
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className={`shrink-0 text-xs ${statusColor}`}>
-              {statusLabel}
-            </Badge>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-base">{storeName}</CardTitle>
+            <CardDescription className="text-xs mt-0.5 font-mono">
+              Order {orderId}
+            </CardDescription>
           </div>
-        </CardHeader>
+          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+        </div>
 
-        <CardContent className="flex flex-col gap-3">
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Flavor</p>
-              <p className="font-medium truncate">{item.flavor}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Qty</p>
-              <p className="font-medium">{item.quantity.toLocaleString()}</p>
-            </div>
-          </div>
+        <p className="text-xs text-muted-foreground">
+          {items.length} item{items.length !== 1 ? "s" : ""} &bull;{" "}
+          {totalUnits.toLocaleString()} total units
+        </p>
 
-          {/* Formulation summary */}
-          {item.flavorComponents.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Flavors:{" "}
-              {item.flavorComponents
-                .map((c) => `${c.name} (${c.percentage}%)`)
-                .join(", ")}
-            </p>
-          )}
-          {item.colorComponents.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Colors:{" "}
-              {item.colorComponents
-                .map((c) => `${c.name} (${c.percentage}%)`)
-                .join(", ")}
-            </p>
-          )}
+        {allReady && (
+          <Badge
+            variant="outline"
+            className="w-fit text-xs bg-green-500/10 text-green-600 border-green-500/20"
+          >
+            Ready for removal
+          </Badge>
+        )}
+      </CardHeader>
 
-          {/* Per-mold timer rows */}
-          <div className="flex flex-col gap-1">
-            {item.molds.map((mold) => (
-              <div
-                key={mold.moldId}
-                className="flex items-center justify-between py-2 border-b last:border-0"
-              >
-                <span className="text-sm font-medium font-mono">
-                  {mold.trayId} — {mold.dehydratorUnitId}, Shelf {mold.shelfPosition}
-                </span>
-                <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
-              </div>
-            ))}
-          </div>
-
-          {/* Expand / activate card */}
-          {item.allMoldsReady && !isActive && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={onActivate}
+      <CardContent className="flex flex-col gap-3">
+        {/* Item list */}
+        <div className="flex flex-col gap-1.5">
+          {items.map((item) => (
+            <div
+              key={item._id}
+              className="flex items-center justify-between text-sm gap-2"
             >
-              Start Removal & Packing
-            </Button>
-          )}
-
-          {/* Active removal flow */}
-          {isActive && (
-            <div className="border-t pt-3 flex flex-col gap-3">
-              <ol className="text-sm list-decimal pl-4 space-y-1 text-muted-foreground">
-                <li>Remove trays from dehydrator units</li>
-                <li>Scan each tray QR code to log removal</li>
-                <li>Combine all gummies into a container</li>
-                <li>Print label and attach to container</li>
-              </ol>
-
-              {/* Tray removal status list */}
-              <div className="flex flex-col gap-1.5">
-                {trayIds.map((trayId) => (
-                  <div key={trayId} className="flex items-center gap-2">
-                    {removedTrayIds.has(trayId) ? (
-                      <div className="flex items-center gap-1 text-green-600 text-sm">
-                        <Check className="w-4 h-4" />
-                        Tray {trayId} removed
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Tray {trayId} — waiting for scan
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Scan input */}
-              {!allTraysRemoved && (
-                <BarcodeScannerInput
-                  value={trayScanValue}
-                  onChange={setTrayScanValue}
-                  onSubmit={(val) => handleRemoveTray(item.cookItemId, val)}
-                  placeholder="Scan tray QR code…"
-                  disabled={isRemoving}
-                  mode="qr"
-                />
-              )}
-
-              {/* Complete button */}
-              {allTraysRemoved && (
-                <Button
-                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => handleCompleteStage3(item.cookItemId)}
-                  disabled={isCompleting}
-                >
-                  {isCompleting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4" />
-                  )}
-                  Print Label & Complete
-                </Button>
-              )}
+              <span className="truncate text-muted-foreground">
+                {item.flavor}
+              </span>
+              <span className="shrink-0 font-medium tabular-nums">
+                {item.quantity.toLocaleString()} units
+              </span>
             </div>
-          )}
-          <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
-        </CardContent>
+          ))}
+        </div>
+
+        {/* Status summary */}
+        <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <Badge
+              key={status}
+              variant="outline"
+              className={`text-xs ${
+                COOK_ITEM_STATUS_COLORS[
+                  status as keyof typeof COOK_ITEM_STATUS_COLORS
+                ] ?? ""
+              }`}
+            >
+              {count}{" "}
+              {COOK_ITEM_STATUS_LABELS[
+                status as keyof typeof COOK_ITEM_STATUS_LABELS
+              ] ?? status}
+            </Badge>
+          ))}
+        </div>
+      </CardContent>
     </Card>
   );
 }
 
 // ─── Stage 3 View ─────────────────────────────────────────────────────────────
 
-export default function Stage3View() {
-  const isAdmin = isAdminUser();
-  const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
-  const [labelData, setLabelData] = useState<ICookItem | null>(null);
-  const [showLabelPreview, setShowLabelPreview] = useState(false);
-  const qrCanvasRef = useRef<HTMLDivElement>(null);
-
+export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: string }) {
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
   });
-
-  const handleComplete = (cookItem: ICookItem) => {
-    setLabelData(cookItem);
-    setShowLabelPreview(true);
-  };
-
-  const downloadQR = (cookItemId: string) => {
-    const qrCanvas = qrCanvasRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
-    if (!qrCanvas) return;
-    const padding = 24;
-    const qrSize = qrCanvas.width;
-    const totalSize = qrSize + padding * 2;
-    const outputCanvas = document.createElement("canvas");
-    outputCanvas.width = totalSize;
-    outputCanvas.height = totalSize;
-    const ctx = outputCanvas.getContext("2d");
-    if (!ctx) return;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, totalSize, totalSize);
-    ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
-    const a = document.createElement("a");
-    a.download = `qr-${cookItemId}.png`;
-    a.href = outputCanvas.toDataURL("image/png");
-    a.click();
-  };
 
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
         <Loader2 className="w-5 h-5 animate-spin" />
-        <span>Loading Stage 3 queue…</span>
+        <span>Loading dehydrator queue…</span>
       </div>
     );
   }
@@ -311,71 +149,32 @@ export default function Stage3View() {
 
   const cookItems = data?.cookItems ?? [];
 
+  if (cookItems.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+        <Thermometer className="w-10 h-10 opacity-40" />
+        <p className="text-sm">No items in the dehydrator removal queue.</p>
+      </div>
+    );
+  }
+
+  const orderGroups = groupByOrder(cookItems);
+
   return (
-    <>
-      {cookItems.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-          <Thermometer className="w-10 h-10 opacity-40" />
-          <p className="text-sm">No items in the dehydrator removal queue.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {cookItems.length} item{cookItems.length !== 1 ? "s" : ""} in dehydrator
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {cookItems.map((item) => (
-              <CookItemCard
-                key={item._id}
-                item={item}
-                isActive={activeCookItemId === item.cookItemId}
-                isAdmin={isAdmin}
-                onActivate={() => setActiveCookItemId(item.cookItemId)}
-                onComplete={handleComplete}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Hidden QR canvas used for download */}
-      {labelData && (
-        <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas
-            value={JSON.stringify({ cookItemId: labelData.cookItemId })}
-            size={300}
-            bgColor="#ffffff"
-            fgColor="#000000"
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-muted-foreground">
+        {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from(orderGroups.entries()).map(([orderId, items]) => (
+          <OrderCard
+            key={orderId}
+            orderId={orderId}
+            items={items}
+            basePath={basePath}
           />
-        </div>
-      )}
-
-      {/* Label preview dialog — lives outside the card so it survives card unmount */}
-      {labelData && (
-        <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Production Label</DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center py-2">
-              <PrintLabel type="production" data={labelData} />
-            </div>
-            <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => window.print()}>
-                Print Label
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 gap-2"
-                onClick={() => downloadQR(labelData.cookItemId)}
-              >
-                <Download className="w-4 h-4" />
-                Download QR
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+        ))}
+      </div>
+    </div>
   );
 }
