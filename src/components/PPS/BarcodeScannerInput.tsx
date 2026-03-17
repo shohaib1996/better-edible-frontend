@@ -13,7 +13,7 @@ interface BarcodeScannerInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  /** "barcode" shows Code128-style hint, "qr" shows QR hint */
+  /** "barcode" shows Code128-style hint, "qr" shows*/
   mode?: "barcode" | "qr";
 }
 
@@ -78,11 +78,10 @@ export default function BarcodeScannerInput({
         },
         () => {
           // scan frame error — ignore
-        }
+        },
       )
       .catch((err: unknown) => {
-        const msg =
-          err instanceof Error ? err.message : "Camera access denied";
+        const msg = err instanceof Error ? err.message : "Camera access denied";
         setCameraError(msg);
         setCameraOpen(false);
         scannerRef.current = null;
@@ -127,9 +126,7 @@ export default function BarcodeScannerInput({
         </div>
       )}
 
-      {cameraError && (
-        <p className="text-xs text-destructive">{cameraError}</p>
-      )}
+      {cameraError && <p className="text-xs text-destructive">{cameraError}</p>}
 
       {/* Input row */}
       <div className="flex gap-2">
