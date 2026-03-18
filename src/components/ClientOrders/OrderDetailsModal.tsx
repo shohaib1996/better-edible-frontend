@@ -166,7 +166,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                     // Get label images from the populated label field
                     const labelImages = item.label?.labelImages || [];
                     const cookItemId = order.client?.store?.storeId && order.orderNumber && item.label?.itemId
-                      ? `${order.client.store.storeId}${order.orderNumber}${item.label.itemId}`
+                      ? `${order.client.store.storeId}-${order.orderNumber}-${item.label.itemId}`
                       : null;
 
                     return (
