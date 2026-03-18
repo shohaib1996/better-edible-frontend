@@ -165,8 +165,8 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                   sortCannaCrispyItems(order.items).map((item, idx) => {
                     // Get label images from the populated label field
                     const labelImages = item.label?.labelImages || [];
-                    const cookItemId = order.client?.store?._id && item.label?._id
-                      ? `${order.client.store._id}-${order.orderNumber}-${item.label._id}`
+                    const cookItemId = order.client?.store?.storeId && order.orderNumber && item.label?.itemId
+                      ? `${order.client.store.storeId}${order.orderNumber}${item.label.itemId}`
                       : null;
 
                     return (

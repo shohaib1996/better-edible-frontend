@@ -74,12 +74,19 @@ export const StoreCard = ({
             onCheckedChange={() => onSelect(store._id)}
           />
           <div>
-            <h3
-              className="text-lg text-foreground font-bold relative inline-block after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full cursor-pointer"
-              onClick={() => onAddNote(store)}
-            >
-              {store.name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3
+                className="text-lg text-foreground font-bold relative inline-block after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all after:duration-300 hover:after:w-full cursor-pointer"
+                onClick={() => onAddNote(store)}
+              >
+                {store.name}
+              </h3>
+              {store.storeId && (
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded-xs">
+                  {store.storeId}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {store.address || "No address"}
             </p>

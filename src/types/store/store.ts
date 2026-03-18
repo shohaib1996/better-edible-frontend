@@ -12,6 +12,7 @@ export interface IContact {
 // Base Store type (non-populated version)
 export interface IStore {
   _id: string;
+  storeId?: string;
   name: string;
   address?: string;
   city?: string;

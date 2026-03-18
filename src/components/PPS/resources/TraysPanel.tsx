@@ -23,7 +23,7 @@ import {
 
 export default function TraysPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [prefix, setPrefix] = useState("TRAY");
+  const [prefix, setPrefix] = useState("T");
   const [startNumber, setStartNumber] = useState("");
   const [endNumber, setEndNumber] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
@@ -155,7 +155,7 @@ export default function TraysPanel() {
                       {previewCount !== 1 ? "s" : ""}:
                     </p>
                     <p className="text-muted-foreground">
-                      {prefix}-{startNumber}, {prefix}-{Number(startNumber) + 1}, … {prefix}-{endNumber}
+                      {prefix}{String(Number(startNumber)).padStart(3,"0")}, {prefix}{String(Number(startNumber)+1).padStart(3,"0")}, … {prefix}{String(Number(endNumber)).padStart(3,"0")}
                     </p>
                   </div>
                 )}

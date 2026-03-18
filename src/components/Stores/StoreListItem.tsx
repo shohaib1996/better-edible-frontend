@@ -88,6 +88,11 @@ export const StoreListItem = ({
               )}
             </Tooltip>
           </TooltipProvider>
+          {store.storeId && (
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded-xs">
+              {store.storeId}
+            </span>
+          )}
           <p className="text-xs text-muted-foreground truncate mt-0.5">
             {store.address || "No address"}
           </p>

@@ -25,6 +25,7 @@ export interface IClientOrderItem {
     _id: string;
     flavorName?: string;
     productType?: string;
+    itemId?: string;
     labelImages?: Pick<ILabelImage, "url" | "secureUrl" | "publicId">[];
   };
   flavorName: string;
@@ -45,7 +46,7 @@ export interface IClientOrder {
   orderNumber: string;
   client: {
     _id: string;
-    store?: Pick<IStore, "_id" | "name" | "address" | "city" | "state">;
+    store?: Pick<IStore, "_id" | "storeId" | "name" | "address" | "city" | "state">;
   };
   assignedRep: Pick<IRep, "_id" | "name" | "email">;
   status: ClientOrderStatus;
