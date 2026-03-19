@@ -59,9 +59,10 @@ import { cn } from "@/lib/utils";
 interface OrderCardProps {
   order: IClientOrder;
   onUpdate: () => void;
+  currentRepId?: string;
 }
 
-export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
+export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => {
   const [updateStatus, { isLoading: updatingStatus }] =
     useUpdateClientOrderStatusMutation();
   const [pushToPPS, { isLoading: pushing }] = usePushOrderToPPSMutation();
@@ -158,10 +159,12 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
   const canEdit = canEditOrder(order.status);
   const canPushToPPS = order.status === "waiting";
   const inProduction = isOrderInProduction(order.status);
+  // If currentRepId is provided (rep view), only own orders are editable
+  const isOwnOrder = currentRepId ? order.assignedRep?._id === currentRepId : true;
 
   return (
     <>
-      <Card className="p-0 gap-0 rounded-xs border-l-4 border-l-primary bg-card transition-all duration-300 shadow-xs overflow-hidden">
+      <Card className={cn("p-0 gap-0 rounded-xs border-l-4 border-l-primary bg-card transition-all duration-300 shadow-xs overflow-hidden", !isOwnOrder && "opacity-75")}>
         {/* Top Section */}
         <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 p-3">
           {/* Left - Store, Order#, Delivery */}
@@ -186,12 +189,19 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
               )}
             </div>
 
-            <button
-              onClick={() => setShowDetailsModal(true)}
-              className="text-lg font-bold text-foreground cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
-            >
-              {order.client?.store?.name || "Unknown Store"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowDetailsModal(true)}
+                className="text-lg font-bold text-foreground cursor-pointer text-left relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full"
+              >
+                {order.client?.store?.name || "Unknown Store"}
+              </button>
+              {!isOwnOrder && currentRepId && (
+                <span className="px-2 py-0.5 rounded-xs text-xs font-semibold bg-muted text-muted-foreground">
+                  Other Rep
+                </span>
+              )}
+            </div>
 
             <h3 className="text-sm font-semibold text-muted-foreground">
               {order.orderNumber}
@@ -236,8 +246,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => setShowDeliveryModal(true)}
-                          className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                          onClick={() => isOwnOrder ? setShowDeliveryModal(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          disabled={!isOwnOrder}
+                          className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
                           <Truck className="h-4 w-4" />
                         </Button>
@@ -250,8 +261,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => setShowPackingListDialog(true)}
-                          className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                          onClick={() => isOwnOrder ? setShowPackingListDialog(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          disabled={!isOwnOrder}
+                          className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
                           <ClipboardList className="h-4 w-4" />
                         </Button>
@@ -264,8 +276,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
-                          onClick={() => generateClientOrderInvoice(order)}
+                          disabled={!isOwnOrder}
+                          className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
+                          onClick={() => isOwnOrder ? generateClientOrderInvoice(order) : toast.error("You are not authorized to change it. This is not your order.")}
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
@@ -278,12 +291,16 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                 {/* Status Selector - Always visible */}
                 <Select
                   value={order.status}
-                  onValueChange={(value) =>
-                    handleStatusChange(value as ClientOrderStatus)
-                  }
-                  disabled={updatingStatus}
+                  onValueChange={(value) => {
+                    if (isOwnOrder) {
+                      handleStatusChange(value as ClientOrderStatus);
+                    } else {
+                      toast.error("You are not authorized to change it. This is not your order.");
+                    }
+                  }}
+                  disabled={updatingStatus || !isOwnOrder}
                 >
-                  <SelectTrigger className="h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200">
+                  <SelectTrigger className={cn("h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xs border-border dark:border-white/20">
@@ -310,9 +327,9 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={handlePushToPPS}
-                            disabled={pushing}
-                            className="h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                            onClick={() => isOwnOrder ? handlePushToPPS() : toast.error("You are not authorized to change it. This is not your order.")}
+                            disabled={pushing || !isOwnOrder}
+                            className={cn("h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                           >
                             {pushing ? "Pushing..." : "Push to PPS"}
                           </Button>
@@ -328,12 +345,13 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant={order.shipASAP ? "destructive" : "outline"}
                           size="sm"
-                          onClick={handleToggleShipASAP}
-                          disabled={toggling}
+                          onClick={() => isOwnOrder ? handleToggleShipASAP() : toast.error("You are not authorized to change it. This is not your order.")}
+                          disabled={toggling || !isOwnOrder}
                           className={cn(
                             "h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs transition-all duration-200",
                             !order.shipASAP &&
                               "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
+                            !isOwnOrder && "opacity-50 cursor-not-allowed",
                           )}
                         >
                           <Truck className="h-4 w-4 mr-1" />
@@ -352,15 +370,17 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => setShowEditModal(true)}
-                          disabled={!canEdit}
-                          className="h-8 w-8 rounded-xs border-none bg-secondary text-secondary-foreground hover:bg-primary hover:text-white dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200"
+                          onClick={() => isOwnOrder ? setShowEditModal(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          disabled={!canEdit || !isOwnOrder}
+                          className={cn("h-8 w-8 rounded-xs border-none bg-secondary text-secondary-foreground hover:bg-primary hover:text-white dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {canEdit
+                        {!isOwnOrder
+                          ? "Cannot edit another rep's order"
+                          : canEdit
                           ? "Edit order"
                           : "Cannot edit order in production"}
                       </TooltipContent>
@@ -371,15 +391,17 @@ export const OrderCard = ({ order, onUpdate }: OrderCardProps) => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => setShowDeleteDialog(true)}
-                          disabled={inProduction}
-                          className="h-8 w-8 rounded-xs text-white border-none bg-accent hover:bg-destructive hover:text-white dark:bg-accent dark:text-white dark:hover:bg-destructive dark:hover:text-white transition-all duration-200"
+                          onClick={() => isOwnOrder ? setShowDeleteDialog(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          disabled={inProduction || !isOwnOrder}
+                          className={cn("h-8 w-8 rounded-xs text-white border-none bg-accent hover:bg-destructive hover:text-white dark:bg-accent dark:text-white dark:hover:bg-destructive dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {inProduction
+                        {!isOwnOrder
+                          ? "Cannot delete another rep's order"
+                          : inProduction
                           ? "Cannot delete order in production"
                           : "Delete order"}
                       </TooltipContent>

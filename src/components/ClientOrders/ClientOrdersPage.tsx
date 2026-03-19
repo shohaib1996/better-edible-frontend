@@ -275,7 +275,7 @@ export const ClientOrdersPage = ({
             <>
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <OrderCard key={order._id} order={order} onUpdate={refetch} />
+                  <OrderCard key={order._id} order={order} onUpdate={refetch} currentRepId={isRepView ? currentRepId : undefined} />
                 ))}
               </div>
 
