@@ -75,7 +75,7 @@ export default function PPSStaffPage() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="gap-1.5 text-muted-foreground hover:text-destructive h-8 px-2"
+            className="gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 px-2"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span className="text-xs">Logout</span>
