@@ -126,6 +126,7 @@ export const OrderDetailsDialog = ({
                 <div className="mt-1">
                   {sortCannaCrispyItems(order.items).map((item, idx) => {
                     const lineTotal = item.qty * item.unitPrice;
+                    const productLine = typeof item.product === "object" ? item.product?.productLine?.name : undefined;
                     return (
                       <div
                         key={idx}
@@ -133,6 +134,11 @@ export const OrderDetailsDialog = ({
                       >
                         {/* Item - Mobile shows all info stacked */}
                         <div className="py-2 px-3 sm:border-r border-border dark:border-gray-700">
+                          {productLine && (
+                            <p className="text-xs text-primary font-medium">
+                              {productLine}
+                            </p>
+                          )}
                           <p className="font-medium text-foreground dark:text-white">
                             {item.name}
                           </p>
