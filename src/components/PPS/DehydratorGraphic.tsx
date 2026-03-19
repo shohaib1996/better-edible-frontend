@@ -62,7 +62,7 @@ function ShelfRow({ pos, assignment, isActive, onTrayScan, existingTrayId }: She
 
   return (
     <div
-      className={`rounded-lg border transition-all ${
+      className={`rounded-xs border transition-all ${
         isLocked
           ? "bg-green-500/10 border-green-500/30"
           : isActive
@@ -142,7 +142,7 @@ function UnitView({ unit, assignments, activeIndex, globalOffset, onTrayScan }: 
   const lockedCount = assignments.filter((a) => a.trayId).length;
 
   return (
-    <div className="border rounded-xl overflow-hidden">
+    <div className="border rounded-xs overflow-hidden">
       {/* Unit header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-b">
         <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function DehydratorGraphic({ units, pendingAssignments, onTraySca
   if (allDone) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-xs bg-green-500/10 flex items-center justify-center">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
         <div>
@@ -237,7 +237,7 @@ export default function DehydratorGraphic({ units, pendingAssignments, onTraySca
     <div className="flex flex-col gap-6">
       {/* Progress bar */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-muted rounded-xs overflow-hidden">
           <div
             className="h-full bg-green-500 transition-all duration-500"
             style={{
@@ -256,7 +256,7 @@ export default function DehydratorGraphic({ units, pendingAssignments, onTraySca
       </div>
 
       {/* Instruction */}
-      <div className="bg-amber-400/10 border border-amber-400/30 rounded-lg px-4 py-3 text-sm text-amber-800">
+      <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-sm text-amber-800">
         <strong>Scan the tray QR code</strong> for each highlighted shelf. The system will advance to the next shelf automatically.
       </div>
 

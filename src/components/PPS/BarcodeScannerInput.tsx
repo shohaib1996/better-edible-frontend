@@ -107,7 +107,7 @@ export default function BarcodeScannerInput({
     <div className={`flex flex-col gap-2 ${className}`}>
       {/* Camera overlay */}
       {cameraOpen && (
-        <div className="relative w-full rounded-lg overflow-hidden border bg-black">
+        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
           <div id={SCANNER_DIV_ID} className="w-full" />
           <Button
             size="sm"
@@ -137,13 +137,13 @@ export default function BarcodeScannerInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled || cameraOpen}
-          className="font-mono text-sm h-9 flex-1"
+          className="font-mono text-sm h-9 flex-1 rounded-xs"
         />
         <Button
           type="button"
           size="sm"
           variant="outline"
-          className="h-9 px-3 shrink-0"
+          className="h-9 px-3 shrink-0 rounded-xs"
           onClick={cameraOpen ? stopScanner : startScanner}
           disabled={disabled}
           title={cameraOpen ? "Close camera" : "Use camera to scan"}

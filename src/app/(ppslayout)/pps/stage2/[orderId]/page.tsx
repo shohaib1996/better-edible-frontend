@@ -52,7 +52,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
   return (
-    <Card>
+    <Card className="rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -114,7 +114,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
             {expanded && (
               <div className="mt-2 flex flex-col gap-1.5">
                 {item.dehydratorAssignments.map((a) => (
-                  <div key={a.moldId} className="flex items-center gap-2 text-xs bg-muted rounded px-2 py-1.5 font-mono">
+                  <div key={a.moldId} className="flex items-center gap-2 text-xs bg-muted rounded-xs px-2 py-1.5 font-mono">
                     <span className="text-muted-foreground">Mold</span>
                     <span>{a.moldId}</span>
                     <span className="text-muted-foreground">→ Tray</span>
@@ -244,7 +244,7 @@ export default function WorkerStage2OrderPage({
   }
 
   return (
-    <div className="p-4 md:p-8 bg-background min-h-screen">
+    <div className="p-4 md:p-8 bg-background flex-1 overflow-y-auto overscroll-contain">
       <div className="flex items-center gap-3 mb-6">
         <Button
           variant="ghost"
@@ -285,7 +285,7 @@ export default function WorkerStage2OrderPage({
 
           {hasUnprocessed && (
             <div className="mt-8 flex justify-end">
-              <Button size="lg" onClick={handleLoadToDehydrator} disabled={isBuilding} className="gap-2">
+              <Button size="lg" onClick={handleLoadToDehydrator} disabled={isBuilding} className="gap-2 rounded-xs">
                 {isBuilding ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                 {isBuilding
                   ? `Assigning shelves… (${unprocessedPairs.length} molds)`

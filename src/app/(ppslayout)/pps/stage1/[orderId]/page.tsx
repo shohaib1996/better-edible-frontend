@@ -75,7 +75,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
   return (
-    <Card className="flex flex-col gap-0">
+    <Card className="flex flex-col gap-0 rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -240,7 +240,7 @@ export default function WorkerStage1OrderPage({
   }
 
   return (
-    <div className="p-4 md:p-8 bg-background min-h-screen">
+    <div className="p-4 md:p-8 bg-background flex-1 overflow-y-auto overscroll-contain">
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => router.push("/pps")} className="shrink-0">
           <ArrowLeft className="w-5 h-5" />

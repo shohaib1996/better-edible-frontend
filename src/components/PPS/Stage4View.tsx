@@ -98,13 +98,13 @@ export default function Stage4View() {
 
     return (
       <div className="max-w-md mx-auto">
-        <Card>
+        <Card className="rounded-xs">
           <CardContent className="p-6 space-y-4">
             <h3 className="text-lg font-bold">{scannedCookItem.storeName}</h3>
             <h4 className="text-xl">{scannedCookItem.flavor}</h4>
             <p className="text-muted-foreground">{scannedCookItem.productType}</p>
 
-            <div className="bg-muted/50 rounded-lg p-3">
+            <div className="bg-muted/50 rounded-xs p-3">
               <p>
                 Expected:{" "}
                 <strong>{expectedCount.toLocaleString()} units</strong>{" "}
@@ -156,7 +156,7 @@ export default function Stage4View() {
 
     return (
       <div className="max-w-md mx-auto">
-        <Card>
+        <Card className="rounded-xs">
           <CardContent className="p-6">
             <h3 className="text-center text-lg font-semibold mb-2">
               Confirm Actual Count
@@ -169,7 +169,7 @@ export default function Stage4View() {
             <div className="flex flex-col items-center gap-3 mb-6">
               <Button
                 variant="outline"
-                className="w-20 h-20 rounded-lg"
+                className="w-20 h-20 rounded-xs"
                 onClick={() => setCount((c) => c + 1)}
               >
                 <ChevronUp className="w-10 h-10" />
@@ -181,7 +181,7 @@ export default function Stage4View() {
 
               <Button
                 variant="outline"
-                className="w-20 h-20 rounded-lg"
+                className="w-20 h-20 rounded-xs"
                 onClick={() => setCount((c) => Math.max(0, c - 1))}
               >
                 <ChevronDown className="w-10 h-10" />
@@ -189,7 +189,7 @@ export default function Stage4View() {
             </div>
 
             {/* Case breakdown */}
-            <div className="bg-muted/50 rounded-lg p-3 mb-4 text-sm space-y-0.5">
+            <div className="bg-muted/50 rounded-xs p-3 mb-4 text-sm space-y-0.5">
               <p className="text-muted-foreground">Case Breakdown:</p>
               {fullCases > 0 && (
                 <p>
@@ -227,11 +227,11 @@ export default function Stage4View() {
   if (step === "result" && confirmResult) {
     return (
       <div className="max-w-lg mx-auto">
-        <Card>
+        <Card className="rounded-xs">
           <CardContent className="p-6 space-y-4">
             {/* Order completion status */}
             {confirmResult.orderStatus.isComplete ? (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xs p-4 text-center">
                 <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
                 <h3 className="text-lg font-bold text-green-600">
                   ORDER COMPLETE
@@ -242,7 +242,7 @@ export default function Stage4View() {
                 </p>
               </div>
             ) : (
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-center">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xs p-4 text-center">
                 <p className="font-medium">
                   Order {confirmResult.orderStatus.orderId}:{" "}
                   {confirmResult.orderStatus.completedItems} /{" "}
@@ -257,7 +257,7 @@ export default function Stage4View() {
             </h3>
             <div className="flex flex-col gap-3">
               {confirmResult.cases.map((c) => (
-                <div key={c.caseId} className="border rounded-lg p-3">
+                <div key={c.caseId} className="border rounded-xs p-3">
                   <PrintLabel type="case" data={c.labelData} />
                 </div>
               ))}

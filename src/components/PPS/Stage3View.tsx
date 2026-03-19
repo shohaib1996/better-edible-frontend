@@ -50,7 +50,7 @@ function OrderCard({
 
   return (
     <Card
-      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all"
+      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all rounded-xs"
       onClick={() =>
         router.push(`${basePath}/stage3/${encodeURIComponent(orderId)}`)
       }

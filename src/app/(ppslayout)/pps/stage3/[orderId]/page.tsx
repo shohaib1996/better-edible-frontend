@@ -119,7 +119,7 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
   };
 
   return (
-    <Card>
+    <Card className="rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -307,7 +307,7 @@ export default function WorkerStage3OrderPage({
   }
 
   return (
-    <div className="p-4 md:p-8 bg-background min-h-screen">
+    <div className="p-4 md:p-8 bg-background flex-1 overflow-y-auto overscroll-contain">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button

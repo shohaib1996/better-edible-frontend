@@ -1,24 +1,20 @@
-import { AppSidebar } from "@/components/AppSidebar/AppSidebar";
-import {
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { cookies } from "next/headers";
+import type { Viewport } from "next";
 
-const PPSLayout = async ({ children }: { children: React.ReactNode }) => {
-  const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+const PPSLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <SidebarProvider defaultOpen={defaultOpen}>
-      <div className="flex max-w-7xl mx-auto w-full min-h-screen" id="layout-container">
-        <AppSidebar />
-        <SidebarInset className="w-full">
-          <SidebarTrigger className="m-2" />
-          {children}
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <div
+      className="h-screen w-screen overflow-hidden flex flex-col bg-background overscroll-none"
+      style={{ touchAction: "pan-x pan-y" }}
+    >
+      {children}
+    </div>
   );
 };
 
