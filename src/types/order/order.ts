@@ -26,7 +26,7 @@ export interface Rep {
 }
 
 export interface OrderItem {
-  product: ObjectIdString;   // product id
+  product: ObjectIdString | { _id: ObjectIdString; productLine?: { _id: string; name: string }; subProductLine?: string; itemName?: string };
   name: string;              // product display name
   unitLabel: string;         // e.g. "300Mg"
   unitPrice: number;         // price per unit before discount
