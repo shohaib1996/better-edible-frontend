@@ -82,7 +82,7 @@ export default function UnitsPanel() {
         </div>
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" className="rounded-xs">
               <Plus className="w-4 h-4 mr-1" />
               Add Units
             </Button>
@@ -135,7 +135,7 @@ export default function UnitsPanel() {
               )}
 
               <Button
-                className="w-full"
+                className="w-full rounded-xs"
                 onClick={handleBulkCreate}
                 disabled={isCreating || !previewCount}
               >

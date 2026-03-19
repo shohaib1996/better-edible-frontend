@@ -103,13 +103,13 @@ export default function TraysPanel() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrintAll} disabled={trays.length === 0}>
+          <Button variant="outline" size="sm" className="rounded-xs bg-accent text-white" onClick={handlePrintAll} disabled={trays.length === 0}>
             <Printer className="w-4 h-4 mr-1" />
             Print All Labels
           </Button>
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" className="rounded-xs">
                 <Plus className="w-4 h-4 mr-1" />
                 Add Trays
               </Button>
@@ -161,7 +161,7 @@ export default function TraysPanel() {
                 )}
 
                 <Button
-                  className="w-full"
+                  className="w-full rounded-xs"
                   onClick={handleBulkCreate}
                   disabled={isCreating || !previewCount}
                 >
