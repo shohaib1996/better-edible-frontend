@@ -164,7 +164,7 @@ export default function MoldsPanel() {
                 </div>
 
                 {previewCount !== null && (
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <div className="bg-muted/50 rounded-xs p-3 text-sm">
                     <p>
                       Will create <strong>{previewCount}</strong> mold
                       {previewCount !== 1 ? "s" : ""}:
@@ -203,7 +203,7 @@ export default function MoldsPanel() {
       {!isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {molds.map((mold) => (
-            <Card key={mold._id}>
+            <Card key={mold._id} className="rounded-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-sm">{mold.moldId}</span>

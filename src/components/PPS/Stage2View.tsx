@@ -46,7 +46,7 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
 
   return (
     <Card
-      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all rounded-xs"
+      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all rounded-xs h-full"
       onClick={() =>
         router.push(`${basePath}/stage2/${encodeURIComponent(orderId)}`)
       }
@@ -69,7 +69,7 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
         </p>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-3 flex-1 justify-between">
         {/* Item list */}
         <div className="flex flex-col gap-1.5">
           {items.map((item) => {
@@ -156,7 +156,7 @@ export default function Stage2View({ basePath = "/admin/pps" }: { basePath?: str
         {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} awaiting
         dehydrator loading
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
           <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
         ))}

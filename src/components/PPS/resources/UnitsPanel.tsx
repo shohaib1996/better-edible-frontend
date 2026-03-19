@@ -122,7 +122,7 @@ export default function UnitsPanel() {
               </div>
 
               {previewCount !== null && (
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                <div className="bg-muted/50 rounded-xs p-3 text-sm">
                   <p>
                     Will create <strong>{previewCount}</strong> unit
                     {previewCount !== 1 ? "s" : ""} with 20 shelves each:
@@ -163,7 +163,7 @@ export default function UnitsPanel() {
           {units.map((unit) => {
             const occ = getOccupancy(unit);
             return (
-              <Card key={unit._id}>
+              <Card key={unit._id} className="rounded-xs">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold">{unit.unitId}</h4>
@@ -181,7 +181,7 @@ export default function UnitsPanel() {
                       return (
                         <div
                           key={pos}
-                          className={`text-center text-xs py-1.5 rounded border ${
+                          className={`text-center text-xs py-1.5 rounded-xs border ${
                             isOccupied
                               ? "bg-red-500/10 border-red-500/20 text-red-600"
                               : "bg-green-500/10 border-green-500/20 text-green-600"

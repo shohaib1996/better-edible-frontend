@@ -1,11 +1,21 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import MoldsPanel from "./resources/MoldsPanel";
 import TraysPanel from "./resources/TraysPanel";
 import UnitsPanel from "./resources/UnitsPanel";
 
+type Tab = "molds" | "trays" | "units";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "molds", label: "Molds" },
+  { id: "trays", label: "Trays" },
+  { id: "units", label: "Units" },
+];
+
 export default function ResourcesView() {
+  const [active, setActive] = useState<Tab>("molds");
+
   return (
     <div className="space-y-4">
       <div>
@@ -15,22 +25,26 @@ export default function ResourcesView() {
         </p>
       </div>
 
-      <Tabs defaultValue="molds">
-        <TabsList>
-          <TabsTrigger value="molds">Molds</TabsTrigger>
-          <TabsTrigger value="trays">Trays</TabsTrigger>
-          <TabsTrigger value="units">Units</TabsTrigger>
-        </TabsList>
-        <TabsContent value="molds">
-          <MoldsPanel />
-        </TabsContent>
-        <TabsContent value="trays">
-          <TraysPanel />
-        </TabsContent>
-        <TabsContent value="units">
-          <UnitsPanel />
-        </TabsContent>
-      </Tabs>
+      <div className="flex gap-1">
+        {TABS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setActive(id)}
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-xs transition-colors",
+              active === id
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {active === "molds" && <MoldsPanel />}
+      {active === "trays" && <TraysPanel />}
+      {active === "units" && <UnitsPanel />}
     </div>
   );
 }

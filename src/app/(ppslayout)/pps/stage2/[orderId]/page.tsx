@@ -265,7 +265,7 @@ export default function WorkerStage2OrderPage({
         </div>
       </div>
 
-      {orderItems.length === 0 ? (
+      {orderItems.length === 0 && view !== "dehydrator" ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <Wind className="w-10 h-10 opacity-40" />
           <p className="text-sm">No Stage 2 items found for order {decodedOrderId}.</p>

@@ -84,7 +84,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
   return (
-    <Card className="flex flex-col gap-0">
+    <Card className="flex flex-col gap-0 rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -173,7 +173,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
             {mode === "idle" && (
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full rounded-xs"
                 onClick={() => setMode("molding")}
               >
                 Start
@@ -184,7 +184,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
             {mode === "molding" && (
               <>
                 <Button
-                  className="w-full"
+                  className="w-full rounded-xs"
                   onClick={() => setMode("scanning")}
                 >
                   Mold
@@ -194,7 +194,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
                     size="sm"
                     onClick={handleCompleteStage1}
                     disabled={isCompleting}
-                    className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
                   >
                     {isCompleting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -223,7 +223,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
                     size="sm"
                     onClick={handleCompleteStage1}
                     disabled={isCompleting}
-                    className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
                   >
                     {isCompleting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

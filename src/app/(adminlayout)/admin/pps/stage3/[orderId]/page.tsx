@@ -121,7 +121,7 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
   };
 
   return (
-    <Card>
+    <Card className="rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -179,7 +179,7 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
 
         {/* Activate button */}
         {item.allMoldsReady && !isActive && (
-          <Button variant="outline" size="sm" className="w-full" onClick={onActivate}>
+          <Button variant="outline" size="sm" className="w-full rounded-xs" onClick={onActivate}>
             Start Removal & Packing
           </Button>
         )}
@@ -224,7 +224,7 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
 
             {allTraysRemoved && (
               <Button
-                className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
                 onClick={handleCompleteStage3}
                 disabled={isCompleting}
               >
@@ -387,12 +387,12 @@ export default function Stage3OrderPage({
               <PrintLabel type="production" data={labelData} />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1" onClick={() => window.print()}>
+              <Button className="flex-1 rounded-xs" onClick={() => window.print()}>
                 Print Label
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 rounded-xs"
                 onClick={() => downloadQR(labelData.cookItemId)}
               >
                 <Download className="w-4 h-4" />

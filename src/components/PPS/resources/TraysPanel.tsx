@@ -149,7 +149,7 @@ export default function TraysPanel() {
                 </div>
 
                 {previewCount !== null && (
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <div className="bg-muted/50 rounded-xs p-3 text-sm">
                     <p>
                       Will create <strong>{previewCount}</strong> tray
                       {previewCount !== 1 ? "s" : ""}:
@@ -188,7 +188,7 @@ export default function TraysPanel() {
       {!isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {trays.map((tray) => (
-            <Card key={tray._id}>
+            <Card key={tray._id} className="rounded-xs">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-sm">{tray.trayId}</span>

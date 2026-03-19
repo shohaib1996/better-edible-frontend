@@ -1,14 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { Factory } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import Stage1View from "@/components/PPS/Stage1View";
 import Stage2View from "@/components/PPS/Stage2View";
 import Stage3View from "@/components/PPS/Stage3View";
 import Stage4View from "@/components/PPS/Stage4View";
 import ResourcesView from "@/components/PPS/ResourcesView";
 
+type Tab = "stage1" | "stage2" | "stage3" | "stage4" | "resources";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "stage1", label: "Stage 1 — Cooking & Molding" },
+  { id: "stage2", label: "Stage 2 — Dehydrator Loading" },
+  { id: "stage3", label: "Stage 3 — Container & Label" },
+  { id: "stage4", label: "Stage 4 — Packaging" },
+  { id: "resources", label: "Resources" },
+];
+
 export default function PPSPage() {
+  const [active, setActive] = useState<Tab>("stage1");
+
   return (
     <div className="p-4 md:p-8 bg-background min-h-screen">
       {/* Header */}
@@ -24,32 +37,34 @@ export default function PPSPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="stage1">
-        <TabsList className="mb-6">
-          <TabsTrigger value="stage1">Stage 1 — Cooking & Molding</TabsTrigger>
-          <TabsTrigger value="stage2">Stage 2 — Dehydrator Loading</TabsTrigger>
-          <TabsTrigger value="stage3">Stage 3 — Container & Label</TabsTrigger>
-          <TabsTrigger value="stage4">Stage 4 — Packaging</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Nav */}
+        <nav className="flex flex-col gap-1 w-full md:w-56 shrink-0">
+          {TABS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setActive(id)}
+              className={cn(
+                "w-full text-center md:text-left px-4 py-2.5 rounded-xs text-sm font-medium transition-colors",
+                active === id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
 
-        <TabsContent value="stage1">
-          <Stage1View />
-        </TabsContent>
-        <TabsContent value="stage2">
-          <Stage2View />
-        </TabsContent>
-        <TabsContent value="stage3">
-          <Stage3View />
-        </TabsContent>
-        <TabsContent value="stage4">
-          <Stage4View />
-        </TabsContent>
-        <TabsContent value="resources">
-          <ResourcesView />
-        </TabsContent>
-      </Tabs>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {active === "stage1" && <Stage1View />}
+          {active === "stage2" && <Stage2View />}
+          {active === "stage3" && <Stage3View />}
+          {active === "stage4" && <Stage4View />}
+          {active === "resources" && <ResourcesView />}
+        </div>
+      </div>
     </div>
   );
 }

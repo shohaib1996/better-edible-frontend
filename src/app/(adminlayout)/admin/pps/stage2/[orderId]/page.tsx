@@ -54,7 +54,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
   return (
-    <Card>
+    <Card className="rounded-xs">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -130,7 +130,7 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
                 {item.dehydratorAssignments.map((a) => (
                   <div
                     key={a.moldId}
-                    className="flex items-center gap-2 text-xs bg-muted rounded px-2 py-1.5 font-mono"
+                    className="flex items-center gap-2 text-xs bg-muted rounded-xs px-2 py-1.5 font-mono"
                   >
                     <span className="text-muted-foreground">Mold</span>
                     <span>{a.moldId}</span>
@@ -303,7 +303,7 @@ export default function Stage2OrderPage({
         </div>
       </div>
 
-      {orderItems.length === 0 ? (
+      {orderItems.length === 0 && view !== "dehydrator" ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <Wind className="w-10 h-10 opacity-40" />
           <p className="text-sm">
@@ -331,7 +331,7 @@ export default function Stage2OrderPage({
                 size="lg"
                 onClick={handleLoadToDehydrator}
                 disabled={isBuilding}
-                className="gap-2"
+                className="gap-2 rounded-xs"
               >
                 {isBuilding ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
