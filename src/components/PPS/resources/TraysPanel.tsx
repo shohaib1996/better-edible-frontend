@@ -114,7 +114,7 @@ export default function TraysPanel() {
                 Add Trays
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-xs">
               <DialogHeader>
                 <DialogTitle>Add New Trays</DialogTitle>
               </DialogHeader>
@@ -125,6 +125,7 @@ export default function TraysPanel() {
                     value={prefix}
                     onChange={(e) => setPrefix(e.target.value)}
                     placeholder="TRAY"
+                    className="rounded-xs"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -135,6 +136,7 @@ export default function TraysPanel() {
                       value={startNumber}
                       onChange={(e) => setStartNumber(e.target.value)}
                       placeholder="501"
+                      className="rounded-xs"
                     />
                   </div>
                   <div>
@@ -144,6 +146,7 @@ export default function TraysPanel() {
                       value={endNumber}
                       onChange={(e) => setEndNumber(e.target.value)}
                       placeholder="550"
+                      className="rounded-xs"
                     />
                   </div>
                 </div>

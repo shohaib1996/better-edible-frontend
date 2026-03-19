@@ -119,7 +119,7 @@ export default function MoldsPanel() {
                 Add Molds
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-xs">
               <DialogHeader>
                 <DialogTitle>Add New Molds</DialogTitle>
               </DialogHeader>
@@ -131,6 +131,7 @@ export default function MoldsPanel() {
                       value={prefix}
                       onChange={(e) => setPrefix(e.target.value)}
                       placeholder="MOLD"
+                      className="rounded-xs"
                     />
                   </div>
                   <div>
@@ -139,6 +140,7 @@ export default function MoldsPanel() {
                       type="number"
                       value={unitsPerMold}
                       onChange={(e) => setUnitsPerMold(e.target.value)}
+                      className="rounded-xs"
                     />
                   </div>
                 </div>
@@ -150,6 +152,7 @@ export default function MoldsPanel() {
                       value={startNumber}
                       onChange={(e) => setStartNumber(e.target.value)}
                       placeholder="101"
+                      className="rounded-xs"
                     />
                   </div>
                   <div>
@@ -159,6 +162,7 @@ export default function MoldsPanel() {
                       value={endNumber}
                       onChange={(e) => setEndNumber(e.target.value)}
                       placeholder="150"
+                      className="rounded-xs"
                     />
                   </div>
                 </div>

@@ -87,7 +87,7 @@ export default function UnitsPanel() {
               Add Units
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="rounded-xs">
             <DialogHeader>
               <DialogTitle>Add New Dehydrator Units</DialogTitle>
             </DialogHeader>
@@ -98,6 +98,7 @@ export default function UnitsPanel() {
                   value={prefix}
                   onChange={(e) => setPrefix(e.target.value)}
                   placeholder="UNIT"
+                  className="rounded-xs"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -108,6 +109,7 @@ export default function UnitsPanel() {
                     value={startNumber}
                     onChange={(e) => setStartNumber(e.target.value)}
                     placeholder="1"
+                    className="rounded-xs"
                   />
                 </div>
                 <div>
@@ -117,6 +119,7 @@ export default function UnitsPanel() {
                     value={endNumber}
                     onChange={(e) => setEndNumber(e.target.value)}
                     placeholder="5"
+                    className="rounded-xs"
                   />
                 </div>
               </div>
