@@ -1,34 +1,24 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Wind,
   CheckCircle2,
   Loader2,
-  ChevronDown,
-  ChevronUp,
-  ArrowRight,
+  Camera,
+  X,
 } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
-import DehydratorGraphic, {
-  type PendingAssignment,
-} from "@/components/PPS/DehydratorGraphic";
 import {
   useGetStage2CookItemsQuery,
-  useGetDehydratorUnitsQuery,
   useProcessMoldMutation,
   ppsApi,
 } from "@/redux/api/PrivateLabel/ppsApi";
@@ -39,123 +29,385 @@ import {
 } from "@/constants/privateLabel";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
-// ─── Cook Item Card (items view) ──────────────────────────────────────────────
+// ─── Tray Slot ────────────────────────────────────────────────────────────────
+// One slot per mold. Shows assigned tray + shelf location once scanned.
 
-function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-  const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
-  const unprocessedMolds = item.assignedMoldIds.filter(
-    (id) => !processedMoldIds.includes(id)
+interface TraySlotProps {
+  slotId: string;
+  index: number;
+  total: number;
+  moldId: string;
+  isActive: boolean;
+  /** Set once tray has been scanned & processMold confirmed */
+  lockedTrayId?: string;
+  lockedUnit?: string;
+  lockedShelf?: number;
+  isProcessing: boolean;
+  onSubmit: (trayId: string) => Promise<boolean>;
+}
+
+function TraySlot({
+  slotId,
+  index,
+  total,
+  moldId,
+  isActive,
+  lockedTrayId,
+  lockedUnit,
+  lockedShelf,
+  isProcessing,
+  onSubmit,
+}: TraySlotProps) {
+  const [value, setValue] = useState("");
+  const [flash, setFlash] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = `tray-scanner-${slotId}`;
+
+  useEffect(() => {
+    if (isActive && !lockedTrayId && !cameraOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isActive, lockedTrayId, cameraOpen]);
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch { /* already stopped */ }
+      scannerRef.current = null;
+    }
+    setCameraOpen(false);
+  }, []);
+
+  const startScanner = useCallback(() => {
+    setCameraError(null);
+    setCameraOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen) return;
+    const scanner = new Html5Qrcode(scannerDivId);
+    scannerRef.current = scanner;
+    scanner
+      .start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
+        },
+        async (decodedText) => {
+          await stopScanner();
+          const ok = await onSubmit(decodedText.trim());
+          if (ok) {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 700);
+          }
+        },
+        () => {},
+      )
+      .catch((err: unknown) => {
+        setCameraError(err instanceof Error ? err.message : "Camera access denied");
+        setCameraOpen(false);
+        scannerRef.current = null;
+      });
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
+
+  const handleSubmit = useCallback(async (trayId: string) => {
+    const trimmed = trayId.trim();
+    if (!trimmed || isProcessing) return;
+    const ok = await onSubmit(trimmed);
+    if (ok) {
+      setValue("");
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
+    }
+  }, [isProcessing, onSubmit]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && value.trim()) handleSubmit(value);
+  };
+
+  // ── Locked (done) ──
+  if (lockedTrayId) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
+        <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-muted-foreground">
+            Tray {index + 1} of {total} · Mold <span className="font-mono">{moldId}</span>
+          </p>
+          <p className="text-xl font-mono font-semibold text-green-700 truncate">{lockedTrayId}</p>
+          {lockedUnit && (
+            <p className="text-xs text-muted-foreground mt-0.5">{lockedUnit} · Shelf {lockedShelf}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active / waiting ──
+  return (
+    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
+      flash
+        ? "bg-green-100 border-green-400"
+        : isActive
+        ? "border-primary bg-primary/5"
+        : "border-muted bg-muted/30 opacity-60"
+    }`}>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-muted-foreground">
+          Tray {index + 1} of {total}
+        </p>
+        <span className="text-xs font-mono text-muted-foreground">Mold: {moldId}</span>
+      </div>
+
+      {/* Camera view */}
+      {cameraOpen && (
+        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
+          <div id={scannerDivId} className="w-full" />
+          <Button
+            size="sm"
+            variant="secondary"
+            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
+            onClick={stopScanner}
+          >
+            <X className="w-4 h-4" />
+            Close
+          </Button>
+          <p className="text-center text-xs text-white/70 pb-2">Point camera at tray barcode</p>
+        </div>
+      )}
+
+      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
+
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isActive ? "Scan tray barcode…" : "Waiting…"}
+          disabled={!isActive || isProcessing || cameraOpen}
+          className="text-xl font-mono rounded-xs h-14 flex-1"
+          autoComplete="off"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-14 px-4 shrink-0 rounded-xs"
+          onClick={cameraOpen ? stopScanner : startScanner}
+          disabled={!isActive || isProcessing}
+          title={cameraOpen ? "Close camera" : "Use camera to scan"}
+        >
+          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
+        </Button>
+      </div>
+
+      {isActive && !cameraOpen && (
+        <p className="text-xs text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+      )}
+    </div>
   );
-  const allProcessed =
-    item.assignedMoldIds.length > 0 && unprocessedMolds.length === 0;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ShelfSlot {
+  moldId: string;
+  trayId?: string;
+  dehydratorUnitId?: string;
+  shelfPosition?: number;
+}
+
+interface NextShelf {
+  dehydratorUnitId: string;
+  shelfPosition: number;
+}
+
+// ─── Cook Item Card ───────────────────────────────────────────────────────────
+
+type CardMode = "idle" | "scanning" | "done";
+
+interface CookItemCardProps {
+  item: ICookItem;
+  isAdmin: boolean;
+  batchStarted: boolean;
+  onGetNextShelf: () => Promise<NextShelf | null>;
+}
+
+function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemCardProps) {
+  const isComplete = item.status === "dehydrating_complete";
+  const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
+
+  const initialMode: CardMode = isComplete ? "done"
+    : item.dehydratorAssignments.length > 0 ? "scanning"
+    : "idle";
+
+  const [mode, setMode] = useState<CardMode>(initialMode);
+  const [slots, setSlots] = useState<ShelfSlot[]>(() =>
+    item.assignedMoldIds.map((moldId) => {
+      const existing = item.dehydratorAssignments.find((a) => a.moldId === moldId);
+      return existing
+        ? { moldId, trayId: existing.trayId, dehydratorUnitId: existing.dehydratorUnitId, shelfPosition: existing.shelfPosition }
+        : { moldId };
+    })
+  );
+
+  const [processMold, { isLoading: isProcessing }] = useProcessMoldMutation();
+
+  const totalTrays = item.assignedMoldIds.length;
+  const lockedCount = slots.filter((s) => s.trayId).length;
+  const allLocked = lockedCount >= totalTrays && totalTrays > 0;
+
+  // Auto-enter scanning when batch starts
+  useEffect(() => {
+    if (batchStarted && mode === "idle") setMode("scanning");
+  }, [batchStarted, mode]);
+
+  const handleTrayScan = useCallback(
+    async (moldId: string, trayId: string): Promise<boolean> => {
+      // Fetch the next available shelf at scan time — after previous processMold has occupied its shelf
+      const shelf = await onGetNextShelf();
+      if (!shelf) return false;
+      try {
+        await processMold({
+          cookItemId: item.cookItemId,
+          moldId,
+          trayId,
+          dehydratorUnitId: shelf.dehydratorUnitId,
+          shelfPosition: shelf.shelfPosition,
+          performedBy: getPPSUser(),
+        } as any).unwrap();
+
+        setSlots((prev) =>
+          prev.map((s) =>
+            s.moldId === moldId
+              ? { ...s, trayId, dehydratorUnitId: shelf.dehydratorUnitId, shelfPosition: shelf.shelfPosition }
+              : s
+          )
+        );
+        return true;
+      } catch (err: any) {
+        toast.error(err?.data?.message || "Tray not found or already in use");
+        return false;
+      }
+    },
+    [processMold, item.cookItemId, onGetNextShelf]
+  );
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
+  // Active tray slot = first unscanned
+  const activeSlotIndex = slots.findIndex((s) => !s.trayId);
+
   return (
-    <Card className="rounded-xs">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="text-base truncate">{item.flavor}</CardTitle>
-            <CardDescription className="text-xs mt-0.5 font-mono">
-              {item.cookItemId}
-            </CardDescription>
-          </div>
-          <Badge variant="outline" className={`shrink-0 text-xs ${statusColor}`}>
-            {statusLabel}
-          </Badge>
+    <div className="flex flex-col gap-0 rounded-xs border bg-card">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-3xl font-bold leading-tight truncate">{item.flavor}</p>
+          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
         </div>
-      </CardHeader>
+        <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
+          {statusLabel}
+        </Badge>
+      </div>
 
-      <CardContent className="flex flex-col gap-3">
-        {/* Summary */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Quantity</p>
-            <p className="font-medium">{item.quantity.toLocaleString()} units</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Molds</p>
-            <p className="font-medium">
-              {processedMoldIds.length} / {item.assignedMoldIds.length} loaded
-            </p>
-          </div>
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-2xl font-bold">{item.quantity.toLocaleString()}</p>
         </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
+          <p className="text-2xl font-bold">{totalTrays}</p>
+        </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Loaded</p>
+          <p className={`text-2xl font-bold ${allLocked ? "text-green-600" : ""}`}>
+            {lockedCount}/{totalTrays}
+          </p>
+        </div>
+      </div>
 
-        {/* Molds list — display only */}
-        {item.assignedMoldIds.length > 0 && (
+      <div className="px-5 py-4 flex flex-col gap-3">
+        {/* ── Flavor components ── */}
+        {item.flavorComponents.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Assigned Molds
-            </p>
+            <p className="text-sm text-muted-foreground mb-1.5">Flavor Components</p>
             <div className="flex flex-wrap gap-1.5">
-              {item.assignedMoldIds.map((id) => {
-                const isLoaded = processedMoldIds.includes(id);
-                return (
-                  <Badge
-                    key={id}
-                    variant={isLoaded ? "default" : "outline"}
-                    className={`text-xs font-mono ${
-                      isLoaded ? "bg-green-600 text-white" : ""
-                    }`}
-                  >
-                    {isLoaded ? "✓ " : ""}
-                    {id}
-                  </Badge>
-                );
-              })}
+              {item.flavorComponents.map((fc) => (
+                <Badge key={fc.name} variant="secondary" className="text-sm">
+                  {fc.name} {fc.percentage}%
+                </Badge>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Existing dehydrator assignments */}
-        {item.dehydratorAssignments.length > 0 && (
-          <div>
-            <button
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setExpanded((v) => !v)}
+        {/* ── Action area ── */}
+        {mode === "done" || isComplete ? (
+          <div className="flex items-center gap-3 py-4 text-green-600">
+            <CheckCircle2 className="w-8 h-8 shrink-0" />
+            <p className="text-xl font-semibold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
+          </div>
+        ) : mode === "idle" && !batchStarted ? (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full text-xl h-14 rounded-xs"
+            onClick={() => setMode("scanning")}
+          >
+            Load to Dehydrator
+          </Button>
+        ) : mode === "scanning" ? (
+          <div className="flex flex-col gap-3">
+            {slots.map((slot, i) => (
+              <TraySlot
+                key={slot.moldId}
+                slotId={`${item.cookItemId}-${i}`}
+                index={i}
+                total={totalTrays}
+                moldId={slot.moldId}
+                isActive={i === activeSlotIndex}
+                lockedTrayId={slot.trayId}
+                lockedUnit={slot.dehydratorUnitId}
+                lockedShelf={slot.shelfPosition}
+                isProcessing={isProcessing}
+                onSubmit={(trayId) => handleTrayScan(slot.moldId, trayId)}
+              />
+            ))}
+
+            <Button
+              size="lg"
+              disabled={!allLocked || isProcessing}
+              className="w-full text-xl h-14 gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40"
+              onClick={() => {/* auto-completes via processMold backend logic */}}
             >
-              {expanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
-              )}
-              {item.dehydratorAssignments.length} tray assignment
-              {item.dehydratorAssignments.length !== 1 ? "s" : ""} loaded
-            </button>
-            {expanded && (
-              <div className="mt-2 flex flex-col gap-1.5">
-                {item.dehydratorAssignments.map((a) => (
-                  <div
-                    key={a.moldId}
-                    className="flex items-center gap-2 text-xs bg-muted rounded-xs px-2 py-1.5 font-mono"
-                  >
-                    <span className="text-muted-foreground">Mold</span>
-                    <span>{a.moldId}</span>
-                    <span className="text-muted-foreground">→ Tray</span>
-                    <span>{a.trayId}</span>
-                    <span className="text-muted-foreground ml-auto">
-                      {a.dehydratorUnitId} · Shelf {a.shelfPosition}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+              <CheckCircle2 className="w-5 h-5" />
+              Dehydrating Complete
+            </Button>
           </div>
-        )}
+        ) : null}
+      </div>
 
-        {allProcessed && (
-          <div className="flex items-center gap-2 text-green-600 text-sm border-t pt-3">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>All molds loaded into dehydrator</span>
-          </div>
-        )}
-
+      <div className="px-5 pb-5">
         <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -170,92 +422,36 @@ export default function Stage2OrderPage({
   const decodedOrderId = decodeURIComponent(orderId);
   const router = useRouter();
   const isAdmin = isAdminUser();
-
   const dispatch = useAppDispatch();
-  const { data: stage2Data, isLoading, isError } = useGetStage2CookItemsQuery();
-  const { data: unitsData } = useGetDehydratorUnitsQuery();
-  const [processMold] = useProcessMoldMutation();
 
-  const [view, setView] = useState<"items" | "dehydrator">("items");
-  const [pendingAssignments, setPendingAssignments] = useState<PendingAssignment[]>([]);
-  const [isBuilding, setIsBuilding] = useState(false);
+  const { data, isLoading, isError } = useGetStage2CookItemsQuery();
 
-  const allItems = stage2Data?.cookItems ?? [];
-  const units = unitsData?.units ?? [];
+  const allItems = data?.cookItems ?? [];
   const orderItems = allItems.filter((item) => item.orderId === decodedOrderId);
   const storeName = orderItems[0]?.storeName;
 
-  // All unprocessed molds across all items in this order
-  const unprocessedPairs: { cookItemId: string; moldId: string; flavor: string }[] =
-    orderItems.flatMap((item) => {
-      const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
-      return item.assignedMoldIds
-        .filter((id) => !processedMoldIds.includes(id))
-        .map((moldId) => ({
-          cookItemId: item.cookItemId,
-          moldId,
-          flavor: item.flavor,
-        }));
-    });
+  const [batchStarted, setBatchStarted] = useState(false);
 
-  const hasUnprocessed = unprocessedPairs.length > 0;
+  const allComplete = orderItems.length > 0 && orderItems.every(
+    (i) => i.status === "dehydrating_complete"
+  );
 
-  // ── Auto-assign shelves and switch to dehydrator view ──────────────────────
-  const handleLoadToDehydrator = async () => {
-    if (!hasUnprocessed) return;
-    setIsBuilding(true);
+  // Fetches the next available shelf at scan time (called once per tray scan)
+  const handleGetNextShelf = useCallback(async (): Promise<NextShelf | null> => {
     try {
-      const assignments: PendingAssignment[] = [];
-
-      for (const pair of unprocessedPairs) {
-        const result = await dispatch(
-          ppsApi.endpoints.getNextAvailableShelf.initiate(undefined, {
-            forceRefetch: true,
-          })
-        );
-        if ("error" in result || !result.data) {
-          toast.error("No available shelves — all dehydrator shelves are full");
-          setIsBuilding(false);
-          return;
-        }
-        assignments.push({
-          cookItemId: pair.cookItemId,
-          moldId: pair.moldId,
-          flavor: pair.flavor,
-          dehydratorUnitId: result.data.dehydratorUnitId,
-          shelfPosition: result.data.shelfPosition,
-        });
+      const result = await dispatch(
+        ppsApi.endpoints.getNextAvailableShelf.initiate(undefined, { forceRefetch: true })
+      );
+      if ("error" in result || !result.data) {
+        toast.error("No available shelves — dehydrator is full");
+        return null;
       }
-
-      setPendingAssignments(assignments);
-      setView("dehydrator");
+      return { dehydratorUnitId: result.data.dehydratorUnitId, shelfPosition: result.data.shelfPosition };
     } catch {
-      toast.error("Failed to assign shelves. Please try again.");
-    } finally {
-      setIsBuilding(false);
+      toast.error("Failed to get next shelf. Please try again.");
+      return null;
     }
-  };
-
-  // ── Handle tray scan: call processMold and mark slot locked ───────────────
-  const handleTrayScan = async (assignment: PendingAssignment, trayId: string) => {
-    await processMold({
-      cookItemId: assignment.cookItemId,
-      moldId: assignment.moldId,
-      trayId,
-      dehydratorUnitId: assignment.dehydratorUnitId,
-      shelfPosition: assignment.shelfPosition,
-      performedBy: getPPSUser(),
-    } as any).unwrap();
-
-    // Mark this slot as locked in local state
-    setPendingAssignments((prev) =>
-      prev.map((a) =>
-        a.moldId === assignment.moldId && a.cookItemId === assignment.cookItemId
-          ? { ...a, trayId }
-          : a
-      )
-    );
-  };
+  }, [dispatch]);
 
   if (isLoading) {
     return (
@@ -281,76 +477,68 @@ export default function Stage2OrderPage({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() =>
-            view === "dehydrator" ? setView("items") : router.push("/admin/pps")
-          }
+          onClick={() => router.push("/admin/pps")}
           className="shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex items-center gap-3">
-          <Wind className="w-7 h-7 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold">
-              {view === "dehydrator"
-                ? "Load to Dehydrator"
-                : storeName ?? "Stage 2 — Dehydrator Loading"}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Wind className="w-8 h-8 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold leading-tight truncate">
+              {storeName ?? "Stage 2 — Dehydrator Loading"}
             </h1>
-            <p className="text-sm text-muted-foreground font-mono">
+            <p className="text-base text-muted-foreground font-mono">
               Order {decodedOrderId}
             </p>
           </div>
         </div>
       </div>
 
-      {orderItems.length === 0 && view !== "dehydrator" ? (
+      {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <Wind className="w-10 h-10 opacity-40" />
-          <p className="text-sm">
-            No Stage 2 items found for order {decodedOrderId}.
-          </p>
+          <p className="text-base">No Stage 2 items found for order {decodedOrderId}.</p>
         </div>
-      ) : view === "items" ? (
-        <>
-          <div className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              {orderItems.length} item{orderItems.length !== 1 ? "s" : ""} in
-              this order
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {orderItems.map((item) => (
-                <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
-              ))}
-            </div>
-          </div>
+      ) : (
+        <div className="flex flex-col gap-5">
+          {/* Load All button */}
+          {!allComplete && (
+            <Button
+              size="lg"
+              onClick={() => setBatchStarted(true)}
+              disabled={batchStarted}
+              className={`w-full text-2xl h-16 rounded-xs font-bold transition-colors ${
+                batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""
+              }`}
+            >
+              {batchStarted ? (
+                <><CheckCircle2 className="w-6 h-6 mr-2" />Loading in Progress</>
+              ) : (
+                "Load All to Dehydrator"
+              )}
+            </Button>
+          )}
 
-          {/* Load to Dehydrator button */}
-          {hasUnprocessed && (
-            <div className="mt-8 flex justify-end">
-              <Button
-                size="lg"
-                onClick={handleLoadToDehydrator}
-                disabled={isBuilding}
-                className="gap-2 rounded-xs"
-              >
-                {isBuilding ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4" />
-                )}
-                {isBuilding
-                  ? `Assigning shelves… (${unprocessedPairs.length} molds)`
-                  : `Load All to Dehydrator (${unprocessedPairs.length} mold${unprocessedPairs.length !== 1 ? "s" : ""})`}
-              </Button>
+          {allComplete && (
+            <div className="flex items-center gap-3 px-5 py-4 rounded-xs bg-green-50 border border-green-200 text-green-700">
+              <CheckCircle2 className="w-7 h-7 shrink-0" />
+              <p className="text-xl font-semibold">All items loaded — ready for dehydrating</p>
             </div>
           )}
-        </>
-      ) : (
-        <DehydratorGraphic
-          units={units}
-          pendingAssignments={pendingAssignments}
-          onTrayScan={handleTrayScan}
-        />
+
+          <div className="flex flex-col gap-4">
+            {orderItems.map((item) => (
+              <CookItemCard
+                key={item._id}
+                item={item}
+                isAdmin={isAdmin}
+                batchStarted={batchStarted}
+                onGetNextShelf={handleGetNextShelf}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
