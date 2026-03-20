@@ -10,10 +10,12 @@ import BarcodeScannerInput from "./BarcodeScannerInput";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   useScanContainerMutation,
-
   useConfirmCountMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
-import type { ICookItem, IConfirmCountResponse } from "@/types/privateLabel/pps";
+import type {
+  ICookItem,
+  IConfirmCountResponse,
+} from "@/types/privateLabel/pps";
 import PrintLabel from "./PrintLabel";
 
 type Step = "scan" | "info" | "count" | "result";
@@ -26,14 +28,18 @@ export default function Stage4View() {
     (Partial<ICookItem> & { numberOfMolds: number }) | null
   >(null);
   const [count, setCount] = useState(0);
-  const [confirmResult, setConfirmResult] = useState<IConfirmCountResponse | null>(null);
+  const [confirmResult, setConfirmResult] =
+    useState<IConfirmCountResponse | null>(null);
 
   const [scanContainer, { isLoading: isScanning }] = useScanContainerMutation();
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
 
   const handleScanContainer = async (qrData: string) => {
     try {
-      const result = await scanContainer({ qrCodeData: qrData, performedBy: getPPSUser() } as any).unwrap();
+      const result = await scanContainer({
+        qrCodeData: qrData,
+        performedBy: getPPSUser(),
+      } as any).unwrap();
       setScannedCookItem(result.cookItem);
       setStep("info");
       setQrScanValue("");
@@ -43,9 +49,16 @@ export default function Stage4View() {
     }
   };
 
-  const handleConfirmCount = async (cookItemId: string, actualCount: number) => {
+  const handleConfirmCount = async (
+    cookItemId: string,
+    actualCount: number,
+  ) => {
     try {
-      const result = await confirmCount({ cookItemId, actualCount, performedBy: getPPSUser() } as any).unwrap();
+      const result = await confirmCount({
+        cookItemId,
+        actualCount,
+        performedBy: getPPSUser(),
+      } as any).unwrap();
       setConfirmResult(result);
       setStep("result");
       toast.success("Count confirmed — cases created");
@@ -65,23 +78,23 @@ export default function Stage4View() {
   // ── Step 1: Scan ─────────────────────────────────────────────────────────────
   if (step === "scan") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+      <div className="flex flex-col min-h-[400px] gap-4 w-full">
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="text-xl font-semibold">
-            Scan container QR code to begin packaging
+            Scan container barcode to begin packaging
           </h2>
           <p className="text-sm text-muted-foreground">
-            Point scanner at the QR code on the container
+            Point scanner at the barcode on the container label
           </p>
         </div>
         <BarcodeScannerInput
           value={qrScanValue}
           onChange={setQrScanValue}
           onSubmit={(val) => handleScanContainer(val)}
-          placeholder="Scan QR code…"
+          placeholder="Scan barcode…"
           disabled={isScanning}
-          mode="qr"
-          className="max-w-md w-full"
+          mode="barcode"
+          className="w-full"
         />
         {isScanning && (
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -102,7 +115,9 @@ export default function Stage4View() {
           <CardContent className="p-6 space-y-4">
             <h3 className="text-lg font-bold">{scannedCookItem.storeName}</h3>
             <h4 className="text-xl">{scannedCookItem.flavor}</h4>
-            <p className="text-muted-foreground">{scannedCookItem.productType}</p>
+            <p className="text-muted-foreground">
+              {scannedCookItem.productType}
+            </p>
 
             <div className="bg-muted/50 rounded-xs p-3">
               <p>
@@ -227,7 +242,7 @@ export default function Stage4View() {
   if (step === "result" && confirmResult) {
     return (
       <div className="max-w-lg mx-auto">
-        <Card className="rounded-xs">
+        <Card className="rounded-xs py-0">
           <CardContent className="p-6 space-y-4">
             {/* Order completion status */}
             {confirmResult.orderStatus.isComplete ? (

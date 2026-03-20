@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useRef } from "react";
+import { use, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -29,7 +29,7 @@ import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
 import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import PrintLabel from "@/components/PPS/PrintLabel";
-import { QRCodeCanvas } from "qrcode.react";
+import Barcode from "react-barcode";
 import {
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,
@@ -216,9 +216,9 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
                 value={trayScanValue}
                 onChange={setTrayScanValue}
                 onSubmit={handleRemoveTray}
-                placeholder="Scan tray QR code…"
+                placeholder="Scan tray barcode…"
                 disabled={isRemoving}
-                mode="qr"
+                mode="barcode"
               />
             )}
 
@@ -260,7 +260,8 @@ export default function Stage3OrderPage({
   const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
   const [labelData, setLabelData] = useState<ICookItem | null>(null);
   const [showLabelPreview, setShowLabelPreview] = useState(false);
-  const qrCanvasRef = useRef<HTMLDivElement>(null);
+  const printLabelRef = useRef<HTMLDivElement>(null);
+  const barcodeRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
@@ -275,24 +276,51 @@ export default function Stage3OrderPage({
     setShowLabelPreview(true);
   };
 
-  const downloadQR = (cookItemId: string) => {
-    const qrCanvas = qrCanvasRef.current?.querySelector("canvas") as HTMLCanvasElement | null;
-    if (!qrCanvas) return;
-    const padding = 24;
-    const qrSize = qrCanvas.width;
-    const totalSize = qrSize + padding * 2;
-    const outputCanvas = document.createElement("canvas");
-    outputCanvas.width = totalSize;
-    outputCanvas.height = totalSize;
-    const ctx = outputCanvas.getContext("2d");
-    if (!ctx) return;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, totalSize, totalSize);
-    ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
-    const a = document.createElement("a");
-    a.download = `qr-${cookItemId}.png`;
-    a.href = outputCanvas.toDataURL("image/png");
-    a.click();
+  const printLabel = useCallback(() => {
+    const labelEl = printLabelRef.current;
+    if (!labelEl) return;
+    const labelHtml = labelEl.innerHTML;
+    const win = window.open("", "_blank", "width=600,height=700");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    @page { size: 4in 6in; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { width: 4in; font-family: sans-serif; }
+  </style>
+</head>
+<body>${labelHtml}</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); win.close(); }, 300);
+  }, []);
+
+  const downloadBarcode = (cookItemId: string) => {
+    const svgEl = barcodeRef.current?.querySelector("svg");
+    if (!svgEl) return;
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const a = document.createElement("a");
+      a.download = `barcode-${cookItemId}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = url;
   };
 
   if (isLoading) {
@@ -364,22 +392,34 @@ export default function Stage3OrderPage({
         </div>
       )}
 
-      {/* Hidden QR canvas for download */}
+      {/* Hidden barcode for download */}
       {labelData && (
-        <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas
-            value={JSON.stringify({ cookItemId: labelData.cookItemId })}
-            size={300}
-            bgColor="#ffffff"
-            fgColor="#000000"
+        <div ref={barcodeRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
+          <Barcode
+            value={labelData.cookItemId}
+            format="CODE128"
+            width={3}
+            height={100}
+            displayValue={true}
+            fontSize={14}
+            margin={10}
+            background="#ffffff"
+            lineColor="#000000"
           />
+        </div>
+      )}
+
+      {/* Hidden fully-rendered label for print — barcode SVG captured from live DOM */}
+      {labelData && (
+        <div ref={printLabelRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
+          <PrintLabel type="production" data={labelData} />
         </div>
       )}
 
       {/* Label preview dialog */}
       {labelData && (
         <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg rounded-xs">
             <DialogHeader>
               <DialogTitle>Production Label</DialogTitle>
             </DialogHeader>
@@ -387,16 +427,16 @@ export default function Stage3OrderPage({
               <PrintLabel type="production" data={labelData} />
             </div>
             <div className="flex gap-2">
-              <Button className="flex-1 rounded-xs" onClick={() => window.print()}>
+              <Button className="flex-1 rounded-xs" onClick={printLabel}>
                 Print Label
               </Button>
               <Button
                 variant="outline"
                 className="flex-1 gap-2 rounded-xs"
-                onClick={() => downloadQR(labelData.cookItemId)}
+                onClick={() => downloadBarcode(labelData.cookItemId)}
               >
                 <Download className="w-4 h-4" />
-                Download QR
+                Download Barcode
               </Button>
             </div>
           </DialogContent>

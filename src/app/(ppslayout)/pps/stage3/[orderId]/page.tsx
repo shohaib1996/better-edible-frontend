@@ -210,9 +210,9 @@ function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookI
                 value={trayScanValue}
                 onChange={setTrayScanValue}
                 onSubmit={handleRemoveTray}
-                placeholder="Scan tray QR code…"
+                placeholder="Scan tray barcode…"
                 disabled={isRemoving}
-                mode="qr"
+                mode="barcode"
               />
             )}
 

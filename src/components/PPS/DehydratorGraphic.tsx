@@ -118,9 +118,9 @@ function ShelfRow({ pos, assignment, isActive, onTrayScan, existingTrayId }: She
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
-            placeholder="Scan tray QR code…"
+            placeholder="Scan tray barcode…"
             disabled={loading}
-            mode="qr"
+            mode="barcode"
           />
         </div>
       )}

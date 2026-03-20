@@ -65,10 +65,20 @@ export default function BarcodeScannerInput({
     const scanner = new Html5Qrcode(SCANNER_DIV_ID);
     scannerRef.current = scanner;
 
+    const isBarcode = mode === "barcode";
+
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        {
+          fps: 10,
+          qrbox: isBarcode
+            ? (viewfinderWidth: number, viewfinderHeight: number) => ({
+                width: Math.floor(viewfinderWidth * 0.9),
+                height: Math.floor(viewfinderHeight * 0.25),
+              })
+            : { width: 250, height: 250 },
+        },
         (decodedText) => {
           // Success — fill input and submit
           onChange(decodedText);

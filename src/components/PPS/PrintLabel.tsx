@@ -1,18 +1,30 @@
 "use client";
 
+import Barcode from "react-barcode";
 import { QRCodeSVG } from "qrcode.react";
-import { Separator } from "@/components/ui/separator";
 import type { ICookItem, ICaseLabelData } from "@/types/privateLabel/pps";
+
+const HR = () => (
+  <hr style={{ border: "none", borderTop: "1px solid #000", margin: "0.05in 0" }} />
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
+function formatLabelTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+  });
+}
+
+function formatLabelDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -24,80 +36,128 @@ type PrintLabelProps =
   | { type: "production"; data: ProductionLabelData }
   | { type: "case"; data: ICaseLabelData };
 
+// ─── Production Label (4×6, one per flavor / cook item) ──────────────────────
+
+function ProductionLabel({ d }: { d: ProductionLabelData }) {
+  const createdAt = d.demoldingCompletionTimestamp || d.createdAt;
+  const moldIds = d.assignedMoldIds ?? [];
+  const trayIds = d.dehydratorTrayIds ?? [];
+
+  return (
+    <div
+      className="print-label bg-white text-black font-sans"
+      style={{
+        width: "4in",
+        padding: "0.15in",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.05in",
+        border: "1px solid #ccc",
+      }}
+    >
+      {/* Store name — largest element */}
+      <div
+        style={{
+          fontSize: "22pt",
+          fontWeight: 900,
+          lineHeight: 1.1,
+          textTransform: "uppercase",
+          letterSpacing: "-0.01em",
+          wordBreak: "break-word",
+        }}
+      >
+        {d.storeName}
+      </div>
+
+      <HR />
+
+      {/* Primary info block */}
+      <div style={{ fontSize: "16pt", fontWeight: 700, lineHeight: 1.35 }}>
+        <div>FLAVOR: {d.flavor}</div>
+        <div>COUNT: ~{d.quantity}</div>
+        <div>CONTENT: {d.productType?.toUpperCase() || "BIOMAX"}</div>
+      </div>
+
+      <HR />
+
+      {/* Secondary info */}
+      <div
+        style={{
+          fontSize: "10pt",
+          fontWeight: 500,
+          lineHeight: 1.55,
+          fontFamily: "monospace",
+        }}
+      >
+        <div>COOK ITEM: {d.cookItemId}</div>
+        <div>ORDER: {d.orderId}</div>
+        {moldIds.length > 0 && (
+          <div>MOLD{moldIds.length > 1 ? "S" : ""}: {moldIds.join(", ")}</div>
+        )}
+        {trayIds.length > 0 && (
+          <div>TRAY{trayIds.length > 1 ? "S" : ""}: {trayIds.join(", ")}</div>
+        )}
+      </div>
+
+      {/* Formulation */}
+      {(d.flavorComponents?.length > 0 || d.colorComponents?.length > 0) && (
+        <>
+          <HR />
+          <div style={{ fontSize: "8.5pt", lineHeight: 1.4, fontFamily: "monospace" }}>
+            {d.flavorComponents?.length > 0 && (
+              <div>
+                FLAVOR FORM:{" "}
+                {d.flavorComponents.map((c) => `${c.name} ${c.percentage}%`).join(", ")}
+              </div>
+            )}
+            {d.colorComponents?.length > 0 && (
+              <div>
+                COLOR FORM:{" "}
+                {d.colorComponents.map((c) => `${c.name} ${c.percentage}%`).join(", ")}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Timestamps + mold count */}
+      <div
+        style={{
+          fontSize: "10pt",
+          fontWeight: 500,
+          lineHeight: 1.55,
+          fontFamily: "monospace",
+        }}
+      >
+        <div>CREATE TIME: {formatLabelTime(createdAt)}</div>
+        <div>CREATE DATE: {formatLabelDate(createdAt)}</div>
+        <div>MOLDS: {moldIds.length} &nbsp; TRAYS: {trayIds.length}</div>
+      </div>
+
+      {/* Barcode — cookItemId */}
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Barcode
+          value={d.cookItemId || "UNKNOWN"}
+          format="CODE128"
+          width={2}
+          height={55}
+          displayValue={true}
+          fontSize={10}
+          margin={2}
+          background="#ffffff"
+          lineColor="#000000"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function PrintLabel(props: PrintLabelProps) {
   if (props.type === "production") {
-    const d = props.data;
-    return (
-      <div className="print-label w-[4in] border p-4 bg-white text-black text-sm font-mono">
-        <h2 className="text-lg font-bold uppercase">{d.storeName}</h2>
-        <h3 className="text-base font-bold">{d.flavor}</h3>
-        <p className="text-base font-bold">~{d.quantity} units</p>
-
-        <Separator className="my-2" />
-
-        <p className="text-xs">Cook Item: {d.cookItemId}</p>
-        <p className="text-xs">Order: {d.orderId}</p>
-        <p className="text-xs">Label: {d.itemId || d.labelId}</p>
-
-        {d.flavorComponents && d.flavorComponents.length > 0 && (
-          <div className="mt-1">
-            <p className="text-xs font-bold">Flavor Formulation:</p>
-            {d.flavorComponents.map((c, i) => (
-              <p key={i} className="text-xs ml-2">
-                {c.name}: {c.percentage}%
-              </p>
-            ))}
-          </div>
-        )}
-
-        {d.colorComponents && d.colorComponents.length > 0 && (
-          <div className="mt-1">
-            <p className="text-xs font-bold">Color Formulation:</p>
-            {d.colorComponents.map((c, i) => (
-              <p key={i} className="text-xs ml-2">
-                {c.name}: {c.percentage}%
-              </p>
-            ))}
-          </div>
-        )}
-
-        {d.assignedMoldIds?.map((moldId) => (
-          <p key={moldId} className="text-xs">
-            Mold: {moldId}
-          </p>
-        ))}
-
-        {d.cookingMoldingCompletionTimestamp && (
-          <p className="text-xs">
-            Molded: {formatDate(d.cookingMoldingCompletionTimestamp)}
-          </p>
-        )}
-
-        {d.dehydratorAssignments?.map((a, i) => (
-          <p key={i} className="text-xs">
-            Dehydrator: {a.trayId}, {a.dehydratorUnitId}, Shelf {a.shelfPosition}
-          </p>
-        ))}
-
-        {d.demoldingCompletionTimestamp && (
-          <p className="text-xs">Packed: {formatDate(d.demoldingCompletionTimestamp)}</p>
-        )}
-
-        <div className="mt-2 flex justify-center">
-          <QRCodeSVG
-            value={
-              d.qrCodeData ||
-              JSON.stringify({ cookItemId: d.cookItemId })
-            }
-            size={120}
-            bgColor="#ffffff"
-            fgColor="#000000"
-          />
-        </div>
-      </div>
-    );
+    return <ProductionLabel d={props.data} />;
   }
 
   // case label
@@ -108,7 +168,7 @@ export default function PrintLabel(props: PrintLabelProps) {
       <h3 className="text-base font-bold">{d.flavor}</h3>
       <p className="text-xl font-bold">{d.unitCount} units</p>
 
-      <Separator className="my-2" />
+      <HR />
 
       <p className="text-xs">Case ID: {d.caseId}</p>
 

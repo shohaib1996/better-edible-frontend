@@ -196,16 +196,26 @@
 }
 
 @media print {
+  @page {
+    size: 4in 6in;
+    margin: 0;
+  }
+
   body * {
     visibility: hidden;
   }
+
   .print-label,
   .print-label * {
     visibility: visible;
   }
+
   .print-label {
     position: absolute;
     left: 0;
     top: 0;
+    width: 4in !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 }

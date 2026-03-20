@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import Barcode from "react-barcode";
 import { Loader2, Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -75,9 +75,9 @@ export default function TraysPanel() {
           <title>Tray Labels</title>
           <style>
             body { margin: 0; padding: 0; }
-            .grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
             .label { border: 1px solid #ccc; padding: 8px; text-align: center;
-                     width: 4in; height: 2in; page-break-inside: avoid;
+                     page-break-inside: avoid;
                      display: flex; flex-direction: column; align-items: center;
                      justify-content: center; gap: 4px; font-family: monospace; }
             @page { margin: 0.5in; size: letter; }
@@ -208,7 +208,7 @@ export default function TraysPanel() {
                 </div>
 
                 <div className="flex justify-center my-2">
-                  <QRCodeSVG value={tray.qrCodeValue} size={80} />
+                  <Barcode value={tray.trayId} format="CODE128" width={1.5} height={40} fontSize={9} margin={2} displayValue={true} />
                 </div>
 
                 {tray.status === "in-use" && (
@@ -241,10 +241,7 @@ export default function TraysPanel() {
       <div ref={printRef} className="hidden">
         {trays.map((tray) => (
           <div key={tray._id} className="label">
-            <QRCodeSVG value={tray.qrCodeValue} size={80} />
-            <span style={{ fontSize: "10px", fontFamily: "monospace" }}>
-              {tray.trayId}
-            </span>
+            <Barcode value={tray.trayId} format="CODE128" width={2} height={50} fontSize={11} margin={4} displayValue={true} />
           </div>
         ))}
       </div>
