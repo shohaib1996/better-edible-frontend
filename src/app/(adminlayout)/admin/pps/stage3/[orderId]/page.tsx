@@ -1,24 +1,20 @@
 "use client";
 
-import { use, useState, useRef, useCallback } from "react";
+import { use, useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Thermometer,
-  Check,
-  Download,
+  CheckCircle2,
   Loader2,
+  Camera,
+  X,
+  Download,
 } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
-import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import PrintLabel from "@/components/PPS/PrintLabel";
 import Barcode from "react-barcode";
 import {
@@ -39,8 +34,6 @@ import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/pr
 import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
 
 // ─── Live countdown timer ─────────────────────────────────────────────────────
-
-import { useEffect } from "react";
 
 function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
   const [timeLeft, setTimeLeft] = useState("");
@@ -78,170 +71,352 @@ function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
   );
 }
 
+// ─── Tray Removal Slot ────────────────────────────────────────────────────────
+
+interface TraySlotProps {
+  slotId: string;
+  index: number;
+  total: number;
+  trayId: string;
+  unitId: string;
+  shelfPosition: number;
+  isActive: boolean;
+  isRemoved: boolean;
+  isProcessing: boolean;
+  onSubmit: (trayId: string) => Promise<boolean>;
+}
+
+function TraySlot({
+  slotId,
+  index,
+  total,
+  trayId,
+  unitId,
+  shelfPosition,
+  isActive,
+  isRemoved,
+  isProcessing,
+  onSubmit,
+}: TraySlotProps) {
+  const [value, setValue] = useState("");
+  const [flash, setFlash] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = `tray-remove-scanner-${slotId}`;
+
+  useEffect(() => {
+    if (isActive && !isRemoved && !cameraOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isActive, isRemoved, cameraOpen]);
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch { /* already stopped */ }
+      scannerRef.current = null;
+    }
+    setCameraOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen) return;
+    const scanner = new Html5Qrcode(scannerDivId);
+    scannerRef.current = scanner;
+    scanner
+      .start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
+        },
+        async (decodedText) => {
+          await stopScanner();
+          const ok = await onSubmit(decodedText.trim());
+          if (ok) {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 700);
+          }
+        },
+        () => {},
+      )
+      .catch((err: unknown) => {
+        setCameraError(err instanceof Error ? err.message : "Camera access denied");
+        setCameraOpen(false);
+        scannerRef.current = null;
+      });
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && value.trim()) {
+      const trimmed = value.trim();
+      setValue("");
+      onSubmit(trimmed).then((ok) => {
+        if (ok) {
+          setFlash(true);
+          setTimeout(() => setFlash(false), 700);
+        }
+      });
+    }
+  };
+
+  if (isRemoved) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
+        <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-muted-foreground">
+            Tray {index + 1} of {total}
+          </p>
+          <p className="text-xl font-mono font-semibold text-green-700 truncate">{trayId}</p>
+          <p className="text-xs text-muted-foreground">{unitId} · Shelf {shelfPosition}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
+      flash
+        ? "bg-green-100 border-green-400"
+        : isActive
+        ? "border-primary bg-primary/5"
+        : "border-muted bg-muted/30 opacity-60"
+    }`}>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-muted-foreground">
+          Tray {index + 1} of {total}
+        </p>
+        <span className="text-xs font-mono text-muted-foreground">{unitId} · Shelf {shelfPosition}</span>
+      </div>
+      <p className="text-xl font-mono font-semibold">{trayId}</p>
+
+      {cameraOpen && (
+        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
+          <div id={scannerDivId} className="w-full" />
+          <Button
+            size="sm"
+            variant="secondary"
+            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
+            onClick={stopScanner}
+          >
+            <X className="w-4 h-4" />
+            Close
+          </Button>
+          <p className="text-center text-xs text-white/70 pb-2">Point camera at tray QR code</p>
+        </div>
+      )}
+
+      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
+
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
+          disabled={!isActive || isProcessing || cameraOpen}
+          className="text-xl font-mono h-14 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
+          autoComplete="off"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-14 px-4 shrink-0 rounded-xs"
+          onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
+          disabled={!isActive || isProcessing}
+          title={cameraOpen ? "Close camera" : "Use camera to scan"}
+        >
+          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
+        </Button>
+      </div>
+
+      {isActive && !cameraOpen && (
+        <p className="text-xs text-muted-foreground">Press Enter, scan QR, or tap camera</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Cook Item Card ────────────────────────────────────────────────────────────
+
+type CardMode = "waiting" | "removing" | "done";
 
 interface CookItemCardProps {
   item: IStage3CookItem;
-  isActive: boolean;
   isAdmin: boolean;
-  onActivate: () => void;
   onComplete: (cookItem: ICookItem) => void;
 }
 
-function CookItemCard({ item, isActive, isAdmin, onActivate, onComplete }: CookItemCardProps) {
-  const [trayScanValue, setTrayScanValue] = useState("");
+function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
+  const isComplete = item.status === "demolding_complete";
+  const removedTrayIds = new Set(item.trayRemovalTimestamps.map((t) => t.trayId));
+  const traySlots = item.molds; // IStage3MoldInfo[]
+  const totalTrays = traySlots.length;
+  const removedCount = traySlots.filter((m) => removedTrayIds.has(m.trayId)).length;
+  const allRemoved = removedCount >= totalTrays && totalTrays > 0;
+
+  const initialMode: CardMode = isComplete ? "done"
+    : removedCount > 0 ? "removing"
+    : "waiting";
+
+  const [mode, setMode] = useState<CardMode>(initialMode);
   const [removeTray, { isLoading: isRemoving }] = useRemoveTrayMutation();
   const [completeStage3, { isLoading: isCompleting }] = useCompleteStage3Mutation();
 
-  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
-  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+  const activeSlotIndex = traySlots.findIndex((m) => !removedTrayIds.has(m.trayId));
 
-  const trayIds = item.dehydratorAssignments.map((a) => a.trayId);
-  const removedTrayIds = new Set(item.trayRemovalTimestamps.map((t) => t.trayId));
-  const allTraysRemoved = trayIds.length > 0 && trayIds.every((id) => removedTrayIds.has(id));
-
-  const handleRemoveTray = async (trayId: string) => {
+  const handleRemoveTray = useCallback(async (trayId: string): Promise<boolean> => {
     try {
       await removeTray({ cookItemId: item.cookItemId, trayId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success(`Tray ${trayId} removed`);
-      setTrayScanValue("");
+      return true;
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to log tray removal");
+      return false;
     }
-  };
+  }, [removeTray, item.cookItemId]);
 
   const handleCompleteStage3 = async () => {
     try {
       const result = await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
       toast.success("Stage 3 complete");
+      setMode("done");
       onComplete(result.cookItem);
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 3");
     }
   };
 
+  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
+  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+
   return (
-    <Card className="rounded-xs">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="text-base truncate">{item.flavor}</CardTitle>
-            <CardDescription className="text-xs mt-0.5 font-mono">
-              {item.cookItemId}
-            </CardDescription>
-          </div>
-          <Badge variant="outline" className={`shrink-0 text-xs ${statusColor}`}>
-            {statusLabel}
-          </Badge>
+    <div className="flex flex-col gap-0 rounded-xs border bg-card">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-3xl font-bold leading-tight truncate">{item.flavor}</p>
+          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
         </div>
-      </CardHeader>
+        <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
+          {statusLabel}
+        </Badge>
+      </div>
 
-      <CardContent className="flex flex-col gap-3">
-        {/* Summary */}
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Flavor</p>
-            <p className="font-medium truncate">{item.flavor}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Qty</p>
-            <p className="font-medium">{item.quantity.toLocaleString()}</p>
-          </div>
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-2xl font-bold">{item.quantity.toLocaleString()}</p>
         </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
+          <p className="text-2xl font-bold">{totalTrays}</p>
+        </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Removed</p>
+          <p className={`text-2xl font-bold ${allRemoved ? "text-green-600" : ""}`}>
+            {removedCount}/{totalTrays}
+          </p>
+        </div>
+      </div>
 
+      <div className="px-5 py-4 flex flex-col gap-3">
+        {/* Flavor / color components */}
         {item.flavorComponents.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Flavors:{" "}
-            {item.flavorComponents.map((c) => `${c.name} (${c.percentage}%)`).join(", ")}
-          </p>
-        )}
-        {item.colorComponents.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Colors:{" "}
-            {item.colorComponents.map((c) => `${c.name} (${c.percentage}%)`).join(", ")}
-          </p>
-        )}
-
-        {/* Per-mold timer rows */}
-        <div className="flex flex-col gap-1">
-          {item.molds.map((mold) => (
-            <div
-              key={mold.moldId}
-              className="flex items-center justify-between py-2 border-b last:border-0"
-            >
-              <span className="text-sm font-medium font-mono">
-                {mold.trayId} — {mold.dehydratorUnitId}, Shelf {mold.shelfPosition}
-              </span>
-              <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
+          <div>
+            <p className="text-sm text-muted-foreground mb-1.5">Flavor Components</p>
+            <div className="flex flex-wrap gap-1.5">
+              {item.flavorComponents.map((fc) => (
+                <Badge key={fc.name} variant="secondary" className="text-sm">
+                  {fc.name} {fc.percentage}%
+                </Badge>
+              ))}
             </div>
-          ))}
-        </div>
-
-        {/* Activate button */}
-        {item.allMoldsReady && !isActive && (
-          <Button variant="outline" size="sm" className="w-full rounded-xs" onClick={onActivate}>
-            Start Removal & Packing
-          </Button>
+          </div>
         )}
 
-        {/* Active removal flow */}
-        {isActive && (
-          <div className="border-t pt-3 flex flex-col gap-3">
-            <ol className="text-sm list-decimal pl-4 space-y-1 text-muted-foreground">
-              <li>Remove trays from dehydrator units</li>
-              <li>Scan each tray QR code to log removal</li>
-              <li>Combine all gummies into a container</li>
-              <li>Print label and attach to container</li>
-            </ol>
-
-            <div className="flex flex-col gap-1.5">
-              {trayIds.map((trayId) => (
-                <div key={trayId} className="flex items-center gap-2">
-                  {removedTrayIds.has(trayId) ? (
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
-                      <Check className="w-4 h-4" />
-                      Tray {trayId} removed
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Tray {trayId} — waiting for scan
-                    </span>
-                  )}
+        {mode === "done" || isComplete ? (
+          <div className="flex items-center gap-3 py-4 text-green-600">
+            <CheckCircle2 className="w-8 h-8 shrink-0" />
+            <p className="text-xl font-semibold">All trays removed — {removedCount} tray{removedCount !== 1 ? "s" : ""}</p>
+          </div>
+        ) : mode === "waiting" ? (
+          <>
+            {/* Dehydration timers */}
+            <div className="flex flex-col gap-1">
+              {traySlots.map((mold) => (
+                <div key={mold.moldId} className="flex items-center justify-between py-2 border-b last:border-0">
+                  <span className="text-base font-mono">
+                    {mold.trayId} — {mold.dehydratorUnitId}, Shelf {mold.shelfPosition}
+                  </span>
+                  <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
                 </div>
               ))}
             </div>
-
-            {!allTraysRemoved && (
-              <BarcodeScannerInput
-                value={trayScanValue}
-                onChange={setTrayScanValue}
-                onSubmit={handleRemoveTray}
-                placeholder="Scan tray barcode…"
-                disabled={isRemoving}
-                mode="barcode"
-              />
-            )}
-
-            {allTraysRemoved && (
+            {item.allMoldsReady && (
               <Button
-                className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
-                onClick={handleCompleteStage3}
-                disabled={isCompleting}
+                size="lg"
+                className="w-full text-xl h-14 rounded-xs"
+                onClick={() => setMode("removing")}
               >
-                {isCompleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )}
-                Print Label & Complete
+                Start Removal & Packing
               </Button>
             )}
+          </>
+        ) : mode === "removing" ? (
+          <div className="flex flex-col gap-3">
+            <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-sm text-amber-800">
+              <strong>Remove each tray</strong> from the dehydrator and scan its QR code to log removal.
+            </div>
+            {traySlots.map((mold, i) => (
+              <TraySlot
+                key={mold.trayId}
+                slotId={`${item.cookItemId}-${i}`}
+                index={i}
+                total={totalTrays}
+                trayId={mold.trayId}
+                unitId={mold.dehydratorUnitId}
+                shelfPosition={mold.shelfPosition}
+                isActive={i === activeSlotIndex}
+                isRemoved={removedTrayIds.has(mold.trayId)}
+                isProcessing={isRemoving}
+                onSubmit={handleRemoveTray}
+              />
+            ))}
+            <Button
+              size="lg"
+              disabled={!allRemoved || isCompleting}
+              className="w-full text-xl h-14 gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40"
+              onClick={handleCompleteStage3}
+            >
+              {isCompleting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5" />
+              )}
+              Print Label & Complete
+            </Button>
           </div>
-        )}
+        ) : null}
+      </div>
 
+      <div className="px-5 pb-5">
         <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -257,7 +432,6 @@ export default function Stage3OrderPage({
   const router = useRouter();
   const isAdmin = isAdminUser();
 
-  const [activeCookItemId, setActiveCookItemId] = useState<string | null>(null);
   const [labelData, setLabelData] = useState<ICookItem | null>(null);
   const [showLabelPreview, setShowLabelPreview] = useState(false);
   const printLabelRef = useRef<HTMLDivElement>(null);
@@ -270,6 +444,10 @@ export default function Stage3OrderPage({
   const allItems = data?.cookItems ?? [];
   const orderItems = allItems.filter((item) => item.orderId === decodedOrderId);
   const storeName = orderItems[0]?.storeName;
+
+  const allComplete = orderItems.length > 0 && orderItems.every(
+    (i) => i.status === "demolding_complete"
+  );
 
   const handleComplete = (cookItem: ICookItem) => {
     setLabelData(cookItem);
@@ -344,23 +522,16 @@ export default function Stage3OrderPage({
     <div className="p-4 md:p-8 bg-background min-h-screen">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/admin/pps")}
-          className="shrink-0"
-        >
+        <Button variant="ghost" size="icon" onClick={() => router.push("/admin/pps")} className="shrink-0">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex items-center gap-3">
-          <Thermometer className="w-7 h-7 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold">
-              {storeName ?? "Stage 3 — Container & Label"}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Thermometer className="w-8 h-8 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold leading-tight truncate">
+              {storeName ?? "Stage 3 — Tray Removal"}
             </h1>
-            <p className="text-sm text-muted-foreground font-mono">
-              Order {decodedOrderId}
-            </p>
+            <p className="text-base text-muted-foreground font-mono">Order {decodedOrderId}</p>
           </div>
         </div>
       </div>
@@ -368,23 +539,23 @@ export default function Stage3OrderPage({
       {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <Thermometer className="w-10 h-10 opacity-40" />
-          <p className="text-sm">
-            No Stage 3 items found for order {decodedOrderId}.
-          </p>
+          <p className="text-base">No Stage 3 items found for order {decodedOrderId}.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {orderItems.length} item{orderItems.length !== 1 ? "s" : ""} in this order
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-5">
+          {allComplete && (
+            <div className="flex items-center gap-3 px-5 py-4 rounded-xs bg-green-50 border border-green-200 text-green-700">
+              <CheckCircle2 className="w-7 h-7 shrink-0" />
+              <p className="text-xl font-semibold">All items complete — ready for packaging</p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
             {orderItems.map((item) => (
               <CookItemCard
                 key={item._id}
                 item={item}
-                isActive={activeCookItemId === item.cookItemId}
                 isAdmin={isAdmin}
-                onActivate={() => setActiveCookItemId(item.cookItemId)}
                 onComplete={handleComplete}
               />
             ))}
@@ -409,7 +580,7 @@ export default function Stage3OrderPage({
         </div>
       )}
 
-      {/* Hidden fully-rendered label for print — barcode SVG captured from live DOM */}
+      {/* Hidden label for print */}
       {labelData && (
         <div ref={printLabelRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
           <PrintLabel type="production" data={labelData} />
