@@ -88,7 +88,7 @@ export default function PPSStaffPage() {
         {active === "stage1" && <Stage1View basePath="/pps" />}
         {active === "stage2" && <Stage2View basePath="/pps" />}
         {active === "stage3" && <Stage3View basePath="/pps" />}
-        {active === "stage4" && <Stage4View />}
+        {active === "stage4" && <Stage4View basePath="/pps" />}
       </div>
 
       {/* Bottom tab bar */}

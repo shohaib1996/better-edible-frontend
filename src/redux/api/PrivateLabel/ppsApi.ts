@@ -128,6 +128,11 @@ export const ppsApi = baseApi.injectEndpoints({
     }),
 
     // ─── Stage 4 ──────────────────────────
+    getStage4CookItems: builder.query<{ cookItems: ICookItem[] }, void>({
+      query: () => "/pps/stage-4/cook-items",
+      providesTags: [tagTypes.ppsCookItems],
+    }),
+
     scanContainer: builder.mutation<
       {
         success: boolean;
@@ -229,6 +234,7 @@ export const {
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,
   useCompleteStage3Mutation,
+  useGetStage4CookItemsQuery,
   useScanContainerMutation,
   useConfirmCountMutation,
   useGetMoldsQuery,

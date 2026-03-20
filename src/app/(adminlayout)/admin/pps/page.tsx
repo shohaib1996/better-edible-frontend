@@ -61,7 +61,7 @@ export default function PPSPage() {
           {active === "stage1" && <Stage1View />}
           {active === "stage2" && <Stage2View />}
           {active === "stage3" && <Stage3View />}
-          {active === "stage4" && <Stage4View />}
+          {active === "stage4" && <Stage4View basePath="/admin/pps" />}
           {active === "resources" && <ResourcesView />}
         </div>
       </div>
