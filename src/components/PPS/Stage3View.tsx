@@ -81,9 +81,9 @@ function OrderCard({
         )}
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-3 flex-1 justify-between">
+      <CardContent className="flex flex-col gap-3 flex-1">
         {/* Item list */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 flex-1">
           {items.map((item) => (
             <div
               key={item._id}
@@ -165,7 +165,7 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
       <p className="text-sm text-muted-foreground">
         {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
           <OrderCard
             key={orderId}
