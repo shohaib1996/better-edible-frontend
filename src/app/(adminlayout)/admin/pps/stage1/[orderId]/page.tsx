@@ -1,26 +1,22 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ChefHat,
   CheckCircle2,
   Loader2,
+  Camera,
+  X,
 } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
-import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
@@ -32,44 +28,232 @@ import {
 } from "@/constants/privateLabel";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
-// ─── Button state machine ─────────────────────────────────────────────────────
-// "idle"     → worker hasn't started yet → shows [Start] button
-// "molding"  → started, collecting molds → shows [Mold] + optional [Complete]
-// "scanning" → input open, autofocused   → shows input + [×] + optional [Complete]
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-type CardMode = "idle" | "molding" | "scanning";
+const UNITS_PER_MOLD = 70;
+
+function moldsNeeded(quantity: number) {
+  return Math.ceil(quantity / UNITS_PER_MOLD);
+}
+
+// ─── Mold Slot Input ──────────────────────────────────────────────────────────
+// Single mold barcode input. Autofocuses when it becomes active.
+// Flashes green on successful scan.
+
+interface MoldSlotProps {
+  slotId: string;
+  index: number;
+  total: number;
+  isActive: boolean;
+  isAssigned: boolean;
+  assignedId?: string;
+  isAssigning: boolean;
+  onSubmit: (barcode: string) => Promise<boolean>;
+}
+
+function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAssigning, onSubmit }: MoldSlotProps) {
+  const [value, setValue] = useState("");
+  const [flash, setFlash] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerDivId = `mold-scanner-${slotId}`;
+
+  useEffect(() => {
+    if (isActive && !isAssigned && !cameraOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isActive, isAssigned, cameraOpen]);
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      } catch { /* already stopped */ }
+      scannerRef.current = null;
+    }
+    setCameraOpen(false);
+  }, []);
+
+  const startScanner = useCallback(() => {
+    setCameraError(null);
+    setCameraOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen) return;
+    const scanner = new Html5Qrcode(scannerDivId);
+    scannerRef.current = scanner;
+    scanner
+      .start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
+        },
+        async (decodedText) => {
+          await stopScanner();
+          const ok = await onSubmit(decodedText.trim());
+          if (ok) {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 700);
+          }
+        },
+        () => {},
+      )
+      .catch((err: unknown) => {
+        setCameraError(err instanceof Error ? err.message : "Camera access denied");
+        setCameraOpen(false);
+        scannerRef.current = null;
+      });
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraOpen]);
+
+  const handleSubmit = useCallback(async (barcode: string) => {
+    const trimmed = barcode.trim();
+    if (!trimmed || isAssigning) return;
+    const ok = await onSubmit(trimmed);
+    if (ok) {
+      setValue("");
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
+    }
+  }, [isAssigning, onSubmit]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && value.trim()) {
+      handleSubmit(value);
+    }
+  };
+
+  if (isAssigned) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
+        <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-muted-foreground">Mold {index + 1} of {total}</p>
+          <p className="text-xl font-mono font-semibold text-green-700 truncate">{assignedId}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${flash ? "bg-green-100 border-green-400" : isActive ? "border-primary bg-primary/5" : "border-muted bg-muted/30 opacity-60"}`}>
+      <p className="text-sm font-medium text-muted-foreground">Mold {index + 1} of {total}</p>
+
+      {/* Camera view */}
+      {cameraOpen && (
+        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
+          <div id={scannerDivId} className="w-full" />
+          <Button
+            size="sm"
+            variant="secondary"
+            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
+            onClick={stopScanner}
+          >
+            <X className="w-4 h-4" />
+            Close
+          </Button>
+          <p className="text-center text-xs text-white/70 pb-2">Point camera at barcode</p>
+        </div>
+      )}
+
+      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
+
+      {/* Input + camera button row */}
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
+          disabled={!isActive || isAssigning || cameraOpen}
+          className="text-xl font-mono rounded-xs h-14 flex-1"
+          autoComplete="off"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-14 px-4 shrink-0 rounded-xs"
+          onClick={cameraOpen ? stopScanner : startScanner}
+          disabled={!isActive || isAssigning}
+          title={cameraOpen ? "Close camera" : "Use camera to scan"}
+        >
+          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
+        </Button>
+      </div>
+
+      {isActive && !cameraOpen && (
+        <p className="text-xs text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+      )}
+    </div>
+  );
+}
 
 // ─── Cook Item Card ───────────────────────────────────────────────────────────
 
-function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) {
-  const isComplete = item.status === "cooking_molding_complete";
+type CardMode = "idle" | "molding" | "done";
 
-  // If already in-progress on load, jump straight to molding mode
-  const initialMode: CardMode =
-    isComplete ? "idle" : item.status === "in-progress" ? "molding" : "idle";
+interface CookItemCardProps {
+  item: ICookItem;
+  isAdmin: boolean;
+  /** When true, this card is part of a "start all" batch (hides individual Start button) */
+  batchStarted: boolean;
+}
+
+function CookItemCard({ item, isAdmin, batchStarted }: CookItemCardProps) {
+  const isComplete = item.status === "cooking_molding_complete";
+  const initialMode: CardMode = isComplete ? "done" : item.status === "in-progress" ? "molding" : "idle";
 
   const [mode, setMode] = useState<CardMode>(initialMode);
-  const [barcodeInput, setBarcodeInput] = useState("");
 
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
   const [completeStage1, { isLoading: isCompleting }] = useCompleteStage1Mutation();
 
-  const handleAssignMold = async (barcode: string) => {
-    const trimmed = barcode.trim();
-    if (!trimmed || isAssigning) return;
+  const totalMolds = moldsNeeded(item.quantity);
+  const assignedCount = item.assignedMoldIds.length;
+  const allMoldsAssigned = assignedCount >= totalMolds;
+
+  // Auto-enter molding when batch starts
+  useEffect(() => {
+    if (batchStarted && mode === "idle") {
+      setMode("molding");
+    }
+  }, [batchStarted, mode]);
+
+  // Auto-complete when all molds are scanned
+  useEffect(() => {
+    if (mode === "molding" && allMoldsAssigned && assignedCount > 0) {
+      handleCompleteStage1();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMoldsAssigned, assignedCount]);
+
+  const handleAssignMold = useCallback(async (barcode: string): Promise<boolean> => {
     try {
       await assignMold({
         cookItemId: item.cookItemId,
-        moldId: trimmed,
+        moldId: barcode,
         performedBy: getPPSUser(),
       } as any).unwrap();
-      setBarcodeInput("");
+      return true;
     } catch (err: any) {
       toast.error(err?.data?.message || "Mold already in use or not found");
+      return false;
     }
-  };
+  }, [assignMold, item.cookItemId]);
 
-  const handleCompleteStage1 = async () => {
+  const handleCompleteStage1 = useCallback(async () => {
     try {
       await completeStage1({
         cookItemId: item.cookItemId,
@@ -78,47 +262,53 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 1");
     }
-  };
+  }, [completeStage1, item.cookItemId]);
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
 
+  // Active mold slot = first unassigned
+  const activeMoldIndex = assignedCount; // 0-based
+
   return (
-    <Card className="flex flex-col gap-0 rounded-xs">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="text-base truncate">{item.flavor}</CardTitle>
-            <CardDescription className="text-xs mt-0.5 font-mono">
-              {item.cookItemId}
-            </CardDescription>
-          </div>
-          <Badge variant="outline" className={`shrink-0 text-xs ${statusColor}`}>
-            {statusLabel}
-          </Badge>
+    <div className="flex flex-col gap-0 rounded-xs border bg-card">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-3xl font-bold leading-tight truncate">{item.flavor}</p>
+          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
         </div>
-      </CardHeader>
+        <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
+          {statusLabel}
+        </Badge>
+      </div>
 
-      <CardContent className="flex flex-col gap-4">
-        {/* Qty + product type */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-muted-foreground text-xs mb-1">Quantity</p>
-            <p className="font-medium">{item.quantity.toLocaleString()} units</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-xs mb-1">Product</p>
-            <p className="font-medium truncate">{item.productType}</p>
-          </div>
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-2xl font-bold">{item.quantity.toLocaleString()}</p>
         </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Molds Needed</p>
+          <p className="text-2xl font-bold">{totalMolds}</p>
+        </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Scanned</p>
+          <p className={`text-2xl font-bold ${allMoldsAssigned ? "text-green-600" : ""}`}>
+            {assignedCount}/{totalMolds}
+          </p>
+        </div>
+      </div>
 
-        {/* Flavor components */}
+      <div className="px-5 py-4 flex flex-col gap-3">
+        {/* ── Flavor components ── */}
         {item.flavorComponents.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1.5">Flavor Components</p>
+            <p className="text-sm text-muted-foreground mb-1.5">Flavor Components</p>
             <div className="flex flex-wrap gap-1.5">
               {item.flavorComponents.map((fc) => (
-                <Badge key={fc.name} variant="secondary" className="text-xs">
+                <Badge key={fc.name} variant="secondary" className="text-sm">
                   {fc.name} {fc.percentage}%
                 </Badge>
               ))}
@@ -126,17 +316,13 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
           </div>
         )}
 
-        {/* Color components */}
+        {/* ── Color components ── */}
         {item.colorComponents.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-1.5">Color Components</p>
+            <p className="text-sm text-muted-foreground mb-1.5">Color Components</p>
             <div className="flex flex-wrap gap-1.5">
               {item.colorComponents.map((cc) => (
-                <Badge
-                  key={cc.name}
-                  variant="outline"
-                  className="text-xs border-violet-500/40 text-violet-600"
-                >
+                <Badge key={cc.name} variant="outline" className="text-sm border-violet-500/40 text-violet-600">
                   {cc.name} {cc.percentage}%
                 </Badge>
               ))}
@@ -144,103 +330,59 @@ function CookItemCard({ item, isAdmin }: { item: ICookItem; isAdmin: boolean }) 
           </div>
         )}
 
-        {/* Assigned molds */}
-        {item.assignedMoldIds.length > 0 && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Assigned Molds ({item.assignedMoldIds.length})
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {item.assignedMoldIds.map((id) => (
-                <Badge key={id} variant="outline" className="text-xs font-mono">
-                  {id}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ── Action area ── */}
-        {isComplete ? (
-          <div className="border-t pt-3 flex items-center gap-2 text-green-600 text-sm">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Stage 1 complete — {item.assignedMoldIds.length} mold(s)</span>
+        {mode === "done" || isComplete ? (
+          <div className="flex items-center gap-3 py-4 text-green-600">
+            <CheckCircle2 className="w-8 h-8 shrink-0" />
+            <p className="text-xl font-semibold">Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""}</p>
           </div>
-        ) : (
-          <div className="border-t pt-3 flex flex-col gap-2">
+        ) : mode === "idle" && !batchStarted ? (
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full text-xl h-14 rounded-xs"
+            onClick={() => setMode("molding")}
+          >
+            Start
+          </Button>
+        ) : mode === "molding" ? (
+          <div className="flex flex-col gap-3">
+            {/* Mold slots */}
+            {Array.from({ length: totalMolds }).map((_, i) => (
+              <MoldSlot
+                key={i}
+                slotId={`${item.cookItemId}-${i}`}
+                index={i}
+                total={totalMolds}
+                isActive={i === activeMoldIndex}
+                isAssigned={i < assignedCount}
+                assignedId={item.assignedMoldIds[i]}
+                isAssigning={isAssigning}
+                onSubmit={handleAssignMold}
+              />
+            ))}
 
-            {/* IDLE — show Start button */}
-            {mode === "idle" && (
-              <Button
-                variant="outline"
-                className="w-full rounded-xs"
-                onClick={() => setMode("molding")}
-              >
-                Start
-              </Button>
-            )}
-
-            {/* MOLDING — show Mold button (+ Complete if molds assigned) */}
-            {mode === "molding" && (
-              <>
-                <Button
-                  className="w-full rounded-xs"
-                  onClick={() => setMode("scanning")}
-                >
-                  Mold
-                </Button>
-                {item.assignedMoldIds.length > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={handleCompleteStage1}
-                    disabled={isCompleting}
-                    className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {isCompleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4" />
-                    )}
-                    Complete Stage 1
-                  </Button>
-                )}
-              </>
-            )}
-
-            {/* SCANNING — barcode scanner with camera support */}
-            {mode === "scanning" && (
-              <>
-                <BarcodeScannerInput
-                  value={barcodeInput}
-                  onChange={setBarcodeInput}
-                  onSubmit={handleAssignMold}
-                  placeholder="Scan mold barcode…"
-                  disabled={isAssigning}
-                  mode="barcode"
-                />
-                {item.assignedMoldIds.length > 0 && (
-                  <Button
-                    size="sm"
-                    onClick={handleCompleteStage1}
-                    disabled={isCompleting}
-                    className="w-full gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {isCompleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4" />
-                    )}
-                    Complete Stage 1
-                  </Button>
-                )}
-              </>
-            )}
+            <Button
+              size="lg"
+              onClick={handleCompleteStage1}
+              disabled={!allMoldsAssigned || isCompleting}
+              className="w-full text-xl h-14 gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40"
+            >
+              {isCompleting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5" />
+              )}
+              Molding Complete
+            </Button>
           </div>
-        )}
+        ) : null}
+      </div>
 
+      <div className="px-5 pb-5">
         <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -261,6 +403,9 @@ export default function Stage1OrderPage({
   const allItems = data?.cookItems ?? [];
   const orderItems = allItems.filter((item) => item.orderId === decodedOrderId);
   const storeName = orderItems[0]?.storeName;
+
+  const [batchStarted, setBatchStarted] = useState(false);
+  const allComplete = orderItems.length > 0 && orderItems.every((i) => i.status === "cooking_molding_complete");
 
   if (isLoading) {
     return (
@@ -291,13 +436,13 @@ export default function Stage1OrderPage({
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="flex items-center gap-3">
-          <ChefHat className="w-7 h-7 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <ChefHat className="w-8 h-8 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold leading-tight truncate">
               {storeName ?? "Stage 1 — Cooking & Molding"}
             </h1>
-            <p className="text-sm text-muted-foreground font-mono">
+            <p className="text-base text-muted-foreground font-mono">
               Order {decodedOrderId}
             </p>
           </div>
@@ -307,16 +452,48 @@ export default function Stage1OrderPage({
       {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
           <ChefHat className="w-10 h-10 opacity-40" />
-          <p className="text-sm">No Stage 1 items found for order {decodedOrderId}.</p>
+          <p className="text-base">No Stage 1 items found for order {decodedOrderId}.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            {orderItems.length} item{orderItems.length !== 1 ? "s" : ""} in this order
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-5">
+          {/* Start All / Molding Complete button */}
+          {!allComplete && (
+            <Button
+              size="lg"
+              onClick={() => setBatchStarted(true)}
+              disabled={batchStarted}
+              className={`w-full text-2xl h-16 rounded-xs font-bold transition-colors ${
+                batchStarted
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : ""
+              }`}
+            >
+              {batchStarted ? (
+                <>
+                  <CheckCircle2 className="w-6 h-6 mr-2" />
+                  Molding Complete
+                </>
+              ) : (
+                "Start All"
+              )}
+            </Button>
+          )}
+
+          {allComplete && (
+            <div className="flex items-center gap-3 px-5 py-4 rounded-xs bg-green-50 border border-green-200 text-green-700">
+              <CheckCircle2 className="w-7 h-7 shrink-0" />
+              <p className="text-xl font-semibold">All items complete — ready for Stage 2</p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
             {orderItems.map((item) => (
-              <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
+              <CookItemCard
+                key={item._id}
+                item={item}
+                isAdmin={isAdmin}
+                batchStarted={batchStarted}
+              />
             ))}
           </div>
         </div>
