@@ -163,17 +163,38 @@ export default function PrintLabel(props: PrintLabelProps) {
   // case label
   const d = props.data;
   return (
-    <div className="print-label w-[4in] border p-4 bg-white text-black font-mono">
-      <h2 className="text-lg font-bold uppercase">{d.storeName}</h2>
-      <h3 className="text-base font-bold">{d.flavor}</h3>
-      <p className="text-xl font-bold">{d.unitCount} units</p>
+    <div
+      className="print-label bg-white text-black font-sans"
+      style={{
+        width: "4in",
+        minHeight: "6in",
+        padding: "0.2in",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.1in",
+        pageBreakAfter: "always",
+        breakAfter: "page",
+      }}
+    >
+      <div style={{ fontSize: "22pt", fontWeight: 900, lineHeight: 1.1, textTransform: "uppercase", letterSpacing: "-0.01em", wordBreak: "break-word" }}>
+        {d.storeName}
+      </div>
+      <div style={{ fontSize: "16pt", fontWeight: 700, lineHeight: 1.35 }}>
+        {d.flavor}
+      </div>
+      <div style={{ fontSize: "20pt", fontWeight: 800 }}>
+        {d.unitCount} units
+      </div>
 
       <HR />
 
-      <p className="text-xs">Case ID: {d.caseId}</p>
+      <div style={{ fontSize: "9pt", fontFamily: "monospace", lineHeight: 1.5, wordBreak: "break-all" }}>
+        Case ID: {d.caseId}
+      </div>
 
-      <div className="mt-2 flex justify-center">
-        <QRCodeSVG value={JSON.stringify({ caseId: d.caseId })} size={100} bgColor="#ffffff" fgColor="#000000" />
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "0.1in" }}>
+        <QRCodeSVG value={JSON.stringify({ caseId: d.caseId, cookItemId: d.cookItemId })} size={160} bgColor="#ffffff" fgColor="#000000" />
       </div>
     </div>
   );

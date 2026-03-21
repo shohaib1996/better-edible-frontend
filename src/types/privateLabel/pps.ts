@@ -198,11 +198,30 @@ export interface IConfirmCountRequest {
   actualCount: number;
 }
 
+export interface ICase {
+  _id: string;
+  caseId: string;
+  cookItemId: string;
+  orderId: string;
+  customerId: string;
+  storeName: string;
+  flavor: string;
+  productType: string;
+  unitCount: number;
+  caseNumber: number;
+  totalCasesForItem: number;
+  labelPrintTimestamp: string;
+  status: "in-inventory" | "shipped";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ICaseLabelData {
   storeName: string;
   flavor: string;
   unitCount: number;
   caseId: string;
+  cookItemId: string;
 }
 
 export interface IConfirmCountResponse {

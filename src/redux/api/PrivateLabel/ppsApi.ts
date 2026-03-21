@@ -2,6 +2,7 @@ import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
 import type {
   ICookItem,
+  ICase,
   IHistoryEntry,
   IStage3CookItem,
   IMold,
@@ -159,6 +160,11 @@ export const ppsApi = baseApi.injectEndpoints({
       }
     ),
 
+    getCaseById: builder.query<{ success: boolean; case: ICase }, string>({
+      query: (caseId) => `/pps/cases/${encodeURIComponent(caseId)}`,
+      providesTags: [tagTypes.ppsCookItems],
+    }),
+
     // ─── History ──────────────────────────
     getCookItemHistory: builder.query<
       { cookItemId: string; history: IHistoryEntry[] },
@@ -225,6 +231,7 @@ export const ppsApi = baseApi.injectEndpoints({
 
 export const {
   useGetCookItemHistoryQuery,
+  useGetCaseByIdQuery,
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
   useCompleteStage1Mutation,

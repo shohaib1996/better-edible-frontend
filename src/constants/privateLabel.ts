@@ -233,8 +233,8 @@ export const COOK_ITEM_STATUS_LABELS: Record<string, string> = {
   "in-progress": "In Progress",
   cooking_molding_complete: "Molded",
   dehydrating_complete: "Dehydrating",
-  demolding_complete: "Packed",
-  packaging_casing_complete: "Complete",
+  demolding_complete: "Ready to Pack",
+  packaging_casing_complete: "Packed",
 };
 
 export const COOK_ITEM_STATUS_COLORS: Record<string, string> = {

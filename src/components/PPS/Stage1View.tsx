@@ -33,6 +33,7 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
   const router = useRouter();
   const storeName = items[0]?.storeName ?? "Unknown Store";
   const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
+  const isInProgress = items.some((i) => i.status === "in-progress");
 
   // Collect unique statuses for summary badges
   const statusCounts = items.reduce<Record<string, number>>((acc, item) => {
@@ -42,12 +43,21 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
 
   return (
     <Card
-      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all rounded-xs h-full"
+      className={`flex flex-col gap-0 cursor-pointer transition-all rounded-xs h-full border-l-4 ${
+        isInProgress
+          ? "border-l-yellow-500 bg-card shadow-md hover:shadow-lg"
+          : "border-l-transparent hover:border-primary/60 hover:shadow-md"
+      }`}
       onClick={() => router.push(`${basePath}/stage1/${encodeURIComponent(orderId)}`)}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
+            {isInProgress && (
+              <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-1">
+                ● In Progress
+              </p>
+            )}
             <CardTitle className="text-base">{storeName}</CardTitle>
             <CardDescription className="text-xs mt-0.5 font-mono">
               Order {orderId}
@@ -130,13 +140,29 @@ export default function Stage1View({ basePath = "/admin/pps" }: { basePath?: str
 
   const orderGroups = groupByOrder(cookItems);
 
+  // Sort: in-progress orders first, then pending
+  const sortedEntries = Array.from(orderGroups.entries()).sort(([, aItems], [, bItems]) => {
+    const aActive = aItems.some((i) => i.status === "in-progress") ? 0 : 1;
+    const bActive = bItems.some((i) => i.status === "in-progress") ? 0 : 1;
+    return aActive - bActive;
+  });
+
+  const inProgressCount = sortedEntries.filter(([, items]) => items.some((i) => i.status === "in-progress")).length;
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">
-        {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in queue
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in queue
+        </p>
+        {inProgressCount > 0 && (
+          <span className="text-xs font-semibold text-yellow-600 bg-yellow-500/10 border border-yellow-500/20 rounded-xs px-2 py-0.5">
+            {inProgressCount} in progress
+          </span>
+        )}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from(orderGroups.entries()).map(([orderId, items]) => (
+        {sortedEntries.map(([orderId, items]) => (
           <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
         ))}
       </div>
