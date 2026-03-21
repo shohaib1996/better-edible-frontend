@@ -1,15 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2, Thermometer, ArrowRight } from "lucide-react";
+import { Loader2, Thermometer, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
   COOK_ITEM_STATUS_COLORS,
@@ -29,19 +22,12 @@ function groupByOrder(items: IStage3CookItem[]): Map<string, IStage3CookItem[]> 
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
-function OrderCard({
-  orderId,
-  items,
-  basePath,
-}: {
-  orderId: string;
-  items: IStage3CookItem[];
-  basePath: string;
-}) {
+function OrderCard({ orderId, items, basePath }: { orderId: string; items: IStage3CookItem[]; basePath: string }) {
   const router = useRouter();
   const storeName = items[0]?.storeName ?? "Unknown Store";
   const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
   const allReady = items.every((i) => i.allMoldsReady);
+  const someReady = items.some((i) => i.allMoldsReady);
 
   const statusCounts = items.reduce<Record<string, number>>((acc, item) => {
     acc[item.status] = (acc[item.status] ?? 0) + 1;
@@ -49,77 +35,73 @@ function OrderCard({
   }, {});
 
   return (
-    <Card
-      className="flex flex-col gap-0 cursor-pointer hover:border-primary/60 hover:shadow-md transition-all rounded-xs h-full"
-      onClick={() =>
-        router.push(`${basePath}/stage3/${encodeURIComponent(orderId)}`)
-      }
+    <button
+      type="button"
+      className={`w-full text-left rounded-xs border bg-card transition-all active:scale-[0.99] border-l-4 ${
+        allReady
+          ? "border-l-green-500 shadow-md hover:shadow-lg"
+          : someReady
+          ? "border-l-orange-400 hover:shadow-md"
+          : "border-l-transparent hover:border-l-primary/60 hover:shadow-md"
+      }`}
+      onClick={() => router.push(`${basePath}/stage3/${encodeURIComponent(orderId)}`)}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="text-base">{storeName}</CardTitle>
-            <CardDescription className="text-xs mt-0.5 font-mono">
-              Order {orderId}
-            </CardDescription>
+      {/* Top section */}
+      <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
+        <div className="min-w-0 flex-1">
+          {allReady && (
+            <p className="text-sm font-bold text-green-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" /> Ready for Removal
+            </p>
+          )}
+          {!allReady && someReady && (
+            <p className="text-sm font-bold text-orange-600 uppercase tracking-widest mb-1">
+              ● Partially Ready
+            </p>
+          )}
+          <p className="text-3xl font-bold leading-tight truncate text-foreground">{storeName}</p>
+          <p className="text-base font-mono text-muted-foreground mt-0.5">Order {orderId}</p>
+        </div>
+        <ArrowRight className="w-8 h-8 text-primary shrink-0" />
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-0 border-t border-b divide-x mx-5">
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Items</p>
+          <p className="text-2xl font-bold">{items.length}</p>
+        </div>
+        <div className="px-3 py-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Total Units</p>
+          <p className="text-2xl font-bold">{totalUnits.toLocaleString()}</p>
+        </div>
+      </div>
+
+      {/* Flavor list */}
+      <div className="px-5 pt-3 pb-2 flex flex-col gap-1.5">
+        {items.map((item) => (
+          <div key={item._id} className="flex items-center justify-between gap-3">
+            <span className="text-lg font-medium truncate">{item.flavor}</span>
+            <span className={`shrink-0 text-base font-bold tabular-nums ${item.allMoldsReady ? "text-green-600" : "text-muted-foreground"}`}>
+              {item.allMoldsReady ? "Ready" : `${item.molds.filter(m => m.isReady).length}/${item.molds.length} ready`}
+            </span>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
-        </div>
+        ))}
+      </div>
 
-        <p className="text-xs text-muted-foreground">
-          {items.length} item{items.length !== 1 ? "s" : ""} &bull;{" "}
-          {totalUnits.toLocaleString()} total units
-        </p>
-
-        {allReady && (
+      {/* Status badges */}
+      <div className="flex flex-wrap gap-2 px-5 pb-4 pt-2 border-t mx-5 mt-1">
+        {Object.entries(statusCounts).map(([status, count]) => (
           <Badge
+            key={status}
             variant="outline"
-            className="w-fit text-xs bg-green-500/10 text-green-600 border-green-500/20"
+            className={`text-sm px-3 py-1 ${COOK_ITEM_STATUS_COLORS[status as keyof typeof COOK_ITEM_STATUS_COLORS] ?? ""}`}
           >
-            Ready for removal
+            {count} {COOK_ITEM_STATUS_LABELS[status as keyof typeof COOK_ITEM_STATUS_LABELS] ?? status}
           </Badge>
-        )}
-      </CardHeader>
-
-      <CardContent className="flex flex-col gap-3 flex-1">
-        {/* Item list */}
-        <div className="flex flex-col gap-1.5 flex-1">
-          {items.map((item) => (
-            <div
-              key={item._id}
-              className="flex items-center justify-between text-sm gap-2"
-            >
-              <span className="truncate text-muted-foreground">
-                {item.flavor}
-              </span>
-              <span className="shrink-0 font-medium tabular-nums">
-                {item.quantity.toLocaleString()} units
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Status summary */}
-        <div className="flex flex-wrap gap-1.5 pt-1 border-t">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <Badge
-              key={status}
-              variant="outline"
-              className={`text-xs ${
-                COOK_ITEM_STATUS_COLORS[
-                  status as keyof typeof COOK_ITEM_STATUS_COLORS
-                ] ?? ""
-              }`}
-            >
-              {count}{" "}
-              {COOK_ITEM_STATUS_LABELS[
-                status as keyof typeof COOK_ITEM_STATUS_LABELS
-              ] ?? status}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </button>
   );
 }
 
@@ -132,16 +114,16 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span>Loading dehydrator queue…</span>
+      <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-xl">Loading dehydrator queue…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="text-destructive py-12 text-center text-sm">
+      <div className="text-destructive py-12 text-center text-lg">
         Failed to load Stage 3 cook items.
       </div>
     );
@@ -151,28 +133,32 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
 
   if (cookItems.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-        <Thermometer className="w-10 h-10 opacity-40" />
-        <p className="text-sm">No items in the dehydrator removal queue.</p>
+      <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
+        <Thermometer className="w-16 h-16 opacity-30" />
+        <p className="text-2xl font-medium">No items in the dehydrator</p>
+        <p className="text-base">Check back after Stage 2 completes.</p>
       </div>
     );
   }
 
   const orderGroups = groupByOrder(cookItems);
+  const readyCount = Array.from(orderGroups.values()).filter((items) => items.every((i) => i.allMoldsReady)).length;
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">
-        {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
-      </p>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="flex items-center gap-3">
+        <p className="text-lg font-semibold text-foreground">
+          {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
+        </p>
+        {readyCount > 0 && (
+          <span className="text-base font-bold text-green-700 bg-green-500/10 border border-green-500/20 rounded-xs px-3 py-1">
+            {readyCount} ready to remove
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
-          <OrderCard
-            key={orderId}
-            orderId={orderId}
-            items={items}
-            basePath={basePath}
-          />
+          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
         ))}
       </div>
     </div>

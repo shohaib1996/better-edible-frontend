@@ -138,15 +138,15 @@ function TraySlot({
 
   if (lockedTrayId) {
     return (
-      <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
-        <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
+      <div className="flex items-center gap-4 px-5 py-4 rounded-xs bg-green-50 border border-green-200">
+        <CheckCircle2 className="w-9 h-9 text-green-600 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground font-medium">
             Tray {index + 1} of {total} · Mold <span className="font-mono">{moldId}</span>
           </p>
-          <p className="text-xl font-mono font-semibold text-green-700 truncate">{lockedTrayId}</p>
+          <p className="text-2xl font-mono font-bold text-green-700 truncate">{lockedTrayId}</p>
           {lockedUnit && (
-            <p className="text-xs text-muted-foreground mt-0.5">{lockedUnit} · Shelf {lockedShelf}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{lockedUnit} · Shelf {lockedShelf}</p>
           )}
         </div>
       </div>
@@ -162,29 +162,23 @@ function TraySlot({
         : "border-muted bg-muted/30 opacity-60"
     }`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-lg font-semibold text-foreground">
           Tray {index + 1} of {total}
         </p>
-        <span className="text-xs font-mono text-muted-foreground">Mold: {moldId}</span>
+        <span className="text-base font-mono text-muted-foreground">Mold: {moldId}</span>
       </div>
 
       {cameraOpen && (
         <div className="relative w-full rounded-xs overflow-hidden border bg-black">
           <div id={scannerDivId} className="w-full" />
-          <Button
-            size="sm"
-            variant="secondary"
-            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
-            onClick={stopScanner}
-          >
-            <X className="w-4 h-4" />
-            Close
+          <Button size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopScanner}>
+            <X className="w-4 h-4" /> Close
           </Button>
-          <p className="text-center text-xs text-white/70 pb-2">Point camera at tray barcode</p>
+          <p className="text-center text-sm text-white/70 pb-2">Point camera at tray barcode</p>
         </div>
       )}
 
-      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
+      {cameraError && <p className="text-base text-destructive">{cameraError}</p>}
 
       <div className="flex gap-2">
         <Input
@@ -194,23 +188,23 @@ function TraySlot({
           onKeyDown={handleKeyDown}
           placeholder={isActive ? "Scan tray barcode…" : "Waiting…"}
           disabled={!isActive || isProcessing || cameraOpen}
-          className="text-xl font-mono rounded-xs h-14 flex-1"
+          className="text-2xl font-mono rounded-xs h-16 flex-1"
           autoComplete="off"
         />
         <Button
           type="button"
           variant="outline"
-          className="h-14 px-4 shrink-0 rounded-xs"
+          className="h-16 w-16 shrink-0 rounded-xs"
           onClick={cameraOpen ? stopScanner : startScanner}
           disabled={!isActive || isProcessing}
           title={cameraOpen ? "Close camera" : "Use camera to scan"}
         >
-          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
+          {cameraOpen ? <X className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
         </Button>
       </div>
 
       {isActive && !cameraOpen && (
-        <p className="text-xs text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+        <p className="text-sm text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
       )}
     </div>
   );
@@ -306,39 +300,39 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className="text-3xl font-bold leading-tight truncate">{item.flavor}</p>
+          <p className="text-4xl font-bold leading-tight truncate">{item.flavor}</p>
           <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
         </div>
-        <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
+        <Badge variant="outline" className={`shrink-0 text-base px-3 py-1.5 ${statusColor}`}>
           {statusLabel}
         </Badge>
       </div>
 
       {/* ── Stats row ── */}
       <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
-        <div className="px-3 py-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
-          <p className="text-2xl font-bold">{item.quantity.toLocaleString()}</p>
+        <div className="px-3 py-4">
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-3xl font-bold">{item.quantity.toLocaleString()}</p>
         </div>
-        <div className="px-3 py-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
-          <p className="text-2xl font-bold">{totalTrays}</p>
+        <div className="px-3 py-4">
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
+          <p className="text-3xl font-bold">{totalTrays}</p>
         </div>
-        <div className="px-3 py-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Loaded</p>
-          <p className={`text-2xl font-bold ${allLocked ? "text-green-600" : ""}`}>
+        <div className="px-3 py-4">
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Loaded</p>
+          <p className={`text-3xl font-bold ${allLocked ? "text-green-600" : ""}`}>
             {lockedCount}/{totalTrays}
           </p>
         </div>
       </div>
 
-      <div className="px-5 py-4 flex flex-col gap-3">
+      <div className="px-5 py-5 flex flex-col gap-4">
         {item.flavorComponents.length > 0 && (
           <div>
-            <p className="text-sm text-muted-foreground mb-1.5">Flavor Components</p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-base text-muted-foreground mb-2">Flavor Components</p>
+            <div className="flex flex-wrap gap-2">
               {item.flavorComponents.map((fc) => (
-                <Badge key={fc.name} variant="secondary" className="text-sm">
+                <Badge key={fc.name} variant="secondary" className="text-base px-3 py-1">
                   {fc.name} {fc.percentage}%
                 </Badge>
               ))}
@@ -347,12 +341,12 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
         )}
 
         {mode === "done" || isComplete ? (
-          <div className="flex items-center gap-3 py-4 text-green-600">
-            <CheckCircle2 className="w-8 h-8 shrink-0" />
-            <p className="text-xl font-semibold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
+          <div className="flex items-center gap-4 py-4 text-green-600">
+            <CheckCircle2 className="w-10 h-10 shrink-0" />
+            <p className="text-2xl font-bold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
           </div>
         ) : mode === "idle" && !batchStarted ? (
-          <Button size="lg" variant="outline" className="w-full text-xl h-14 rounded-xs" onClick={() => setMode("scanning")}>
+          <Button size="lg" variant="outline" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={() => setMode("scanning")}>
             Load to Dehydrator
           </Button>
         ) : mode === "scanning" ? (
@@ -376,10 +370,10 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
             <Button
               size="lg"
               disabled={!allLocked || isProcessing}
-              className="w-full text-xl h-14 gap-2 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40"
+              className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold"
               onClick={() => {}}
             >
-              <CheckCircle2 className="w-5 h-5" />
+              <CheckCircle2 className="w-6 h-6" />
               Dehydrating Complete
             </Button>
           </div>
@@ -431,43 +425,43 @@ export default function WorkerStage2OrderPage({
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        <span>Loading…</span>
+      <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-xl">Loading…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="text-destructive py-12 text-center text-sm">
+      <div className="text-destructive py-12 text-center text-lg">
         Failed to load cook items. Check your connection and try again.
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 bg-background flex-1 overflow-y-auto overscroll-contain">
+    <div className="p-4 md:p-6 bg-background flex-1 overflow-y-auto overscroll-contain">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/pps")} className="shrink-0">
-          <ArrowLeft className="w-5 h-5" />
+        <Button variant="ghost" size="icon" onClick={() => router.push("/pps")} className="shrink-0 w-12 h-12">
+          <ArrowLeft className="w-6 h-6" />
         </Button>
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Wind className="w-8 h-8 text-primary shrink-0" />
+          <Wind className="w-10 h-10 text-primary shrink-0" />
           <div className="min-w-0">
             <h1 className="text-3xl font-bold leading-tight truncate">
               {storeName ?? "Stage 2 — Dehydrator Loading"}
             </h1>
-            <p className="text-base text-muted-foreground font-mono">Order {decodedOrderId}</p>
+            <p className="text-lg text-muted-foreground font-mono">Order {decodedOrderId}</p>
           </div>
         </div>
       </div>
 
       {orderItems.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-          <Wind className="w-10 h-10 opacity-40" />
-          <p className="text-base">No Stage 2 items found for order {decodedOrderId}.</p>
+        <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
+          <Wind className="w-14 h-14 opacity-40" />
+          <p className="text-xl">No Stage 2 items found for order {decodedOrderId}.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -476,12 +470,12 @@ export default function WorkerStage2OrderPage({
               size="lg"
               onClick={() => setBatchStarted(true)}
               disabled={batchStarted}
-              className={`w-full text-2xl h-16 rounded-xs font-bold transition-colors ${
+              className={`w-full text-2xl py-5 h-auto rounded-xs font-bold transition-colors ${
                 batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""
               }`}
             >
               {batchStarted ? (
-                <><CheckCircle2 className="w-6 h-6 mr-2" />Loading in Progress</>
+                <><CheckCircle2 className="w-7 h-7 mr-2" />Loading in Progress</>
               ) : (
                 "Load All to Dehydrator"
               )}
@@ -489,9 +483,9 @@ export default function WorkerStage2OrderPage({
           )}
 
           {allComplete && (
-            <div className="flex items-center gap-3 px-5 py-4 rounded-xs bg-green-50 border border-green-200 text-green-700">
-              <CheckCircle2 className="w-7 h-7 shrink-0" />
-              <p className="text-xl font-semibold">All items loaded — ready for dehydrating</p>
+            <div className="flex items-center gap-4 px-5 py-5 rounded-xs bg-green-50 border border-green-200 text-green-700">
+              <CheckCircle2 className="w-9 h-9 shrink-0" />
+              <p className="text-2xl font-bold">All items loaded — ready for dehydrating</p>
             </div>
           )}
 

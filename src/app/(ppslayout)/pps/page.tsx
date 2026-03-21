@@ -50,11 +50,11 @@ export default function PPSStaffPage() {
   return (
     <>
       {/* Header */}
-      <header className="shrink-0 border-b bg-background grid grid-cols-3 items-center px-4 h-16">
+      <header className="shrink-0 border-b bg-background grid grid-cols-3 items-center px-4 h-20">
         {/* Left — worker name */}
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <User className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate max-w-[140px]">{workerName}</span>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <User className="w-5 h-5 shrink-0" />
+          <span className="truncate max-w-[160px] text-base font-medium">{workerName}</span>
         </div>
 
         {/* Center — logo */}
@@ -62,9 +62,9 @@ export default function PPSStaffPage() {
           <Image
             src="https://www.better-edibles.com/assets/logo.png"
             alt="Better Edibles"
-            width={240}
-            height={64}
-            className="object-contain h-14 w-auto"
+            width={260}
+            height={72}
+            className="object-contain h-16 w-auto"
             priority
           />
         </div>
@@ -75,10 +75,10 @@ export default function PPSStaffPage() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 px-2"
+            className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 px-3"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="text-xs">Logout</span>
+            <LogOut className="w-5 h-5" />
+            <span className="text-base">Logout</span>
           </Button>
         </div>
       </header>
@@ -100,15 +100,15 @@ export default function PPSStaffPage() {
               key={id}
               onClick={() => setActive(id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-3 text-xs font-medium transition-colors select-none",
+                "flex-1 flex flex-col items-center justify-center gap-1.5 py-4 font-semibold transition-colors select-none",
                 isActive
                   ? "text-primary border-t-2 border-primary -mt-px bg-primary/5"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className="w-5 h-5" />
-              <span className="hidden sm:block">{label}</span>
-              <span className="block sm:hidden">{short}</span>
+              <Icon className="w-7 h-7" />
+              <span className="hidden sm:block text-lg">{label}</span>
+              <span className="block sm:hidden text-lg">{short}</span>
             </button>
           );
         })}
