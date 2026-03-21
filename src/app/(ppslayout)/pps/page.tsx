@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChefHat, Wind, Thermometer, Package, LogOut, User } from "lucide-react";
+import { ChefHat, Wind, Thermometer, Package, LogOut, User, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Stage1View from "@/components/PPS/Stage1View";
@@ -24,6 +24,7 @@ export default function PPSStaffPage() {
   const router = useRouter();
   const [active, setActive] = useState<Stage>("stage1");
   const [workerName, setWorkerName] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     try {
@@ -37,6 +38,27 @@ export default function PPSStaffPage() {
       router.replace("/login");
     }
   }, [router]);
+
+  // Restore persisted theme on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("pps-theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("pps-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("pps-theme", "light");
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -52,9 +74,9 @@ export default function PPSStaffPage() {
       {/* Header */}
       <header className="shrink-0 border-b bg-background grid grid-cols-3 items-center px-4 h-20">
         {/* Left — worker name */}
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <User className="w-5 h-5 shrink-0" />
-          <span className="truncate max-w-[160px] text-base font-medium">{workerName}</span>
+        <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+          <User className="w-6 h-6 shrink-0" />
+          <span className="truncate max-w-[160px] text-xl font-semibold">{workerName}</span>
         </div>
 
         {/* Center — logo */}
@@ -64,21 +86,30 @@ export default function PPSStaffPage() {
             alt="Better Edibles"
             width={260}
             height={72}
-            className="object-contain h-16 w-auto"
+            className="object-contain h-16 w-auto dark:invert"
             priority
           />
         </div>
 
-        {/* Right — logout */}
-        <div className="flex items-center justify-end">
+        {/* Right — theme toggle + logout */}
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="shrink-0 h-11 w-11 text-muted-foreground hover:text-foreground"
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-10 px-3"
+            className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-11 px-3"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-base">Logout</span>
+            <LogOut className="w-6 h-6" />
+            <span className="text-lg font-semibold">Logout</span>
           </Button>
         </div>
       </header>
