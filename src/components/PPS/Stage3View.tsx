@@ -22,7 +22,7 @@ function groupByOrder(items: IStage3CookItem[]): Map<string, IStage3CookItem[]> 
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
-function OrderCard({ orderId, items, basePath }: { orderId: string; items: IStage3CookItem[]; basePath: string }) {
+function OrderCard({ orderId, items, basePath, compact }: { orderId: string; items: IStage3CookItem[]; basePath: string; compact?: boolean }) {
   const router = useRouter();
   const storeName = items[0]?.storeName ?? "Unknown Store";
   const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -59,21 +59,21 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: IStag
               ● Partially Ready
             </p>
           )}
-          <p className="text-3xl font-bold leading-tight truncate text-foreground">{storeName}</p>
-          <p className="text-base font-mono text-muted-foreground mt-0.5">Order {orderId}</p>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground`}>{storeName}</p>
+          <p className={`${compact ? "text-sm" : "text-base"} font-mono text-muted-foreground mt-0.5`}>Order {orderId}</p>
         </div>
-        <ArrowRight className="w-8 h-8 text-primary shrink-0" />
+        <ArrowRight className={`${compact ? "w-5 h-5" : "w-8 h-8"} text-primary shrink-0`} />
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-0 border-t border-b divide-x mx-5">
         <div className="px-3 py-3">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Items</p>
-          <p className="text-2xl font-bold">{items.length}</p>
+          <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{items.length}</p>
         </div>
         <div className="px-3 py-3">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Total Units</p>
-          <p className="text-2xl font-bold">{totalUnits.toLocaleString()}</p>
+          <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{totalUnits.toLocaleString()}</p>
         </div>
       </div>
 
@@ -81,8 +81,8 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: IStag
       <div className="px-5 pt-3 pb-2 flex flex-col gap-1.5">
         {items.map((item) => (
           <div key={item._id} className="flex items-center justify-between gap-3">
-            <span className="text-lg font-medium truncate">{item.flavor}</span>
-            <span className={`shrink-0 text-base font-bold tabular-nums ${item.allMoldsReady ? "text-green-600" : "text-muted-foreground"}`}>
+            <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate`}>{item.flavor}</span>
+            <span className={`shrink-0 ${compact ? "text-sm" : "text-base"} font-bold tabular-nums ${item.allMoldsReady ? "text-green-600" : "text-muted-foreground"}`}>
               {item.allMoldsReady ? "Ready" : `${item.molds.filter(m => m.isReady).length}/${item.molds.length} ready`}
             </span>
           </div>
@@ -107,7 +107,7 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: IStag
 
 // ─── Stage 3 View ─────────────────────────────────────────────────────────────
 
-export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: string }) {
+export default function Stage3View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
   });
@@ -116,14 +116,14 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
         <Loader2 className="w-10 h-10 animate-spin" />
-        <p className="text-xl">Loading dehydrator queue…</p>
+        <p className={compact ? "text-base" : "text-xl"}>Loading dehydrator queue…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="text-destructive py-12 text-center text-lg">
+      <div className={`text-destructive py-12 text-center ${compact ? "text-sm" : "text-lg"}`}>
         Failed to load Stage 3 cook items.
       </div>
     );
@@ -134,9 +134,9 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
   if (cookItems.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
-        <Thermometer className="w-16 h-16 opacity-30" />
-        <p className="text-2xl font-medium">No items in the dehydrator</p>
-        <p className="text-base">Check back after Stage 2 completes.</p>
+        <Thermometer className={`${compact ? "w-10 h-10" : "w-16 h-16"} opacity-30`} />
+        <p className={`${compact ? "text-base" : "text-2xl"} font-medium`}>No items in the dehydrator</p>
+        <p className={compact ? "text-sm" : "text-base"}>Check back after Stage 2 completes.</p>
       </div>
     );
   }
@@ -147,18 +147,18 @@ export default function Stage3View({ basePath = "/admin/pps" }: { basePath?: str
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <p className="text-lg font-semibold text-foreground">
+        <p className={`${compact ? "text-sm" : "text-lg"} font-semibold text-foreground`}>
           {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
         </p>
         {readyCount > 0 && (
-          <span className="text-base font-bold text-green-700 bg-green-500/10 border border-green-500/20 rounded-xs px-3 py-1">
+          <span className={`${compact ? "text-sm" : "text-base"} font-bold text-green-700 bg-green-500/10 border border-green-500/20 rounded-xs px-3 py-1`}>
             {readyCount} ready to remove
           </span>
         )}
       </div>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
-          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
+          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} compact={compact} />
         ))}
       </div>
     </div>

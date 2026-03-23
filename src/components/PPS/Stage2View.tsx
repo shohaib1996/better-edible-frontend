@@ -22,7 +22,7 @@ function groupByOrder(items: ICookItem[]): Map<string, ICookItem[]> {
 
 // ─── Order Card ───────────────────────────────────────────────────────────────
 
-function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICookItem[]; basePath: string }) {
+function OrderCard({ orderId, items, basePath, compact }: { orderId: string; items: ICookItem[]; basePath: string; compact?: boolean }) {
   const router = useRouter();
   const storeName = items[0]?.storeName ?? "Unknown Store";
   const totalUnits = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -44,25 +44,25 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
       {/* Top section */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className="text-3xl font-bold leading-tight truncate text-foreground">{storeName}</p>
-          <p className="text-base font-mono text-muted-foreground mt-0.5">Order {orderId}</p>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground`}>{storeName}</p>
+          <p className={`${compact ? "text-sm" : "text-base"} font-mono text-muted-foreground mt-0.5`}>Order {orderId}</p>
         </div>
-        <ArrowRight className="w-8 h-8 text-primary shrink-0" />
+        <ArrowRight className={`${compact ? "w-5 h-5" : "w-8 h-8"} text-primary shrink-0`} />
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
         <div className="px-3 py-3">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Units</p>
-          <p className="text-2xl font-bold">{totalUnits.toLocaleString()}</p>
+          <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{totalUnits.toLocaleString()}</p>
         </div>
         <div className="px-3 py-3">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Molds</p>
-          <p className="text-2xl font-bold">{totalMolds}</p>
+          <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{totalMolds}</p>
         </div>
         <div className="px-3 py-3">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Loaded</p>
-          <p className={`text-2xl font-bold ${allLoaded ? "text-green-600" : ""}`}>
+          <p className={`${compact ? "text-lg" : "text-2xl"} font-bold ${allLoaded ? "text-green-600" : ""}`}>
             {processedMolds}/{totalMolds}
           </p>
         </div>
@@ -75,8 +75,8 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
           const total = item.assignedMoldIds.length;
           return (
             <div key={item._id} className="flex items-center justify-between gap-3">
-              <span className="text-lg font-medium truncate">{item.flavor}</span>
-              <span className="shrink-0 text-base font-bold tabular-nums text-foreground">
+              <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate`}>{item.flavor}</span>
+              <span className={`shrink-0 ${compact ? "text-sm" : "text-base"} font-bold tabular-nums text-foreground`}>
                 {processed}/{total} molds
               </span>
             </div>
@@ -102,21 +102,21 @@ function OrderCard({ orderId, items, basePath }: { orderId: string; items: ICook
 
 // ─── Stage 2 View ─────────────────────────────────────────────────────────────
 
-export default function Stage2View({ basePath = "/admin/pps" }: { basePath?: string }) {
+export default function Stage2View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
   const { data, isLoading, isError } = useGetStage2CookItemsQuery();
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
         <Loader2 className="w-10 h-10 animate-spin" />
-        <p className="text-xl">Loading dehydrator queue…</p>
+        <p className={compact ? "text-base" : "text-xl"}>Loading dehydrator queue…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="text-destructive py-12 text-center text-lg">
+      <div className={`text-destructive py-12 text-center ${compact ? "text-sm" : "text-lg"}`}>
         Failed to load Stage 2 cook items.
       </div>
     );
@@ -127,9 +127,9 @@ export default function Stage2View({ basePath = "/admin/pps" }: { basePath?: str
   if (cookItems.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
-        <Wind className="w-16 h-16 opacity-30" />
-        <p className="text-2xl font-medium">No items ready for loading</p>
-        <p className="text-base">Check back after Stage 1 completes.</p>
+        <Wind className={`${compact ? "w-10 h-10" : "w-16 h-16"} opacity-30`} />
+        <p className={`${compact ? "text-base" : "text-2xl"} font-medium`}>No items ready for loading</p>
+        <p className={compact ? "text-sm" : "text-base"}>Check back after Stage 1 completes.</p>
       </div>
     );
   }
@@ -138,12 +138,12 @@ export default function Stage2View({ basePath = "/admin/pps" }: { basePath?: str
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-lg font-semibold text-foreground">
+      <p className={`${compact ? "text-sm" : "text-lg"} font-semibold text-foreground`}>
         {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} awaiting dehydrator loading
       </p>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
-          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} />
+          <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} compact={compact} />
         ))}
       </div>
     </div>

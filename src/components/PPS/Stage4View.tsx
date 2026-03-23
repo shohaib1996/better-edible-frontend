@@ -207,9 +207,10 @@ function CaseLookup() {
 
 interface Stage4ViewProps {
   basePath?: string;
+  compact?: boolean;
 }
 
-export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage4ViewProps) {
+export default function Stage4View({ basePath: _basePath = "/admin/pps", compact }: Stage4ViewProps) {
   const isAdmin = isAdminUser();
 
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
@@ -387,10 +388,10 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
         <div className="flex flex-col gap-3 rounded-xs border bg-card p-5">
           <div className="flex items-center gap-2 text-foreground">
             <ScanLine className="w-6 h-6 text-primary shrink-0" />
-            <p className="text-xl font-semibold">Scan a container to begin packaging</p>
+            <p className={`${compact ? "text-base" : "text-xl"} font-semibold`}>Scan a container to begin packaging</p>
           </div>
 
-          <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-base text-amber-800">
+          <div className={`bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 ${compact ? "text-sm" : "text-base"} text-amber-800`}>
             <strong>Point the camera</strong> at the production label barcode on the container, or type the barcode and press Enter.
           </div>
 
@@ -421,13 +422,13 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
               }}
               placeholder="Scan container barcode…"
               disabled={isVerifying || cameraOpen}
-              className="text-2xl font-mono h-16 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
+              className={`${compact ? "text-base" : "text-2xl"} font-mono ${compact ? "h-10" : "h-16"} flex-1 px-3 rounded-xs border bg-background disabled:opacity-50`}
               autoComplete="off"
             />
             <Button
               type="button"
               variant="outline"
-              className="h-16 w-16 shrink-0 rounded-xs"
+              className={`${compact ? "h-10 w-10" : "h-16 w-16"} shrink-0 rounded-xs`}
               onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
               disabled={isVerifying}
               title={cameraOpen ? "Close camera" : "Use camera to scan"}
@@ -447,7 +448,7 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
       {/* ── Queue: items awaiting packaging (idle only) ── */}
       {viewMode === "idle" && queueItems.length > 0 && (
         <div className="flex flex-col gap-3">
-          <p className="text-lg font-semibold text-foreground">
+          <p className={`${compact ? "text-sm" : "text-lg"} font-semibold text-foreground`}>
             {queueItems.length} item{queueItems.length !== 1 ? "s" : ""} ready to pack
           </p>
           {queueItems.map((item) => {
@@ -458,23 +459,23 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
               <div key={item._id} className="rounded-xs border bg-card">
                 <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-3xl font-bold truncate">{item.flavor}</p>
-                    <p className="text-base text-muted-foreground font-mono mt-0.5">{item.storeName}</p>
+                    <p className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate`}>{item.flavor}</p>
+                    <p className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-0.5`}>{item.storeName}</p>
                   </div>
-                  <Badge variant="outline" className={`shrink-0 text-base px-3 py-1 ${sc}`}>{sl}</Badge>
+                  <Badge variant="outline" className={`shrink-0 ${compact ? "text-sm" : "text-base"} px-3 py-1 ${sc}`}>{sl}</Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
                   <div className="px-3 py-3">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Qty</p>
-                    <p className="text-2xl font-bold">{ec.toLocaleString()}</p>
+                    <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{ec.toLocaleString()}</p>
                   </div>
                   <div className="px-3 py-3">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Molds</p>
-                    <p className="text-2xl font-bold">{Math.ceil(ec / 70)}</p>
+                    <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{Math.ceil(ec / 70)}</p>
                   </div>
                   <div className="px-3 py-3">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Cases</p>
-                    <p className="text-2xl font-bold">{Math.floor(ec / 100) + (ec % 100 > 0 ? 1 : 0)}</p>
+                    <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{Math.floor(ec / 100) + (ec % 100 > 0 ? 1 : 0)}</p>
                   </div>
                 </div>
                 <div className="px-5 py-3">
@@ -492,8 +493,8 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
           {/* Header */}
           <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
             <div className="min-w-0 flex-1">
-              <p className="text-3xl font-bold leading-tight truncate">{scannedItem.flavor}</p>
-              <p className="text-base text-muted-foreground font-mono mt-1">{scannedItem.cookItemId}</p>
+              <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate`}>{scannedItem.flavor}</p>
+              <p className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-1`}>{scannedItem.cookItemId}</p>
             </div>
             {scannedItem.status && (
               <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
@@ -506,15 +507,15 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
           <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
             <div className="px-3 py-3">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
-              <p className="text-2xl font-bold">{expectedCount.toLocaleString()}</p>
+              <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{expectedCount.toLocaleString()}</p>
             </div>
             <div className="px-3 py-3">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Molds</p>
-              <p className="text-2xl font-bold">{moldsCount}</p>
+              <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>{moldsCount}</p>
             </div>
             <div className="px-3 py-3">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Cases</p>
-              <p className="text-2xl font-bold">
+              <p className={`${compact ? "text-lg" : "text-2xl"} font-bold`}>
                 {Math.floor(expectedCount / 100) + (expectedCount % 100 > 0 ? 1 : 0)}
               </p>
             </div>
@@ -538,7 +539,7 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
             {/* ── Counting ── */}
             {viewMode === "counting" && (
               <div className="flex flex-col gap-4">
-                <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-base text-amber-800">
+                <div className={`bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 ${compact ? "text-sm" : "text-base"} text-amber-800`}>
                   <strong>Bag, seal, and count</strong> all gummies from this batch. Adjust count if needed.
                 </div>
 
@@ -546,33 +547,33 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
                 <div className="flex flex-col items-center gap-4">
                   <Button
                     variant="outline"
-                    className="w-28 h-28 rounded-xs"
+                    className={`${compact ? "w-16 h-16" : "w-28 h-28"} rounded-xs`}
                     onClick={() => setCount((c) => c + 1)}
                   >
-                    <ChevronUp className="w-14 h-14" />
+                    <ChevronUp className={`${compact ? "w-8 h-8" : "w-14 h-14"}`} />
                   </Button>
-                  <div className="text-7xl font-bold tabular-nums select-none">{count}</div>
+                  <div className={`${compact ? "text-5xl" : "text-7xl"} font-bold tabular-nums select-none`}>{count}</div>
                   <Button
                     variant="outline"
-                    className="w-28 h-28 rounded-xs"
+                    className={`${compact ? "w-16 h-16" : "w-28 h-28"} rounded-xs`}
                     onClick={() => setCount((c) => Math.max(0, c - 1))}
                   >
-                    <ChevronDown className="w-14 h-14" />
+                    <ChevronDown className={`${compact ? "w-8 h-8" : "w-14 h-14"}`} />
                   </Button>
                 </div>
 
                 {/* Case breakdown */}
-                <div className="bg-muted/50 rounded-xs p-4 text-base space-y-1">
+                <div className={`bg-muted/50 rounded-xs p-4 ${compact ? "text-sm" : "text-base"} space-y-1`}>
                   <p className="text-muted-foreground font-medium">Case Breakdown:</p>
                   {fullCases > 0 && <p>— {fullCases} full case{fullCases !== 1 ? "s" : ""} of 100 units</p>}
                   {partialCase > 0 && <p>— 1 partial case of {partialCase} units</p>}
-                  <p className="text-lg font-bold mt-1">Total: {totalCases} case{totalCases !== 1 ? "s" : ""}</p>
+                  <p className={`${compact ? "text-base" : "text-lg"} font-bold mt-1`}>Total: {totalCases} case{totalCases !== 1 ? "s" : ""}</p>
                 </div>
 
                 <Button
                   size="lg"
                   disabled={isConfirming || count === 0}
-                  className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold"
+                  className={`w-full ${compact ? "text-base h-10" : "text-2xl h-16"} gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold`}
                   onClick={handleConfirmCount}
                 >
                   {isConfirming ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
@@ -585,11 +586,11 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
             {viewMode === "done" && (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-4 py-3 text-green-600">
-                  <CheckCircle2 className="w-10 h-10 shrink-0" />
+                  <CheckCircle2 className={`${compact ? "w-6 h-6" : "w-10 h-10"} shrink-0`} />
                   <div>
-                    <p className="text-2xl font-bold">Packaging complete</p>
+                    <p className={`${compact ? "text-base" : "text-2xl"} font-bold`}>Packaging complete</p>
                     {result && (
-                      <p className="text-base text-muted-foreground">
+                      <p className={`${compact ? "text-sm" : "text-base"} text-muted-foreground`}>
                         {result.cases.length} case{result.cases.length !== 1 ? "s" : ""} created · {result.orderStatus.completedItems}/{result.orderStatus.totalItems} items in order done
                       </p>
                     )}
@@ -606,7 +607,7 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
                     </div>
                     <Button
                       size="lg"
-                      className="w-full text-2xl h-16 rounded-xs font-bold"
+                      className={`w-full ${compact ? "text-base h-10" : "text-2xl h-16"} rounded-xs font-bold`}
                       onClick={printCaseLabels}
                     >
                       Print Case Labels ({result.cases.length})
@@ -617,7 +618,7 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps" }: Stage
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full text-2xl h-16 rounded-xs gap-3 font-bold"
+                  className={`w-full ${compact ? "text-base h-10" : "text-2xl h-16"} rounded-xs gap-3 font-bold`}
                   onClick={handleScanNext}
                 >
                   <ScanLine className="w-6 h-6" />

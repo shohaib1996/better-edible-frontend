@@ -10,7 +10,7 @@ export const viewport: Viewport = {
 const PPSLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div
-      className="h-screen w-screen overflow-hidden flex flex-col bg-background overscroll-none"
+      className="h-dvh w-screen overflow-hidden flex flex-col bg-background overscroll-none"
       style={{ touchAction: "pan-x pan-y" }}
     >
       {children}

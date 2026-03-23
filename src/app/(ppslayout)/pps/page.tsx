@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { ChefHat, Wind, Thermometer, Package, LogOut, User, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,9 +20,15 @@ const TABS: { id: Stage; label: string; icon: React.ElementType; short: string }
   { id: "stage4", label: "Packaging", short: "Stage 4", icon: Package },
 ];
 
+function stageFromParam(param: string | null): Stage {
+  const map: Record<string, Stage> = { "1": "stage1", "2": "stage2", "3": "stage3", "4": "stage4" };
+  return map[param ?? ""] ?? "stage1";
+}
+
 export default function PPSStaffPage() {
   const router = useRouter();
-  const [active, setActive] = useState<Stage>("stage1");
+  const searchParams = useSearchParams();
+  const [active, setActive] = useState<Stage>(() => stageFromParam(searchParams.get("stage")));
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
 
@@ -115,7 +121,7 @@ export default function PPSStaffPage() {
       </header>
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 md:p-6">
         {active === "stage1" && <Stage1View basePath="/pps" />}
         {active === "stage2" && <Stage2View basePath="/pps" />}
         {active === "stage3" && <Stage3View basePath="/pps" />}
@@ -129,7 +135,11 @@ export default function PPSStaffPage() {
           return (
             <button
               key={id}
-              onClick={() => setActive(id)}
+              onClick={() => {
+                setActive(id);
+                const num = id.replace("stage", "");
+                router.replace(`/pps?stage=${num}`);
+              }}
               className={cn(
                 "flex-1 flex flex-col items-center justify-center gap-1.5 py-4 font-semibold transition-colors select-none",
                 isActive
