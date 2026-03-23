@@ -26,7 +26,7 @@ export default function MoldsPanel() {
   const [prefix, setPrefix] = useState("M");
   const [startNumber, setStartNumber] = useState("");
   const [endNumber, setEndNumber] = useState("");
-  const [unitsPerMold, setUnitsPerMold] = useState("50");
+  const [unitsPerMold, setUnitsPerMold] = useState("70");
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useGetMoldsQuery();
@@ -57,7 +57,7 @@ export default function MoldsPanel() {
         startNumber: start,
         endNumber: end,
         prefix,
-        unitsPerMold: Number(unitsPerMold) || 50,
+        unitsPerMold: Number(unitsPerMold) || 70,
       }).unwrap();
       toast.success(
         `Created ${res.created} mold${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`
