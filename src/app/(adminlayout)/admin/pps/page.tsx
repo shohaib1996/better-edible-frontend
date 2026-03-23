@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Factory } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Stage1View from "@/components/PPS/Stage1View";
@@ -19,8 +19,17 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "resources", label: "Resources" },
 ];
 
+const PARAM_TO_TAB: Record<string, Tab> = {
+  "1": "stage1", "2": "stage2", "3": "stage3", "4": "stage4", "resources": "resources",
+};
+const TAB_TO_PARAM: Record<Tab, string> = {
+  stage1: "1", stage2: "2", stage3: "3", stage4: "4", resources: "resources",
+};
+
 export default function PPSPage() {
-  const [active, setActive] = useState<Tab>("stage1");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const active: Tab = PARAM_TO_TAB[searchParams.get("stage") ?? ""] ?? "stage1";
 
   return (
     <div className="p-4 md:p-8 bg-background min-h-screen">
@@ -43,7 +52,7 @@ export default function PPSPage() {
           {TABS.map(({ id, label }) => (
             <button
               key={id}
-              onClick={() => setActive(id)}
+              onClick={() => router.replace(`/admin/pps?stage=${TAB_TO_PARAM[id]}`)}
               className={cn(
                 "w-full text-center md:text-left px-4 py-2.5 rounded-xs text-sm font-medium transition-colors",
                 active === id
