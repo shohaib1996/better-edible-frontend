@@ -202,7 +202,7 @@ function NamePicker({
   const { data, isLoading, isError } = useGetAllRepsQuery({});
   const Icon = meta.icon;
 
-  const workers = (data ?? []).filter(
+  const workers = (data?.data ?? []).filter(
     (r: any) => r.repType === meta.repType && r.status === "active"
   );
 
