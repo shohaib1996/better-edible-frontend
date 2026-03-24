@@ -63,7 +63,7 @@ export function LoginForm() {
         );
         toast.success("Login successful!");
         const repType = result?.rep?.repType || result?.repType;
-        router.push(repType === "pps" ? "/pps" : "/rep/orders");
+        router.push(repType === "pps" || repType === "production" || repType === "packaging" ? "/pps" : "/rep/orders");
         return;
       } catch (_) {
         // If rep fails, try admin
