@@ -14,7 +14,7 @@ export function getPPSUser() {
 export function isAdminUser(): boolean {
   try {
     const u = JSON.parse(localStorage.getItem("better-user") || "{}");
-    return u.repType !== "pps";
+    return u.repType !== "pps" && u.repType !== "production" && u.repType !== "packaging";
   } catch {
     return false;
   }
