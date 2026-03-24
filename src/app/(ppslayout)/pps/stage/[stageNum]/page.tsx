@@ -199,7 +199,7 @@ function NamePicker({
   };
   onSelect: (rep: { _id: string; name: string; repType: string }) => void;
 }) {
-  const { data, isLoading, isError } = useGetAllRepsQuery();
+  const { data, isLoading, isError } = useGetAllRepsQuery({});
   const Icon = meta.icon;
 
   const workers = (data ?? []).filter(
