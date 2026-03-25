@@ -48,7 +48,6 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-
 import { useUser } from "@/redux/hooks/useAuth";
 
 // ---------------- MENU ITEMS ---------------- //
@@ -76,9 +75,7 @@ const repItems = [
   // { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
-const ppsItems = [
-  { title: "Production (PPS)", url: "/pps", icon: Factory },
-];
+const ppsItems = [{ title: "Production (PPS)", url: "/pps", icon: Factory }];
 
 // ---------------- SIDEBAR COMPONENT ---------------- //
 
@@ -102,8 +99,8 @@ export function AppSidebar() {
     user.role === "superadmin"
       ? adminItems
       : user.repType === "pps"
-      ? ppsItems
-      : repItems;
+        ? ppsItems
+        : repItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -133,10 +130,10 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm uppercase tracking-wide">
             {user.role === "superadmin"
-            ? "Admin Panel"
-            : user.repType === "pps"
-            ? "Production"
-            : "Rep Dashboard"}
+              ? "Admin Panel"
+              : user.repType === "pps"
+                ? "Production"
+                : "Rep Dashboard"}
           </SidebarGroupLabel>
 
           <SidebarGroupContent>
