@@ -7,10 +7,7 @@ import {
   ChefHat,
   CheckCircle2,
   Loader2,
-  Camera,
-  X,
 } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,68 +51,13 @@ interface MoldSlotProps {
 function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAssigning, onSubmit }: MoldSlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivId = `mold-scanner-${slotId}`;
 
   useEffect(() => {
-    if (isActive && !isAssigned && !cameraOpen) {
+    if (isActive && !isAssigned) {
       inputRef.current?.focus();
     }
-  }, [isActive, isAssigned, cameraOpen]);
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  const startScanner = useCallback(() => {
-    setCameraError(null);
-    setCameraOpen(true);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(scannerDivId);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
-        },
-        async (decodedText) => {
-          await stopScanner();
-          const ok = await onSubmit(decodedText.trim());
-          if (ok) {
-            setFlash(true);
-            setTimeout(() => setFlash(false), 700);
-          }
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
+  }, [isActive, isAssigned]);
 
   const handleSubmit = useCallback(async (barcode: string) => {
     const trimmed = barcode.trim();
@@ -150,51 +92,19 @@ function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAs
     <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${flash ? "bg-green-100 border-green-400" : isActive ? "border-primary bg-primary/5" : "border-muted bg-muted/30 opacity-60"}`}>
       <p className="text-sm font-medium text-muted-foreground">Mold {index + 1} of {total}</p>
 
-      {/* Camera view */}
-      {cameraOpen && (
-        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-          <div id={scannerDivId} className="w-full" />
-          <Button
-            size="sm"
-            variant="secondary"
-            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
-            onClick={stopScanner}
-          >
-            <X className="w-4 h-4" />
-            Close
-          </Button>
-          <p className="text-center text-xs text-white/70 pb-2">Point camera at barcode</p>
-        </div>
-      )}
+      <Input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
+        disabled={!isActive || isAssigning}
+        className="text-xl font-mono rounded-xs h-14"
+        autoComplete="off"
+      />
 
-      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-
-      {/* Input + camera button row */}
-      <div className="flex gap-2">
-        <Input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
-          disabled={!isActive || isAssigning || cameraOpen}
-          className="text-xl font-mono rounded-xs h-14 flex-1"
-          autoComplete="off"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-14 px-4 shrink-0 rounded-xs"
-          onClick={cameraOpen ? stopScanner : startScanner}
-          disabled={!isActive || isAssigning}
-          title={cameraOpen ? "Close camera" : "Use camera to scan"}
-        >
-          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-        </Button>
-      </div>
-
-      {isActive && !cameraOpen && (
-        <p className="text-xs text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+      {isActive && (
+        <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
       )}
     </div>
   );

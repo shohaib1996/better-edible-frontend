@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Loader2, ChevronUp, ChevronDown, CheckCircle2, Camera, X, ScanLine } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Loader2, ChevronUp, ChevronDown, CheckCircle2, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "./CookItemHistory";
@@ -30,62 +29,23 @@ import PrintLabel from "./PrintLabel";
 type ScannedItem = Partial<ICookItem> & { numberOfMolds: number };
 type ViewMode = "idle" | "counting" | "done";
 
-const SCANNER_DIV_ID = "stage4-main-scanner";
-
 // ─── Case Lookup ──────────────────────────────────────────────────────────────
 
 function CaseLookup() {
   const [open, setOpen] = useState(false);
   const [scanValue, setScanValue] = useState("");
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const [lookedUpId, setLookedUpId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const LOOKUP_SCANNER_ID = "case-lookup-scanner";
 
   const { data, isFetching, isError } = useGetCaseByIdQuery(lookedUpId!, {
     skip: !lookedUpId,
   });
   const caseData: ICase | null = data?.case ?? null;
 
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
+  // Autofocus input when open
   useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(LOOKUP_SCANNER_ID);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }) },
-        async (decoded) => {
-          await stopScanner();
-          handleLookup(decoded.trim());
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
-
-  // Autofocus input when open and camera closed
-  useEffect(() => {
-    if (open && !cameraOpen) setTimeout(() => inputRef.current?.focus(), 50);
-  }, [open, cameraOpen]);
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
 
   const handleLookup = useCallback((raw: string) => {
     const trimmed = raw.trim();
@@ -100,12 +60,11 @@ function CaseLookup() {
     }
   }, []);
 
-  const handleReset = useCallback(async () => {
-    await stopScanner();
+  const handleReset = useCallback(() => {
     setLookedUpId(null);
     setScanValue("");
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [stopScanner]);
+  }, []);
 
   return (
     <div className="rounded-xs border bg-card">
@@ -125,41 +84,20 @@ function CaseLookup() {
         <div className="border-t px-5 py-4 flex flex-col gap-3">
           {!caseData && (
             <>
-              {cameraOpen && (
-                <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-                  <div id={LOOKUP_SCANNER_ID} className="w-full" />
-                  <Button size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopScanner}>
-                    <X className="w-4 h-4" /> Close
-                  </Button>
-                  <p className="text-center text-xs text-white/70 pb-2">Point camera at case QR code</p>
-                </div>
-              )}
-              {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-              <div className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  value={scanValue}
-                  onChange={(e) => setScanValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && scanValue.trim()) handleLookup(scanValue); }}
-                  placeholder="Scan case QR or type Case ID…"
-                  disabled={isFetching || cameraOpen}
-                  className="text-base font-mono h-12 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
-                  autoComplete="off"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 px-4 shrink-0 rounded-xs"
-                  onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
-                  disabled={isFetching}
-                >
-                  {isFetching ? <Loader2 className="w-5 h-5 animate-spin" /> : cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-                </Button>
-              </div>
+              <input
+                ref={inputRef}
+                value={scanValue}
+                onChange={(e) => setScanValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && scanValue.trim()) handleLookup(scanValue); }}
+                placeholder="Scan case QR or type Case ID…"
+                disabled={isFetching}
+                className="text-base font-mono h-12 w-full px-3 rounded-xs border bg-background disabled:opacity-50"
+                autoComplete="off"
+              />
               {isError && lookedUpId && (
                 <p className="text-sm text-destructive">Case not found — check the ID and try again.</p>
               )}
-              {!cameraOpen && <p className="text-xs text-muted-foreground">Scan the QR on a case label, or type the Case ID and press Enter</p>}
+              <p className="text-xs text-muted-foreground">Scan the QR on a case label, or type the Case ID and press Enter</p>
             </>
           )}
 
@@ -219,11 +157,8 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
   const [result, setResult] = useState<IConfirmCountResponse | null>(null);
   const [scanValue, setScanValue] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: queueData } = useGetStage4CookItemsQuery();
@@ -232,56 +167,12 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
   const [scanContainer] = useScanContainerMutation();
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
 
-  // ── Camera ──────────────────────────────────────────────────────────────────
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  // Auto-open camera when idle
+  // Autofocus input when in idle mode
   useEffect(() => {
-    if (viewMode === "idle" && !cameraOpen) {
-      setCameraError(null);
-      setCameraOpen(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
-
-  // Autofocus input when camera is closed in idle mode
-  useEffect(() => {
-    if (viewMode === "idle" && !cameraOpen) {
+    if (viewMode === "idle") {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [viewMode, cameraOpen]);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(SCANNER_DIV_ID);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }) },
-        async (decoded) => {
-          await stopScanner();
-          await handleScanSubmit(decoded.trim());
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
+  }, [viewMode]);
 
   // ── Scan handler ────────────────────────────────────────────────────────────
 
@@ -357,15 +248,13 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
 
   // ── Reset for next container ─────────────────────────────────────────────────
 
-  const handleScanNext = useCallback(async () => {
-    await stopScanner();
+  const handleScanNext = useCallback(() => {
     setScannedItem(null);
     setCount(0);
     setResult(null);
     setScanValue("");
-    setCameraError(null);
-    setViewMode("idle"); // triggers auto-open camera effect
-  }, [stopScanner]);
+    setViewMode("idle");
+  }, []);
 
   // ── Derived values ───────────────────────────────────────────────────────────
 
@@ -392,25 +281,8 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
           </div>
 
           <div className={`bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 ${compact ? "text-sm" : "text-base"} text-amber-800`}>
-            <strong>Point the camera</strong> at the production label barcode on the container, or type the barcode and press Enter.
+            <strong>Scan the barcode</strong> on the production label on the container, or type the barcode and press Enter.
           </div>
-
-          {cameraOpen && (
-            <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-              <div id={SCANNER_DIV_ID} className="w-full" />
-              <Button
-                size="sm"
-                variant="secondary"
-                className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
-                onClick={stopScanner}
-              >
-                <X className="w-4 h-4" /> Close
-              </Button>
-              <p className="text-center text-xs text-white/70 pb-2">Point camera at container barcode</p>
-            </div>
-          )}
-
-          {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
 
           <div className="flex gap-2">
             <input
@@ -421,24 +293,13 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
                 if (e.key === "Enter" && scanValue.trim()) handleScanSubmit(scanValue);
               }}
               placeholder="Scan container barcode…"
-              disabled={isVerifying || cameraOpen}
-              className={`${compact ? "text-base" : "text-2xl"} font-mono ${compact ? "h-10" : "h-16"} flex-1 px-3 rounded-xs border bg-background disabled:opacity-50`}
+              disabled={isVerifying}
+              className={`${compact ? "text-base" : "text-2xl"} font-mono ${compact ? "h-10" : "h-16"} w-full px-3 rounded-xs border bg-background disabled:opacity-50`}
               autoComplete="off"
             />
-            <Button
-              type="button"
-              variant="outline"
-              className={`${compact ? "h-10 w-10" : "h-16 w-16"} shrink-0 rounded-xs`}
-              onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
-              disabled={isVerifying}
-              title={cameraOpen ? "Close camera" : "Use camera to scan"}
-            >
-              {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : cameraOpen ? <X className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
-            </Button>
+            {isVerifying && <Loader2 className="w-6 h-6 animate-spin self-center shrink-0" />}
           </div>
-          {!cameraOpen && (
-            <p className="text-sm text-muted-foreground">Press Enter after typing, or tap the camera icon to scan</p>
-          )}
+          <p className="text-sm text-muted-foreground">Scan barcode or press Enter</p>
         </div>
       )}
 
@@ -655,12 +516,8 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
   const [result, setResult] = useState<IConfirmCountResponse | null>(null);
   const [scanValue, setScanValue] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
-  const scannerDivId = `container-scanner-${item.cookItemId.replace(/[^a-z0-9]/gi, "-")}`;
 
   const [scanContainer] = useScanContainerMutation();
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
@@ -674,43 +531,10 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
   const totalCases = fullCases + (partialCase > 0 ? 1 : 0);
 
   useEffect(() => {
-    if (mode === "scanning" && !cameraOpen) {
+    if (mode === "scanning") {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [mode, cameraOpen]);
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(scannerDivId);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }) },
-        async (decoded) => {
-          await stopScanner();
-          await handleScanSubmit(decoded.trim());
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
+  }, [mode]);
 
   const handleScanSubmit = useCallback(async (qrData: string) => {
     const trimmed = qrData.trim();
@@ -828,16 +652,6 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
             <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-sm text-amber-800">
               <strong>Scan the production label</strong> on the container to verify you have the right batch.
             </div>
-            {cameraOpen && (
-              <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-                <div id={scannerDivId} className="w-full" />
-                <Button size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopScanner}>
-                  <X className="w-4 h-4" /> Close
-                </Button>
-                <p className="text-center text-xs text-white/70 pb-2">Point camera at container barcode</p>
-              </div>
-            )}
-            {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -845,21 +659,13 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
                 onChange={(e) => setScanValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && scanValue.trim()) handleScanSubmit(scanValue); }}
                 placeholder="Scan container barcode…"
-                disabled={isVerifying || cameraOpen}
+                disabled={isVerifying}
                 className="text-xl font-mono h-14 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
                 autoComplete="off"
               />
-              <Button
-                type="button"
-                variant="outline"
-                className="h-14 px-4 shrink-0 rounded-xs"
-                onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
-                disabled={isVerifying}
-              >
-                {isVerifying ? <Loader2 className="w-5 h-5 animate-spin" /> : cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-              </Button>
+              {isVerifying && <Loader2 className="w-5 h-5 animate-spin self-center shrink-0" />}
             </div>
-            {!cameraOpen && <p className="text-xs text-muted-foreground">Press Enter, scan barcode, or tap camera</p>}
+            <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
           </div>
         )}
 

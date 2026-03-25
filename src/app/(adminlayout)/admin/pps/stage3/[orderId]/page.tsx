@@ -7,11 +7,8 @@ import {
   Thermometer,
   CheckCircle2,
   Loader2,
-  Camera,
-  X,
   Download,
 } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +84,7 @@ interface TraySlotProps {
 }
 
 function TraySlot({
-  slotId,
+  slotId: _slotId,
   index,
   total,
   trayId,
@@ -100,63 +97,13 @@ function TraySlot({
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivId = `tray-remove-scanner-${slotId}`;
 
   useEffect(() => {
-    if (isActive && !isRemoved && !cameraOpen) {
+    if (isActive && !isRemoved) {
       inputRef.current?.focus();
     }
-  }, [isActive, isRemoved, cameraOpen]);
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(scannerDivId);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
-        },
-        async (decodedText) => {
-          await stopScanner();
-          const ok = await onSubmit(decodedText.trim());
-          if (ok) {
-            setFlash(true);
-            setTimeout(() => setFlash(false), 700);
-          }
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
+  }, [isActive, isRemoved]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && value.trim()) {
@@ -202,49 +149,19 @@ function TraySlot({
       </div>
       <p className="text-xl font-mono font-semibold">{trayId}</p>
 
-      {cameraOpen && (
-        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-          <div id={scannerDivId} className="w-full" />
-          <Button
-            size="sm"
-            variant="secondary"
-            className="absolute top-2 right-2 gap-1 z-10 rounded-xs"
-            onClick={stopScanner}
-          >
-            <X className="w-4 h-4" />
-            Close
-          </Button>
-          <p className="text-center text-xs text-white/70 pb-2">Point camera at tray QR code</p>
-        </div>
-      )}
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
+        disabled={!isActive || isProcessing}
+        className="text-xl font-mono h-14 w-full px-3 rounded-xs border bg-background disabled:opacity-50"
+        autoComplete="off"
+      />
 
-      {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-
-      <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
-          disabled={!isActive || isProcessing || cameraOpen}
-          className="text-xl font-mono h-14 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
-          autoComplete="off"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-14 px-4 shrink-0 rounded-xs"
-          onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
-          disabled={!isActive || isProcessing}
-          title={cameraOpen ? "Close camera" : "Use camera to scan"}
-        >
-          {cameraOpen ? <X className="w-5 h-5" /> : <Camera className="w-5 h-5" />}
-        </Button>
-      </div>
-
-      {isActive && !cameraOpen && (
-        <p className="text-xs text-muted-foreground">Press Enter, scan QR, or tap camera</p>
+      {isActive && (
+        <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
       )}
     </div>
   );
