@@ -20,6 +20,7 @@ import {
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
 import PrintLabel from "@/components/PPS/PrintLabel";
+import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,
@@ -95,26 +96,17 @@ function TraySlot({
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isActive && !isRemoved) {
-      inputRef.current?.focus();
+  const handleSubmit = useCallback(async (scanned: string) => {
+    const trimmed = scanned.trim();
+    if (!trimmed) return;
+    setValue("");
+    const ok = await onSubmit(trimmed);
+    if (ok) {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
     }
-  }, [isActive, isRemoved]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      const trimmed = value.trim();
-      setValue("");
-      onSubmit(trimmed).then((ok) => {
-        if (ok) {
-          setFlash(true);
-          setTimeout(() => setFlash(false), 700);
-        }
-      });
-    }
-  };
+  }, [onSubmit]);
 
   if (isRemoved) {
     return (
@@ -142,20 +134,17 @@ function TraySlot({
         <span className="text-base font-mono text-muted-foreground">{unitId} · Shelf {shelfPosition}</span>
       </div>
       <p className="text-2xl font-mono font-bold">{trayId}</p>
-
-      <input
-        ref={inputRef}
+      <BarcodeScannerInput
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={setValue}
+        onSubmit={handleSubmit}
         placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
         disabled={!isActive || isProcessing}
-        className="text-2xl font-mono h-16 w-full px-3 rounded-xs border bg-background disabled:opacity-50"
-        autoComplete="off"
+        mode="qr"
+        inputClassName="text-2xl font-mono h-16"
       />
-
       {isActive && (
-        <p className="text-sm text-muted-foreground">Scan barcode or press Enter</p>
+        <p className="text-sm text-muted-foreground">Scan barcode, use camera, or press Enter</p>
       )}
     </div>
   );

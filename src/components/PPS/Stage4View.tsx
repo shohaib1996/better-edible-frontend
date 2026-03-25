@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Loader2, ChevronUp, ChevronDown, CheckCircle2, ScanLine } from "lucide-react";
+import BarcodeScannerInput from "./BarcodeScannerInput";
 import { toast } from "sonner";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "./CookItemHistory";
@@ -35,17 +36,11 @@ function CaseLookup() {
   const [open, setOpen] = useState(false);
   const [scanValue, setScanValue] = useState("");
   const [lookedUpId, setLookedUpId] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data, isFetching, isError } = useGetCaseByIdQuery(lookedUpId!, {
     skip: !lookedUpId,
   });
   const caseData: ICase | null = data?.case ?? null;
-
-  // Autofocus input when open
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50);
-  }, [open]);
 
   const handleLookup = useCallback((raw: string) => {
     const trimmed = raw.trim();
@@ -63,7 +58,6 @@ function CaseLookup() {
   const handleReset = useCallback(() => {
     setLookedUpId(null);
     setScanValue("");
-    setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
   return (
@@ -84,15 +78,14 @@ function CaseLookup() {
         <div className="border-t px-5 py-4 flex flex-col gap-3">
           {!caseData && (
             <>
-              <input
-                ref={inputRef}
+              <BarcodeScannerInput
                 value={scanValue}
-                onChange={(e) => setScanValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && scanValue.trim()) handleLookup(scanValue); }}
+                onChange={setScanValue}
+                onSubmit={handleLookup}
                 placeholder="Scan case QR or type Case ID…"
                 disabled={isFetching}
-                className="text-base font-mono h-12 w-full px-3 rounded-xs border bg-background disabled:opacity-50"
-                autoComplete="off"
+                mode="qr"
+                inputClassName="text-base font-mono h-12"
               />
               {isError && lookedUpId && (
                 <p className="text-sm text-destructive">Case not found — check the ID and try again.</p>
@@ -158,7 +151,6 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
   const [scanValue, setScanValue] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data: queueData } = useGetStage4CookItemsQuery();
@@ -166,13 +158,6 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
 
   const [scanContainer] = useScanContainerMutation();
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
-
-  // Autofocus input when in idle mode
-  useEffect(() => {
-    if (viewMode === "idle") {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [viewMode]);
 
   // ── Scan handler ────────────────────────────────────────────────────────────
 
@@ -196,7 +181,6 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
           ? "Barcode not recognised — scan the production label on the container"
           : msg
       );
-      setTimeout(() => inputRef.current?.focus(), 50);
     } finally {
       setIsVerifying(false);
     }
@@ -284,22 +268,22 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
             <strong>Scan the barcode</strong> on the production label on the container, or type the barcode and press Enter.
           </div>
 
-          <div className="flex gap-2">
-            <input
-              ref={inputRef}
-              value={scanValue}
-              onChange={(e) => setScanValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && scanValue.trim()) handleScanSubmit(scanValue);
-              }}
-              placeholder="Scan container barcode…"
-              disabled={isVerifying}
-              className={`${compact ? "text-base" : "text-2xl"} font-mono ${compact ? "h-10" : "h-16"} w-full px-3 rounded-xs border bg-background disabled:opacity-50`}
-              autoComplete="off"
-            />
-            {isVerifying && <Loader2 className="w-6 h-6 animate-spin self-center shrink-0" />}
-          </div>
-          <p className="text-sm text-muted-foreground">Scan barcode or press Enter</p>
+          {isVerifying
+            ? <div className="flex items-center gap-2 text-muted-foreground py-2">
+                <Loader2 className={`${compact ? "w-5 h-5" : "w-6 h-6"} animate-spin`} />
+                <span className={compact ? "text-sm" : "text-base"}>Verifying…</span>
+              </div>
+            : <BarcodeScannerInput
+                value={scanValue}
+                onChange={setScanValue}
+                onSubmit={handleScanSubmit}
+                placeholder="Scan container barcode…"
+                disabled={isVerifying}
+                mode="barcode"
+                inputClassName={`${compact ? "text-base h-10" : "text-2xl h-16"} font-mono`}
+              />
+          }
+          <p className="text-sm text-muted-foreground">Scan barcode, use camera, or press Enter</p>
         </div>
       )}
 
@@ -516,7 +500,6 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
   const [result, setResult] = useState<IConfirmCountResponse | null>(null);
   const [scanValue, setScanValue] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const [scanContainer] = useScanContainerMutation();
@@ -529,12 +512,6 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
   const fullCases = Math.floor(count / 100);
   const partialCase = count % 100;
   const totalCases = fullCases + (partialCase > 0 ? 1 : 0);
-
-  useEffect(() => {
-    if (mode === "scanning") {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [mode]);
 
   const handleScanSubmit = useCallback(async (qrData: string) => {
     const trimmed = qrData.trim();
@@ -552,8 +529,6 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
         : msg.includes("not found")
         ? "Barcode not recognised — scan the production label on the container"
         : msg);
-      setMode("scanning");
-      setTimeout(() => inputRef.current?.focus(), 50);
     } finally {
       setIsVerifying(false);
     }
@@ -652,20 +627,22 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
             <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-sm text-amber-800">
               <strong>Scan the production label</strong> on the container to verify you have the right batch.
             </div>
-            <div className="flex gap-2">
-              <input
-                ref={inputRef}
-                value={scanValue}
-                onChange={(e) => setScanValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && scanValue.trim()) handleScanSubmit(scanValue); }}
-                placeholder="Scan container barcode…"
-                disabled={isVerifying}
-                className="text-xl font-mono h-14 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
-                autoComplete="off"
-              />
-              {isVerifying && <Loader2 className="w-5 h-5 animate-spin self-center shrink-0" />}
-            </div>
-            <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
+            {isVerifying
+              ? <div className="flex items-center gap-2 text-muted-foreground py-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Verifying…</span>
+                </div>
+              : <BarcodeScannerInput
+                  value={scanValue}
+                  onChange={setScanValue}
+                  onSubmit={handleScanSubmit}
+                  placeholder="Scan container barcode…"
+                  disabled={isVerifying}
+                  mode="barcode"
+                  inputClassName="text-xl font-mono h-14"
+                />
+            }
+            <p className="text-xs text-muted-foreground">Scan barcode, use camera, or press Enter</p>
           </div>
         )}
 

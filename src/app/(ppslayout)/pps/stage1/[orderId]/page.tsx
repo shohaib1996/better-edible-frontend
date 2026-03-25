@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,9 +11,9 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
+import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
@@ -49,13 +49,6 @@ interface MoldSlotProps {
 function MoldSlot({ slotId: _slotId, index, total, isActive, isAssigned, assignedId, isAssigning, onSubmit }: MoldSlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isActive && !isAssigned) {
-      inputRef.current?.focus();
-    }
-  }, [isActive, isAssigned]);
 
   const handleSubmit = useCallback(async (barcode: string) => {
     const trimmed = barcode.trim();
@@ -67,12 +60,6 @@ function MoldSlot({ slotId: _slotId, index, total, isActive, isAssigned, assigne
       setTimeout(() => setFlash(false), 700);
     }
   }, [isAssigning, onSubmit]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      handleSubmit(value);
-    }
-  };
 
   if (isAssigned) {
     return (
@@ -89,20 +76,17 @@ function MoldSlot({ slotId: _slotId, index, total, isActive, isAssigned, assigne
   return (
     <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${flash ? "bg-green-100 border-green-400" : isActive ? "border-primary bg-primary/5" : "border-muted bg-muted/30 opacity-60"}`}>
       <p className="text-lg font-semibold text-foreground">Mold {index + 1} of {total}</p>
-
-      <Input
-        ref={inputRef}
+      <BarcodeScannerInput
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={setValue}
+        onSubmit={handleSubmit}
         placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
         disabled={!isActive || isAssigning}
-        className="text-2xl font-mono rounded-xs h-16"
-        autoComplete="off"
+        mode="barcode"
+        inputClassName="text-2xl font-mono h-16"
       />
-
       {isActive && (
-        <p className="text-sm text-muted-foreground">Scan barcode or press Enter</p>
+        <p className="text-sm text-muted-foreground">Scan barcode, use camera, or press Enter</p>
       )}
     </div>
   );

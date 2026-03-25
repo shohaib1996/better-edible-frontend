@@ -21,6 +21,7 @@ import {
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
 import PrintLabel from "@/components/PPS/PrintLabel";
+import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import Barcode from "react-barcode";
 import {
   useGetStage3CookItemsQuery,
@@ -97,35 +98,24 @@ function TraySlot({
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isActive && !isRemoved) {
-      inputRef.current?.focus();
+  const handleSubmit = useCallback(async (scanned: string) => {
+    const trimmed = scanned.trim();
+    if (!trimmed) return;
+    setValue("");
+    const ok = await onSubmit(trimmed);
+    if (ok) {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
     }
-  }, [isActive, isRemoved]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      const trimmed = value.trim();
-      setValue("");
-      onSubmit(trimmed).then((ok) => {
-        if (ok) {
-          setFlash(true);
-          setTimeout(() => setFlash(false), 700);
-        }
-      });
-    }
-  };
+  }, [onSubmit]);
 
   if (isRemoved) {
     return (
       <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
         <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-muted-foreground">
-            Tray {index + 1} of {total}
-          </p>
+          <p className="text-sm text-muted-foreground">Tray {index + 1} of {total}</p>
           <p className="text-xl font-mono font-semibold text-green-700 truncate">{trayId}</p>
           <p className="text-xs text-muted-foreground">{unitId} · Shelf {shelfPosition}</p>
         </div>
@@ -142,26 +132,21 @@ function TraySlot({
         : "border-muted bg-muted/30 opacity-60"
     }`}>
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
-          Tray {index + 1} of {total}
-        </p>
+        <p className="text-sm font-medium text-muted-foreground">Tray {index + 1} of {total}</p>
         <span className="text-xs font-mono text-muted-foreground">{unitId} · Shelf {shelfPosition}</span>
       </div>
       <p className="text-xl font-mono font-semibold">{trayId}</p>
-
-      <input
-        ref={inputRef}
+      <BarcodeScannerInput
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={setValue}
+        onSubmit={handleSubmit}
         placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
         disabled={!isActive || isProcessing}
-        className="text-xl font-mono h-14 w-full px-3 rounded-xs border bg-background disabled:opacity-50"
-        autoComplete="off"
+        mode="qr"
+        inputClassName="text-xl font-mono h-14"
       />
-
       {isActive && (
-        <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
+        <p className="text-xs text-muted-foreground">Scan barcode, use camera, or press Enter</p>
       )}
     </div>
   );

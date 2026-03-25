@@ -226,6 +226,54 @@ export const ppsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.ppsUnits],
     }),
+
+    bulkDeleteMolds: builder.mutation<
+      { success: boolean; deleted: number; message: string },
+      { moldIds: string[] }
+    >({
+      query: (body) => ({
+        url: "/pps/molds/bulk",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsMolds],
+    }),
+
+    updateMoldStatus: builder.mutation<
+      { success: boolean; mold: IMold },
+      { moldId: string; status: "available" | "in-use" }
+    >({
+      query: ({ moldId, ...body }) => ({
+        url: `/pps/molds/${moldId}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsMolds],
+    }),
+
+    bulkDeleteTrays: builder.mutation<
+      { success: boolean; deleted: number; message: string },
+      { trayIds: string[] }
+    >({
+      query: (body) => ({
+        url: "/pps/dehydrator-trays/bulk",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsTrays],
+    }),
+
+    updateTrayStatus: builder.mutation<
+      { success: boolean; tray: IDehydratorTray },
+      { trayId: string; status: "available" | "in-use" }
+    >({
+      query: ({ trayId, ...body }) => ({
+        url: `/pps/dehydrator-trays/${trayId}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsTrays],
+    }),
   }),
 });
 
@@ -250,4 +298,8 @@ export const {
   useBulkCreateMoldsMutation,
   useBulkCreateTraysMutation,
   useBulkCreateDehydratorUnitsMutation,
+  useBulkDeleteMoldsMutation,
+  useUpdateMoldStatusMutation,
+  useBulkDeleteTraysMutation,
+  useUpdateTrayStatusMutation,
 } = ppsApi;

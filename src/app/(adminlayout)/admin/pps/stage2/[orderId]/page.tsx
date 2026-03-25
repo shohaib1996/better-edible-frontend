@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,9 +11,9 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
+import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,
@@ -57,13 +57,6 @@ function TraySlot({
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isActive && !lockedTrayId) {
-      inputRef.current?.focus();
-    }
-  }, [isActive, lockedTrayId]);
 
   const handleSubmit = useCallback(async (trayId: string) => {
     const trimmed = trayId.trim();
@@ -75,10 +68,6 @@ function TraySlot({
       setTimeout(() => setFlash(false), 700);
     }
   }, [isProcessing, onSubmit]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) handleSubmit(value);
-  };
 
   // ── Locked (done) ──
   if (lockedTrayId) {
@@ -113,20 +102,17 @@ function TraySlot({
         </p>
         <span className="text-xs font-mono text-muted-foreground">Mold: {moldId}</span>
       </div>
-
-      <Input
-        ref={inputRef}
+      <BarcodeScannerInput
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={setValue}
+        onSubmit={handleSubmit}
         placeholder={isActive ? "Scan tray barcode…" : "Waiting…"}
         disabled={!isActive || isProcessing}
-        className="text-xl font-mono rounded-xs h-14"
-        autoComplete="off"
+        mode="qr"
+        inputClassName="text-xl font-mono h-14"
       />
-
       {isActive && (
-        <p className="text-xs text-muted-foreground">Scan barcode or press Enter</p>
+        <p className="text-xs text-muted-foreground">Scan barcode, use camera, or press Enter</p>
       )}
     </div>
   );

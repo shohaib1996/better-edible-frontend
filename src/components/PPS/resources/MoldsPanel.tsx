@@ -2,13 +2,15 @@
 
 import { useState, useRef } from "react";
 import Barcode from "react-barcode";
-import { Loader2, Plus, Printer } from "lucide-react";
+import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,8 @@ import {
 import {
   useGetMoldsQuery,
   useBulkCreateMoldsMutation,
+  useBulkDeleteMoldsMutation,
+  useUpdateMoldStatusMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 
 export default function MoldsPanel() {
@@ -27,19 +31,63 @@ export default function MoldsPanel() {
   const [startNumber, setStartNumber] = useState("");
   const [endNumber, setEndNumber] = useState("");
   const [unitsPerMold, setUnitsPerMold] = useState("70");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useGetMoldsQuery();
   const [bulkCreate, { isLoading: isCreating }] = useBulkCreateMoldsMutation();
+  const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteMoldsMutation();
+  const [updateStatus] = useUpdateMoldStatusMutation();
 
   const molds = data?.molds ?? [];
-  const availableCount = molds.filter((m) => m.status === "available").length;
+  const availableMolds = molds.filter((m) => m.status === "available");
+  const availableCount = availableMolds.length;
   const inUseCount = molds.filter((m) => m.status === "in-use").length;
+
+  const allAvailableSelected =
+    availableMolds.length > 0 &&
+    availableMolds.every((m) => selected.has(m.moldId));
 
   const previewCount =
     startNumber && endNumber && Number(endNumber) >= Number(startNumber)
       ? Number(endNumber) - Number(startNumber) + 1
       : null;
+
+  const toggleSelect = (moldId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(moldId)) next.delete(moldId);
+      else next.add(moldId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allAvailableSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(availableMolds.map((m) => m.moldId)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const res = await bulkDelete({ moldIds: [...selected] }).unwrap();
+      toast.success(res.message);
+      setSelected(new Set());
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to delete molds");
+    }
+  };
+
+  const handleStatusChange = async (moldId: string) => {
+    try {
+      await updateStatus({ moldId, status: "available" }).unwrap();
+      toast.success("Mold released to available");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update status");
+    }
+  };
 
   const handleBulkCreate = async () => {
     const start = Number(startNumber);
@@ -100,14 +148,44 @@ export default function MoldsPanel() {
   return (
     <div className="space-y-4 pt-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-medium">Molds ({molds.length})</h3>
-          <p className="text-sm text-muted-foreground">
-            {availableCount} available, {inUseCount} in use
-          </p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
+          {availableMolds.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={allAvailableSelected}
+                onCheckedChange={toggleSelectAll}
+                id="select-all-molds"
+              />
+              <label htmlFor="select-all-molds" className="text-sm cursor-pointer select-none">
+                Select All
+              </label>
+            </div>
+          )}
+          <div>
+            <h3 className="font-medium">Molds ({molds.length})</h3>
+            <p className="text-sm text-muted-foreground">
+              {availableCount} available, {inUseCount} in use
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {selected.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xs"
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-1" />
+              )}
+              Delete ({selected.size})
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-xs bg-accent text-white" onClick={handlePrintAll} disabled={molds.length === 0}>
             <Printer className="w-4 h-4 mr-1" />
             Print All Labels
@@ -208,9 +286,17 @@ export default function MoldsPanel() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {molds.map((mold) => (
             <Card key={mold._id} className="rounded-xs">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm">{mold.moldId}</span>
+              <CardContent className="px-3 py-0">
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selected.has(mold.moldId)}
+                      onCheckedChange={() => toggleSelect(mold.moldId)}
+                      disabled={mold.status === "in-use"}
+                      className={mold.status === "in-use" ? "opacity-40" : ""}
+                    />
+                    <span className="font-medium text-sm">{mold.moldId}</span>
+                  </div>
                   <Badge
                     variant="outline"
                     className={
@@ -246,6 +332,17 @@ export default function MoldsPanel() {
                   <p className="text-xs text-muted-foreground text-center">
                     Last used: {new Date(mold.lastUsedAt).toLocaleDateString()}
                   </p>
+                )}
+
+                {/* Force release — only shown for in-use molds */}
+                {mold.status === "in-use" && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">Force release</span>
+                    <Switch
+                      checked={false}
+                      onCheckedChange={() => handleStatusChange(mold.moldId)}
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -2,13 +2,15 @@
 
 import { useState, useRef } from "react";
 import Barcode from "react-barcode";
-import { Loader2, Plus, Printer } from "lucide-react";
+import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,8 @@ import {
 import {
   useGetDehydratorTraysQuery,
   useBulkCreateTraysMutation,
+  useBulkDeleteTraysMutation,
+  useUpdateTrayStatusMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 
 export default function TraysPanel() {
@@ -26,19 +30,63 @@ export default function TraysPanel() {
   const [prefix, setPrefix] = useState("T");
   const [startNumber, setStartNumber] = useState("");
   const [endNumber, setEndNumber] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const printRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useGetDehydratorTraysQuery();
   const [bulkCreate, { isLoading: isCreating }] = useBulkCreateTraysMutation();
+  const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteTraysMutation();
+  const [updateStatus] = useUpdateTrayStatusMutation();
 
   const trays = data?.trays ?? [];
-  const availableCount = trays.filter((t) => t.status === "available").length;
+  const availableTrays = trays.filter((t) => t.status === "available");
+  const availableCount = availableTrays.length;
   const inUseCount = trays.filter((t) => t.status === "in-use").length;
+
+  const allAvailableSelected =
+    availableTrays.length > 0 &&
+    availableTrays.every((t) => selected.has(t.trayId));
 
   const previewCount =
     startNumber && endNumber && Number(endNumber) >= Number(startNumber)
       ? Number(endNumber) - Number(startNumber) + 1
       : null;
+
+  const toggleSelect = (trayId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(trayId)) next.delete(trayId);
+      else next.add(trayId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allAvailableSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(availableTrays.map((t) => t.trayId)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const res = await bulkDelete({ trayIds: [...selected] }).unwrap();
+      toast.success(res.message);
+      setSelected(new Set());
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to delete trays");
+    }
+  };
+
+  const handleStatusChange = async (trayId: string) => {
+    try {
+      await updateStatus({ trayId, status: "available" }).unwrap();
+      toast.success("Tray released to available");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update status");
+    }
+  };
 
   const handleBulkCreate = async () => {
     const start = Number(startNumber);
@@ -95,14 +143,44 @@ export default function TraysPanel() {
   return (
     <div className="space-y-4 pt-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-medium">Trays ({trays.length})</h3>
-          <p className="text-sm text-muted-foreground">
-            {availableCount} available, {inUseCount} in use
-          </p>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-3">
+          {availableTrays.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={allAvailableSelected}
+                onCheckedChange={toggleSelectAll}
+                id="select-all-trays"
+              />
+              <label htmlFor="select-all-trays" className="text-sm cursor-pointer select-none">
+                Select All
+              </label>
+            </div>
+          )}
+          <div>
+            <h3 className="font-medium">Trays ({trays.length})</h3>
+            <p className="text-sm text-muted-foreground">
+              {availableCount} available, {inUseCount} in use
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {selected.size > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xs"
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-1" />
+              )}
+              Delete ({selected.size})
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="rounded-xs bg-accent text-white" onClick={handlePrintAll} disabled={trays.length === 0}>
             <Printer className="w-4 h-4 mr-1" />
             Print All Labels
@@ -192,9 +270,17 @@ export default function TraysPanel() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {trays.map((tray) => (
             <Card key={tray._id} className="rounded-xs">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-sm">{tray.trayId}</span>
+              <CardContent className="px-3 py-0">
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selected.has(tray.trayId)}
+                      onCheckedChange={() => toggleSelect(tray.trayId)}
+                      disabled={tray.status === "in-use"}
+                      className={tray.status === "in-use" ? "opacity-40" : ""}
+                    />
+                    <span className="font-medium text-sm">{tray.trayId}</span>
+                  </div>
                   <Badge
                     variant="outline"
                     className={
@@ -230,6 +316,17 @@ export default function TraysPanel() {
                   <p className="text-xs text-muted-foreground text-center">
                     Last used: {new Date(tray.lastUsedAt).toLocaleDateString()}
                   </p>
+                )}
+
+                {/* Force release — only shown for in-use trays */}
+                {tray.status === "in-use" && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">Force release</span>
+                    <Switch
+                      checked={false}
+                      onCheckedChange={() => handleStatusChange(tray.trayId)}
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>
