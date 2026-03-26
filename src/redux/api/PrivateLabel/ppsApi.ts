@@ -1,6 +1,16 @@
 import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
 import type {
+  ILabelOrder,
+  ILabelInventory,
+  IInventorySummary,
+  ICreateLabelOrderRequest,
+  IReceiveLabelOrderRequest,
+  IApplyLabelsRequest,
+  IPrintLabelsRequest,
+  ISetReorderThresholdRequest,
+} from "@/types/privateLabel/packagePrep";
+import type {
   ICookItem,
   ICase,
   IHistoryEntry,
@@ -274,6 +284,79 @@ export const ppsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.ppsTrays],
     }),
+
+    // ─── Package Prep ──────────────────────────
+    getActiveLabelOrders: builder.query<{ success: boolean; orders: ILabelOrder[] }, void>({
+      query: () => "/pps/package-prep/orders",
+      providesTags: [tagTypes.ppsLabelOrders],
+    }),
+
+    createLabelOrder: builder.mutation<{ success: boolean; order: ILabelOrder }, ICreateLabelOrderRequest>({
+      query: (body) => ({
+        url: "/pps/package-prep/orders",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelOrders],
+    }),
+
+    receiveLabelOrder: builder.mutation<
+      { success: boolean; order: ILabelOrder; inventory: ILabelInventory },
+      IReceiveLabelOrderRequest
+    >({
+      query: ({ orderId, ...body }) => ({
+        url: `/pps/package-prep/orders/${orderId}/receive`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelOrders, tagTypes.ppsLabelInventory],
+    }),
+
+    getLabelInventory: builder.query<
+      { success: boolean; inventory: ILabelInventory[] },
+      { storeId?: string } | void
+    >({
+      query: (params) => ({
+        url: "/pps/package-prep/inventory",
+        params: params || {},
+      }),
+      providesTags: [tagTypes.ppsLabelInventory],
+    }),
+
+    applyLabels: builder.mutation<{ success: boolean; inventory: ILabelInventory }, IApplyLabelsRequest>({
+      query: (body) => ({
+        url: "/pps/package-prep/inventory/apply",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelInventory],
+    }),
+
+    printLabels: builder.mutation<{ success: boolean; inventory: ILabelInventory }, IPrintLabelsRequest>({
+      query: (body) => ({
+        url: "/pps/package-prep/inventory/print",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelInventory],
+    }),
+
+    getInventorySummary: builder.query<{ success: boolean } & IInventorySummary, void>({
+      query: () => "/pps/package-prep/inventory/summary",
+      providesTags: [tagTypes.ppsLabelInventory],
+    }),
+
+    setReorderThreshold: builder.mutation<
+      { success: boolean; inventory: ILabelInventory },
+      ISetReorderThresholdRequest
+    >({
+      query: ({ inventoryId, ...body }) => ({
+        url: `/pps/package-prep/inventory/${inventoryId}/threshold`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelInventory],
+    }),
   }),
 });
 
@@ -302,4 +385,12 @@ export const {
   useUpdateMoldStatusMutation,
   useBulkDeleteTraysMutation,
   useUpdateTrayStatusMutation,
+  useGetActiveLabelOrdersQuery,
+  useCreateLabelOrderMutation,
+  useReceiveLabelOrderMutation,
+  useGetLabelInventoryQuery,
+  useApplyLabelsMutation,
+  usePrintLabelsMutation,
+  useGetInventorySummaryQuery,
+  useSetReorderThresholdMutation,
 } = ppsApi;
