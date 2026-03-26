@@ -195,7 +195,13 @@ function UnprocessedTab({
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState msg="Failed to load inventory." />;
 
-  const items = (data?.inventory ?? []).filter((i) => i.unprocessed > 0);
+  const items = (data?.inventory ?? [])
+    .filter((i) => i.unprocessed > 0)
+    .sort((a, b) => {
+      const aBelow = a.reorderThreshold > 0 && (a.unprocessed + a.labeled + a.printed) < a.reorderThreshold;
+      const bBelow = b.reorderThreshold > 0 && (b.unprocessed + b.labeled + b.printed) < b.reorderThreshold;
+      return Number(bBelow) - Number(aBelow);
+    });
   if (items.length === 0) return <EmptyState msg="No unprocessed labels." />;
 
   async function handleApply(inv: ILabelInventory) {
@@ -231,13 +237,17 @@ function UnprocessedTab({
         return (
           <div
             key={inv._id}
-            className="rounded-xs border border-border bg-card overflow-hidden"
+            className={cn(
+              "rounded-xs border bg-card overflow-hidden",
+              belowThreshold
+                ? "border-red-300 border-l-4 border-l-red-500 dark:border-red-700 dark:border-l-red-500"
+                : "border-border"
+            )}
           >
             <div className="px-4 pt-4 pb-3">
               {belowThreshold && (
                 <div className="flex items-center gap-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xs px-2.5 py-1.5 mb-3 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Below
-                  reorder threshold
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Below reorder threshold
                 </div>
               )}
               <div className="flex items-start justify-between gap-3">
@@ -374,7 +384,13 @@ function ApplyLabelTab({
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState msg="Failed to load inventory." />;
 
-  const items = (data?.inventory ?? []).filter((i) => i.labeled > 0);
+  const items = (data?.inventory ?? [])
+    .filter((i) => i.labeled > 0)
+    .sort((a, b) => {
+      const aBelow = a.reorderThreshold > 0 && (a.unprocessed + a.labeled + a.printed) < a.reorderThreshold;
+      const bBelow = b.reorderThreshold > 0 && (b.unprocessed + b.labeled + b.printed) < b.reorderThreshold;
+      return Number(bBelow) - Number(aBelow);
+    });
   if (items.length === 0)
     return <EmptyState msg="No labeled bags awaiting printing." />;
 
@@ -429,12 +445,23 @@ function ApplyLabelTab({
       {items.map((inv) => {
         const isExpanded = expandedId === inv._id;
         const form = getForm(inv._id, inv.labeled);
+        const belowThreshold = inv.reorderThreshold > 0 && (inv.unprocessed + inv.labeled + inv.printed) < inv.reorderThreshold;
         return (
           <div
             key={inv._id}
-            className="rounded-xs border border-border bg-card overflow-hidden"
+            className={cn(
+              "rounded-xs border bg-card overflow-hidden",
+              belowThreshold
+                ? "border-red-300 border-l-4 border-l-red-500 dark:border-red-700 dark:border-l-red-500"
+                : "border-border"
+            )}
           >
             <div className="px-4 pt-4 pb-3">
+              {belowThreshold && (
+                <div className="flex items-center gap-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xs px-2.5 py-1.5 mb-3 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Below reorder threshold
+                </div>
+              )}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p
@@ -596,7 +623,13 @@ function PrintedTab({
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState msg="Failed to load inventory." />;
 
-  const items = (data?.inventory ?? []).filter((i) => i.printed > 0);
+  const items = (data?.inventory ?? [])
+    .filter((i) => i.printed > 0)
+    .sort((a, b) => {
+      const aBelow = a.reorderThreshold > 0 && (a.unprocessed + a.labeled + a.printed) < a.reorderThreshold;
+      const bBelow = b.reorderThreshold > 0 && (b.unprocessed + b.labeled + b.printed) < b.reorderThreshold;
+      return Number(bBelow) - Number(aBelow);
+    });
   if (items.length === 0) return <EmptyState msg="No printed bags in stock." />;
 
   const total = items.reduce((s, i) => s + i.printed, 0);
@@ -606,12 +639,24 @@ function PrintedTab({
       <p className="text-sm font-semibold text-green-700 bg-green-50 border border-green-200 rounded-xs px-4 py-2.5 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
         {total.toLocaleString()} total finished bags ready for gummies
       </p>
-      {items.map((inv) => (
+      {items.map((inv) => {
+        const belowThreshold = inv.reorderThreshold > 0 && (inv.unprocessed + inv.labeled + inv.printed) < inv.reorderThreshold;
+        return (
         <div
           key={inv._id}
-          className="rounded-xs border border-border bg-card overflow-hidden"
+          className={cn(
+            "rounded-xs border bg-card overflow-hidden",
+            belowThreshold
+              ? "border-red-300 border-l-4 border-l-red-500 dark:border-red-700 dark:border-l-red-500"
+              : "border-border"
+          )}
         >
           <div className="px-4 py-4">
+            {belowThreshold && (
+              <div className="flex items-center gap-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xs px-2.5 py-1.5 mb-3 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Below reorder threshold
+              </div>
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p
@@ -650,7 +695,8 @@ function PrintedTab({
           </div>
           {isAdmin && <ReorderThresholdInline inv={inv} />}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
