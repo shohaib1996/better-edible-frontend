@@ -225,7 +225,7 @@ export default function PackagePrepAdminOrder() {
                 </option>
                 {labels.map((l) => (
                   <option key={l._id} value={l._id}>
-                    {l.flavorName}{l.itemId ? ` (${l.itemId})` : ""}
+                    {l.flavorName}
                   </option>
                 ))}
               </select>
