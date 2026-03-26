@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Package } from "lucide-react";
 import MoldsPanel from "./resources/MoldsPanel";
 import TraysPanel from "./resources/TraysPanel";
 import UnitsPanel from "./resources/UnitsPanel";
@@ -15,6 +17,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function ResourcesView() {
   const [active, setActive] = useState<Tab>("molds");
+  const router = useRouter();
 
   return (
     <div className="space-y-4">
@@ -25,7 +28,7 @@ export default function ResourcesView() {
         </p>
       </div>
 
-      <div className="flex gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -40,6 +43,13 @@ export default function ResourcesView() {
             {label}
           </button>
         ))}
+        <button
+          onClick={() => router.push("/admin/pps/package-prep")}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xs bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+        >
+          <Package className="w-4 h-4" />
+          Package Prep
+        </button>
       </div>
 
       {active === "molds" && <MoldsPanel />}

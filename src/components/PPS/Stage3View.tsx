@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2, Thermometer, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Loader2, Thermometer, ArrowRight, CheckCircle2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
@@ -108,6 +108,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
 // ─── Stage 3 View ─────────────────────────────────────────────────────────────
 
 export default function Stage3View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
+  const router = useRouter();
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
   });
@@ -146,15 +147,24 @@ export default function Stage3View({ basePath = "/admin/pps", compact }: { baseP
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <p className={`${compact ? "text-sm" : "text-lg"} font-semibold text-foreground`}>
-          {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
-        </p>
-        {readyCount > 0 && (
-          <span className={`${compact ? "text-sm" : "text-base"} font-bold text-green-700 bg-green-500/10 border border-green-500/20 rounded-xs px-3 py-1`}>
-            {readyCount} ready to remove
-          </span>
-        )}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <p className={`${compact ? "text-sm" : "text-lg"} font-semibold text-foreground`}>
+            {orderGroups.size} order{orderGroups.size !== 1 ? "s" : ""} in dehydrator
+          </p>
+          {readyCount > 0 && (
+            <span className={`${compact ? "text-sm" : "text-base"} font-bold text-green-700 bg-green-500/10 border border-green-500/20 rounded-xs px-3 py-1`}>
+              {readyCount} ready to remove
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => router.push(`${basePath}/package-prep`)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground font-semibold ${compact ? "text-xs" : "text-sm"}`}
+        >
+          <Package className={compact ? "w-3 h-3" : "w-4 h-4"} />
+          Package Prep
+        </button>
       </div>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
