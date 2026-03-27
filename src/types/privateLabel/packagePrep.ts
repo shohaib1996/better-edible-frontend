@@ -13,6 +13,7 @@ export interface ILabelOrder {
   orderedAt: string;
   createdAt: string;
   updatedAt: string;
+  labelImageUrl?: string | null;
 }
 
 export interface ILastPrintData {
@@ -35,6 +36,7 @@ export interface ILabelInventory {
   lastPrintData?: ILastPrintData;
   totalStock?: number;
   belowThreshold?: boolean;
+  labelImageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,9 +82,9 @@ export interface IPrintLabelsRequest {
   storeId: string;
   labelId: string;
   quantity: number;
-  lotNumber: string;
-  thcPercent: string;
-  testDate: string;
+  lotNumber?: string;
+  thcPercent?: string;
+  testDate?: string;
 }
 
 export interface ISetReorderThresholdRequest {
