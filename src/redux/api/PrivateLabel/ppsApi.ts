@@ -22,6 +22,7 @@ import type {
   IGetCookItemsResponse,
   IGetStage3CookItemsResponse,
   IAssignMoldRequest,
+  IUnassignMoldRequest,
   IProcessMoldRequest,
   IConfirmCountRequest,
   IConfirmCountResponse,
@@ -51,6 +52,18 @@ export const ppsApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: "/pps/stage-1/assign-mold",
         method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsCookItems, tagTypes.ppsMolds],
+    }),
+
+    unassignMold: builder.mutation<
+      { success: boolean; cookItem: ICookItem; mold: IMold },
+      IUnassignMoldRequest
+    >({
+      query: (body) => ({
+        url: "/pps/stage-1/unassign-mold",
+        method: "DELETE",
         body,
       }),
       invalidatesTags: [tagTypes.ppsCookItems, tagTypes.ppsMolds],
@@ -365,6 +378,7 @@ export const {
   useGetCaseByIdQuery,
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
+  useUnassignMoldMutation,
   useCompleteStage1Mutation,
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,

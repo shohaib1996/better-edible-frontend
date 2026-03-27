@@ -27,6 +27,7 @@ export type CookItemStatus =
 // ──────────────────────────────
 export interface IMoldingTimestamp {
   moldId: string;
+  unitsPerMold: number;
   startTimestamp: string;
   completionTimestamp?: string;
 }
@@ -181,6 +182,12 @@ export interface IGetStage3CookItemsResponse {
 }
 
 export interface IAssignMoldRequest {
+  cookItemId: string;
+  moldId: string;
+  unitsPerMold?: number;
+}
+
+export interface IUnassignMoldRequest {
   cookItemId: string;
   moldId: string;
 }

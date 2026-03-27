@@ -1,25 +1,25 @@
 "use client";
 
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ChefHat,
   CheckCircle2,
   Loader2,
-  Camera,
+  Plus,
   X,
 } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/CookItemHistory";
+import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
+  useUnassignMoldMutation,
   useCompleteStage1Mutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import {
@@ -39,98 +39,48 @@ function moldsNeeded(quantity: number) {
 // ─── Mold Slot Input ──────────────────────────────────────────────────────────
 
 interface MoldSlotProps {
-  slotId: string;
   index: number;
   total: number;
   isActive: boolean;
   isAssigned: boolean;
   assignedId?: string;
+  units: number;
+  onUnitsChange: (units: number) => void;
   isAssigning: boolean;
+  isCancelling: boolean;
   onSubmit: (barcode: string) => Promise<boolean>;
+  onCancel: () => void;
 }
 
-function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAssigning, onSubmit }: MoldSlotProps) {
+function MoldSlot({
+  index,
+  total,
+  isActive,
+  isAssigned,
+  assignedId,
+  units,
+  onUnitsChange,
+  isAssigning,
+  isCancelling,
+  onSubmit,
+  onCancel,
+}: MoldSlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivId = `mold-scanner-${slotId}`;
 
-  useEffect(() => {
-    if (isActive && !isAssigned && !cameraOpen) {
-      inputRef.current?.focus();
-    }
-  }, [isActive, isAssigned, cameraOpen]);
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  const startScanner = useCallback(() => {
-    setCameraError(null);
-    setCameraOpen(true);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(scannerDivId);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
-        },
-        async (decodedText) => {
-          await stopScanner();
-          const ok = await onSubmit(decodedText.trim());
-          if (ok) {
-            setFlash(true);
-            setTimeout(() => setFlash(false), 700);
-          }
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
+  const handleSubmit = useCallback(
+    async (barcode: string) => {
+      const trimmed = barcode.trim();
+      if (!trimmed || isAssigning) return;
+      const ok = await onSubmit(trimmed);
+      if (ok) {
+        setValue("");
+        setFlash(true);
+        setTimeout(() => setFlash(false), 700);
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
-
-  const handleSubmit = useCallback(async (barcode: string) => {
-    const trimmed = barcode.trim();
-    if (!trimmed || isAssigning) return;
-    const ok = await onSubmit(trimmed);
-    if (ok) {
-      setValue("");
-      setFlash(true);
-      setTimeout(() => setFlash(false), 700);
-    }
-  }, [isAssigning, onSubmit]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      handleSubmit(value);
-    }
-  };
+    },
+    [isAssigning, onSubmit],
+  );
 
   if (isAssigned) {
     return (
@@ -140,51 +90,64 @@ function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAs
           <p className="text-base text-muted-foreground font-medium">Mold {index + 1} of {total}</p>
           <p className="text-2xl font-mono font-bold text-green-700 truncate">{assignedId}</p>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm text-muted-foreground">Units:</span>
+          <input
+            type="number"
+            min={1}
+            value={units}
+            onChange={(e) => onUnitsChange(Math.max(1, Number(e.target.value) || 1))}
+            className="w-20 text-lg font-mono font-bold text-center border rounded-xs px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isCancelling}
+          className="shrink-0 p-2 rounded-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+          title="Remove mold"
+        >
+          {isCancelling ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
+        </button>
       </div>
     );
   }
 
   return (
-    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${flash ? "bg-green-100 border-green-400" : isActive ? "border-primary bg-primary/5" : "border-muted bg-muted/30 opacity-60"}`}>
-      <p className="text-lg font-semibold text-foreground">Mold {index + 1} of {total}</p>
-
-      {cameraOpen && (
-        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-          <div id={scannerDivId} className="w-full" />
-          <Button size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopScanner}>
-            <X className="w-4 h-4" /> Close
-          </Button>
-          <p className="text-center text-sm text-white/70 pb-2">Point camera at barcode</p>
+    <div
+      className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
+        flash
+          ? "bg-green-100 border-green-400"
+          : isActive
+            ? "border-primary bg-primary/5"
+            : "border-muted bg-muted/30 opacity-60"
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-lg font-semibold text-foreground">Mold {index + 1} of {total}</p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Units:</span>
+          <input
+            type="number"
+            min={1}
+            value={units}
+            onChange={(e) => onUnitsChange(Math.max(1, Number(e.target.value) || 1))}
+            disabled={!isActive}
+            className="w-20 text-lg font-mono font-bold text-center border rounded-xs px-2 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+          />
         </div>
-      )}
-
-      {cameraError && <p className="text-base text-destructive">{cameraError}</p>}
-
-      <div className="flex gap-2">
-        <Input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
-          disabled={!isActive || isAssigning || cameraOpen}
-          className="text-2xl font-mono rounded-xs h-16 flex-1"
-          autoComplete="off"
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-16 w-16 shrink-0 rounded-xs"
-          onClick={cameraOpen ? stopScanner : startScanner}
-          disabled={!isActive || isAssigning}
-          title={cameraOpen ? "Close camera" : "Use camera to scan"}
-        >
-          {cameraOpen ? <X className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
-        </Button>
       </div>
-
-      {isActive && !cameraOpen && (
-        <p className="text-sm text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+      <BarcodeScannerInput
+        value={value}
+        onChange={setValue}
+        onSubmit={handleSubmit}
+        placeholder={isActive ? "Scan mold barcode…" : "Waiting…"}
+        disabled={!isActive || isAssigning}
+        mode="barcode"
+        inputClassName="text-2xl font-mono h-16"
+      />
+      {isActive && (
+        <p className="text-sm text-muted-foreground">Scan barcode, use camera, or press Enter</p>
       )}
     </div>
   );
@@ -192,71 +155,132 @@ function MoldSlot({ slotId, index, total, isActive, isAssigned, assignedId, isAs
 
 // ─── Cook Item Card ───────────────────────────────────────────────────────────
 
-type CardMode = "idle" | "molding" | "done";
+type CardMode = "idle" | "molding" | "confirming" | "done";
 
 interface CookItemCardProps {
   item: ICookItem;
   isAdmin: boolean;
   batchStarted: boolean;
+  onItemDone: () => void;
 }
 
-function CookItemCard({ item, isAdmin, batchStarted }: CookItemCardProps) {
+function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardProps) {
   const isComplete = item.status === "cooking_molding_complete";
-  const initialMode: CardMode = isComplete ? "done" : item.status === "in-progress" ? "molding" : "idle";
+  const initialMode: CardMode = isComplete
+    ? "done"
+    : item.status === "in-progress"
+      ? "molding"
+      : "idle";
 
   const [mode, setMode] = useState<CardMode>(initialMode);
+  const [extraMolds, setExtraMolds] = useState(0);
+  const [moldUnits, setMoldUnits] = useState<number[]>(() =>
+    item.moldingTimestamps.map((t) => t.unitsPerMold ?? 70),
+  );
+  const [cancellingMoldId, setCancellingMoldId] = useState<string | null>(null);
 
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
+  const [unassignMold] = useUnassignMoldMutation();
   const [completeStage1, { isLoading: isCompleting }] = useCompleteStage1Mutation();
 
-  const totalMolds = moldsNeeded(item.quantity);
+  const totalMolds = moldsNeeded(item.quantity) + extraMolds;
   const assignedCount = item.assignedMoldIds.length;
   const allMoldsAssigned = assignedCount >= totalMolds;
 
   useEffect(() => {
-    if (batchStarted && mode === "idle") {
-      setMode("molding");
-    }
+    setMoldUnits((prev) => {
+      const updated = [...prev];
+      item.moldingTimestamps.forEach((t, i) => {
+        if (updated[i] === undefined) updated[i] = t.unitsPerMold ?? 70;
+      });
+      while (updated.length < totalMolds) updated.push(UNITS_PER_MOLD);
+      return updated;
+    });
+  }, [item.moldingTimestamps, totalMolds]);
+
+  useEffect(() => {
+    if (batchStarted && mode === "idle") setMode("molding");
   }, [batchStarted, mode]);
 
   useEffect(() => {
     if (mode === "molding" && allMoldsAssigned && assignedCount > 0) {
-      handleCompleteStage1();
+      setMode("confirming");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allMoldsAssigned, assignedCount]);
 
-  const handleAssignMold = useCallback(async (barcode: string): Promise<boolean> => {
-    try {
-      await assignMold({
-        cookItemId: item.cookItemId,
-        moldId: barcode,
-        performedBy: getPPSUser(),
-      } as any).unwrap();
-      return true;
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Mold already in use or not found");
-      return false;
-    }
-  }, [assignMold, item.cookItemId]);
+  const handleAssignMold = useCallback(
+    async (barcode: string): Promise<boolean> => {
+      const slotIndex = assignedCount;
+      const units = moldUnits[slotIndex] ?? UNITS_PER_MOLD;
+      try {
+        await assignMold({
+          cookItemId: item.cookItemId,
+          moldId: barcode,
+          unitsPerMold: units,
+          performedBy: getPPSUser(),
+        } as any).unwrap();
+        return true;
+      } catch (err: any) {
+        toast.error(err?.data?.message || "Mold already in use or not found");
+        return false;
+      }
+    },
+    [assignMold, item.cookItemId, assignedCount, moldUnits],
+  );
 
-  const handleCompleteStage1 = useCallback(async () => {
+  const handleUnassignMold = useCallback(
+    async (moldId: string) => {
+      setCancellingMoldId(moldId);
+      try {
+        await unassignMold({
+          cookItemId: item.cookItemId,
+          moldId,
+          performedBy: getPPSUser(),
+        } as any).unwrap();
+        setMode("molding");
+      } catch (err: any) {
+        toast.error(err?.data?.message || "Failed to remove mold");
+      } finally {
+        setCancellingMoldId(null);
+      }
+    },
+    [unassignMold, item.cookItemId],
+  );
+
+  const handleFinish = useCallback(async () => {
     try {
       await completeStage1({
         cookItemId: item.cookItemId,
         performedBy: getPPSUser(),
       } as any).unwrap();
+      setMode("done");
+      onItemDone();
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 1");
     }
-  }, [completeStage1, item.cookItemId]);
+  }, [completeStage1, item.cookItemId, onItemDone]);
+
+  const handleCancelConfirm = useCallback(() => {
+    setMode("molding");
+  }, []);
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
   const activeMoldIndex = assignedCount;
+  const qtyProduced = moldUnits.slice(0, assignedCount).reduce((sum, u) => sum + (u || 0), 0);
+
+  const handleUnitsChange = useCallback((index: number, units: number) => {
+    setMoldUnits((prev) => {
+      const updated = [...prev];
+      updated[index] = units;
+      return updated;
+    });
+  }, []);
 
   return (
     <div className="flex flex-col gap-0 rounded-xs border bg-card">
+      {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
           <p className="text-4xl font-bold leading-tight truncate">{item.flavor}</p>
@@ -267,10 +291,17 @@ function CookItemCard({ item, isAdmin, batchStarted }: CookItemCardProps) {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
+      {/* ── Stats row (4 columns) ── */}
+      <div className="grid grid-cols-4 gap-0 border-t border-b divide-x mx-5">
         <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty Ordered</p>
           <p className="text-3xl font-bold">{item.quantity.toLocaleString()}</p>
+        </div>
+        <div className="px-3 py-4">
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty Produced</p>
+          <p className={`text-3xl font-bold ${assignedCount > 0 ? "text-blue-600" : ""}`}>
+            {qtyProduced.toLocaleString()}
+          </p>
         </div>
         <div className="px-3 py-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Molds Needed</p>
@@ -285,39 +316,55 @@ function CookItemCard({ item, isAdmin, batchStarted }: CookItemCardProps) {
       </div>
 
       <div className="px-5 py-5 flex flex-col gap-4">
-        {item.flavorComponents.length > 0 && (
-          <div>
-            <p className="text-base text-muted-foreground mb-2">Flavor Components</p>
-            <div className="flex flex-wrap gap-2">
-              {item.flavorComponents.map((fc) => (
-                <Badge key={fc.name} variant="secondary" className="text-base px-3 py-1">
-                  {fc.name} {fc.percentage}%
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {item.colorComponents.length > 0 && (
-          <div>
-            <p className="text-base text-muted-foreground mb-2">Color Components</p>
-            <div className="flex flex-wrap gap-2">
-              {item.colorComponents.map((cc) => (
-                <Badge key={cc.name} variant="outline" className="text-base px-3 py-1 border-violet-500/40 text-violet-600">
-                  {cc.name} {cc.percentage}%
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* ── Action area ── */}
         {mode === "done" || isComplete ? (
           <div className="flex items-center gap-4 py-4 text-green-600">
             <CheckCircle2 className="w-10 h-10 shrink-0" />
-            <p className="text-2xl font-bold">Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""}</p>
+            <p className="text-2xl font-bold">
+              Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""},{" "}
+              {qtyProduced.toLocaleString()} units
+            </p>
+          </div>
+        ) : mode === "confirming" ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4 px-5 py-5 rounded-xs bg-green-50 border border-green-200">
+              <CheckCircle2 className="w-9 h-9 text-green-600 shrink-0" />
+              <p className="text-xl font-bold text-green-800">
+                Molding for <span className="font-bold">{item.flavor}</span> is finished.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                size="lg"
+                onClick={handleFinish}
+                disabled={isCompleting}
+                className="flex-1 text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold"
+              >
+                {isCompleting ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-6 h-6" />
+                )}
+                Finish
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleCancelConfirm}
+                disabled={isCompleting}
+                className="text-lg h-16 px-8 rounded-xs font-semibold"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         ) : mode === "idle" && !batchStarted ? (
-          <Button size="lg" variant="outline" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={() => setMode("molding")}>
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full text-2xl h-16 rounded-xs font-bold"
+            onClick={() => setMode("molding")}
+          >
             Start
           </Button>
         ) : mode === "molding" ? (
@@ -325,29 +372,32 @@ function CookItemCard({ item, isAdmin, batchStarted }: CookItemCardProps) {
             {Array.from({ length: totalMolds }).map((_, i) => (
               <MoldSlot
                 key={i}
-                slotId={`${item.cookItemId}-${i}`}
                 index={i}
                 total={totalMolds}
                 isActive={i === activeMoldIndex}
                 isAssigned={i < assignedCount}
                 assignedId={item.assignedMoldIds[i]}
+                units={moldUnits[i] ?? UNITS_PER_MOLD}
+                onUnitsChange={(u) => handleUnitsChange(i, u)}
                 isAssigning={isAssigning}
+                isCancelling={cancellingMoldId === item.assignedMoldIds[i]}
                 onSubmit={handleAssignMold}
+                onCancel={() => handleUnassignMold(item.assignedMoldIds[i])}
               />
             ))}
 
+            {/* Add Mold button */}
             <Button
               size="lg"
-              onClick={handleCompleteStage1}
-              disabled={!allMoldsAssigned || isCompleting}
-              className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold"
+              variant="outline"
+              className="self-start gap-2 rounded-xs text-lg h-12 px-5"
+              onClick={() => {
+                setExtraMolds((n) => n + 1);
+                setMoldUnits((prev) => [...prev, UNITS_PER_MOLD]);
+              }}
             >
-              {isCompleting ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-6 h-6" />
-              )}
-              Molding Complete
+              <Plus className="w-5 h-5" />
+              Add Mold
             </Button>
           </div>
         ) : null}
@@ -378,7 +428,30 @@ export default function LockedStage1OrderPage({
   const storeName = orderItems[0]?.storeName;
 
   const [batchStarted, setBatchStarted] = useState(false);
-  const allComplete = orderItems.length > 0 && orderItems.every((i) => i.status === "cooking_molding_complete");
+  const allComplete =
+    orderItems.length > 0 &&
+    orderItems.every((i) => i.status === "cooking_molding_complete");
+
+  const completedCountRef = useRef(0);
+
+  const handleItemDone = useCallback(() => {
+    completedCountRef.current += 1;
+    const total = orderItems.length;
+    if (completedCountRef.current >= total) {
+      const otherOrders = Array.from(
+        new Set(
+          allItems
+            .filter((i) => i.orderId !== decodedOrderId && ["pending", "in-progress"].includes(i.status))
+            .map((i) => i.orderId),
+        ),
+      );
+      if (otherOrders.length > 0) {
+        router.push(`/pps/stage/${stageNum}/stage1/${encodeURIComponent(otherOrders[0])}`);
+      } else {
+        router.push(`/pps/stage/${stageNum}`);
+      }
+    }
+  }, [allItems, decodedOrderId, orderItems.length, router, stageNum]);
 
   if (isLoading) {
     return (
@@ -399,8 +472,14 @@ export default function LockedStage1OrderPage({
 
   return (
     <div className="p-4 md:p-6 bg-background flex-1 overflow-y-auto overscroll-contain">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => router.push(`/pps/stage/${stageNum}`)} className="shrink-0 w-12 h-12">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push(`/pps/stage/${stageNum}`)}
+          className="shrink-0 w-12 h-12"
+        >
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -421,15 +500,14 @@ export default function LockedStage1OrderPage({
         </div>
       ) : (
         <div className="flex flex-col gap-5">
+          {/* Start All button */}
           {!allComplete && (
             <Button
               size="lg"
               onClick={() => setBatchStarted(true)}
               disabled={batchStarted}
               className={`w-full text-2xl h-18 rounded-xs font-bold transition-colors py-5 ${
-                batchStarted
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : ""
+                batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""
               }`}
             >
               {batchStarted ? (
@@ -457,6 +535,7 @@ export default function LockedStage1OrderPage({
                 item={item}
                 isAdmin={isAdmin}
                 batchStarted={batchStarted}
+                onItemDone={handleItemDone}
               />
             ))}
           </div>
