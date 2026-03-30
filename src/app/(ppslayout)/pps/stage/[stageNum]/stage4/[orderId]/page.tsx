@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Package, Loader2 } from "lucide-react";
+import { ArrowLeft, LogOut, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/ppsUser";
 import { CookItemCard } from "@/components/PPS/Stage4View";
@@ -22,6 +22,11 @@ export default function LockedStage4OrderPage({
   const allItems = data?.cookItems ?? [];
   const orderItems = allItems.filter((item) => item.orderId === decodedOrderId);
   const storeName = orderItems[0]?.storeName;
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("better-user");
+    router.push(`/pps/stage/${stageNum}`);
+  }, [router, stageNum]);
 
   if (isLoading) {
     return (
@@ -55,6 +60,15 @@ export default function LockedStage4OrderPage({
             <p className="text-base text-muted-foreground font-mono">Order {decodedOrderId}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="shrink-0 gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-11 px-3"
+        >
+          <LogOut className="w-6 h-6" />
+          <span className="text-lg font-semibold">Logout</span>
+        </Button>
       </div>
 
       {orderItems.length === 0 ? (

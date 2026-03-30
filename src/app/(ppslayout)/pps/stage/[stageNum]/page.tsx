@@ -45,8 +45,22 @@ export default function LockedStagePage({
   const { stageNum } = use(params);
   const router = useRouter();
 
-  const [workerSelected, setWorkerSelected] = useState(false);
-  const [workerName, setWorkerName] = useState<string | null>(null);
+  const [workerSelected, setWorkerSelected] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("better-user") || "{}");
+      return !!u?.id;
+    } catch {
+      return false;
+    }
+  });
+  const [workerName, setWorkerName] = useState<string | null>(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("better-user") || "{}");
+      return u?.id ? (u.name || u.loginName || "Worker") : null;
+    } catch {
+      return null;
+    }
+  });
   const [isDark, setIsDark] = useState(false);
 
   const meta = STAGE_META[stageNum];
