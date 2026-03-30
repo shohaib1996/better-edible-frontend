@@ -69,7 +69,7 @@ export default function PPSPage() {
         <div className="flex-1 min-w-0">
           {active === "stage1" && <Stage1View compact />}
           {active === "stage2" && <Stage2View compact />}
-          {active === "stage3" && <Stage3View compact />}
+          {active === "stage3" && <Stage3View compact isAdmin />}
           {active === "stage4" && <Stage4View basePath="/admin/pps" compact />}
           {active === "resources" && <ResourcesView />}
         </div>

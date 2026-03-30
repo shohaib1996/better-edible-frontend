@@ -107,7 +107,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
 
 // ─── Stage 3 View ─────────────────────────────────────────────────────────────
 
-export default function Stage3View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
+export default function Stage3View({ basePath = "/admin/pps", compact, isAdmin }: { basePath?: string; compact?: boolean; isAdmin?: boolean }) {
   const router = useRouter();
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
@@ -158,13 +158,15 @@ export default function Stage3View({ basePath = "/admin/pps", compact }: { baseP
             </span>
           )}
         </div>
-        <button
-          onClick={() => router.push(`${basePath}/package-prep`)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground font-semibold ${compact ? "text-xs" : "text-sm"}`}
-        >
-          <Package className={compact ? "w-3 h-3" : "w-4 h-4"} />
-          Package Prep
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => router.push(`${basePath}/package-prep`)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground font-semibold ${compact ? "text-xs" : "text-sm"}`}
+          >
+            <Package className={compact ? "w-3 h-3" : "w-4 h-4"} />
+            Package Prep
+          </button>
+        )}
       </div>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (
