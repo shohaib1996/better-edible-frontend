@@ -11,7 +11,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Column, DataTable } from "../../ReUsableComponents/DataTable";
 import { ITimelog } from "@/types";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 type TimelogResponse = ITimelog[] | { message?: string } | null | undefined;
 
 const TimelogById = ({ id }: { id: string }) => {
+  const router = useRouter();
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -140,6 +142,13 @@ const TimelogById = ({ id }: { id: string }) => {
   return (
     <Card className="border-0 shadow-none bg-transparent">
       <CardHeader>
+        <Button
+          variant="outline"
+          className="w-fit rounded-xs mb-2"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="size-4 mr-1" /> Back
+        </Button>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <CardTitle className="text-xl font-bold text-foreground">
             🕒 Timelogs for {timelogs[0]?.rep?.name || "Representative"}

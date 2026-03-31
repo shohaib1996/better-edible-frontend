@@ -133,15 +133,6 @@ export default function RepsPage() {
     { key: "name", header: "Name" },
     // { key: "_id", header: "ID" },
     {
-      key: "territory",
-      header: "Territory",
-      render: (rep) => (
-        <div className="max-w-[200px] wrap-break-word whitespace-normal">
-          {rep.territory}
-        </div>
-      ),
-    },
-    {
       key: "checkin",
       header: "Clock In",
       render: (rep) => (
@@ -163,39 +154,13 @@ export default function RepsPage() {
         </span>
       ),
     },
-    { key: "phone", header: "Phone" },
     { key: "repType", header: "Type" },
-    {
-      key: "status",
-      header: "Status",
-      render: (rep) => (
-        <span
-          className={`px-2 py-1 rounded-xs text-xs font-medium ${
-            rep.status === "active"
-              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-              : rep.status === "inactive"
-              ? "bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground"
-              : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-          }`}
-        >
-          {rep.status}
-        </span>
-      ),
-    },
-    {
-      key: "storeCount",
-      header: "Store Count",
-      render: (rep) => (
-        <span className="font-medium text-foreground dark:text-foreground">
-          {rep.storeCount || 0}
-        </span>
-      ),
-    },
     {
       key: "actions",
       header: "Actions",
+      className: "text-right",
       render: (rep) => (
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-center justify-end">
           <Link href={`/admin/reps/${rep._id}`}>
             <Button
               size="sm"

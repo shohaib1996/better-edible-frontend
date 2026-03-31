@@ -9,7 +9,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Clock, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useGetTimelogsSummaryQuery } from "@/redux/api/Timelog/timelogs";
 import { ITimelogSummary } from "@/types";
@@ -17,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
 
 export default function RepsHoursContent() {
+  const router = useRouter();
   const today = new Date();
   const sevenDaysAgo = subDays(today, 7);
 
@@ -107,6 +109,9 @@ export default function RepsHoursContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+          <Button variant="outline" className="w-fit rounded-xs" onClick={() => router.back()}>
+            <ArrowLeft className="size-4 mr-1" /> Back
+          </Button>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 text-foreground">
               <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />

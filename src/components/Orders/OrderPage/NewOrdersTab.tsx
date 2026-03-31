@@ -63,7 +63,7 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
   isRepView = false,
 }) => {
   const [updateSample] = useUpdateSampleMutation();
-  const [hideSamples, setHideSamples] = useState(false);
+  const [viewMode, setViewMode] = useState<"orders" | "samples" | "both">("both");
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
@@ -82,9 +82,12 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     toast.error("You are not authorized to change it. This is not your order.");
   };
 
-  const filteredOrders = hideSamples
-    ? orders.filter((o) => !(o as any).isSample)
-    : orders;
+  const filteredOrders =
+    viewMode === "orders"
+      ? orders.filter((o) => !(o as any).isSample)
+      : viewMode === "samples"
+      ? orders.filter((o) => (o as any).isSample)
+      : orders;
 
   const regularOrders = filteredOrders.filter((o) => !(o as any).isSample);
   const sampleOrders = filteredOrders.filter((o) => (o as any).isSample);
@@ -138,15 +141,16 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
     <TooltipProvider>
       <div className="space-y-3">
         <div className="flex items-center justify-between pr-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={hideSamples}
-              onChange={(e) => setHideSamples(e.target.checked)}
-              className="h-4 w-4 rounded-xs accent-primary cursor-pointer"
-            />
-            <span className="text-muted-foreground font-medium">Hide Samples</span>
-          </label>
+          <Select value={viewMode} onValueChange={(v) => setViewMode(v as "orders" | "samples" | "both")}>
+            <SelectTrigger className="w-44 rounded-xs border border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="both">Orders &amp; Samples</SelectItem>
+              <SelectItem value="orders">Orders</SelectItem>
+              <SelectItem value="samples">Samples</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="text-right">
             <span className="font-semibold text-emerald-600">
               {orderCount} Orders = $

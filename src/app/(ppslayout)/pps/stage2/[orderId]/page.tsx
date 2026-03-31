@@ -2,12 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Wind,
-  CheckCircle2,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeft, Wind, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,16 +51,19 @@ function TraySlot({
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
 
-  const handleSubmit = useCallback(async (trayId: string) => {
-    const trimmed = trayId.trim();
-    if (!trimmed || isProcessing) return;
-    const ok = await onSubmit(trimmed);
-    if (ok) {
-      setValue("");
-      setFlash(true);
-      setTimeout(() => setFlash(false), 700);
-    }
-  }, [isProcessing, onSubmit]);
+  const handleSubmit = useCallback(
+    async (trayId: string) => {
+      const trimmed = trayId.trim();
+      if (!trimmed || isProcessing) return;
+      const ok = await onSubmit(trimmed);
+      if (ok) {
+        setValue("");
+        setFlash(true);
+        setTimeout(() => setFlash(false), 700);
+      }
+    },
+    [isProcessing, onSubmit],
+  );
 
   if (lockedTrayId) {
     return (
@@ -73,11 +71,16 @@ function TraySlot({
         <CheckCircle2 className="w-9 h-9 text-green-600 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-base text-muted-foreground font-medium">
-            Tray {index + 1} of {total} · Mold <span className="font-mono">{moldId}</span>
+            Tray {index + 1} of {total} · Mold{" "}
+            <span className="font-mono">{moldId}</span>
           </p>
-          <p className="text-2xl font-mono font-bold text-green-700 truncate">{lockedTrayId}</p>
+          <p className="text-2xl font-mono font-bold text-green-700 truncate">
+            {lockedTrayId}
+          </p>
           {lockedUnit && (
-            <p className="text-sm text-muted-foreground mt-0.5">{lockedUnit} · Shelf {lockedShelf}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {lockedUnit} · Shelf {lockedShelf}
+            </p>
           )}
         </div>
       </div>
@@ -85,18 +88,22 @@ function TraySlot({
   }
 
   return (
-    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
-      flash
-        ? "bg-green-100 border-green-400"
-        : isActive
-        ? "border-primary bg-primary/5"
-        : "border-muted bg-muted/30 opacity-60"
-    }`}>
+    <div
+      className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
+        flash
+          ? "bg-green-100 border-green-400"
+          : isActive
+            ? "border-primary bg-primary/5"
+            : "border-muted bg-muted/30 opacity-60"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <p className="text-lg font-semibold text-foreground">
           Tray {index + 1} of {total}
         </p>
-        <span className="text-base font-mono text-muted-foreground">Mold: {moldId}</span>
+        <span className="text-base font-mono text-muted-foreground">
+          Mold: {moldId}
+        </span>
       </div>
       <BarcodeScannerInput
         value={value}
@@ -108,7 +115,9 @@ function TraySlot({
         inputClassName="text-2xl font-mono h-16"
       />
       {isActive && (
-        <p className="text-sm text-muted-foreground">Scan barcode, use camera, or press Enter</p>
+        <p className="text-sm text-muted-foreground">
+          Scan barcode, use camera, or press Enter
+        </p>
       )}
     </div>
   );
@@ -139,21 +148,35 @@ interface CookItemCardProps {
   onGetNextShelf: () => Promise<NextShelf | null>;
 }
 
-function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemCardProps) {
+function CookItemCard({
+  item,
+  isAdmin,
+  batchStarted,
+  onGetNextShelf,
+}: CookItemCardProps) {
   const isComplete = item.status === "dehydrating_complete";
 
-  const initialMode: CardMode = isComplete ? "done"
-    : item.dehydratorAssignments.length > 0 ? "scanning"
-    : "idle";
+  const initialMode: CardMode = isComplete
+    ? "done"
+    : item.dehydratorAssignments.length > 0
+      ? "scanning"
+      : "idle";
 
   const [mode, setMode] = useState<CardMode>(initialMode);
   const [slots, setSlots] = useState<ShelfSlot[]>(() =>
     item.assignedMoldIds.map((moldId) => {
-      const existing = item.dehydratorAssignments.find((a) => a.moldId === moldId);
+      const existing = item.dehydratorAssignments.find(
+        (a) => a.moldId === moldId,
+      );
       return existing
-        ? { moldId, trayId: existing.trayId, dehydratorUnitId: existing.dehydratorUnitId, shelfPosition: existing.shelfPosition }
+        ? {
+            moldId,
+            trayId: existing.trayId,
+            dehydratorUnitId: existing.dehydratorUnitId,
+            shelfPosition: existing.shelfPosition,
+          }
         : { moldId };
-    })
+    }),
   );
 
   const [processMold, { isLoading: isProcessing }] = useProcessMoldMutation();
@@ -182,9 +205,14 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
         setSlots((prev) =>
           prev.map((s) =>
             s.moldId === moldId
-              ? { ...s, trayId, dehydratorUnitId: shelf.dehydratorUnitId, shelfPosition: shelf.shelfPosition }
-              : s
-          )
+              ? {
+                  ...s,
+                  trayId,
+                  dehydratorUnitId: shelf.dehydratorUnitId,
+                  shelfPosition: shelf.shelfPosition,
+                }
+              : s,
+          ),
         );
         return true;
       } catch (err: any) {
@@ -192,7 +220,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
         return false;
       }
     },
-    [processMold, item.cookItemId, onGetNextShelf]
+    [processMold, item.cookItemId, onGetNextShelf],
   );
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
@@ -204,10 +232,17 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className="text-4xl font-bold leading-tight truncate">{item.flavor}</p>
-          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
+          <p className="text-4xl font-bold leading-tight truncate">
+            {item.flavor}
+          </p>
+          <p className="text-base text-muted-foreground font-mono mt-1">
+            {item.cookItemId}
+          </p>
         </div>
-        <Badge variant="outline" className={`shrink-0 text-base px-3 py-1.5 ${statusColor}`}>
+        <Badge
+          variant="outline"
+          className={`shrink-0 text-base px-3 py-1.5 ${statusColor}`}
+        >
           {statusLabel}
         </Badge>
       </div>
@@ -215,16 +250,24 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
       {/* ── Stats row ── */}
       <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
         <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+            Qty
+          </p>
           <p className="text-3xl font-bold">{item.quantity.toLocaleString()}</p>
         </div>
         <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+            Trays
+          </p>
           <p className="text-3xl font-bold">{totalTrays}</p>
         </div>
         <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Loaded</p>
-          <p className={`text-3xl font-bold ${allLocked ? "text-green-600" : ""}`}>
+          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+            Loaded
+          </p>
+          <p
+            className={`text-3xl font-bold ${allLocked ? "text-green-600" : ""}`}
+          >
             {lockedCount}/{totalTrays}
           </p>
         </div>
@@ -233,10 +276,16 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
       <div className="px-5 py-5 flex flex-col gap-4">
         {item.flavorComponents.length > 0 && (
           <div>
-            <p className="text-base text-muted-foreground mb-2">Flavor Components</p>
+            <p className="text-base text-muted-foreground mb-2">
+              Flavor Components
+            </p>
             <div className="flex flex-wrap gap-2">
               {item.flavorComponents.map((fc) => (
-                <Badge key={fc.name} variant="secondary" className="text-base px-3 py-1">
+                <Badge
+                  key={fc.name}
+                  variant="secondary"
+                  className="text-base px-3 py-1"
+                >
                   {fc.name} {fc.percentage}%
                 </Badge>
               ))}
@@ -247,10 +296,18 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
         {mode === "done" || isComplete ? (
           <div className="flex items-center gap-4 py-4 text-green-600">
             <CheckCircle2 className="w-10 h-10 shrink-0" />
-            <p className="text-2xl font-bold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
+            <p className="text-2xl font-bold">
+              All trays loaded — {lockedCount} tray
+              {lockedCount !== 1 ? "s" : ""}
+            </p>
           </div>
         ) : mode === "idle" && !batchStarted ? (
-          <Button size="lg" variant="outline" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={() => setMode("scanning")}>
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full text-2xl h-16 rounded-xs font-bold"
+            onClick={() => setMode("scanning")}
+          >
             Load to Dehydrator
           </Button>
         ) : mode === "scanning" ? (
@@ -312,20 +369,26 @@ export default function WorkerStage2OrderPage({
 
   const [batchStarted, setBatchStarted] = useState(false);
 
-  const allComplete = orderItems.length > 0 && orderItems.every(
-    (i) => i.status === "dehydrating_complete"
-  );
+  const allComplete =
+    orderItems.length > 0 &&
+    orderItems.every((i) => i.status === "dehydrating_complete");
 
-  const handleGetNextShelf = useCallback(async (): Promise<NextShelf | null> => {
-    const result = await dispatch(
-      ppsApi.endpoints.getNextAvailableShelf.initiate(undefined, { forceRefetch: true })
-    );
-    if ("error" in result || !result.data) {
-      toast.error("No available shelves — dehydrator is full");
-      return null;
-    }
-    return { dehydratorUnitId: result.data.dehydratorUnitId, shelfPosition: result.data.shelfPosition };
-  }, [dispatch]);
+  const handleGetNextShelf =
+    useCallback(async (): Promise<NextShelf | null> => {
+      const result = await dispatch(
+        ppsApi.endpoints.getNextAvailableShelf.initiate(undefined, {
+          forceRefetch: true,
+        }),
+      );
+      if ("error" in result || !result.data) {
+        toast.error("No available shelves — dehydrator is full");
+        return null;
+      }
+      return {
+        dehydratorUnitId: result.data.dehydratorUnitId,
+        shelfPosition: result.data.shelfPosition,
+      };
+    }, [dispatch]);
 
   if (isLoading) {
     return (
@@ -348,7 +411,12 @@ export default function WorkerStage2OrderPage({
     <div className="p-4 md:p-6 bg-background flex-1 overflow-y-auto overscroll-contain">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/pps")} className="shrink-0 w-12 h-12">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/pps")}
+          className="shrink-0 w-12 h-12"
+        >
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -357,7 +425,9 @@ export default function WorkerStage2OrderPage({
             <h1 className="text-3xl font-bold leading-tight truncate">
               {storeName ?? "Stage 2 — Dehydrator Loading"}
             </h1>
-            <p className="text-lg text-muted-foreground font-mono">Order {decodedOrderId}</p>
+            <p className="text-lg text-muted-foreground font-mono">
+              Order {decodedOrderId}
+            </p>
           </div>
         </div>
       </div>
@@ -365,7 +435,9 @@ export default function WorkerStage2OrderPage({
       {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
           <Wind className="w-14 h-14 opacity-40" />
-          <p className="text-xl">No Stage 2 items found for order {decodedOrderId}.</p>
+          <p className="text-xl">
+            No Stage 2 items found for order {decodedOrderId}.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -379,7 +451,10 @@ export default function WorkerStage2OrderPage({
               }`}
             >
               {batchStarted ? (
-                <><CheckCircle2 className="w-7 h-7 mr-2" />Loading in Progress</>
+                <>
+                  <CheckCircle2 className="w-7 h-7 mr-2" />
+                  Loading in Progress
+                </>
               ) : (
                 "Load All to Dehydrator"
               )}
@@ -389,7 +464,9 @@ export default function WorkerStage2OrderPage({
           {allComplete && (
             <div className="flex items-center gap-4 px-5 py-5 rounded-xs bg-green-50 border border-green-200 text-green-700">
               <CheckCircle2 className="w-9 h-9 shrink-0" />
-              <p className="text-2xl font-bold">All items loaded — ready for dehydrating</p>
+              <p className="text-2xl font-bold">
+                All items loaded — ready for dehydrating
+              </p>
             </div>
           )}
 
