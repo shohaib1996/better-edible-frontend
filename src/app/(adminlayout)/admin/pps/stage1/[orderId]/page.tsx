@@ -50,6 +50,8 @@ interface MoldSlotProps {
   isCancelling: boolean;
   onSubmit: (barcode: string) => Promise<boolean>;
   onCancel: () => void;
+  /** Changes when a new mold is assigned — forces remount so autoFocus fires */
+  focusKey: number;
 }
 
 function MoldSlot({
@@ -64,6 +66,7 @@ function MoldSlot({
   isCancelling,
   onSubmit,
   onCancel,
+  focusKey,
 }: MoldSlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
@@ -137,7 +140,9 @@ function MoldSlot({
           />
         </div>
       </div>
+      {/* key={focusKey} forces remount when assignedCount changes → autoFocus fires natively */}
       <BarcodeScannerInput
+        key={focusKey}
         value={value}
         onChange={setValue}
         onSubmit={handleSubmit}
@@ -145,6 +150,8 @@ function MoldSlot({
         disabled={!isActive || isAssigning}
         mode="barcode"
         inputClassName="text-xl font-mono h-14"
+        showManualActions={isActive}
+        autoFocus={isActive}
       />
       {isActive && (
         <p className="text-xs text-muted-foreground">Scan barcode, use camera, or press Enter</p>
@@ -161,7 +168,6 @@ interface CookItemCardProps {
   item: ICookItem;
   isAdmin: boolean;
   batchStarted: boolean;
-  /** Called when this item finishes (mode → done) */
   onItemDone: () => void;
 }
 
@@ -175,11 +181,9 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
 
   const [mode, setMode] = useState<CardMode>(initialMode);
   const [extraMolds, setExtraMolds] = useState(0);
-  // moldUnits[i] = units for mold slot i (tracks editable units; initialized from saved timestamps or default)
   const [moldUnits, setMoldUnits] = useState<number[]>(() =>
     item.moldingTimestamps.map((t) => t.unitsPerMold ?? 70),
   );
-  // Track which assigned mold is being cancelled
   const [cancellingMoldId, setCancellingMoldId] = useState<string | null>(null);
 
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
@@ -190,6 +194,9 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
   const assignedCount = item.assignedMoldIds.length;
   const allMoldsAssigned = assignedCount >= totalMolds;
 
+  // Derive effective mode: if batch started and still idle, treat as molding immediately
+  const effectiveMode: CardMode = mode === "idle" && batchStarted ? "molding" : mode;
+
   // Keep moldUnits in sync when new molds are assigned (from server updates)
   useEffect(() => {
     setMoldUnits((prev) => {
@@ -197,20 +204,13 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
       item.moldingTimestamps.forEach((t, i) => {
         if (updated[i] === undefined) updated[i] = t.unitsPerMold ?? 70;
       });
-      // ensure array is at least totalMolds long
       while (updated.length < totalMolds) updated.push(UNITS_PER_MOLD);
       return updated;
     });
   }, [item.moldingTimestamps, totalMolds]);
 
-  // Auto-enter molding when batch starts
   useEffect(() => {
-    if (batchStarted && mode === "idle") setMode("molding");
-  }, [batchStarted, mode]);
-
-  // When all molds assigned → show confirming screen
-  useEffect(() => {
-    if (mode === "molding" && allMoldsAssigned && assignedCount > 0) {
+    if (effectiveMode === "molding" && allMoldsAssigned && assignedCount > 0) {
       setMode("confirming");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -218,7 +218,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
 
   const handleAssignMold = useCallback(
     async (barcode: string): Promise<boolean> => {
-      const slotIndex = assignedCount; // next slot
+      const slotIndex = assignedCount;
       const units = moldUnits[slotIndex] ?? UNITS_PER_MOLD;
       try {
         await assignMold({
@@ -245,7 +245,6 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
           moldId,
           performedBy: getPPSUser(),
         } as any).unwrap();
-        // Reset to molding if we were confirming
         setMode("molding");
       } catch (err: any) {
         toast.error(err?.data?.message || "Failed to remove mold");
@@ -276,8 +275,6 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
   const activeMoldIndex = assignedCount;
-
-  // Qty produced = sum of units for all assigned molds
   const qtyProduced = moldUnits.slice(0, assignedCount).reduce((sum, u) => sum + (u || 0), 0);
 
   const handleUnitsChange = useCallback((index: number, units: number) => {
@@ -326,8 +323,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
       </div>
 
       <div className="px-5 py-4 flex flex-col gap-3">
-        {/* ── Action area ── */}
-        {mode === "done" || isComplete ? (
+        {effectiveMode === "done" || isComplete ? (
           <div className="flex items-center gap-3 py-4 text-green-600">
             <CheckCircle2 className="w-8 h-8 shrink-0" />
             <p className="text-xl font-semibold">
@@ -335,7 +331,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
               {qtyProduced.toLocaleString()} units
             </p>
           </div>
-        ) : mode === "confirming" ? (
+        ) : effectiveMode === "confirming" ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3 px-4 py-4 rounded-xs bg-green-50 border border-green-200">
               <CheckCircle2 className="w-7 h-7 text-green-600 shrink-0" />
@@ -368,18 +364,17 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
               </Button>
             </div>
           </div>
-        ) : mode === "idle" && !batchStarted ? (
+        ) : effectiveMode === "idle" ? (
           <Button
             size="lg"
             variant="outline"
             className="w-full text-xl h-14 rounded-xs"
-            onClick={() => setMode("molding")}
+            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("molding"); }}
           >
             Start
           </Button>
-        ) : mode === "molding" ? (
+        ) : effectiveMode === "molding" ? (
           <div className="flex flex-col gap-3">
-            {/* Mold slots */}
             {Array.from({ length: totalMolds }).map((_, i) => (
               <MoldSlot
                 key={i}
@@ -394,10 +389,10 @@ function CookItemCard({ item, isAdmin, batchStarted, onItemDone }: CookItemCardP
                 isCancelling={cancellingMoldId === item.assignedMoldIds[i]}
                 onSubmit={handleAssignMold}
                 onCancel={() => handleUnassignMold(item.assignedMoldIds[i])}
+                focusKey={i === activeMoldIndex ? assignedCount : -i}
               />
             ))}
 
-            {/* Add Mold button */}
             <Button
               size="sm"
               variant="outline"
@@ -444,14 +439,12 @@ export default function Stage1OrderPage({
     orderItems.length > 0 &&
     orderItems.every((i) => i.status === "cooking_molding_complete");
 
-  // Track locally-completed items (to allow navigating after the last item finishes)
   const completedCountRef = useRef(0);
 
   const handleItemDone = useCallback(() => {
     completedCountRef.current += 1;
     const total = orderItems.length;
     if (completedCountRef.current >= total) {
-      // All items in this order are done — find next order or go back
       const otherOrders = Array.from(
         new Set(
           allItems
@@ -486,7 +479,6 @@ export default function Stage1OrderPage({
 
   return (
     <div className="p-4 md:p-8 bg-background min-h-screen">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button
           variant="ghost"
@@ -516,11 +508,10 @@ export default function Stage1OrderPage({
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          {/* Start All button */}
           {!allComplete && (
             <Button
               size="lg"
-              onClick={() => setBatchStarted(true)}
+              onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setBatchStarted(true); }}
               disabled={batchStarted}
               className={`w-full text-2xl h-16 rounded-xs font-bold transition-colors ${
                 batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""
