@@ -11,7 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ClipboardList } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
@@ -171,37 +171,62 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
             Viewing notes for {format(selectedDate, "MMMM d, yyyy")}
           </p>
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full sm:w-[240px] justify-start text-left font-normal rounded-xs bg-accent text-white dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90",
-                !selectedDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? (
-                format(selectedDate, "PPP")
-              ) : (
-                <span>Pick a date</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                if (date) {
-                  setSelectedDate(date);
-                  setPage(1); // Reset to first page when changing date
-                }
-              }}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xs bg-accent text-white hover:bg-primary"
+            onClick={() => {
+              const prev = new Date(selectedDate);
+              prev.setDate(prev.getDate() - 1);
+              setSelectedDate(prev);
+              setPage(1);
+            }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full sm:w-[240px] justify-start text-left font-normal rounded-xs bg-accent text-white dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? (
+                  format(selectedDate, "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setPage(1);
+                  }
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xs bg-accent text-white hover:bg-primary"
+            onClick={() => {
+              const next = new Date(selectedDate);
+              next.setDate(next.getDate() + 1);
+              setSelectedDate(next);
+              setPage(1);
+            }}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Total Notes Info */}

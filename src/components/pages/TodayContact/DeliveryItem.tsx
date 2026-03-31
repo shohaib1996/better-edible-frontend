@@ -150,7 +150,12 @@ export const DeliveryItem = ({
               <span>{delivery.amount.toFixed(2)}</span>
             </div>
             <span className="text-xs text-muted-foreground uppercase">
-              {delivery.disposition.replaceAll("_", " ")}
+              {(Array.isArray(delivery.disposition)
+                ? delivery.disposition
+                : [delivery.disposition]
+              )
+                .map((d: string) => d.replaceAll("_", " "))
+                .join(", ")}
             </span>
           </div>
 

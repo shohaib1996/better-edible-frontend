@@ -210,7 +210,12 @@ export default function DeliveriesContent() {
       render: (delivery) => (
         <div className="flex flex-col gap-0.5 text-sm">
           <span className="capitalize text-foreground font-medium">
-            {delivery.disposition.replace(/_/g, " ")}
+            {(Array.isArray(delivery.disposition)
+              ? delivery.disposition
+              : [delivery.disposition]
+            )
+              .map((d: string) => d.replace(/_/g, " "))
+              .join(", ")}
           </span>
           <span className="text-muted-foreground capitalize">
             {delivery.paymentAction.replace(/_/g, " ")}

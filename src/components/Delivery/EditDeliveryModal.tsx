@@ -17,6 +17,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -58,7 +59,7 @@ export const EditDeliveryModal = ({
 
   const [formData, setFormData] = useState({
     assignedTo: "",
-    disposition: "delivery",
+    disposition: ["delivery"] as string[],
     paymentAction: "",
     amount: "",
     scheduledAt: new Date(),
@@ -70,7 +71,11 @@ export const EditDeliveryModal = ({
     if (delivery) {
       setFormData({
         assignedTo: delivery.assignedTo?._id || "",
-        disposition: delivery.disposition || "delivery",
+        disposition: Array.isArray(delivery.disposition)
+          ? delivery.disposition
+          : delivery.disposition
+          ? [delivery.disposition]
+          : ["delivery"],
         paymentAction: delivery.paymentAction || "",
         amount: delivery.amount?.toString() || "",
         scheduledAt: delivery.scheduledAt
@@ -87,6 +92,18 @@ export const EditDeliveryModal = ({
   const handleChange = (key: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
+
+  const handleDispositionToggle = (value: string) => {
+    setFormData((prev) => {
+      const current = prev.disposition;
+      const updated = current.includes(value)
+        ? current.filter((d) => d !== value)
+        : [...current, value];
+      return { ...prev, disposition: updated };
+    });
+  };
+
+  const showAmount = formData.disposition.includes("delivery") || formData.disposition.includes("money_pickup");
 
   // ✅ When user selects a date, normalize it to local midnight
   const handleDateSelect = (date: Date | undefined) => {
@@ -194,44 +211,48 @@ export const EditDeliveryModal = ({
               <Truck className="h-3.5 w-3.5 text-primary" />
               Disposition
             </Label>
-            <Select
-              value={formData.disposition}
-              onValueChange={(val) => handleChange("disposition", val)}
-            >
-              <SelectTrigger className="w-full border-border rounded-xs bg-input text-foreground focus:ring-0 focus:border-primary">
-                <SelectValue placeholder="Select Disposition" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xs">
-                <SelectItem value="delivery" className="rounded-xs">
-                  Delivery
-                </SelectItem>
-                <SelectItem value="sample_drop" className="rounded-xs">
-                  Sample Drop
-                </SelectItem>
-                <SelectItem value="money_pickup" className="rounded-xs">
-                  Money Pickup
-                </SelectItem>
-                <SelectItem value="other" className="rounded-xs">
-                  Other
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="border border-border rounded-xs bg-input p-3 grid grid-cols-2 gap-2">
+              {[
+                { value: "delivery", label: "Delivery" },
+                { value: "sample_drop", label: "Sample Drop" },
+                { value: "money_pickup", label: "Money Pickup" },
+                { value: "sales_call", label: "Sales Call" },
+                { value: "other", label: "Other" },
+              ].map((item) => (
+                <div key={item.value} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`edit-disposition-${item.value}`}
+                    checked={formData.disposition.includes(item.value)}
+                    onCheckedChange={() => handleDispositionToggle(item.value)}
+                    className="rounded-xs"
+                  />
+                  <label
+                    htmlFor={`edit-disposition-${item.value}`}
+                    className="text-sm text-foreground cursor-pointer select-none"
+                  >
+                    {item.label}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Amount */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <DollarSign className="h-3.5 w-3.5 text-primary" />
-              Amount ($)
-            </Label>
-            <Input
-              type="number"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => handleChange("amount", e.target.value)}
-              className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary"
-            />
-          </div>
+          {/* Amount — only for Delivery or Money Pickup */}
+          {showAmount && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-primary" />
+                Amount ($)
+              </Label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => handleChange("amount", e.target.value)}
+                className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary"
+              />
+            </div>
+          )}
 
           {/* Payment Action */}
           <div className="space-y-1.5">

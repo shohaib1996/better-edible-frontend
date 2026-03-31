@@ -1,9 +1,11 @@
 "use client";
 
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import { useGetRepByIdQuery } from "@/redux/api/Rep/repApi";
 import { RepNotesTable } from "@/components/Notes/RepNotesTable";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function RepNotesPage({
   params,
@@ -11,6 +13,7 @@ export default function RepNotesPage({
   params: Promise<{ repId: string }>;
 }) {
   const { repId } = use(params);
+  const router = useRouter();
 
   // Fetch rep information for display
   const { data: rep, isLoading: repLoading } = useGetRepByIdQuery(repId);
@@ -35,6 +38,14 @@ export default function RepNotesPage({
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
+        <Button
+          size="sm"
+          className="mb-4 rounded-xs bg-accent text-white hover:bg-primary"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
         <h1 className="text-3xl font-bold">{rep.name}'s Notes</h1>
         <p className="text-muted-foreground mt-1">
           Territory: {rep.territory || "N/A"}
