@@ -35,7 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useGetAllDeliveriesQuery } from "@/redux/api/Deliveries/deliveryApi";
+import { useGetAllDeliveriesQuery, useGetDeliveryOrderQuery } from "@/redux/api/Deliveries/deliveryApi";
 import type { Delivery } from "@/types/delivery/delivery";
 import { useDebounce } from "@/hooks/useDebounce";
 import { RepSelect } from "@/components/Shared/RepSelect";
@@ -44,7 +44,7 @@ import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPaginati
 
 export default function DeliveriesContent() {
   const [storeName, setStoreName] = useState("");
-  const [status, setStatus] = useState<string>("in_transit");
+  const [status, setStatus] = useState<string>("all");
   const [selectedRep, setSelectedRep] = useState<string>("all");
   // Always work with UTC-normalized dates so the calendar day matches stored scheduledAt
   const todayUTC = () => {
@@ -77,7 +77,26 @@ export default function DeliveriesContent() {
 
   const { data, isLoading, isError } = useGetAllDeliveriesQuery(queryParams);
 
-  const deliveries: Delivery[] = data?.deliveries || [];
+  // Fetch stop order for the selected rep + date to sort deliveries accordingly
+  const dateStr = date ? `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}` : "";
+  const { data: deliveryOrderData } = useGetDeliveryOrderQuery(
+    { repId: selectedRep, date: dateStr },
+    { skip: !selectedRep || selectedRep === "all" || !dateStr }
+  );
+
+  const rawDeliveries: Delivery[] = data?.deliveries || [];
+
+  // Sort deliveries to mirror driver's stop order when a rep is selected
+  const deliveries: Delivery[] = (() => {
+    const stopOrder: string[] = deliveryOrderData?.order || [];
+    if (!stopOrder.length) return rawDeliveries;
+    const indexed = new Map(stopOrder.map((id, i) => [id, i]));
+    return [...rawDeliveries].sort((a, b) => {
+      const ai = indexed.has(a._id) ? indexed.get(a._id)! : 9999;
+      const bi = indexed.has(b._id) ? indexed.get(b._id)! : 9999;
+      return ai - bi;
+    });
+  })();
   const totalItems = data?.total || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -118,7 +137,7 @@ export default function DeliveriesContent() {
 
   const handleReset = () => {
     setStoreName("");
-    setStatus("in_transit");
+    setStatus("all");
     setSelectedRep("all");
     setDate(todayUTC());
     setCurrentPage(1);
@@ -127,7 +146,7 @@ export default function DeliveriesContent() {
   const today = todayUTC();
   const showReset =
     storeName ||
-    status !== "in_transit" ||
+    status !== "all" ||
     selectedRep !== "all" ||
     date?.toISOString().slice(0, 10) !== today.toISOString().slice(0, 10);
 
@@ -138,7 +157,6 @@ export default function DeliveriesContent() {
       className: "min-w-[200px]",
       render: (delivery) => (
         <div className="flex flex-col">
-          {/* Desktop: Tooltip on hover */}
           <div className="hidden md:block">
             <TooltipProvider>
               <Tooltip>
@@ -155,9 +173,7 @@ export default function DeliveriesContent() {
                 </TooltipTrigger>
                 <TooltipContent className="rounded-xs max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-semibold">
-                      {delivery.storeId?.name || "N/A"}
-                    </p>
+                    <p className="font-semibold">{delivery.storeId?.name || "N/A"}</p>
                     <p className="text-xs">
                       {delivery.storeId?.address}
                       {delivery.storeId?.city && `, ${delivery.storeId.city}`}
@@ -167,12 +183,11 @@ export default function DeliveriesContent() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          {/* Mobile: Show wrapped text */}
           <div className="md:hidden">
             <div className="font-semibold text-foreground wrap-break-word whitespace-normal max-w-[250px]">
               {delivery.storeId?.name || "N/A"}
             </div>
-            <div className="text-sm text-muted-foreground break-break-word whitespace-normal max-w-[250px]">
+            <div className="text-sm text-muted-foreground whitespace-normal max-w-[250px]">
               {delivery.storeId?.address}
               {delivery.storeId?.city && `, ${delivery.storeId.city}`}
             </div>
@@ -190,44 +205,39 @@ export default function DeliveriesContent() {
       ),
     },
     {
-      key: "scheduledAt",
-      header: "Scheduled At",
-      render: (delivery) => (
-        <div className="text-foreground">
-          {(() => {
-            const d = new Date(delivery.scheduledAt);
-            return format(
-              new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-              "MMM dd, yyyy"
-            );
-          })()}
-        </div>
-      ),
-    },
-    {
       key: "disposition",
-      header: "Disposition",
+      header: "Details",
       render: (delivery) => (
-        <div className="capitalize text-foreground">
-          {delivery.disposition.replace(/_/g, " ")}
-        </div>
-      ),
-    },
-    {
-      key: "paymentAction",
-      header: "Payment",
-      render: (delivery) => (
-        <div className="capitalize text-foreground">
-          {delivery.paymentAction.replace(/_/g, " ")}
+        <div className="flex flex-col gap-0.5 text-sm">
+          <span className="capitalize text-foreground font-medium">
+            {delivery.disposition.replace(/_/g, " ")}
+          </span>
+          <span className="text-muted-foreground capitalize">
+            {delivery.paymentAction.replace(/_/g, " ")}
+          </span>
+          <span className="text-primary font-semibold">
+            ${delivery.amount.toFixed(2)}
+          </span>
         </div>
       ),
     },
     {
       key: "amount",
-      header: "Amount",
+      header: "Payment Collected",
       render: (delivery) => (
-        <div className="text-primary font-semibold">
-          ${delivery.amount.toFixed(2)}
+        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
+          {delivery.paymentAction === "collect_payment"
+            ? `$${delivery.amount.toFixed(2)}`
+            : <span className="text-muted-foreground font-normal">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: "notes",
+      header: "Notes",
+      render: (delivery) => (
+        <div className="text-sm text-foreground max-w-[200px] whitespace-normal">
+          {delivery.notes || <span className="text-muted-foreground">—</span>}
         </div>
       ),
     },

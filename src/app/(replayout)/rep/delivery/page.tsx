@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import {
   CalendarIcon,
   ChevronLeft,
@@ -35,41 +35,65 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUser } from "@/redux/hooks/useAuth";
-import { useGetAllDeliveriesQuery } from "@/redux/api/Deliveries/deliveryApi";
+import { useGetAllDeliveriesQuery, useGetDeliveryOrderQuery } from "@/redux/api/Deliveries/deliveryApi";
 import type { Delivery } from "@/types/delivery/delivery";
 import { useDebounce } from "@/hooks/useDebounce";
+import { RepSelect } from "@/components/Shared/RepSelect";
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 export default function DeliveryPage() {
-  const user = useUser();
   const [storeName, setStoreName] = useState("");
-  const [status, setStatus] = useState<string>("in_transit");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [status, setStatus] = useState<string>("all");
+  const [selectedRep, setSelectedRep] = useState<string>("all");
+
+  const todayUTC = () => {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  };
+  const [date, setDate] = useState<Date | undefined>(todayUTC());
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
 
   const debouncedStoreName = useDebounce(storeName, 500);
 
   const queryParams: any = {
-    assignedTo: user?.id,
     page: currentPage,
     limit: itemsPerPage,
   };
 
   if (debouncedStoreName) queryParams.storeName = debouncedStoreName;
   if (status && status !== "all") queryParams.status = status;
+  if (selectedRep && selectedRep !== "all") queryParams.assignedTo = selectedRep;
   if (date) {
-    queryParams.startDate = startOfDay(date).toISOString();
-    queryParams.endDate = endOfDay(date).toISOString();
+    const startUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
+    const endUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+    queryParams.startDate = startUTC.toISOString();
+    queryParams.endDate = endUTC.toISOString();
   }
 
-  const { data, isLoading, isError } = useGetAllDeliveriesQuery(queryParams, {
-    skip: !user?.id,
-  });
+  const { data, isLoading, isError } = useGetAllDeliveriesQuery(queryParams);
 
-  const deliveries: Delivery[] = data?.deliveries || [];
+  // Fetch stop order for selected rep + date to mirror driver's order
+  const dateStr = date ? `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}` : "";
+  const { data: deliveryOrderData } = useGetDeliveryOrderQuery(
+    { repId: selectedRep, date: dateStr },
+    { skip: !selectedRep || selectedRep === "all" || !dateStr }
+  );
+
+  const rawDeliveries: Delivery[] = data?.deliveries || [];
+
+  const deliveries: Delivery[] = (() => {
+    const stopOrder: string[] = deliveryOrderData?.order || [];
+    if (!stopOrder.length) return rawDeliveries;
+    const indexed = new Map(stopOrder.map((id, i) => [id, i]));
+    return [...rawDeliveries].sort((a, b) => {
+      const ai = indexed.has(a._id) ? indexed.get(a._id)! : 9999;
+      const bi = indexed.has(b._id) ? indexed.get(b._id)! : 9999;
+      return ai - bi;
+    });
+  })();
+
   const totalItems = data?.total || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -93,7 +117,7 @@ export default function DeliveryPage() {
   const handlePrevDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() - 1);
+      newDate.setUTCDate(newDate.getUTCDate() - 1);
       setDate(newDate);
       setCurrentPage(1);
     }
@@ -102,28 +126,26 @@ export default function DeliveryPage() {
   const handleNextDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setDate(newDate.getDate() + 1);
+      newDate.setUTCDate(newDate.getUTCDate() + 1);
       setDate(newDate);
       setCurrentPage(1);
     }
   };
 
-  const handleClearDate = () => {
-    setDate(undefined);
-    setCurrentPage(1);
-  };
-
   const handleReset = () => {
     setStoreName("");
-    setStatus("in_transit");
-    setDate(new Date());
+    setStatus("all");
+    setSelectedRep("all");
+    setDate(todayUTC());
     setCurrentPage(1);
   };
 
+  const today = todayUTC();
   const showReset =
     storeName ||
-    status !== "in_transit" ||
-    date?.toDateString() !== new Date().toDateString();
+    status !== "all" ||
+    selectedRep !== "all" ||
+    date?.toISOString().slice(0, 10) !== today.toISOString().slice(0, 10);
 
   const columns: Column<Delivery>[] = [
     {
@@ -132,7 +154,6 @@ export default function DeliveryPage() {
       className: "min-w-[200px]",
       render: (delivery) => (
         <div className="flex flex-col">
-          {/* Desktop: Tooltip on hover */}
           <div className="hidden md:block">
             <TooltipProvider>
               <Tooltip>
@@ -149,9 +170,7 @@ export default function DeliveryPage() {
                 </TooltipTrigger>
                 <TooltipContent className="rounded-xs max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-semibold">
-                      {delivery.storeId?.name || "N/A"}
-                    </p>
+                    <p className="font-semibold">{delivery.storeId?.name || "N/A"}</p>
                     <p className="text-xs">
                       {delivery.storeId?.address}
                       {delivery.storeId?.city && `, ${delivery.storeId.city}`}
@@ -161,12 +180,11 @@ export default function DeliveryPage() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          {/* Mobile: Show wrapped text */}
           <div className="md:hidden">
             <div className="font-semibold text-foreground wrap-break-word whitespace-normal max-w-[250px]">
               {delivery.storeId?.name || "N/A"}
             </div>
-            <div className="text-sm text-muted-foreground break-break-word whitespace-normal max-w-[250px]">
+            <div className="text-sm text-muted-foreground whitespace-normal max-w-[250px]">
               {delivery.storeId?.address}
               {delivery.storeId?.city && `, ${delivery.storeId.city}`}
             </div>
@@ -175,44 +193,48 @@ export default function DeliveryPage() {
       ),
     },
     {
-      key: "scheduledAt",
-      header: "Scheduled At",
+      key: "assignedTo",
+      header: "Assigned Rep",
       render: (delivery) => (
-        <div className="text-foreground">
-          {(() => {
-            const d = new Date(delivery.scheduledAt);
-            return format(
-              new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-              "MMM dd, yyyy"
-            );
-          })()}
+        <div className="text-primary font-medium">
+          {delivery.assignedTo?.name || "Unassigned"}
         </div>
       ),
     },
     {
       key: "disposition",
-      header: "Disposition",
+      header: "Details",
       render: (delivery) => (
-        <div className="capitalize text-foreground">
-          {delivery.disposition.replace(/_/g, " ")}
-        </div>
-      ),
-    },
-    {
-      key: "paymentAction",
-      header: "Payment",
-      render: (delivery) => (
-        <div className="capitalize text-foreground">
-          {delivery.paymentAction.replace(/_/g, " ")}
+        <div className="flex flex-col gap-0.5 text-sm">
+          <span className="capitalize text-foreground font-medium">
+            {delivery.disposition.replace(/_/g, " ")}
+          </span>
+          <span className="text-muted-foreground capitalize">
+            {delivery.paymentAction.replace(/_/g, " ")}
+          </span>
+          <span className="text-primary font-semibold">
+            ${delivery.amount.toFixed(2)}
+          </span>
         </div>
       ),
     },
     {
       key: "amount",
-      header: "Amount",
+      header: "Payment Collected",
       render: (delivery) => (
-        <div className="text-primary font-semibold">
-          ${delivery.amount.toFixed(2)}
+        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
+          {delivery.paymentAction === "collect_payment"
+            ? `$${delivery.amount.toFixed(2)}`
+            : <span className="text-muted-foreground font-normal">—</span>}
+        </div>
+      ),
+    },
+    {
+      key: "notes",
+      header: "Notes",
+      render: (delivery) => (
+        <div className="text-sm text-foreground max-w-[200px] whitespace-normal">
+          {delivery.notes || <span className="text-muted-foreground">—</span>}
         </div>
       ),
     },
@@ -257,13 +279,13 @@ export default function DeliveryPage() {
       <div className="flex items-center gap-2">
         <Truck className="h-6 w-6 text-primary" />
         <h1 className="text-xl md:text-2xl font-semibold text-foreground">
-          My Deliveries
+          Deliveries
         </h1>
       </div>
 
       {/* Filters */}
       <Card className="p-4 rounded-xs border border-border bg-card dark:bg-card max-w-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 w-full">
           {/* Date Navigation */}
           <div className="flex items-center gap-1 min-w-0">
             <Button
@@ -286,7 +308,7 @@ export default function DeliveryPage() {
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">
-                    {date ? format(date, "MMM dd, yyyy") : "Pick a date"}
+                    {date ? format(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()), "MMM dd, yyyy") : "Pick a date"}
                   </span>
                 </Button>
               </PopoverTrigger>
@@ -295,7 +317,9 @@ export default function DeliveryPage() {
                   mode="single"
                   selected={date}
                   onSelect={(d) => {
-                    setDate(d);
+                    if (d) {
+                      setDate(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
+                    }
                     setCurrentPage(1);
                   }}
                   initialFocus
@@ -312,16 +336,19 @@ export default function DeliveryPage() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+          </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleClearDate}
-              className="h-9 w-9 shrink-0 rounded-xs bg-red-500 text-white hover:bg-red-600"
-              title="Clear date filter"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+          {/* Rep Select */}
+          <div className="min-w-0">
+            <RepSelect
+              value={selectedRep}
+              onChange={(val) => {
+                setSelectedRep(val);
+                setCurrentPage(1);
+              }}
+              showAllOption={true}
+              className="rounded-xs h-9 border border-border w-full"
+            />
           </div>
 
           {/* Status Select */}
@@ -366,10 +393,10 @@ export default function DeliveryPage() {
             <Button
               variant="outline"
               onClick={handleReset}
-              className="rounded-xs h-9 gap-1 md:col-span-3"
+              className="rounded-xs h-9 gap-1 md:col-span-4"
             >
               <X className="h-4 w-4" />
-              <span>Reset All Filters</span>
+              <span>Reset</span>
             </Button>
           )}
         </div>
