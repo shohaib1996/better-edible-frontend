@@ -21,6 +21,7 @@ import CookItemHistory from "@/components/PPS/CookItemHistory";
 import {
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,
+  useUnprocessMoldMutation,
   ppsApi,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import { useAppDispatch } from "@/redux/hooks/hooks";
@@ -43,6 +44,8 @@ interface TraySlotProps {
   lockedShelf?: number;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  onUnprocess?: () => void;
+  isUnprocessing?: boolean;
   /** Changes when active slot advances — forces remount so autoFocus fires */
   focusKey?: number;
 }
@@ -58,6 +61,8 @@ function TraySlot({
   lockedShelf,
   isProcessing,
   onSubmit,
+  onUnprocess,
+  isUnprocessing,
   focusKey: _focusKey,
 }: TraySlotProps) {
   const [value, setValue] = useState("");
@@ -157,6 +162,19 @@ function TraySlot({
             <p className="text-sm text-muted-foreground mt-0.5">{lockedUnit} · Shelf {lockedShelf}</p>
           )}
         </div>
+        {onUnprocess && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="shrink-0 h-9 w-9 rounded-xs text-muted-foreground hover:text-destructive"
+            onClick={onUnprocess}
+            disabled={isUnprocessing}
+            title="Remove tray assignment"
+          >
+            {isUnprocessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+          </Button>
+        )}
       </div>
     );
   }
@@ -288,6 +306,17 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
   );
 
   const [processMold, { isLoading: isProcessing }] = useProcessMoldMutation();
+  const [unprocessMold, { isLoading: isUnprocessing }] = useUnprocessMoldMutation();
+
+  const handleUnprocessMold = useCallback(async (moldId: string) => {
+    try {
+      await unprocessMold({ cookItemId: item.cookItemId, moldId, performedBy: getPPSUser() } as any).unwrap();
+      setSlots((prev) => prev.map((s) => s.moldId === moldId ? { moldId: s.moldId } : s));
+      if (mode === "done") setMode("scanning");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to remove tray assignment");
+    }
+  }, [unprocessMold, item.cookItemId, mode]);
 
   const totalTrays = item.assignedMoldIds.length;
   const lockedCount = slots.filter((s) => s.trayId).length;
@@ -396,6 +425,8 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
                 lockedShelf={slot.shelfPosition || undefined}
                 isProcessing={isProcessing}
                 onSubmit={(trayId) => handleTrayScan(slot.moldId, trayId)}
+                onUnprocess={slot.trayId ? () => handleUnprocessMold(slot.moldId) : undefined}
+                isUnprocessing={isUnprocessing}
                 focusKey={i === activeSlotIndex ? lockedCount : -i}
               />
             ))}

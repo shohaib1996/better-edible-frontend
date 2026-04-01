@@ -104,6 +104,23 @@ export const ppsApi = baseApi.injectEndpoints({
       ],
     }),
 
+    unprocessMold: builder.mutation<
+      { success: boolean; cookItem: ICookItem },
+      { cookItemId: string; moldId: string; performedBy?: any }
+    >({
+      query: (body) => ({
+        url: "/pps/stage-2/unprocess-mold",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: [
+        tagTypes.ppsCookItems,
+        tagTypes.ppsMolds,
+        tagTypes.ppsTrays,
+        tagTypes.ppsUnits,
+      ],
+    }),
+
     getNextAvailableShelf: builder.query<
       { dehydratorUnitId: string; shelfPosition: number },
       void
@@ -382,6 +399,7 @@ export const {
   useCompleteStage1Mutation,
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,
+  useUnprocessMoldMutation,
   useGetNextAvailableShelfQuery,
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,

@@ -8,10 +8,7 @@ import {
   CheckCircle2,
   Loader2,
   LogOut,
-  Camera,
-  X,
 } from "lucide-react";
-import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +23,6 @@ import CookItemHistory from "@/components/PPS/CookItemHistory";
 import PrintLabel from "@/components/PPS/PrintLabel";
 import {
   useGetStage3CookItemsQuery,
-  useRemoveTrayMutation,
   useCompleteStage3Mutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
@@ -70,218 +66,7 @@ function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
   );
 }
 
-// ─── Tray Removal Slot ────────────────────────────────────────────────────────
-
-interface TraySlotProps {
-  slotId: string;
-  index: number;
-  total: number;
-  trayId: string;
-  unitId: string;
-  shelfPosition: number;
-  isActive: boolean;
-  isRemoved: boolean;
-  isProcessing: boolean;
-  onSubmit: (trayId: string) => Promise<boolean>;
-  /** Changes when active slot advances — forces remount so autoFocus fires */
-  focusKey?: number;
-}
-
-function TraySlot({
-  slotId,
-  index,
-  total,
-  trayId,
-  unitId,
-  shelfPosition,
-  isActive,
-  isRemoved,
-  isProcessing,
-  onSubmit,
-}: TraySlotProps) {
-  const [value, setValue] = useState("");
-  const [flash, setFlash] = useState(false);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const scannerDivId = `tray-remove-scanner-${slotId}`;
-
-  // Focus on mount (triggered by key remount when active slot changes)
-  useEffect(() => {
-    if (!isActive || isRemoved || cameraOpen) return;
-    inputRef.current?.focus();
-    const t1 = setTimeout(() => inputRef.current?.focus(), 100);
-    const t2 = setTimeout(() => inputRef.current?.focus(), 300);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const stopScanner = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-      } catch { /* already stopped */ }
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode(scannerDivId);
-    scannerRef.current = scanner;
-    scanner
-      .start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: (w: number, h: number) => ({ width: Math.floor(w * 0.9), height: Math.floor(h * 0.25) }),
-        },
-        async (decodedText) => {
-          await stopScanner();
-          const ok = await onSubmit(decodedText.trim());
-          if (ok) {
-            setFlash(true);
-            setTimeout(() => setFlash(false), 700);
-          }
-        },
-        () => {},
-      )
-      .catch((err: unknown) => {
-        setCameraError(err instanceof Error ? err.message : "Camera access denied");
-        setCameraOpen(false);
-        scannerRef.current = null;
-      });
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && value.trim()) {
-      const trimmed = value.trim();
-      setValue("");
-      onSubmit(trimmed).then((ok) => {
-        if (ok) {
-          setFlash(true);
-          setTimeout(() => setFlash(false), 700);
-        }
-      });
-    }
-  };
-
-  if (isRemoved) {
-    return (
-      <div className="flex items-center gap-4 px-5 py-4 rounded-xs bg-green-50 border border-green-200">
-        <CheckCircle2 className="w-9 h-9 text-green-600 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-base text-muted-foreground font-medium">Tray {index + 1} of {total}</p>
-          <p className="text-2xl font-mono font-bold text-green-700 truncate">{trayId}</p>
-          <p className="text-sm text-muted-foreground">{unitId} · Shelf {shelfPosition}</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex flex-col gap-3 rounded-xs border p-4 transition-colors ${
-      flash
-        ? "bg-green-100 border-green-400"
-        : isActive
-        ? "border-primary bg-primary/5"
-        : "border-muted bg-muted/30 opacity-60"
-    }`}>
-      <div className="flex items-center justify-between">
-        <p className="text-lg font-semibold text-foreground">Tray {index + 1} of {total}</p>
-        <span className="text-base font-mono text-muted-foreground">{unitId} · Shelf {shelfPosition}</span>
-      </div>
-      <p className="text-2xl font-mono font-bold">{trayId}</p>
-
-      {cameraOpen && (
-        <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-          <div id={scannerDivId} className="w-full" />
-          <Button size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopScanner}>
-            <X className="w-4 h-4" /> Close
-          </Button>
-          <p className="text-center text-sm text-white/70 pb-2">Point camera at tray QR code</p>
-        </div>
-      )}
-
-      {cameraError && <p className="text-base text-destructive">{cameraError}</p>}
-
-      <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isActive ? "Scan tray QR code…" : "Waiting…"}
-          disabled={!isActive || isProcessing || cameraOpen}
-          className="text-2xl font-mono h-16 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
-          autoComplete="off"
-          autoFocus={isActive}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          className="h-16 w-16 shrink-0 rounded-xs"
-          onClick={cameraOpen ? stopScanner : () => { setCameraError(null); setCameraOpen(true); }}
-          disabled={!isActive || isProcessing}
-          title={cameraOpen ? "Close camera" : "Use camera to scan"}
-        >
-          {cameraOpen ? <X className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
-        </Button>
-      </div>
-
-      {isActive && !cameraOpen && (
-        <>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="default"
-              className="flex-1 gap-1.5 rounded-xs"
-              onClick={() => {
-                const trimmed = value.trim();
-                if (!trimmed) return;
-                setValue("");
-                onSubmit(trimmed).then((ok) => {
-                  if (ok) { setFlash(true); setTimeout(() => setFlash(false), 700); }
-                });
-              }}
-              disabled={!value.trim() || isProcessing}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Submit
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="gap-1.5 rounded-xs"
-              onClick={() => { setValue(""); inputRef.current?.focus(); }}
-              disabled={!value.trim()}
-            >
-              <X className="w-4 h-4" />
-              Clear
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">Press Enter, scan QR, or tap camera</p>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── Cook Item Card ────────────────────────────────────────────────────────────
-
-type CardMode = "waiting" | "removing" | "done";
 
 interface CookItemCardProps {
   item: IStage3CookItem;
@@ -291,37 +76,16 @@ interface CookItemCardProps {
 
 function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
   const isComplete = item.status === "demolding_complete";
-  const removedTrayIds = new Set(item.trayRemovalTimestamps.map((t) => t.trayId));
   const traySlots = item.molds;
   const totalTrays = traySlots.length;
-  const removedCount = traySlots.filter((m) => removedTrayIds.has(m.trayId)).length;
-  const allRemoved = removedCount >= totalTrays && totalTrays > 0;
-
-  const initialMode: CardMode = isComplete ? "done"
-    : removedCount > 0 ? "removing"
-    : "waiting";
-
-  const [mode, setMode] = useState<CardMode>(initialMode);
-  const [removeTray, { isLoading: isRemoving }] = useRemoveTrayMutation();
+  const [done, setDone] = useState(isComplete);
   const [completeStage3, { isLoading: isCompleting }] = useCompleteStage3Mutation();
-
-  const activeSlotIndex = traySlots.findIndex((m) => !removedTrayIds.has(m.trayId));
-
-  const handleRemoveTray = useCallback(async (scannedId: string): Promise<boolean> => {
-    try {
-      await removeTray({ cookItemId: item.cookItemId, trayId: scannedId, performedBy: getPPSUser() } as any).unwrap();
-      return true;
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to log tray removal");
-      return false;
-    }
-  }, [removeTray, item.cookItemId]);
 
   const handleCompleteStage3 = async () => {
     try {
       const result = await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
       toast.success("Stage 3 complete");
-      setMode("done");
+      setDone(true);
       onComplete(result.cookItem);
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 3");
@@ -343,7 +107,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
+      <div className="grid grid-cols-2 gap-0 border-t border-b divide-x mx-5">
         <div className="px-3 py-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
           <p className="text-3xl font-bold">{item.quantity.toLocaleString()}</p>
@@ -351,12 +115,6 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
         <div className="px-3 py-4">
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Trays</p>
           <p className="text-3xl font-bold">{totalTrays}</p>
-        </div>
-        <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Removed</p>
-          <p className={`text-3xl font-bold ${allRemoved ? "text-green-600" : ""}`}>
-            {removedCount}/{totalTrays}
-          </p>
         </div>
       </div>
 
@@ -374,70 +132,37 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
           </div>
         )}
 
-        {mode === "done" || isComplete ? (
+        {/* Tray list */}
+        <div className="flex flex-col gap-0 rounded-xs border divide-y">
+          {traySlots.map((mold) => (
+            <div key={mold.moldId} className="flex items-center justify-between px-4 py-3 gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-mono font-semibold truncate">{mold.trayId}</p>
+                <p className="text-sm text-muted-foreground">{mold.dehydratorUnitId} · Shelf {mold.shelfPosition}</p>
+              </div>
+              <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
+            </div>
+          ))}
+        </div>
+
+        {done ? (
           <div className="flex items-center gap-4 py-4 text-green-600">
             <CheckCircle2 className="w-10 h-10 shrink-0" />
-            <p className="text-2xl font-bold">All trays removed — {removedCount} tray{removedCount !== 1 ? "s" : ""}</p>
+            <p className="text-2xl font-bold">Complete — label printed</p>
           </div>
-        ) : mode === "waiting" ? (
-          <>
-            <div className="flex flex-col gap-0 rounded-xs border divide-y">
-              {traySlots.map((mold) => (
-                <div key={mold.moldId} className="flex items-center justify-between px-4 py-3 gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-lg font-mono font-semibold truncate">{mold.trayId}</p>
-                    <p className="text-sm text-muted-foreground">{mold.dehydratorUnitId} · Shelf {mold.shelfPosition}</p>
-                  </div>
-                  <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
-                </div>
-              ))}
-            </div>
-            {item.allMoldsReady && (
-              <Button
-                size="lg"
-                className="w-full text-2xl h-16 rounded-xs font-bold"
-                onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("removing"); }}
-              >
-                Start Removal & Packing
-              </Button>
-            )}
-          </>
-        ) : mode === "removing" ? (
-          <div className="flex flex-col gap-3">
-            <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-base text-amber-800">
-              <strong>Remove each tray</strong> from the dehydrator and scan its QR code to log removal.
-            </div>
-            {traySlots.map((mold, i) => (
-              <TraySlot
-                key={i === activeSlotIndex ? `active-${removedCount}` : mold.trayId}
-                slotId={`${item.cookItemId}-${i}`}
-                index={i}
-                total={totalTrays}
-                trayId={mold.trayId}
-                unitId={mold.dehydratorUnitId}
-                shelfPosition={mold.shelfPosition}
-                isActive={i === activeSlotIndex}
-                isRemoved={removedTrayIds.has(mold.trayId)}
-                isProcessing={isRemoving}
-                onSubmit={handleRemoveTray}
-                focusKey={i === activeSlotIndex ? removedCount : -i}
-              />
-            ))}
-            <Button
-              size="lg"
-              disabled={!allRemoved || isCompleting}
-              className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40 font-bold"
-              onClick={handleCompleteStage3}
-            >
-              {isCompleting ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-6 h-6" />
-              )}
-              Print Label & Complete
-            </Button>
-          </div>
-        ) : null}
+        ) : item.allMoldsReady ? (
+          <Button
+            size="lg"
+            disabled={isCompleting}
+            className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white font-bold"
+            onClick={handleCompleteStage3}
+          >
+            {isCompleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
+            Complete & Print Label
+          </Button>
+        ) : (
+          <p className="text-lg text-muted-foreground text-center py-2">Waiting for dehydration to finish…</p>
+        )}
       </div>
 
       <div className="px-5 pb-5">

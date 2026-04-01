@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Wind, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Wind, CheckCircle2, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
 import {
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,
+  useUnprocessMoldMutation,
   ppsApi,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import { useAppDispatch } from "@/redux/hooks/hooks";
@@ -34,6 +35,7 @@ interface TraySlotProps {
   lockedShelf?: number;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  onUnprocess?: () => Promise<void>;
 }
 
 function TraySlot({
@@ -47,6 +49,7 @@ function TraySlot({
   lockedShelf,
   isProcessing,
   onSubmit,
+  onUnprocess,
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
@@ -83,6 +86,17 @@ function TraySlot({
             </p>
           )}
         </div>
+        {onUnprocess && (
+          <button
+            type="button"
+            onClick={onUnprocess}
+            disabled={isProcessing}
+            className="shrink-0 p-2 rounded-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+            title="Remove tray assignment"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
     );
   }
@@ -180,6 +194,17 @@ function CookItemCard({
   );
 
   const [processMold, { isLoading: isProcessing }] = useProcessMoldMutation();
+  const [unprocessMold, { isLoading: isUnprocessing }] = useUnprocessMoldMutation();
+
+  const handleUnprocessMold = useCallback(async (moldId: string) => {
+    try {
+      await unprocessMold({ cookItemId: item.cookItemId, moldId, performedBy: getPPSUser() } as any).unwrap();
+      setSlots((prev) => prev.map((s) => s.moldId === moldId ? { moldId: s.moldId } : s));
+      toast.success("Tray unassigned");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to unassign tray");
+    }
+  }, [unprocessMold, item.cookItemId]);
 
   const totalTrays = item.assignedMoldIds.length;
   const lockedCount = slots.filter((s) => s.trayId).length;
@@ -323,8 +348,9 @@ function CookItemCard({
                 lockedTrayId={slot.trayId}
                 lockedUnit={slot.dehydratorUnitId || undefined}
                 lockedShelf={slot.shelfPosition || undefined}
-                isProcessing={isProcessing}
+                isProcessing={isProcessing || isUnprocessing}
                 onSubmit={(trayId) => handleTrayScan(slot.moldId, trayId)}
+                onUnprocess={slot.trayId ? () => handleUnprocessMold(slot.moldId) : undefined}
               />
             ))}
 
