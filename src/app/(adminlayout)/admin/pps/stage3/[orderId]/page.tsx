@@ -87,6 +87,8 @@ interface TraySlotProps {
   isRemoved: boolean;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  /** Changes when active slot advances — forces remount so autoFocus fires */
+  focusKey?: number;
 }
 
 function TraySlot({
@@ -156,6 +158,7 @@ function TraySlot({
         </span>
       </div>
       <p className="text-xl font-mono font-semibold">{trayId}</p>
+      {/* key={focusKey} on call site forces remount → autoFocus fires on next slot */}
       <BarcodeScannerInput
         value={value}
         onChange={setValue}
@@ -164,6 +167,8 @@ function TraySlot({
         disabled={!isActive || isProcessing}
         mode="qr"
         inputClassName="text-xl font-mono h-14"
+        showManualActions={isActive}
+        autoFocus={isActive}
       />
       {isActive && (
         <p className="text-xs text-muted-foreground">
@@ -337,7 +342,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
               <Button
                 size="lg"
                 className="w-full text-xl h-14 rounded-xs"
-                onClick={() => setMode("removing")}
+                onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("removing"); }}
               >
                 Start Removal & Packing
               </Button>
@@ -351,7 +356,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
             </div>
             {traySlots.map((mold, i) => (
               <TraySlot
-                key={mold.trayId}
+                key={i === activeSlotIndex ? `active-${removedCount}` : mold.trayId}
                 slotId={`${item.cookItemId}-${i}`}
                 index={i}
                 total={totalTrays}
@@ -362,6 +367,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
                 isRemoved={removedTrayIds.has(mold.trayId)}
                 isProcessing={isRemoving}
                 onSubmit={handleRemoveTray}
+                focusKey={i === activeSlotIndex ? removedCount : -i}
               />
             ))}
             <Button

@@ -43,6 +43,8 @@ interface TraySlotProps {
   lockedShelf?: number;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  /** Changes when active slot advances — forces remount so autoFocus fires */
+  focusKey?: number;
 }
 
 function TraySlot({
@@ -56,6 +58,7 @@ function TraySlot({
   lockedShelf,
   isProcessing,
   onSubmit,
+  focusKey: _focusKey,
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
@@ -65,11 +68,15 @@ function TraySlot({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerDivId = `tray-scanner-${slotId}`;
 
+  // Focus on mount (triggered by key={focusKey} remount when active slot changes)
   useEffect(() => {
-    if (isActive && !lockedTrayId && !cameraOpen) {
-      inputRef.current?.focus();
-    }
-  }, [isActive, lockedTrayId, cameraOpen]);
+    if (!isActive || lockedTrayId || cameraOpen) return;
+    inputRef.current?.focus();
+    const t1 = setTimeout(() => inputRef.current?.focus(), 100);
+    const t2 = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -191,6 +198,7 @@ function TraySlot({
           disabled={!isActive || isProcessing || cameraOpen}
           className="text-2xl font-mono rounded-xs h-16 flex-1"
           autoComplete="off"
+          autoFocus={isActive}
         />
         <Button
           type="button"
@@ -205,7 +213,33 @@ function TraySlot({
       </div>
 
       {isActive && !cameraOpen && (
-        <p className="text-sm text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+        <>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              className="flex-1 gap-1.5 rounded-xs"
+              onClick={() => { if (value.trim()) handleSubmit(value); }}
+              disabled={!value.trim() || isProcessing}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Submit
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xs"
+              onClick={() => { setValue(""); inputRef.current?.focus(); }}
+              disabled={!value.trim()}
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">Press Enter, scan barcode, or tap camera</p>
+        </>
       )}
     </div>
   );
@@ -259,9 +293,8 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
   const lockedCount = slots.filter((s) => s.trayId).length;
   const allLocked = lockedCount >= totalTrays && totalTrays > 0;
 
-  useEffect(() => {
-    if (batchStarted && mode === "idle") setMode("scanning");
-  }, [batchStarted, mode]);
+  // Derive effective mode: if batch started and still idle, treat as scanning immediately
+  const effectiveMode: CardMode = mode === "idle" && batchStarted ? "scanning" : mode;
 
   const handleTrayScan = useCallback(
     async (moldId: string, trayId: string): Promise<boolean> => {
@@ -339,20 +372,20 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
           </div>
         )}
 
-        {mode === "done" || isComplete ? (
+        {effectiveMode === "done" || isComplete ? (
           <div className="flex items-center gap-4 py-4 text-green-600">
             <CheckCircle2 className="w-10 h-10 shrink-0" />
             <p className="text-2xl font-bold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
           </div>
-        ) : mode === "idle" && !batchStarted ? (
-          <Button size="lg" variant="outline" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={() => setMode("scanning")}>
+        ) : effectiveMode === "idle" ? (
+          <Button size="lg" variant="outline" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("scanning"); }}>
             Load to Dehydrator
           </Button>
-        ) : mode === "scanning" ? (
+        ) : effectiveMode === "scanning" ? (
           <div className="flex flex-col gap-3">
             {slots.map((slot, i) => (
               <TraySlot
-                key={slot.moldId}
+                key={i === activeSlotIndex ? `active-${lockedCount}` : slot.moldId}
                 slotId={`${item.cookItemId}-${i}`}
                 index={i}
                 total={totalTrays}
@@ -363,6 +396,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
                 lockedShelf={slot.shelfPosition || undefined}
                 isProcessing={isProcessing}
                 onSubmit={(trayId) => handleTrayScan(slot.moldId, trayId)}
+                focusKey={i === activeSlotIndex ? lockedCount : -i}
               />
             ))}
 
@@ -480,7 +514,7 @@ export default function LockedStage2OrderPage({
           {!allComplete && (
             <Button
               size="lg"
-              onClick={() => setBatchStarted(true)}
+              onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setBatchStarted(true); }}
               disabled={batchStarted}
               className={`w-full text-2xl py-5 h-auto rounded-xs font-bold transition-colors ${
                 batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""

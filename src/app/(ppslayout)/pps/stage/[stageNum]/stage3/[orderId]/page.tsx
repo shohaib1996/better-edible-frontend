@@ -83,6 +83,8 @@ interface TraySlotProps {
   isRemoved: boolean;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  /** Changes when active slot advances — forces remount so autoFocus fires */
+  focusKey?: number;
 }
 
 function TraySlot({
@@ -105,11 +107,15 @@ function TraySlot({
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerDivId = `tray-remove-scanner-${slotId}`;
 
+  // Focus on mount (triggered by key remount when active slot changes)
   useEffect(() => {
-    if (isActive && !isRemoved && !cameraOpen) {
-      inputRef.current?.focus();
-    }
-  }, [isActive, isRemoved, cameraOpen]);
+    if (!isActive || isRemoved || cameraOpen) return;
+    inputRef.current?.focus();
+    const t1 = setTimeout(() => inputRef.current?.focus(), 100);
+    const t2 = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -219,6 +225,7 @@ function TraySlot({
           disabled={!isActive || isProcessing || cameraOpen}
           className="text-2xl font-mono h-16 flex-1 px-3 rounded-xs border bg-background disabled:opacity-50"
           autoComplete="off"
+          autoFocus={isActive}
         />
         <Button
           type="button"
@@ -233,7 +240,40 @@ function TraySlot({
       </div>
 
       {isActive && !cameraOpen && (
-        <p className="text-sm text-muted-foreground">Press Enter, scan QR, or tap camera</p>
+        <>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              className="flex-1 gap-1.5 rounded-xs"
+              onClick={() => {
+                const trimmed = value.trim();
+                if (!trimmed) return;
+                setValue("");
+                onSubmit(trimmed).then((ok) => {
+                  if (ok) { setFlash(true); setTimeout(() => setFlash(false), 700); }
+                });
+              }}
+              disabled={!value.trim() || isProcessing}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Submit
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-xs"
+              onClick={() => { setValue(""); inputRef.current?.focus(); }}
+              disabled={!value.trim()}
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">Press Enter, scan QR, or tap camera</p>
+        </>
       )}
     </div>
   );
@@ -356,7 +396,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
               <Button
                 size="lg"
                 className="w-full text-2xl h-16 rounded-xs font-bold"
-                onClick={() => setMode("removing")}
+                onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("removing"); }}
               >
                 Start Removal & Packing
               </Button>
@@ -369,7 +409,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
             </div>
             {traySlots.map((mold, i) => (
               <TraySlot
-                key={mold.trayId}
+                key={i === activeSlotIndex ? `active-${removedCount}` : mold.trayId}
                 slotId={`${item.cookItemId}-${i}`}
                 index={i}
                 total={totalTrays}
@@ -380,6 +420,7 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
                 isRemoved={removedTrayIds.has(mold.trayId)}
                 isProcessing={isRemoving}
                 onSubmit={handleRemoveTray}
+                focusKey={i === activeSlotIndex ? removedCount : -i}
               />
             ))}
             <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -41,6 +41,8 @@ interface TraySlotProps {
   lockedShelf?: number;
   isProcessing: boolean;
   onSubmit: (trayId: string) => Promise<boolean>;
+  /** Changes when active slot advances — forces remount so autoFocus fires */
+  focusKey?: number;
 }
 
 function TraySlot({
@@ -57,6 +59,17 @@ function TraySlot({
 }: TraySlotProps) {
   const [value, setValue] = useState("");
   const [flash, setFlash] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Focus on mount (triggered by key remount when active slot changes)
+  useEffect(() => {
+    if (!isActive || lockedTrayId) return;
+    inputRef.current?.focus();
+    const t1 = setTimeout(() => inputRef.current?.focus(), 100);
+    const t2 = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = useCallback(async (trayId: string) => {
     const trimmed = trayId.trim();
@@ -102,6 +115,7 @@ function TraySlot({
         </p>
         <span className="text-xs font-mono text-muted-foreground">Mold: {moldId}</span>
       </div>
+      {/* key={focusKey} on call site forces remount → autoFocus fires on next slot */}
       <BarcodeScannerInput
         value={value}
         onChange={setValue}
@@ -110,6 +124,8 @@ function TraySlot({
         disabled={!isActive || isProcessing}
         mode="qr"
         inputClassName="text-xl font-mono h-14"
+        showManualActions={isActive}
+        autoFocus={isActive}
       />
       {isActive && (
         <p className="text-xs text-muted-foreground">Scan barcode, use camera, or press Enter</p>
@@ -167,10 +183,8 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
   const lockedCount = slots.filter((s) => s.trayId).length;
   const allLocked = lockedCount >= totalTrays && totalTrays > 0;
 
-  // Auto-enter scanning when batch starts
-  useEffect(() => {
-    if (batchStarted && mode === "idle") setMode("scanning");
-  }, [batchStarted, mode]);
+  // Derive effective mode: if batch started and still idle, treat as scanning immediately
+  const effectiveMode: CardMode = mode === "idle" && batchStarted ? "scanning" : mode;
 
   const handleTrayScan = useCallback(
     async (moldId: string, trayId: string): Promise<boolean> => {
@@ -256,25 +270,25 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
         )}
 
         {/* ── Action area ── */}
-        {mode === "done" || isComplete ? (
+        {effectiveMode === "done" || isComplete ? (
           <div className="flex items-center gap-3 py-4 text-green-600">
             <CheckCircle2 className="w-8 h-8 shrink-0" />
             <p className="text-xl font-semibold">All trays loaded — {lockedCount} tray{lockedCount !== 1 ? "s" : ""}</p>
           </div>
-        ) : mode === "idle" && !batchStarted ? (
+        ) : effectiveMode === "idle" ? (
           <Button
             size="lg"
             variant="outline"
             className="w-full text-xl h-14 rounded-xs"
-            onClick={() => setMode("scanning")}
+            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("scanning"); }}
           >
             Load to Dehydrator
           </Button>
-        ) : mode === "scanning" ? (
+        ) : effectiveMode === "scanning" ? (
           <div className="flex flex-col gap-3">
             {slots.map((slot, i) => (
               <TraySlot
-                key={slot.moldId}
+                key={i === activeSlotIndex ? `active-${lockedCount}` : slot.moldId}
                 slotId={`${item.cookItemId}-${i}`}
                 index={i}
                 total={totalTrays}
@@ -285,6 +299,7 @@ function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemC
                 lockedShelf={slot.shelfPosition}
                 isProcessing={isProcessing}
                 onSubmit={(trayId) => handleTrayScan(slot.moldId, trayId)}
+                focusKey={i === activeSlotIndex ? lockedCount : -i}
               />
             ))}
 
@@ -403,7 +418,7 @@ export default function Stage2OrderPage({
           {!allComplete && (
             <Button
               size="lg"
-              onClick={() => setBatchStarted(true)}
+              onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setBatchStarted(true); }}
               disabled={batchStarted}
               className={`w-full text-2xl h-16 rounded-xs font-bold transition-colors ${
                 batchStarted ? "bg-green-600 hover:bg-green-700 text-white" : ""
