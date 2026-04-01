@@ -76,9 +76,14 @@ export default function UnitsPanel() {
       return;
     }
     try {
-      const res = await bulkCreate({ startNumber: start, endNumber: end, prefix, totalShelves: shelves }).unwrap();
+      const res = await bulkCreate({
+        startNumber: start,
+        endNumber: end,
+        prefix,
+        totalShelves: shelves,
+      }).unwrap();
       toast.success(
-        `Created ${res.created} dehydrator${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`
+        `Created ${res.created} dehydrator${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`,
       );
       setShowAddModal(false);
       setStartNumber("");
@@ -94,7 +99,9 @@ export default function UnitsPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-medium">Dehydrators ({units.length})</h3>
-          <p className="text-sm text-muted-foreground">Shelf capacity per dehydrator varies</p>
+          <p className="text-sm text-muted-foreground">
+            Shelf capacity per dehydrator varies
+          </p>
         </div>
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
           <DialogTrigger asChild>
@@ -141,7 +148,9 @@ export default function UnitsPanel() {
               </div>
 
               <div>
-                <Label className="text-xs mb-1 block">Shelves per Dehydrator</Label>
+                <Label className="text-xs mb-1 block">
+                  Shelves per Dehydrator
+                </Label>
                 <Input
                   type="number"
                   value={totalShelves}
@@ -155,11 +164,11 @@ export default function UnitsPanel() {
                 <div className="bg-muted/50 rounded-xs p-3 text-sm">
                   <p>
                     Will create <strong>{previewCount}</strong> dehydrator
-                    {previewCount !== 1 ? "s" : ""} with <strong>{totalShelves || "?"}</strong> shelves each:
+                    {previewCount !== 1 ? "s" : ""} with{" "}
+                    <strong>{totalShelves || "?"}</strong> shelves each:
                   </p>
                   <p className="text-muted-foreground">
-                    {prefix}-{startNumber}, …{" "}
-                    {prefix}-{endNumber}
+                    {prefix}-{startNumber}, … {prefix}-{endNumber}
                   </p>
                 </div>
               )}
@@ -193,7 +202,7 @@ export default function UnitsPanel() {
           {units.map((unit) => {
             const occ = getOccupancy(unit);
             return (
-              <Card key={unit._id} className="rounded-xs">
+              <Card key={unit._id} className="rounded-xs py-0">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold">{unit.unitId}</h4>
@@ -203,7 +212,9 @@ export default function UnitsPanel() {
                   </div>
 
                   {/* Dynamic shelf grid */}
-                  <div className={`grid ${getGridCols(unit.totalShelves)} gap-1`}>
+                  <div
+                    className={`grid ${getGridCols(unit.totalShelves)} gap-1`}
+                  >
                     {Array.from({ length: unit.totalShelves }, (_, i) => {
                       const pos = String(i + 1);
                       const shelf = unit.shelves[pos];
@@ -211,7 +222,7 @@ export default function UnitsPanel() {
                       return (
                         <div
                           key={pos}
-                          className={`text-center text-xs py-0 rounded-xs border ${
+                          className={`text-center text-xs py-1.5 rounded-xs border ${
                             isOccupied
                               ? "bg-red-500/10 border-red-500/20 text-red-600"
                               : "bg-green-500/10 border-green-500/20 text-green-600"
