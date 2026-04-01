@@ -211,7 +211,7 @@ export default function UnitsPanel() {
                       return (
                         <div
                           key={pos}
-                          className={`text-center text-xs py-1.5 rounded-xs border ${
+                          className={`text-center text-xs py-0 rounded-xs border ${
                             isOccupied
                               ? "bg-red-500/10 border-red-500/20 text-red-600"
                               : "bg-green-500/10 border-green-500/20 text-green-600"
