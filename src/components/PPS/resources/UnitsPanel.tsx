@@ -48,7 +48,11 @@ export default function UnitsPanel() {
   const [bulkCreate, { isLoading: isCreating }] =
     useBulkCreateDehydratorUnitsMutation();
 
-  const units = data?.units ?? [];
+  const units = [...(data?.units ?? [])].sort((a, b) => {
+    const numA = parseInt(a.unitId.replace(/\D/g, ""), 10);
+    const numB = parseInt(b.unitId.replace(/\D/g, ""), 10);
+    return numA - numB;
+  });
 
   const previewCount =
     startNumber && endNumber && Number(endNumber) >= Number(startNumber)
