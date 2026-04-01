@@ -31,11 +31,18 @@ function getOccupancy(unit: IDehydratorUnit) {
   };
 }
 
+function getGridCols(totalShelves: number) {
+  if (totalShelves <= 20) return "grid-cols-4";
+  if (totalShelves <= 30) return "grid-cols-6";
+  return "grid-cols-8";
+}
+
 export default function UnitsPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [prefix, setPrefix] = useState("UNIT");
+  const [prefix, setPrefix] = useState("D");
   const [startNumber, setStartNumber] = useState("");
   const [endNumber, setEndNumber] = useState("");
+  const [totalShelves, setTotalShelves] = useState("24");
 
   const { data, isLoading } = useGetDehydratorUnitsQuery();
   const [bulkCreate, { isLoading: isCreating }] =
@@ -51,24 +58,29 @@ export default function UnitsPanel() {
   const handleBulkCreate = async () => {
     const start = Number(startNumber);
     const end = Number(endNumber);
+    const shelves = Number(totalShelves);
     if (!start || !end || end < start) {
       toast.error("Invalid number range");
       return;
     }
-    if (end - start + 1 > 20) {
-      toast.error("Maximum 20 units at a time");
+    if (end - start + 1 > 10) {
+      toast.error("Maximum 10 dehydrators at a time");
+      return;
+    }
+    if (!shelves || shelves < 1 || shelves > 100) {
+      toast.error("Shelves must be between 1 and 100");
       return;
     }
     try {
-      const res = await bulkCreate({ startNumber: start, endNumber: end, prefix }).unwrap();
+      const res = await bulkCreate({ startNumber: start, endNumber: end, prefix, totalShelves: shelves }).unwrap();
       toast.success(
-        `Created ${res.created} unit${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`
+        `Created ${res.created} dehydrator${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`
       );
       setShowAddModal(false);
       setStartNumber("");
       setEndNumber("");
     } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to create units");
+      toast.error(err?.data?.message || "Failed to create dehydrators");
     }
   };
 
@@ -77,19 +89,19 @@ export default function UnitsPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-medium">Dehydrator Units ({units.length})</h3>
-          <p className="text-sm text-muted-foreground">20 shelves per unit</p>
+          <h3 className="font-medium">Dehydrators ({units.length})</h3>
+          <p className="text-sm text-muted-foreground">Shelf capacity per dehydrator varies</p>
         </div>
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
           <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xs">
+            <Button size="sm" className="rounded-xs bg-accent text-white">
               <Plus className="w-4 h-4 mr-1" />
-              Add Units
+              Add Dehydrators
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-xs">
             <DialogHeader>
-              <DialogTitle>Add New Dehydrator Units</DialogTitle>
+              <DialogTitle>Add New Dehydrators</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -97,7 +109,7 @@ export default function UnitsPanel() {
                 <Input
                   value={prefix}
                   onChange={(e) => setPrefix(e.target.value)}
-                  placeholder="UNIT"
+                  placeholder="D"
                   className="rounded-xs"
                 />
               </div>
@@ -118,17 +130,28 @@ export default function UnitsPanel() {
                     type="number"
                     value={endNumber}
                     onChange={(e) => setEndNumber(e.target.value)}
-                    placeholder="5"
+                    placeholder="8"
                     className="rounded-xs"
                   />
                 </div>
               </div>
 
+              <div>
+                <Label className="text-xs mb-1 block">Shelves per Dehydrator</Label>
+                <Input
+                  type="number"
+                  value={totalShelves}
+                  onChange={(e) => setTotalShelves(e.target.value)}
+                  placeholder="24"
+                  className="rounded-xs"
+                />
+              </div>
+
               {previewCount !== null && (
                 <div className="bg-muted/50 rounded-xs p-3 text-sm">
                   <p>
-                    Will create <strong>{previewCount}</strong> unit
-                    {previewCount !== 1 ? "s" : ""} with 20 shelves each:
+                    Will create <strong>{previewCount}</strong> dehydrator
+                    {previewCount !== 1 ? "s" : ""} with <strong>{totalShelves || "?"}</strong> shelves each:
                   </p>
                   <p className="text-muted-foreground">
                     {prefix}-{startNumber}, …{" "}
@@ -145,7 +168,7 @@ export default function UnitsPanel() {
                 {isCreating ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                Create Units
+                Create Dehydrators
               </Button>
             </div>
           </DialogContent>
@@ -156,11 +179,11 @@ export default function UnitsPanel() {
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Loading units…</span>
+          <span>Loading dehydrators…</span>
         </div>
       )}
 
-      {/* Unit cards */}
+      {/* Dehydrator cards */}
       {!isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {units.map((unit) => {
@@ -175,8 +198,8 @@ export default function UnitsPanel() {
                     </Badge>
                   </div>
 
-                  {/* 4×5 shelf grid */}
-                  <div className="grid grid-cols-4 gap-1">
+                  {/* Dynamic shelf grid */}
+                  <div className={`grid ${getGridCols(unit.totalShelves)} gap-1`}>
                     {Array.from({ length: unit.totalShelves }, (_, i) => {
                       const pos = String(i + 1);
                       const shelf = unit.shelves[pos];

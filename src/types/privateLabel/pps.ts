@@ -255,6 +255,7 @@ export interface IBulkCreateResourceRequest {
   startNumber: number;
   endNumber: number;
   prefix: string;
+  totalShelves?: number;
 }
 
 export interface IBulkCreateMoldsRequest extends IBulkCreateResourceRequest {

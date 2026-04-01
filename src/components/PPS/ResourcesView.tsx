@@ -10,7 +10,7 @@ type Tab = "molds" | "trays" | "units";
 const TABS: { id: Tab; label: string }[] = [
   { id: "molds", label: "Molds" },
   { id: "trays", label: "Trays" },
-  { id: "units", label: "Units" },
+  { id: "units", label: "Dehydrators" },
 ];
 
 export default function ResourcesView() {
@@ -21,7 +21,7 @@ export default function ResourcesView() {
       <div>
         <h2 className="text-lg font-semibold">Resource Management</h2>
         <p className="text-sm text-muted-foreground">
-          Manage molds, dehydrator trays, and dehydrator units
+          Manage molds, dehydrator trays, and dehydrators
         </p>
       </div>
 
