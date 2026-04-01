@@ -26,7 +26,7 @@ export const RepStoreFilters = ({
     <div className="flex flex-wrap items-center gap-3">
       <Input
         type="text"
-        placeholder="Search by store name..."
+        placeholder="Search by name, address, contact info..."
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
         className="flex-1 min-w-[200px] border border-accent rounded-xs"
