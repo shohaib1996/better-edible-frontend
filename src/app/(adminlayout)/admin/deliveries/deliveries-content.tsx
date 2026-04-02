@@ -46,11 +46,7 @@ export default function DeliveriesContent() {
   const [storeName, setStoreName] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [selectedRep, setSelectedRep] = useState<string>("all");
-  // Always work with UTC-normalized dates so the calendar day matches stored scheduledAt
-  const todayUTC = () => {
-    const now = new Date();
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  };
+  const todayUTC = () => new Date();
   const [date, setDate] = useState<Date | undefined>(todayUTC());
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,7 +116,7 @@ export default function DeliveriesContent() {
   const handlePrevDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setUTCDate(newDate.getUTCDate() - 1);
+      newDate.setDate(newDate.getDate() - 1);
       setDate(newDate);
       setCurrentPage(1);
     }
@@ -129,7 +125,7 @@ export default function DeliveriesContent() {
   const handleNextDay = () => {
     if (date) {
       const newDate = new Date(date);
-      newDate.setUTCDate(newDate.getUTCDate() + 1);
+      newDate.setDate(newDate.getDate() + 1);
       setDate(newDate);
       setCurrentPage(1);
     }
@@ -316,7 +312,7 @@ export default function DeliveriesContent() {
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">
-                    {date ? format(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()), "MMM dd, yyyy") : "Pick a date"}
+                    {date ? format(date, "MMM dd, yyyy") : "Pick a date"}
                   </span>
                 </Button>
               </PopoverTrigger>
@@ -325,9 +321,7 @@ export default function DeliveriesContent() {
                   mode="single"
                   selected={date}
                   onSelect={(d) => {
-                    if (d) {
-                      setDate(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
-                    }
+                    if (d) setDate(d);
                     setCurrentPage(1);
                   }}
                   initialFocus
