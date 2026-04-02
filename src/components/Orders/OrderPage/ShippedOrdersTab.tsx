@@ -25,7 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { format, subDays } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { toast } from "sonner";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
@@ -67,9 +67,9 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   isRepView = false,
 }) => {
   const today = new Date();
-  const sevenDaysAgo = subDays(today, 7);
+  const sixMonthsAgo = subMonths(today, 6);
 
-  const [startDate, setStartDate] = useState<Date | undefined>(sevenDaysAgo);
+  const [startDate, setStartDate] = useState<Date | undefined>(sixMonthsAgo);
   const [endDate, setEndDate] = useState<Date | undefined>(today);
   const [selectedRepName, setSelectedRepName] = useState<string | undefined>();
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -77,7 +77,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   // Set default date range and trigger initial filter
   useEffect(() => {
     onFilter({
-      startDate: format(sevenDaysAgo, "yyyy-MM-dd"),
+      startDate: format(sixMonthsAgo, "yyyy-MM-dd"),
       endDate: format(today, "yyyy-MM-dd"),
     });
   }, []); // Empty dependency array - run only once on mount
@@ -238,16 +238,30 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           </p>
         ) : (
           <>
-            <div className="text-right font-semibold text-emerald-600 dark:text-emerald-400 pr-1">
-              Shipped Orders Value: $
-              {shippedTotal.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+            <div className="flex items-center justify-between pr-1">
+              <div className="flex gap-3 text-sm font-semibold">
+                <span className="text-primary">
+                  {orders.filter((o) => !(o as any).isSample).length} Orders
+                </span>
+                <span className="text-purple-600 dark:text-purple-400">
+                  {orders.filter((o) => (o as any).isSample).length} Samples
+                </span>
+              </div>
+              <div className="font-semibold text-emerald-600 dark:text-emerald-400">
+                Shipped Value: $
+                {shippedTotal.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
             </div>
 
-            {orders.map((order) => {
+            {(() => {
+              let orderIndex = 0;
+              let sampleIndex = 0;
+              return orders.map((order) => {
               const isSample = (order as any).isSample === true;
+              const displayNumber = isSample ? ++sampleIndex : ++orderIndex;
               const isOwnOrder = isRepView
                 ? order.rep?._id === currentRep?._id
                 : true;
@@ -267,6 +281,12 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                     {/* Store Info */}
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-2 flex-wrap">
+                        <span className={cn(
+                          "text-xs font-bold rounded-xs px-1.5 py-0.5 min-w-[24px] text-center",
+                          isSample ? "bg-purple-600 text-white" : "bg-primary text-white"
+                        )}>
+                          {displayNumber}
+                        </span>
                         {!isSample ? (
                           <button
                             onClick={() => handleOpenDialog(order)}
@@ -481,7 +501,8 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                   </div>
                 </Card>
               );
-            })}
+            });
+            })()}
 
             {/* Pagination */}
             {totalOrders > itemsPerPage && onPageChange && onLimitChange && (
