@@ -368,7 +368,6 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
                             "shipped",
                             "cancelled",
                             "manifested",
-                            "accepted",
                             "submitted",
                           ].map((s) => (
                             <SelectItem

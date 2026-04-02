@@ -392,7 +392,6 @@ export const NewOrdersTab: React.FC<NewOrdersTabProps> = ({
                     <SelectContent className="text-sm rounded-xs">
                       {[
                         "submitted",
-                        "accepted",
                         "manifested",
                         "shipped",
                         "cancelled",

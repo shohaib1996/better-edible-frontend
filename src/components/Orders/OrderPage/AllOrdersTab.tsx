@@ -360,7 +360,6 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                     <SelectContent className="text-sm rounded-xs">
                       {[
                         "submitted",
-                        "accepted",
                         "manifested",
                         "shipped",
                         "cancelled",
