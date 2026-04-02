@@ -75,6 +75,14 @@ export const deliveriesApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.deliveries],
     }),
 
+    // 🔍 Check if a delivery exists for a given order/sample/clientOrder
+    checkDeliveryExists: builder.query<
+      { exists: boolean; delivery: { _id: string; status: string; scheduledAt?: string } | null },
+      { orderId?: string; sampleId?: string; clientOrderId?: string }
+    >({
+      query: (params) => ({ url: "/deliveries/check", params }),
+    }),
+
     // 🔹 Delivery order sequence
     getDeliveryOrder: builder.query({
       query: ({ repId, date }: { repId: string; date: string }) => ({
@@ -103,4 +111,5 @@ export const {
   useUpdateDeliveryMutation,
   useGetDeliveryOrderQuery,
   useSaveDeliveryOrderMutation,
+  useLazyCheckDeliveryExistsQuery,
 } = deliveriesApi;

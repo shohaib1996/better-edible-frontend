@@ -143,28 +143,26 @@ export const StoresModals = ({
       )}
 
       {/* Rep-only modals */}
-      {!isAdmin && (
-        <>
-          {selectedStoreForSample && user && (
-            <SampleModal
-              open={sampleModalOpen}
-              onClose={onCloseSampleModal}
-              storeId={selectedStoreForSample._id}
-              storeName={selectedStoreForSample.name}
-              storeAddress={selectedStoreForSample.address || ""}
-              repId={user.id}
-              repName={user.name || ""}
-            />
-          )}
-          {selectedStoreForFollowup && user && (
-            <ManageFollowUpModal
-              open={followupModalOpen}
-              onClose={onCloseFollowupModal}
-              storeId={selectedStoreForFollowup._id}
-              repId={user.id}
-            />
-          )}
-        </>
+      {!isAdmin && selectedStoreForFollowup && user && (
+        <ManageFollowUpModal
+          open={followupModalOpen}
+          onClose={onCloseFollowupModal}
+          storeId={selectedStoreForFollowup._id}
+          repId={user.id}
+        />
+      )}
+
+      {/* Sample modal — available for both admin and rep */}
+      {selectedStoreForSample && user && (
+        <SampleModal
+          open={sampleModalOpen}
+          onClose={onCloseSampleModal}
+          storeId={selectedStoreForSample._id}
+          storeName={selectedStoreForSample.name}
+          storeAddress={selectedStoreForSample.address || ""}
+          repId={user.id}
+          repName={user.name || ""}
+        />
       )}
 
       {/* Shared modals */}

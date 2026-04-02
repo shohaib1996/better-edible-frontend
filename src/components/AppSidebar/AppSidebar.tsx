@@ -59,7 +59,7 @@ const adminItems = [
   { title: "Orders", url: "/admin/orders", icon: Search },
   { title: "Private Label", url: "/admin/client-orders", icon: Users },
   { title: "Follow Ups", url: "/admin/follow-ups", icon: CalendarSync },
-  { title: "Samples List", url: "/admin/samples", icon: Gift },
+  // { title: "Samples List", url: "/admin/samples", icon: Gift },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
 ];

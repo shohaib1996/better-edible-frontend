@@ -170,6 +170,10 @@ export const StoresView = ({ isAdmin }: StoresViewProps) => {
                   s.setSelectedStoreForOrder(store);
                   s.setCreateOrderModalOpen(true);
                 }}
+                onOpenSample={(store) => {
+                  s.setSelectedStoreForSample(store);
+                  s.setSampleModalOpen(true);
+                }}
                 onAddNote={openAddNote}
               />
             ))}
@@ -191,6 +195,10 @@ export const StoresView = ({ isAdmin }: StoresViewProps) => {
                 onOpenCreateOrder={(store) => {
                   s.setSelectedStoreForOrder(store);
                   s.setCreateOrderModalOpen(true);
+                }}
+                onOpenSample={(store) => {
+                  s.setSelectedStoreForSample(store);
+                  s.setSampleModalOpen(true);
                 }}
                 onAddNote={openAddNote}
               />

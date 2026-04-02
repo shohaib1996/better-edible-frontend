@@ -17,6 +17,7 @@ import {
   Truck,
   Calendar,
   FilePlus,
+  Package,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { IStore } from "@/types";
@@ -32,6 +33,7 @@ interface StoreCardProps {
   onOpenDelivery: (store: any) => void;
   onOpenFollowup: (store: IStore) => void;
   onOpenCreateOrder: (store: IStore) => void;
+  onOpenSample: (store: IStore) => void;
   onAddNote: (store: IStore) => void;
 }
 
@@ -46,6 +48,7 @@ export const StoreCard = ({
   onOpenDelivery,
   onOpenFollowup,
   onOpenCreateOrder,
+  onOpenSample,
   onAddNote,
 }: StoreCardProps) => {
   const hasDue = store.dueAmount > 0;
@@ -125,6 +128,22 @@ export const StoreCard = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Create Order</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-xs cursor-pointer"
+                  onClick={() => onOpenSample(store)}
+                >
+                  <Package className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sample</p>
               </TooltipContent>
             </Tooltip>
 

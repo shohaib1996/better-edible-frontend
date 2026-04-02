@@ -53,6 +53,7 @@ import { EditOrderModal } from "./EditOrderModal";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { ClientOrderPackingListDialog } from "./ClientOrderPackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
+import { useLazyCheckDeliveryExistsQuery } from "@/redux/api/Deliveries/deliveryApi";
 import { generateClientOrderInvoice } from "@/utils/clientOrderInvoiceGenerator";
 import { cn } from "@/lib/utils";
 
@@ -69,17 +70,24 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
   const [toggleShipASAP, { isLoading: toggling }] = useToggleShipASAPMutation();
   const [deleteOrder, { isLoading: deleting }] = useDeleteClientOrderMutation();
 
+  const [checkDeliveryExists, { isFetching: checkingDelivery }] = useLazyCheckDeliveryExistsQuery();
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showPackingListDialog, setShowPackingListDialog] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [showShippedDialog, setShowShippedDialog] = useState(false);
+  const [showNoDeliveryWarning, setShowNoDeliveryWarning] = useState(false);
 
   const handleStatusChange = async (newStatus: ClientOrderStatus) => {
-    // Show dialog for tracking number when changing to shipped
     if (newStatus === "shipped") {
-      setShowShippedDialog(true);
+      const result = await checkDeliveryExists({ clientOrderId: order._id }).unwrap();
+      if (!result.exists) {
+        setShowNoDeliveryWarning(true);
+      } else {
+        setShowShippedDialog(true);
+      }
       return;
     }
 
@@ -298,7 +306,7 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                       toast.error("You are not authorized to change it. This is not your order.");
                     }
                   }}
-                  disabled={updatingStatus || !isOwnOrder}
+                  disabled={updatingStatus || checkingDelivery || !isOwnOrder}
                 >
                   <SelectTrigger className={cn("h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}>
                     <SelectValue />
@@ -488,6 +496,32 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
               className="bg-destructive hover:bg-destructive/90 text-white rounded-xs"
             >
               {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* No Delivery Warning Dialog */}
+      <AlertDialog open={showNoDeliveryWarning} onOpenChange={setShowNoDeliveryWarning}>
+        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>No Delivery Assigned</AlertDialogTitle>
+            <AlertDialogDescription>
+              Order {order.orderNumber} does not have a delivery created yet. Shipping without a delivery may cause tracking issues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowNoDeliveryWarning(false);
+                setShowShippedDialog(true);
+              }}
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Ship Anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

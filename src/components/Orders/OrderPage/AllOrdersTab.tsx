@@ -41,6 +41,17 @@ import { generateInvoice } from "@/utils/invoiceGenerator";
 import { PackingListDialog } from "./PackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { useUpdateSampleMutation } from "@/redux/api/Samples/samplesApi";
+import { useLazyCheckDeliveryExistsQuery } from "@/redux/api/Deliveries/deliveryApi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 interface AllOrdersTabProps {
@@ -79,11 +90,13 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   currentRep,
 }) => {
   const [updateSample] = useUpdateSampleMutation();
+  const [checkDeliveryExists] = useLazyCheckDeliveryExistsQuery();
   const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
   const [packingOrder, setPackingOrder] = useState<IOrder | null>(null);
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] =
     useState<IOrder | null>(null);
+  const [noDeliveryWarning, setNoDeliveryWarning] = useState<{ order: IOrder; newStatus: string } | null>(null);
 
   // Opens the order details dialog for the clicked order card.
   const handleOpenDialog = (order: IOrder) => {
@@ -98,6 +111,19 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
   // Centralized feedback for actions blocked by ownership checks.
   const handleUnauthorizedAction = () => {
     toast.error("You are not authorized to change it. This is not your order.");
+  };
+
+  const handleStatusChangeWithCheck = async (order: IOrder, newStatus: string) => {
+    if (newStatus === "shipped") {
+      const isSample = (order as any).isSample === true;
+      const params = isSample ? { sampleId: order._id } : { orderId: order._id };
+      const result = await checkDeliveryExists(params).unwrap();
+      if (!result.exists) {
+        setNoDeliveryWarning({ order, newStatus });
+        return;
+      }
+    }
+    handleChangeStatus(order._id, newStatus);
   };
 
   const allOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
@@ -340,7 +366,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
                     value={order.status}
                     onValueChange={(value) => {
                       if (isOwnOrder) {
-                        handleChangeStatus(order._id, value);
+                        handleStatusChangeWithCheck(order, value);
                       } else {
                         handleUnauthorizedAction();
                       }
@@ -598,6 +624,34 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
         order={packingOrder}
         onClose={() => setPackingOrder(null)}
       />
+
+      <AlertDialog open={!!noDeliveryWarning} onOpenChange={(open) => { if (!open) setNoDeliveryWarning(null); }}>
+        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-card">
+          <AlertDialogHeader>
+            <AlertDialogTitle>No Delivery Assigned</AlertDialogTitle>
+            <AlertDialogDescription>
+              This order does not have a delivery created yet. Shipping without a delivery may cause tracking issues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (noDeliveryWarning) {
+                  handleChangeStatus(noDeliveryWarning.order._id, noDeliveryWarning.newStatus);
+                }
+                setNoDeliveryWarning(null);
+              }}
+              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Ship Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <DeliveryModal
         open={deliveryModalOpen}
         onClose={() => setDeliveryModalOpen(false)}
