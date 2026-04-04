@@ -133,18 +133,43 @@ function CookItemCard({ item, isAdmin, onComplete }: CookItemCardProps) {
           </div>
         )}
 
-        {/* Tray list */}
-        <div className="flex flex-col gap-0 rounded-xs border divide-y">
-          {traySlots.map((mold) => (
-            <div key={mold.moldId} className="flex items-center justify-between px-4 py-3 gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-lg font-mono font-semibold truncate">{mold.trayId}</p>
-                <p className="text-sm text-muted-foreground">{mold.dehydratorUnitId} · Shelf {mold.shelfPosition}</p>
+        {/* Dehydrator graphic — grouped by unit */}
+        {(() => {
+          const unitMap = new Map<string, typeof traySlots>();
+          traySlots.forEach((m) => {
+            const existing = unitMap.get(m.dehydratorUnitId) ?? [];
+            unitMap.set(m.dehydratorUnitId, [...existing, m]);
+          });
+          return Array.from(unitMap.entries()).map(([unitId, molds]) => (
+            <div key={unitId} className="rounded-xs border overflow-hidden">
+              {/* Unit header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-b">
+                <span className="font-semibold text-base">{unitId}</span>
+                <span className="text-sm text-muted-foreground">{molds.length} shelf{molds.length !== 1 ? "ves" : ""}</span>
               </div>
-              <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
+              {/* Shelf rows */}
+              <div className="flex flex-col divide-y">
+                {molds.map((mold) => {
+                  const globalIdx = traySlots.indexOf(mold);
+                  const unitsThisMold = Math.min(70, item.quantity - globalIdx * 70);
+                  return (
+                    <div key={mold.moldId} className={`flex items-center gap-4 px-4 py-3 ${mold.isReady ? "bg-green-500/5" : ""}`}>
+                      {/* Shelf number — primary */}
+                      <div className="shrink-0 w-12 h-12 rounded-xs border flex items-center justify-center font-bold text-2xl bg-background">
+                        {mold.shelfPosition}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-lg font-semibold">Shelf {mold.shelfPosition}</p>
+                        <p className="text-sm text-muted-foreground font-mono">{mold.trayId} · {unitsThisMold} units</p>
+                      </div>
+                      <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
 
         {done ? (
           <div className="flex items-center gap-4 py-4 text-green-600">

@@ -189,12 +189,8 @@ export default function PrintLabel(props: PrintLabelProps) {
 
       <HR />
 
-      <div style={{ fontSize: "9pt", fontFamily: "monospace", lineHeight: 1.5, wordBreak: "break-all" }}>
-        Case ID: {d.caseId}
-      </div>
-
       <div style={{ display: "flex", justifyContent: "center", marginTop: "0.1in" }}>
-        <QRCodeSVG value={JSON.stringify({ caseId: d.caseId, cookItemId: d.cookItemId })} size={160} bgColor="#ffffff" fgColor="#000000" />
+        <QRCodeSVG value={`/admin/client-orders?orderId=${d.orderId}`} size={160} bgColor="#ffffff" fgColor="#000000" />
       </div>
     </div>
   );

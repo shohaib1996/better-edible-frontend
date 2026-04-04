@@ -229,6 +229,7 @@ export interface ICaseLabelData {
   unitCount: number;
   caseId: string;
   cookItemId: string;
+  orderId: string;
 }
 
 export interface IConfirmCountResponse {

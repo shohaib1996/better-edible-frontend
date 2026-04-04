@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, ChevronUp, ChevronDown, CheckCircle2, ScanLine } from "lucide-react";
 import BarcodeScannerInput from "./BarcodeScannerInput";
 import { toast } from "sonner";
@@ -141,8 +142,9 @@ interface Stage4ViewProps {
   compact?: boolean;
 }
 
-export default function Stage4View({ basePath: _basePath = "/admin/pps", compact }: Stage4ViewProps) {
+export default function Stage4View({ basePath = "/admin/pps", compact }: Stage4ViewProps) {
   const isAdmin = isAdminUser();
+  const router = useRouter();
 
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [scannedItem, setScannedItem] = useState<ScannedItem | null>(null);
@@ -301,7 +303,11 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
             const sl = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
             const ec = item.expectedCount ?? 0;
             return (
-              <div key={item._id} className="rounded-xs border bg-card">
+              <button
+                key={item._id}
+                className="rounded-xs border bg-card w-full text-left"
+                onClick={() => router.push(`${basePath}/stage4/item/${encodeURIComponent(item.cookItemId)}`)}
+              >
                 <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
                   <div className="min-w-0 flex-1">
                     <p className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate`}>{item.flavor}</p>
@@ -326,7 +332,7 @@ export default function Stage4View({ basePath: _basePath = "/admin/pps", compact
                 <div className="px-5 py-3">
                   <p className="text-sm font-mono text-muted-foreground">{item.cookItemId}</p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
