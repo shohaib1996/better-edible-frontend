@@ -288,6 +288,7 @@ export default function LockedStage3OrderPage({
 
   const printLabel = useCallback((cookItem: ICookItem) => {
     setLabelData(cookItem);
+    setShowLabelPreview(true);
     setTimeout(() => {
       const labelEl = printLabelRef.current;
       if (!labelEl) return;

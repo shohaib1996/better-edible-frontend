@@ -111,6 +111,7 @@ export default function Stage3OrderPage({
 
   const printLabel = useCallback((cookItem: ICookItem) => {
     setLabelData(cookItem);
+    setShowLabelPreview(true);
     // Give React a tick to render the hidden label before printing
     setTimeout(() => {
       const labelEl = printLabelRef.current;
