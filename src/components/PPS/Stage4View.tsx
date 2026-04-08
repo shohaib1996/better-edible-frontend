@@ -177,7 +177,7 @@ export default function Stage4View({ basePath = "/admin/pps", compact }: Stage4V
     } catch (err: any) {
       const msg = err?.data?.message ?? "Scan failed";
       toast.error(
-        msg.includes("demolding_complete")
+        msg.includes("bag_seal_complete")
           ? "Wrong container — this item isn't ready for packaging"
           : msg.includes("not found")
           ? "Barcode not recognised — scan the production label on the container"

@@ -223,6 +223,9 @@ export const COOK_ITEM_STATUSES = [
   "cooking_molding_complete",
   "dehydrating_complete",
   "demolding_complete",
+  "bagging",
+  "sealing",
+  "bag_seal_complete",
   "packaging_casing_complete",
 ] as const;
 
@@ -233,7 +236,10 @@ export const COOK_ITEM_STATUS_LABELS: Record<string, string> = {
   "in-progress": "In Progress",
   cooking_molding_complete: "Molded",
   dehydrating_complete: "Dehydrating",
-  demolding_complete: "Ready to Pack",
+  demolding_complete: "Demolded",
+  bagging: "Bagging",
+  sealing: "Sealing",
+  bag_seal_complete: "Ready to Pack",
   packaging_casing_complete: "Packed",
 };
 
@@ -242,7 +248,10 @@ export const COOK_ITEM_STATUS_COLORS: Record<string, string> = {
   "in-progress": "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
   cooking_molding_complete: "bg-primary/10 text-primary border-primary/20",
   dehydrating_complete: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  demolding_complete: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  demolding_complete: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  bagging: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  sealing: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  bag_seal_complete: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   packaging_casing_complete:
     "bg-green-500/10 text-green-600 border-green-500/20",
 };

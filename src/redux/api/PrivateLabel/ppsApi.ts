@@ -168,6 +168,21 @@ export const ppsApi = baseApi.injectEndpoints({
       ],
     }),
 
+    startBagging: builder.mutation<{ success: boolean; cookItem: ICookItem }, { cookItemId: string; performedBy?: any }>({
+      query: (body) => ({ url: "/pps/stage-3/start-bagging", method: "POST", body }),
+      invalidatesTags: [tagTypes.ppsCookItems],
+    }),
+
+    startSealing: builder.mutation<{ success: boolean; cookItem: ICookItem }, { cookItemId: string; performedBy?: any }>({
+      query: (body) => ({ url: "/pps/stage-3/start-sealing", method: "POST", body }),
+      invalidatesTags: [tagTypes.ppsCookItems],
+    }),
+
+    completeBagSeal: builder.mutation<{ success: boolean; cookItem: ICookItem }, { cookItemId: string; performedBy?: any }>({
+      query: (body) => ({ url: "/pps/stage-3/bag-seal-complete", method: "POST", body }),
+      invalidatesTags: [tagTypes.ppsCookItems],
+    }),
+
     // ─── Stage 4 ──────────────────────────
     getStage4CookItems: builder.query<{ cookItems: ICookItem[] }, void>({
       query: () => "/pps/stage-4/cook-items",
@@ -404,6 +419,9 @@ export const {
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,
   useCompleteStage3Mutation,
+  useStartBaggingMutation,
+  useStartSealingMutation,
+  useCompleteBagSealMutation,
   useGetStage4CookItemsQuery,
   useScanContainerMutation,
   useConfirmCountMutation,

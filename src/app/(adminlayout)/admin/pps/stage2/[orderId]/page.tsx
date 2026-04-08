@@ -137,7 +137,7 @@ function TraySlot({
         onSubmit={handleSubmit}
         placeholder={isActive ? "Scan tray barcode…" : "Waiting…"}
         disabled={!isActive || isProcessing}
-        mode="qr"
+        mode="barcode"
         inputClassName="text-xl font-mono h-14"
         showManualActions={isActive}
         autoFocus={isActive}
@@ -176,7 +176,6 @@ interface CookItemCardProps {
 
 function CookItemCard({ item, isAdmin, batchStarted, onGetNextShelf }: CookItemCardProps) {
   const isComplete = item.status === "dehydrating_complete";
-  const processedMoldIds = item.dehydratorAssignments.map((a) => a.moldId);
 
   const initialMode: CardMode = isComplete ? "done"
     : item.dehydratorAssignments.length > 0 ? "scanning"

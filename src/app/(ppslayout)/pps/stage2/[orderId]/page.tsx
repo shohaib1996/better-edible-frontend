@@ -125,7 +125,7 @@ function TraySlot({
         onSubmit={handleSubmit}
         placeholder={isActive ? "Scan tray barcode…" : "Waiting…"}
         disabled={!isActive || isProcessing}
-        mode="qr"
+        mode="barcode"
         inputClassName="text-2xl font-mono h-16"
       />
       {isActive && (

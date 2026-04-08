@@ -20,6 +20,9 @@ export type CookItemStatus =
   | "cooking_molding_complete"
   | "dehydrating_complete"
   | "demolding_complete"
+  | "bagging"
+  | "sealing"
+  | "bag_seal_complete"
   | "packaging_casing_complete";
 
 // ──────────────────────────────
@@ -76,6 +79,8 @@ export interface ICookItem {
   containerPackedTimestamp?: string;
   labelPrintTimestamp?: string;
   demoldingCompletionTimestamp?: string;
+  baggingStartTimestamp?: string;
+  sealingStartTimestamp?: string;
   packagingStartTimestamp?: string;
   expectedCount: number;
   actualCount?: number;
