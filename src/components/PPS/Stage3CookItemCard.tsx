@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Barcode from "react-barcode";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, ScanLine } from "lucide-react";
@@ -95,6 +96,18 @@ export function Stage3CookItemCard({ item, isAdmin, compact }: Stage3CookItemCar
         <div className="min-w-0 flex-1">
           <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate`}>{item.flavor}</p>
           <p className="text-sm text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
+          <div className="mt-2">
+            <Barcode
+              value={item.cookItemId}
+              format="CODE128"
+              width={1.2}
+              height={40}
+              displayValue={false}
+              margin={0}
+              background="#ffffff"
+              lineColor="#000000"
+            />
+          </div>
         </div>
         <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
           {statusLabel}
