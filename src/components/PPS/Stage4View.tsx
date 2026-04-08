@@ -85,6 +85,7 @@ function CaseLookup() {
                 onSubmit={handleLookup}
                 placeholder="Scan case QR or type Case ID…"
                 disabled={isFetching}
+                autoFocus
                 mode="qr"
                 inputClassName="text-base font-mono h-12"
               />
@@ -281,6 +282,7 @@ export default function Stage4View({ basePath = "/admin/pps", compact }: Stage4V
                 onSubmit={handleScanSubmit}
                 placeholder="Scan container barcode…"
                 disabled={isVerifying}
+                autoFocus
                 mode="barcode"
                 inputClassName={`${compact ? "text-base h-10" : "text-2xl h-16"} font-mono`}
               />
@@ -644,6 +646,7 @@ function CookItemCard({ item, isAdmin, basePath: _basePath }: CookItemCardProps)
                   onSubmit={handleScanSubmit}
                   placeholder="Scan container barcode…"
                   disabled={isVerifying}
+                  autoFocus
                   mode="barcode"
                   inputClassName="text-xl font-mono h-14"
                 />
