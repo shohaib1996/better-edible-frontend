@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useRef } from "react";
+import { use, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Package, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,29 @@ export default function AdminStage4ItemPage({
   const [result, setResult] = useState<IConfirmCountResponse | null>(null);
   const [isDone, setIsDone] = useState(item?.status === "packaging_casing_complete");
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Build reprint label data from item fields when already packaged (result not in session)
+  const reprintCases = result?.cases ?? (item && item.status === "packaging_casing_complete" && item.caseIds?.length
+    ? item.caseIds.map((caseId, i) => {
+        const isLastCase = i === item.caseIds.length - 1;
+        const unitCount = isLastCase && (item.partialCaseCount ?? 0) > 0
+          ? item.partialCaseCount!
+          : 100;
+        return {
+          caseId,
+          unitCount,
+          caseNumber: i + 1,
+          labelData: {
+            storeName: item.storeName,
+            flavor: item.flavor,
+            unitCount,
+            caseId,
+            cookItemId: item.cookItemId,
+            orderId: item.orderId,
+          },
+        };
+      })
+    : null);
 
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
 
@@ -183,23 +206,24 @@ export default function AdminStage4ItemPage({
             <CheckCircle2 className="w-7 h-7 shrink-0" />
             <div>
               <p className="text-lg font-bold">Packaging complete</p>
-              {result && (
+              {reprintCases && (
                 <p className="text-sm text-muted-foreground">
-                  {result.cases.length} case{result.cases.length !== 1 ? "s" : ""} created · {result.orderStatus.completedItems}/{result.orderStatus.totalItems} items in order done
+                  {reprintCases.length} case{reprintCases.length !== 1 ? "s" : ""} created
+                  {result && ` · ${result.orderStatus.completedItems}/${result.orderStatus.totalItems} items in order done`}
                 </p>
               )}
             </div>
           </div>
 
-          {result && (
+          {reprintCases && (
             <>
               <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
-                {result.cases.map((c) => (
+                {reprintCases.map((c) => (
                   <PrintLabel key={c.caseId} type="case" data={c.labelData} />
                 ))}
               </div>
               <Button size="lg" className="w-full text-base h-12 rounded-xs font-bold" onClick={printCaseLabels}>
-                Print Case Labels ({result.cases.length})
+                Print Case Labels ({reprintCases.length})
               </Button>
             </>
           )}

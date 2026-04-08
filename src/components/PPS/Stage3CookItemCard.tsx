@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Barcode from "react-barcode";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, ScanLine } from "lucide-react";
@@ -16,7 +15,7 @@ import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
 } from "@/constants/privateLabel";
-import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
+import type { IStage3CookItem } from "@/types/privateLabel/pps";
 
 // ─── Dehydration Timer ───────────────────────────────────────────────────────
 
@@ -55,10 +54,9 @@ export interface Stage3CookItemCardProps {
   item: IStage3CookItem;
   isAdmin: boolean;
   compact?: boolean;
-  onPrintLabel: (cookItem: ICookItem) => void;
 }
 
-export function Stage3CookItemCard({ item, isAdmin, compact, onPrintLabel }: Stage3CookItemCardProps) {
+export function Stage3CookItemCard({ item, isAdmin, compact }: Stage3CookItemCardProps) {
   const [completeBagSeal, { isLoading: isCompleting }] = useCompleteBagSealMutation();
   const [completeStage3, { isLoading: isCompletingTrayRemoval }] = useCompleteStage3Mutation();
 
@@ -73,9 +71,8 @@ export function Stage3CookItemCard({ item, isAdmin, compact, onPrintLabel }: Sta
 
   const handleTrayRemoval = async () => {
     try {
-      const result = await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success("Tray removal complete");
-      onPrintLabel(result.cookItem);
+      await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
+      toast.success("Tray removal complete — scan the barcode to start bagging");
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete tray removal");
     }
@@ -98,18 +95,6 @@ export function Stage3CookItemCard({ item, isAdmin, compact, onPrintLabel }: Sta
         <div className="min-w-0 flex-1">
           <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate`}>{item.flavor}</p>
           <p className="text-sm text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
-          <div className="mt-2">
-            <Barcode
-              value={item.cookItemId}
-              format="CODE128"
-              width={1.2}
-              height={40}
-              displayValue={false}
-              margin={0}
-              background="#ffffff"
-              lineColor="#000000"
-            />
-          </div>
         </div>
         <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
           {statusLabel}
@@ -154,7 +139,7 @@ export function Stage3CookItemCard({ item, isAdmin, compact, onPrintLabel }: Sta
                 onClick={handleTrayRemoval}
               >
                 {isCompletingTrayRemoval ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                Complete Tray Removal & Print Label
+                Complete Tray Removal
               </Button>
             ) : (
               <p className={`${compact ? "text-xs" : "text-sm"} text-muted-foreground text-center py-1`}>Waiting for dehydration to finish…</p>

@@ -31,7 +31,6 @@ import {
   useCompleteBagSealMutation,
   useCompleteStage3Mutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
-import Barcode from "react-barcode";
 import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
 import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
 
@@ -71,10 +70,9 @@ function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
 interface CookItemCardProps {
   item: IStage3CookItem;
   isAdmin: boolean;
-  onPrintLabel: (cookItem: any) => void;
 }
 
-function CookItemCard({ item, isAdmin, onPrintLabel }: CookItemCardProps) {
+function CookItemCard({ item, isAdmin }: CookItemCardProps) {
   const [completeBagSeal, { isLoading: isCompleting }] = useCompleteBagSealMutation();
   const [completeStage3, { isLoading: isCompletingTrayRemoval }] = useCompleteStage3Mutation();
 
@@ -89,9 +87,8 @@ function CookItemCard({ item, isAdmin, onPrintLabel }: CookItemCardProps) {
 
   const handleTrayRemoval = async () => {
     try {
-      const result = await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success("Tray removal complete");
-      onPrintLabel(result.cookItem);
+      await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
+      toast.success("Tray removal complete — scan the barcode to start bagging");
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete tray removal");
     }
@@ -114,19 +111,7 @@ function CookItemCard({ item, isAdmin, onPrintLabel }: CookItemCardProps) {
         <div className="min-w-0 flex-1">
           <p className="text-4xl font-bold leading-tight truncate">{item.flavor}</p>
           <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
-          <div className="mt-2">
-            <Barcode
-              value={item.cookItemId}
-              format="CODE128"
-              width={1.4}
-              height={50}
-              displayValue={false}
-              margin={0}
-              background="#ffffff"
-              lineColor="#000000"
-            />
           </div>
-        </div>
         <Badge variant="outline" className={`shrink-0 text-base px-3 py-1.5 ${statusColor}`}>
           {statusLabel}
         </Badge>
@@ -170,7 +155,7 @@ function CookItemCard({ item, isAdmin, onPrintLabel }: CookItemCardProps) {
                 onClick={handleTrayRemoval}
               >
                 {isCompletingTrayRemoval ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-                Complete Tray Removal & Print Label
+                Complete Tray Removal
               </Button>
             ) : (
               <p className="text-base text-muted-foreground text-center py-1">Waiting for dehydration to finish…</p>
@@ -453,7 +438,7 @@ export default function WorkerStage3OrderPage({
 
           <div className="flex flex-col gap-4">
             {orderItems.map((item) => (
-              <CookItemCard key={item._id} item={item} isAdmin={isAdmin} onPrintLabel={printLabel} />
+              <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
             ))}
           </div>
         </div>

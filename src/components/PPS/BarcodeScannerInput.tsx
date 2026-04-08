@@ -82,11 +82,12 @@ const BarcodeScannerInput = forwardRef<BarcodeScannerInputHandle, BarcodeScanner
     // Focus text input on mount when autoFocus=true (works even after key-forced remount)
     useEffect(() => {
       if (!autoFocus || cameraOpen) return;
-      // Try immediately, then retry at 50ms and 150ms to handle disabled→enabled transition
+      // Try immediately, then retry at 100ms, 300ms, 500ms to handle tab-button focus stealing
       inputRef.current?.focus();
       const t1 = setTimeout(() => inputRef.current?.focus(), 100);
       const t2 = setTimeout(() => inputRef.current?.focus(), 300);
-      return () => { clearTimeout(t1); clearTimeout(t2); };
+      const t3 = setTimeout(() => inputRef.current?.focus(), 500);
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

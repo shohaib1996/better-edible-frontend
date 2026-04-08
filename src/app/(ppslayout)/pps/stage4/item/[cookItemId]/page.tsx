@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useRef } from "react";
+import { use, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Package, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import PrintLabel from "@/components/PPS/PrintLabel";
 import {
   useGetStage4CookItemsQuery,
   useConfirmCountMutation,
+  useScanContainerMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import {
   COOK_ITEM_STATUS_COLORS,
@@ -44,7 +45,41 @@ export default function WorkerStage4ItemPage({
   const [isDone, setIsDone] = useState(item?.status === "packaging_casing_complete");
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Build reprint label data from item fields when already packaged (result not in session)
+  const reprintCases = result?.cases ?? (item && item.status === "packaging_casing_complete" && item.caseIds?.length
+    ? item.caseIds.map((caseId, i) => {
+        const isLastCase = i === item.caseIds.length - 1;
+        const unitCount = isLastCase && (item.partialCaseCount ?? 0) > 0
+          ? item.partialCaseCount!
+          : 100;
+        return {
+          caseId,
+          unitCount,
+          caseNumber: i + 1,
+          labelData: {
+            storeName: item.storeName,
+            flavor: item.flavor,
+            unitCount,
+            caseId,
+            cookItemId: item.cookItemId,
+            orderId: item.orderId,
+          },
+        };
+      })
+    : null);
+
   const [confirmCount, { isLoading: isConfirming }] = useConfirmCountMutation();
+  const [scanContainer] = useScanContainerMutation();
+
+  // Auto-call scanContainer on mount if item is bag_seal_complete (sets packagingStartTimestamp)
+  useEffect(() => {
+    if (item && item.status === "bag_seal_complete") {
+      scanContainer({ qrCodeData: item.cookItemId, performedBy: getPPSUser() } as any).catch(() => {
+        // Already started in a previous session — ignore errors
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.cookItemId]);
 
   const handleConfirmCount = useCallback(async () => {
     if (!item?.cookItemId) return;
@@ -182,23 +217,24 @@ export default function WorkerStage4ItemPage({
             <CheckCircle2 className="w-10 h-10 shrink-0" />
             <div>
               <p className="text-2xl font-bold">Packaging complete</p>
-              {result && (
+              {reprintCases && (
                 <p className="text-base text-muted-foreground">
-                  {result.cases.length} case{result.cases.length !== 1 ? "s" : ""} created · {result.orderStatus.completedItems}/{result.orderStatus.totalItems} items in order done
+                  {reprintCases.length} case{reprintCases.length !== 1 ? "s" : ""} created
+                  {result && ` · ${result.orderStatus.completedItems}/${result.orderStatus.totalItems} items in order done`}
                 </p>
               )}
             </div>
           </div>
 
-          {result && (
+          {reprintCases && (
             <>
               <div ref={printRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
-                {result.cases.map((c) => (
+                {reprintCases.map((c) => (
                   <PrintLabel key={c.caseId} type="case" data={c.labelData} />
                 ))}
               </div>
               <Button size="lg" className="w-full text-2xl h-16 rounded-xs font-bold" onClick={printCaseLabels}>
-                Print Case Labels ({result.cases.length})
+                Print Case Labels ({reprintCases.length})
               </Button>
             </>
           )}

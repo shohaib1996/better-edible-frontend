@@ -306,10 +306,6 @@ export default function Stage3OrderPage({
                 item={item}
                 isAdmin={isAdmin}
                 compact={true}
-                onPrintLabel={(cookItem) => {
-                  setLabelData(cookItem);
-                  setShowLabelPreview(true);
-                }}
               />
             ))}
           </div>
