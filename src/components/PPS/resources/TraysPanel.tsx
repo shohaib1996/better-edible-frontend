@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,10 @@ import {
   useBulkCreateTraysMutation,
   useBulkDeleteTraysMutation,
   useUpdateTrayStatusMutation,
+  useGetStage1CookItemsQuery,
+  useGetStage2CookItemsQuery,
+  useGetStage3CookItemsQuery,
+  useGetStage4CookItemsQuery,
 } from "@/redux/api/PrivateLabel/ppsApi";
 
 export default function TraysPanel() {
@@ -37,6 +42,20 @@ export default function TraysPanel() {
   const [bulkCreate, { isLoading: isCreating }] = useBulkCreateTraysMutation();
   const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteTraysMutation();
   const [updateStatus] = useUpdateTrayStatusMutation();
+
+  const { data: s1Data } = useGetStage1CookItemsQuery({ status: "in-progress,cooking_molding_complete" });
+  const { data: s2Data } = useGetStage2CookItemsQuery();
+  const { data: s3Data } = useGetStage3CookItemsQuery();
+  const { data: s4Data } = useGetStage4CookItemsQuery();
+
+  const cookItemMap = new Map<string, { storeName: string; flavor: string }>(
+    [
+      ...(s1Data?.cookItems ?? []),
+      ...(s2Data?.cookItems ?? []),
+      ...(s3Data?.cookItems ?? []),
+      ...(s4Data?.cookItems ?? []),
+    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }])
+  );
 
   const trays = data?.trays ?? [];
   const availableTrays = trays.filter((t) => t.status === "available");
@@ -299,15 +318,28 @@ export default function TraysPanel() {
 
                 {tray.status === "in-use" && (
                   <>
-                    {tray.currentCookItemId && (
-                      <p className="text-xs text-muted-foreground text-center truncate">
-                        Cook Item: {tray.currentCookItemId}
-                      </p>
-                    )}
+                    {tray.currentCookItemId && (() => {
+                      const ci = cookItemMap.get(tray.currentCookItemId);
+                      return ci ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-xs text-center font-medium truncate cursor-default">
+                                {ci.storeName} · {ci.flavor}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>{ci.storeName} · {ci.flavor}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <p className="text-xs text-muted-foreground text-center truncate">
+                          {tray.currentCookItemId}
+                        </p>
+                      );
+                    })()}
                     {tray.currentDehydratorUnitId && (
                       <p className="text-xs text-muted-foreground text-center">
-                        {tray.currentDehydratorUnitId}, Shelf{" "}
-                        {tray.currentShelfPosition}
+                        {tray.currentDehydratorUnitId}, Shelf {tray.currentShelfPosition}
                       </p>
                     )}
                   </>

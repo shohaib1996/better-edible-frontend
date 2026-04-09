@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,10 @@ import {
   useBulkCreateMoldsMutation,
   useBulkDeleteMoldsMutation,
   useUpdateMoldStatusMutation,
+  useGetStage1CookItemsQuery,
+  useGetStage2CookItemsQuery,
+  useGetStage3CookItemsQuery,
+  useGetStage4CookItemsQuery,
 } from "@/redux/api/PrivateLabel/ppsApi";
 
 export default function MoldsPanel() {
@@ -38,6 +43,20 @@ export default function MoldsPanel() {
   const [bulkCreate, { isLoading: isCreating }] = useBulkCreateMoldsMutation();
   const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteMoldsMutation();
   const [updateStatus] = useUpdateMoldStatusMutation();
+
+  const { data: s1Data } = useGetStage1CookItemsQuery({ status: "in-progress,cooking_molding_complete" });
+  const { data: s2Data } = useGetStage2CookItemsQuery();
+  const { data: s3Data } = useGetStage3CookItemsQuery();
+  const { data: s4Data } = useGetStage4CookItemsQuery();
+
+  const cookItemMap = new Map<string, { storeName: string; flavor: string }>(
+    [
+      ...(s1Data?.cookItems ?? []),
+      ...(s2Data?.cookItems ?? []),
+      ...(s3Data?.cookItems ?? []),
+      ...(s4Data?.cookItems ?? []),
+    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }])
+  );
 
   const molds = data?.molds ?? [];
   const availableMolds = molds.filter((m) => m.status === "available");
@@ -323,11 +342,25 @@ export default function MoldsPanel() {
                 <p className="text-xs text-muted-foreground text-center">
                   {mold.unitsPerMold} units/mold
                 </p>
-                {mold.status === "in-use" && mold.currentCookItemId && (
-                  <p className="text-xs text-muted-foreground text-center truncate">
-                    Cook Item: {mold.currentCookItemId}
-                  </p>
-                )}
+                {mold.status === "in-use" && mold.currentCookItemId && (() => {
+                  const ci = cookItemMap.get(mold.currentCookItemId);
+                  return ci ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-xs text-center font-medium truncate cursor-default">
+                            {ci.storeName} · {ci.flavor}
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent>{ci.storeName} · {ci.flavor}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center truncate">
+                      {mold.currentCookItemId}
+                    </p>
+                  );
+                })()}
                 {mold.lastUsedAt && (
                   <p className="text-xs text-muted-foreground text-center">
                     Last used: {new Date(mold.lastUsedAt).toLocaleDateString()}
