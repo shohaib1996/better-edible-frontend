@@ -8,6 +8,9 @@ export interface INote {
 
   // Store reference (populated or string)
   entityId: string | StoreInfo;
+  
+  // Delivery reference (optional)
+  deliveryId?: string;
 
   // Rep reference (populated or string)
   author: string | AuthorInfo;

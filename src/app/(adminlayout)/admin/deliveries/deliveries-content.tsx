@@ -36,18 +36,93 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useGetAllDeliveriesQuery, useGetDeliveryOrderQuery } from "@/redux/api/Deliveries/deliveryApi";
+import { useGetAllNotesQuery } from "@/redux/api/Notes/notes";
 import type { Delivery } from "@/types/delivery/delivery";
 import { useDebounce } from "@/hooks/useDebounce";
 import { RepSelect } from "@/components/Shared/RepSelect";
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
+/* ------------------------------------------------------------------
+   Shows what the rep actually collected, pulled from their note
+   ------------------------------------------------------------------ */
+function PaymentCollectedCell({ deliveryId }: { deliveryId: string }) {
+  const { data, isLoading } = useGetAllNotesQuery(
+    { deliveryId, limit: 5 },
+    { skip: !deliveryId }
+  );
+
+  if (isLoading) return <span className="text-muted-foreground text-xs">…</span>;
+
+  const notes = data?.notes || [];
+
+  const payments: string[] = [];
+  for (const note of notes) {
+    if (note.payment?.cash) payments.push("Cash");
+    if (note.payment?.check) payments.push("Check");
+    if (note.payment?.noPay) payments.push("No Pay");
+    if (note.payment?.amount && note.payment.amount !== "")
+      payments.push(`$${note.payment.amount}`);
+  }
+
+  if (!payments.length) return <span className="text-muted-foreground font-normal">—</span>;
+
+  return (
+    <div className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+      {payments.join(" · ")}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------
+   Fetches notes the rep left for a store on the delivery date
+   ------------------------------------------------------------------ */
+function DeliveryNoteCell({ deliveryId }: { deliveryId: string }) {
+  const { data, isLoading } = useGetAllNotesQuery(
+    { deliveryId, limit: 5 },
+    { skip: !deliveryId }
+  );
+
+  if (isLoading) return <span className="text-muted-foreground text-xs">…</span>;
+
+  const notes = data?.notes || [];
+
+  if (!notes.length) return <span className="text-muted-foreground">—</span>;
+
+  return (
+    <div className="space-y-1.5 max-w-[220px]">
+      {notes.map((note: any) => (
+        <div key={note._id} className="text-sm">
+          {note.content
+            ? <p className="text-foreground whitespace-normal leading-snug">{note.content}</p>
+            : <span className="text-muted-foreground">—</span>
+          }
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const DISPOSITION_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "delivery", label: "Delivery" },
+  { value: "sample_drop", label: "Sample Drop" },
+  { value: "money_pickup", label: "Money Pickup" },
+  { value: "sales_call", label: "Sales Call" },
+  { value: "other", label: "Other" },
+];
+
 export default function DeliveriesContent() {
   const [storeName, setStoreName] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [selectedRep, setSelectedRep] = useState<string>("all");
-  const todayUTC = () => new Date();
-  const [date, setDate] = useState<Date | undefined>(todayUTC());
+  const [dispositionFilter, setDispositionFilter] = useState<string>("all");
+  // Initialize to local midnight so date parts always match the user's timezone (PST)
+  const todayLocal = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  };
+  const [date, setDate] = useState<Date | undefined>(todayLocal());
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -64,9 +139,9 @@ export default function DeliveriesContent() {
   if (selectedRep && selectedRep !== "all")
     queryParams.assignedTo = selectedRep;
   if (date) {
-    // Use UTC day boundaries to match how scheduledAt is stored (UTC midnight)
-    const startUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0));
-    const endUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999));
+    // Use local date parts to match how scheduledAt is stored (local midnight → UTC)
+    const startUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
+    const endUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999));
     queryParams.startDate = startUTC.toISOString();
     queryParams.endDate = endUTC.toISOString();
   }
@@ -74,7 +149,7 @@ export default function DeliveriesContent() {
   const { data, isLoading, isError } = useGetAllDeliveriesQuery(queryParams);
 
   // Fetch stop order for the selected rep + date to sort deliveries accordingly
-  const dateStr = date ? `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}` : "";
+  const dateStr = date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` : "";
   const { data: deliveryOrderData } = useGetDeliveryOrderQuery(
     { repId: selectedRep, date: dateStr },
     { skip: !selectedRep || selectedRep === "all" || !dateStr }
@@ -83,7 +158,7 @@ export default function DeliveriesContent() {
   const rawDeliveries: Delivery[] = data?.deliveries || [];
 
   // Sort deliveries to mirror driver's stop order when a rep is selected
-  const deliveries: Delivery[] = (() => {
+  const sortedDeliveries: Delivery[] = (() => {
     const stopOrder: string[] = deliveryOrderData?.order || [];
     if (!stopOrder.length) return rawDeliveries;
     const indexed = new Map(stopOrder.map((id, i) => [id, i]));
@@ -93,6 +168,16 @@ export default function DeliveriesContent() {
       return ai - bi;
     });
   })();
+
+  // Client-side disposition filter
+  const deliveries: Delivery[] =
+    dispositionFilter === "all"
+      ? sortedDeliveries
+      : sortedDeliveries.filter((d) => {
+          const disp = Array.isArray(d.disposition) ? d.disposition : [d.disposition];
+          return disp.includes(dispositionFilter as Delivery["disposition"]);
+        });
+
   const totalItems = data?.total || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -135,16 +220,20 @@ export default function DeliveriesContent() {
     setStoreName("");
     setStatus("all");
     setSelectedRep("all");
-    setDate(todayUTC());
+    setDispositionFilter("all");
+    setDate(todayLocal());
     setCurrentPage(1);
   };
 
-  const today = todayUTC();
+  const today = todayLocal();
+  const toLocalDateStr = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const showReset =
     storeName ||
     status !== "all" ||
     selectedRep !== "all" ||
-    date?.toISOString().slice(0, 10) !== today.toISOString().slice(0, 10);
+    dispositionFilter !== "all" ||
+    (date ? toLocalDateStr(date) !== toLocalDateStr(today) : false);
 
   const columns: Column<Delivery>[] = [
     {
@@ -226,20 +315,23 @@ export default function DeliveriesContent() {
       key: "amount",
       header: "Payment Collected",
       render: (delivery) => (
-        <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
-          {delivery.paymentAction === "collect_payment"
-            ? `$${delivery.amount.toFixed(2)}`
-            : <span className="text-muted-foreground font-normal">—</span>}
-        </div>
+        <PaymentCollectedCell deliveryId={delivery._id} />
       ),
     },
     {
       key: "notes",
-      header: "Notes",
+      header: "Admin Note",
       render: (delivery) => (
         <div className="text-sm text-foreground max-w-[200px] whitespace-normal">
           {delivery.notes || <span className="text-muted-foreground">—</span>}
         </div>
+      ),
+    },
+    {
+      key: "repNote",
+      header: "Rep Note",
+      render: (delivery) => (
+        <DeliveryNoteCell deliveryId={delivery._id} />
       ),
     },
     {
@@ -321,10 +413,9 @@ export default function DeliveriesContent() {
                   mode="single"
                   selected={date}
                   onSelect={(d) => {
-                    if (d) setDate(d);
+                    if (d) setDate(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
                     setCurrentPage(1);
                   }}
-                  initialFocus
                   className="rounded-xs"
                 />
               </PopoverContent>
@@ -403,6 +494,28 @@ export default function DeliveriesContent() {
           )}
         </div>
       </Card>
+
+      {/* Disposition Filter */}
+      <div className="flex flex-wrap gap-2">
+        {DISPOSITION_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => {
+              setDispositionFilter(opt.value);
+              setCurrentPage(1);
+            }}
+            className={cn(
+              "px-3 py-1.5 rounded-xs text-sm font-medium border transition-colors",
+              dispositionFilter === opt.value
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-foreground border-border hover:bg-muted"
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       {/* Table */}
       {deliveries.length === 0 ? (

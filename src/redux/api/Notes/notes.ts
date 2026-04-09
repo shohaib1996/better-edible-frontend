@@ -15,12 +15,14 @@ export const notesApi = baseApi.injectEndpoints({
         const limit = !isString && args?.limit ? args.limit : undefined;
         const repId = !isString && args?.repId ? args.repId : undefined;
         const date = !isString && args?.date ? args.date : undefined;
+        const deliveryId = !isString && args?.deliveryId ? args.deliveryId : undefined;
 
         if (entityId) params.append("entityId", entityId);
         if (page) params.append("page", page.toString());
         if (limit) params.append("limit", limit.toString());
         if (repId) params.append("repId", repId.toString());
         if (date) params.append("date", date.toString());
+        if (deliveryId) params.append("deliveryId", deliveryId.toString());
 
         return `/notes?${params.toString()}`;
       },

@@ -201,6 +201,7 @@ export const AddNoteModal = ({
           entityId: storeId,
           author: repId,
           date: dateString,
+          ...(deliveryId && { deliveryId }),
         };
         await createNote(noteData).unwrap();
         toast.success("Note created successfully!");
