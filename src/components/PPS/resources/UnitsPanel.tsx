@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,10 @@ import {
 import {
   useGetDehydratorUnitsQuery,
   useBulkCreateDehydratorUnitsMutation,
+  useGetStage1CookItemsQuery,
+  useGetStage2CookItemsQuery,
+  useGetStage3CookItemsQuery,
+  useGetStage4CookItemsQuery,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import type { IDehydratorUnit } from "@/types/privateLabel/pps";
 
@@ -37,6 +42,53 @@ function getGridCols(totalShelves: number) {
   return "grid-cols-8";
 }
 
+// ─── Shelf Cell with tooltip (click-to-open for mobile) ───────────────────────
+
+function ShelfCell({
+  pos,
+  isOccupied,
+  cookInfo,
+  trayId,
+  cookItemId,
+}: {
+  pos: string;
+  isOccupied: boolean;
+  cookInfo: { storeName: string; flavor: string } | null;
+  trayId: string | null;
+  cookItemId: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const tooltipContent = isOccupied
+    ? cookInfo
+      ? `${cookInfo.storeName} · ${cookInfo.flavor}`
+      : trayId || cookItemId || "Occupied"
+    : "Empty";
+
+  return (
+    <TooltipProvider delayDuration={100}>
+      <Tooltip open={open} onOpenChange={setOpen}>
+        <TooltipTrigger asChild>
+          <div
+            className={`text-center text-xs py-1.5 rounded-xs border cursor-pointer select-none ${
+              isOccupied
+                ? "bg-red-500/10 border-red-500/20 text-red-600"
+                : "bg-green-500/10 border-green-500/20 text-green-600"
+            }`}
+            onClick={() => setOpen((o) => !o)}
+          >
+            {pos}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[200px] text-center text-xs">
+          <p className="font-semibold">Shelf {pos}</p>
+          <p>{tooltipContent}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 export default function UnitsPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [prefix, setPrefix] = useState("D");
@@ -47,6 +99,20 @@ export default function UnitsPanel() {
   const { data, isLoading } = useGetDehydratorUnitsQuery();
   const [bulkCreate, { isLoading: isCreating }] =
     useBulkCreateDehydratorUnitsMutation();
+
+  const { data: s1Data } = useGetStage1CookItemsQuery({ status: "in-progress,cooking_molding_complete" });
+  const { data: s2Data } = useGetStage2CookItemsQuery();
+  const { data: s3Data } = useGetStage3CookItemsQuery();
+  const { data: s4Data } = useGetStage4CookItemsQuery();
+
+  const cookItemMap = new Map<string, { storeName: string; flavor: string }>(
+    [
+      ...(s1Data?.cookItems ?? []),
+      ...(s2Data?.cookItems ?? []),
+      ...(s3Data?.cookItems ?? []),
+      ...(s4Data?.cookItems ?? []),
+    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }])
+  );
 
   const units = [...(data?.units ?? [])].sort((a, b) => {
     const numA = parseInt(a.unitId.replace(/\D/g, ""), 10);
@@ -219,22 +285,17 @@ export default function UnitsPanel() {
                       const pos = String(i + 1);
                       const shelf = unit.shelves[pos];
                       const isOccupied = shelf?.occupied;
+                      const cookInfo = isOccupied && shelf.cookItemId ? cookItemMap.get(shelf.cookItemId) : null;
+
                       return (
-                        <div
+                        <ShelfCell
                           key={pos}
-                          className={`text-center text-xs py-1.5 rounded-xs border ${
-                            isOccupied
-                              ? "bg-red-500/10 border-red-500/20 text-red-600"
-                              : "bg-green-500/10 border-green-500/20 text-green-600"
-                          }`}
-                          title={
-                            isOccupied
-                              ? `Shelf ${pos}: ${shelf.trayId} (${shelf.cookItemId})`
-                              : `Shelf ${pos}: Empty`
-                          }
-                        >
-                          {pos}
-                        </div>
+                          pos={pos}
+                          isOccupied={!!isOccupied}
+                          cookInfo={cookInfo ?? null}
+                          trayId={shelf?.trayId ?? null}
+                          cookItemId={shelf?.cookItemId ?? null}
+                        />
                       );
                     })}
                   </div>
