@@ -237,6 +237,16 @@ export default function DeliveriesContent() {
 
   const columns: Column<Delivery>[] = [
     {
+      key: "index",
+      header: "#",
+      className: "w-[40px] text-center",
+      render: (_, index) => (
+        <span className="text-muted-foreground text-sm font-medium">
+          {(currentPage - 1) * itemsPerPage + index + 1}
+        </span>
+      ),
+    },
+    {
       key: "storeId",
       header: "Store",
       className: "min-w-[200px]",
