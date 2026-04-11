@@ -12,6 +12,7 @@ import {
   ScanLine,
   Camera,
   X,
+  Timer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,39 +31,33 @@ import {
   useStartBaggingMutation,
   useStartSealingMutation,
   useCompleteBagSealMutation,
-  useCompleteStage3Mutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
 import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
 
-// ─── Dehydration Timer ───────────────────────────────────────────────────────
+// ─── Elapsed Timer ────────────────────────────────────────────────────────────
 
-function DehydrationTimer({ expectedEndTime }: { expectedEndTime: string }) {
-  const [timeLeft, setTimeLeft] = useState("");
-  const [isReady, setIsReady] = useState(false);
-
+function ElapsedTimer({ since }: { since: string }) {
+  const [elapsed, setElapsed] = useState(() => Date.now() - new Date(since).getTime());
   useEffect(() => {
-    const update = () => {
-      const diff = new Date(expectedEndTime).getTime() - Date.now();
-      if (diff <= 0) {
-        setIsReady(true);
-        setTimeLeft("READY");
-      } else {
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
-      }
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [expectedEndTime]);
-
+    const id = setInterval(() => setElapsed(Date.now() - new Date(since).getTime()), 1000);
+    return () => clearInterval(id);
+  }, [since]);
+  const hours = Math.floor(elapsed / 3_600_000);
+  const minutes = Math.floor((elapsed % 3_600_000) / 60_000);
+  const seconds = Math.floor((elapsed % 60_000) / 1_000);
+  const timeStr = hours > 0
+    ? `${hours}h ${String(minutes).padStart(2, "0")}m`
+    : minutes > 0
+    ? `${minutes}m ${String(seconds).padStart(2, "0")}s`
+    : `${seconds}s`;
   return (
-    <Badge variant="outline" className={`text-base font-mono tabular-nums ${isReady ? "bg-green-500/10 text-green-700 border-green-500/20 font-bold" : "bg-orange-500/10 text-orange-700 border-orange-500/20"}`}>
-      {timeLeft || "…"}
-    </Badge>
+    <div className="flex items-center gap-2 px-4 py-4 rounded-xs bg-blue-50 border border-blue-200 text-blue-800 text-base">
+      <Timer className="w-5 h-5 shrink-0" />
+      <span>Demolded </span>
+      <span className="font-bold font-mono tabular-nums">{timeStr}</span>
+      <span> ago</span>
+    </div>
   );
 }
 
@@ -74,24 +69,24 @@ interface CookItemCardProps {
 }
 
 function CookItemCard({ item, isAdmin }: CookItemCardProps) {
+  const [startSealing, { isLoading: isStartingSealing }] = useStartSealingMutation();
   const [completeBagSeal, { isLoading: isCompleting }] = useCompleteBagSealMutation();
-  const [completeStage3, { isLoading: isCompletingTrayRemoval }] = useCompleteStage3Mutation();
 
-  const handleFinish = async () => {
+  const handleFinishBagging = async () => {
+    try {
+      await startSealing({ cookItemId: item.cookItemId, performedBy: getPPSUser() }).unwrap();
+      toast.success(`${item.flavor} — sealing started`);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to start sealing");
+    }
+  };
+
+  const handleFinishSealing = async () => {
     try {
       await completeBagSeal({ cookItemId: item.cookItemId, performedBy: getPPSUser() }).unwrap();
       toast.success("Item sealed — ready for packaging");
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete bag & seal");
-    }
-  };
-
-  const handleTrayRemoval = async () => {
-    try {
-      await completeStage3({ cookItemId: item.cookItemId, performedBy: getPPSUser() } as any).unwrap();
-      toast.success("Tray removal complete — scan the barcode to start bagging");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to complete tray removal");
     }
   };
 
@@ -102,8 +97,6 @@ function CookItemCard({ item, isAdmin }: CookItemCardProps) {
   const isSealing = item.status === "sealing";
   const isBagging = item.status === "bagging";
   const isDemolded = item.status === "demolding_complete";
-  const isDehydrating = item.status === "dehydrating_complete";
-  const allMoldsReady = isDehydrating && item.molds?.every((m) => m.isReady);
 
   return (
     <div className={`flex flex-col gap-0 rounded-xs border bg-card ${isDone ? "opacity-75" : ""}`}>
@@ -131,71 +124,64 @@ function CookItemCard({ item, isAdmin }: CookItemCardProps) {
       </div>
 
       <div className="px-5 py-5 flex flex-col gap-4">
-        {isDehydrating && item.molds?.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {item.molds.map((mold, idx) => {
-              const unitsThisMold = Math.min(70, item.quantity - idx * 70);
-              return (
-                <div key={mold.moldId} className={`flex items-center gap-3 px-3 py-3 rounded-xs border ${mold.isReady ? "bg-green-500/5 border-green-200" : "bg-muted/30"}`}>
-                  <div className="shrink-0 w-10 h-10 rounded-xs border flex items-center justify-center font-bold text-lg bg-background">
-                    {mold.shelfPosition}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold">Shelf {mold.shelfPosition} · {mold.dehydratorUnitId}</p>
-                    <p className="text-sm text-muted-foreground font-mono">{mold.trayId} · {unitsThisMold} units</p>
-                  </div>
-                  <DehydrationTimer expectedEndTime={mold.dehydrationEndTime} />
-                </div>
-              );
-            })}
-            {allMoldsReady ? (
-              <Button
-                size="lg"
-                disabled={isCompletingTrayRemoval}
-                className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white font-bold"
-                onClick={handleTrayRemoval}
-              >
-                {isCompletingTrayRemoval ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-                Complete Tray Removal
-              </Button>
-            ) : (
-              <p className="text-base text-muted-foreground text-center py-1">Waiting for dehydration to finish…</p>
-            )}
+        {/* ── elapsed time since demolding ── */}
+        {!isDone && item.demoldingCompletionTimestamp && (
+          <ElapsedTimer since={item.demoldingCompletionTimestamp} />
+        )}
+
+        {/* ── demolding_complete: waiting for scan ── */}
+        {isDemolded && (
+          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-orange-50 border border-orange-200 text-orange-700">
+            <ScanLine className="w-10 h-10 shrink-0" />
+            <p className="text-xl font-semibold">Scan barcode to start bagging &amp; print label</p>
           </div>
         )}
 
-        {isDone ? (
-          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-green-50 border border-green-200 text-green-700">
-            <CheckCircle2 className="w-10 h-10 shrink-0" />
-            <p className="text-2xl font-bold">Sealed — ready for packaging</p>
+        {/* ── bagging: label printed, show Finish Bagging button ── */}
+        {isBagging && (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-amber-50 border border-amber-200 text-amber-700">
+              <CheckCircle2 className="w-10 h-10 shrink-0" />
+              <p className="text-xl font-semibold">Label printed — bagging in progress</p>
+            </div>
+            <Button
+              size="lg"
+              disabled={isStartingSealing}
+              className="w-full text-2xl h-16 gap-3 rounded-xs bg-amber-500 hover:bg-amber-600 text-white font-bold"
+              onClick={handleFinishBagging}
+            >
+              {isStartingSealing ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
+              Finish Bagging
+            </Button>
           </div>
-        ) : isDemolded ? (
-          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-orange-50 border border-orange-200 text-orange-700">
-            <ScanLine className="w-10 h-10 shrink-0" />
-            <p className="text-xl font-semibold">Scan barcode to start bagging</p>
-          </div>
-        ) : isBagging ? (
-          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-amber-50 border border-amber-200 text-amber-700">
-            <ScanLine className="w-10 h-10 shrink-0" />
-            <p className="text-xl font-semibold">Scan again to seal (label will print)</p>
-          </div>
-        ) : isSealing ? (
+        )}
+
+        {/* ── sealing: show Finish Sealing button ── */}
+        {isSealing && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-indigo-50 border border-indigo-200 text-indigo-700">
               <CheckCircle2 className="w-10 h-10 shrink-0" />
-              <p className="text-xl font-semibold">Label printed — sealing in progress</p>
+              <p className="text-xl font-semibold">Sealing in progress</p>
             </div>
             <Button
               size="lg"
               disabled={isCompleting}
               className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white font-bold"
-              onClick={handleFinish}
+              onClick={handleFinishSealing}
             >
               {isCompleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-              Finish Item
+              Finish Sealing
             </Button>
           </div>
-        ) : null}
+        )}
+
+        {/* ── bag_seal_complete ── */}
+        {isDone && (
+          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-green-50 border border-green-200 text-green-700">
+            <CheckCircle2 className="w-10 h-10 shrink-0" />
+            <p className="text-2xl font-bold">Sealed — ready for packaging</p>
+          </div>
+        )}
 
         {isAdmin && (
           <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
@@ -269,7 +255,6 @@ export default function LockedStage3OrderPage({
   }, [cameraOpen]);
 
   const [startBagging] = useStartBaggingMutation();
-  const [startSealing] = useStartSealingMutation();
 
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
@@ -284,7 +269,6 @@ export default function LockedStage3OrderPage({
     localStorage.removeItem("better-user");
     router.push(`/pps/stage/${stageNum}`);
   }, [router, stageNum]);
-
 
   const printLabel = useCallback((cookItem: ICookItem) => {
     setLabelData(cookItem);
@@ -327,21 +311,16 @@ export default function LockedStage3OrderPage({
 
     if (item.status === "demolding_complete") {
       try {
-        await startBagging({ cookItemId, performedBy }).unwrap();
-        toast.success(`${item.flavor} — bagging started`);
+        const result = await startBagging({ cookItemId, performedBy }).unwrap();
+        toast.success(`${item.flavor} — bagging started, printing label`);
+        printLabel(result.cookItem);
       } catch (err: any) {
         toast.error(err?.data?.message || "Failed to start bagging");
       }
     } else if (item.status === "bagging") {
-      try {
-        const result = await startSealing({ cookItemId, performedBy }).unwrap();
-        toast.success(`${item.flavor} — sealing started, printing label`);
-        printLabel(result.cookItem);
-      } catch (err: any) {
-        toast.error(err?.data?.message || "Failed to start sealing");
-      }
+      toast.info(`${item.flavor} is bagging — use the Finish Bagging button on the card`);
     } else if (item.status === "sealing") {
-      toast.info(`${item.flavor} is sealing — use the Finish button on the card`);
+      toast.info(`${item.flavor} is sealing — use the Finish Sealing button on the card`);
     } else if (item.status === "bag_seal_complete") {
       toast.info(`${item.flavor} is already complete`);
     } else {
@@ -349,7 +328,7 @@ export default function LockedStage3OrderPage({
     }
 
     setTimeout(() => scanInputRef.current?.focus(), 50);
-  }, [orderItems, startBagging, startSealing, printLabel]);
+  }, [orderItems, startBagging, printLabel]);
 
   const handleScanInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -409,7 +388,7 @@ export default function LockedStage3OrderPage({
           Scan container barcode
         </div>
         <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-base text-amber-800">
-          Scan once → start bagging · Scan again → start sealing & print label
+          Scan barcode on bag → start bagging &amp; print label · Use buttons on card to finish bagging &amp; sealing
         </div>
         {cameraOpen && (
           <div className="relative w-full rounded-xs overflow-hidden border bg-black">
@@ -442,7 +421,7 @@ export default function LockedStage3OrderPage({
       {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
           <PackageCheck className="w-14 h-14 opacity-40" />
-          <p className="text-xl">No bag & seal items found for order {decodedOrderId}.</p>
+          <p className="text-xl">No bag &amp; seal items found for order {decodedOrderId}.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-5">

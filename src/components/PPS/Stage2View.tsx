@@ -1,13 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Wind, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useGetStage2CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
+import {
+  useGetStage2CookItemsQuery,
+  useGetStage2UnloadItemsQuery,
+} from "@/redux/api/PrivateLabel/ppsApi";
 import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
 } from "@/constants/privateLabel";
+import Stage2UnloadView from "@/components/PPS/Stage2UnloadView";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
 // ─── Group cook items by orderId ──────────────────────────────────────────────
@@ -20,7 +25,7 @@ function groupByOrder(items: ICookItem[]): Map<string, ICookItem[]> {
   }, new Map<string, ICookItem[]>());
 }
 
-// ─── Order Card ───────────────────────────────────────────────────────────────
+// ─── Load Order Card ──────────────────────────────────────────────────────────
 
 function OrderCard({ orderId, items, basePath, compact }: { orderId: string; items: ICookItem[]; basePath: string; compact?: boolean }) {
   const router = useRouter();
@@ -100,9 +105,9 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
   );
 }
 
-// ─── Stage 2 View ─────────────────────────────────────────────────────────────
+// ─── Load Tab Content ─────────────────────────────────────────────────────────
 
-export default function Stage2View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
+function LoadTab({ basePath, compact }: { basePath: string; compact?: boolean }) {
   const { data, isLoading, isError } = useGetStage2CookItemsQuery();
 
   if (isLoading) {
@@ -146,6 +151,74 @@ export default function Stage2View({ basePath = "/admin/pps", compact }: { baseP
           <OrderCard key={orderId} orderId={orderId} items={items} basePath={basePath} compact={compact} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// ─── Stage 2 View ─────────────────────────────────────────────────────────────
+
+export default function Stage2View({ basePath = "/admin/pps", compact }: { basePath?: string; compact?: boolean }) {
+  const [activeTab, setActiveTab] = useState<"unload" | "load">("unload");
+
+  // Fetch both counts for badges
+  const { data: unloadData } = useGetStage2UnloadItemsQuery();
+  const { data: loadData } = useGetStage2CookItemsQuery();
+
+  const unloadCount = unloadData?.cookItems?.length ?? 0;
+  const loadCount = loadData?.cookItems?.length ?? 0;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Sub-tab toggle */}
+      <div className="flex gap-2 p-1 bg-muted rounded-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab("unload")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xs font-semibold transition-colors ${
+            activeTab === "unload"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          } ${compact ? "text-sm" : "text-base"}`}
+        >
+          Unload
+          {unloadCount > 0 && (
+            <span className={`rounded-full font-bold px-2 py-0.5 ${
+              activeTab === "unload"
+                ? "bg-orange-500 text-white"
+                : "bg-muted-foreground/20 text-muted-foreground"
+            } ${compact ? "text-xs" : "text-sm"}`}>
+              {unloadCount}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("load")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xs font-semibold transition-colors ${
+            activeTab === "load"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          } ${compact ? "text-sm" : "text-base"}`}
+        >
+          Load
+          {loadCount > 0 && (
+            <span className={`rounded-full font-bold px-2 py-0.5 ${
+              activeTab === "load"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted-foreground/20 text-muted-foreground"
+            } ${compact ? "text-xs" : "text-sm"}`}>
+              {loadCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "unload" ? (
+        <Stage2UnloadView compact={compact} />
+      ) : (
+        <LoadTab basePath={basePath} compact={compact} />
+      )}
     </div>
   );
 }

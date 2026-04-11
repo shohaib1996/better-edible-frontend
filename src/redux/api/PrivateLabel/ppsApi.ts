@@ -15,6 +15,7 @@ import type {
   ICase,
   IHistoryEntry,
   IStage3CookItem,
+  IUnloadCookItem,
   IMold,
   IDehydratorTray,
   IDehydratorUnit,
@@ -127,6 +128,23 @@ export const ppsApi = baseApi.injectEndpoints({
     >({
       query: () => "/pps/stage-2/next-available-shelf",
       providesTags: [tagTypes.ppsUnits],
+    }),
+
+    getStage2UnloadItems: builder.query<{ cookItems: IUnloadCookItem[] }, void>({
+      query: () => "/pps/stage-2/unload-items",
+      providesTags: [tagTypes.ppsCookItems],
+    }),
+
+    completeUnload: builder.mutation<
+      { success: boolean; cookItem: ICookItem; releasedTrays: string[] },
+      { cookItemId: string; performedBy?: any }
+    >({
+      query: (body) => ({
+        url: "/pps/stage-2/unload-complete",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsCookItems, tagTypes.ppsTrays, tagTypes.ppsUnits],
     }),
 
     // ─── Stage 3 ──────────────────────────
@@ -416,6 +434,8 @@ export const {
   useProcessMoldMutation,
   useUnprocessMoldMutation,
   useGetNextAvailableShelfQuery,
+  useGetStage2UnloadItemsQuery,
+  useCompleteUnloadMutation,
   useGetStage3CookItemsQuery,
   useRemoveTrayMutation,
   useCompleteStage3Mutation,

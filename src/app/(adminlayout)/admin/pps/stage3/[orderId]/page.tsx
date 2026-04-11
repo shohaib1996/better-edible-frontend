@@ -28,7 +28,6 @@ import Barcode from "react-barcode";
 import {
   useGetStage3CookItemsQuery,
   useStartBaggingMutation,
-  useStartSealingMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
 import { Stage3CookItemCard } from "@/components/PPS/Stage3CookItemCard";
 import type { ICookItem } from "@/types/privateLabel/pps";
@@ -98,7 +97,6 @@ export default function Stage3OrderPage({
   }, [cameraOpen]);
 
   const [startBagging] = useStartBaggingMutation();
-  const [startSealing] = useStartSealingMutation();
 
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
@@ -151,21 +149,16 @@ export default function Stage3OrderPage({
 
     if (item.status === "demolding_complete") {
       try {
-        await startBagging({ cookItemId, performedBy }).unwrap();
-        toast.success(`${item.flavor} — bagging started`);
+        const result = await startBagging({ cookItemId, performedBy }).unwrap();
+        toast.success(`${item.flavor} — bagging started, printing label`);
+        printLabel(result.cookItem);
       } catch (err: any) {
         toast.error(err?.data?.message || "Failed to start bagging");
       }
     } else if (item.status === "bagging") {
-      try {
-        const result = await startSealing({ cookItemId, performedBy }).unwrap();
-        toast.success(`${item.flavor} — sealing started, printing label`);
-        printLabel(result.cookItem);
-      } catch (err: any) {
-        toast.error(err?.data?.message || "Failed to start sealing");
-      }
+      toast.info(`${item.flavor} is bagging — use the Finish Bagging button on the card`);
     } else if (item.status === "sealing") {
-      toast.info(`${item.flavor} is sealing — use the Finish button on the card`);
+      toast.info(`${item.flavor} is sealing — use the Finish Sealing button on the card`);
     } else if (item.status === "bag_seal_complete") {
       toast.info(`${item.flavor} is already complete`);
     } else {
@@ -174,7 +167,7 @@ export default function Stage3OrderPage({
 
     // Return focus to scanner
     setTimeout(() => scanInputRef.current?.focus(), 50);
-  }, [orderItems, startBagging, startSealing, printLabel]);
+  }, [orderItems, startBagging, printLabel]);
 
   const handleScanInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -256,7 +249,7 @@ export default function Stage3OrderPage({
           Scan container barcode
         </div>
         <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-sm text-amber-800">
-          Scan once → start bagging · Scan again → start sealing & print label
+          Scan barcode on bag → start bagging &amp; print label · Use buttons on card to finish bagging &amp; sealing
         </div>
         {cameraOpen && (
           <div className="relative w-full rounded-xs overflow-hidden border bg-black">

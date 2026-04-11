@@ -96,6 +96,21 @@ export interface ICookItem {
 }
 
 // ──────────────────────────────
+// Stage 2 Unload enriched
+// ──────────────────────────────
+export interface IUnloadShelf {
+  shelfLabel: string; // e.g. "D1-S4"
+  trayId: string;
+  moldId: string;
+  dehydratorUnitId: string;
+  shelfPosition: number;
+}
+
+export interface IUnloadCookItem extends ICookItem {
+  shelves: IUnloadShelf[];
+}
+
+// ──────────────────────────────
 // Stage 3 enriched (with timer)
 // ──────────────────────────────
 export interface IStage3MoldInfo {
