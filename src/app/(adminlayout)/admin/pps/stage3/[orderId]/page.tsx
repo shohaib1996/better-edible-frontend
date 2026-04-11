@@ -122,7 +122,7 @@ export default function Stage3OrderPage({
 <head>
   <meta charset="utf-8" />
   <style>
-    @page { size: 4in 6in; margin: 0; }
+    @page { size: 4in 2in; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { width: 4in; font-family: sans-serif; }
   </style>
@@ -332,7 +332,7 @@ export default function Stage3OrderPage({
           ref={printLabelRef}
           style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}
         >
-          <PrintLabel type="production" data={labelData} />
+          <PrintLabel type="bagging" data={labelData} />
         </div>
       )}
 
@@ -344,7 +344,7 @@ export default function Stage3OrderPage({
               <DialogTitle>Production Label</DialogTitle>
             </DialogHeader>
             <div className="flex justify-center py-2">
-              <PrintLabel type="production" data={labelData} />
+              <PrintLabel type="bagging" data={labelData} />
             </div>
             <div className="flex gap-2">
               <Button
@@ -360,7 +360,7 @@ export default function Stage3OrderPage({
 <head>
   <meta charset="utf-8" />
   <style>
-    @page { size: 4in 6in; margin: 0; }
+    @page { size: 4in 2in; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { width: 4in; font-family: sans-serif; }
   </style>

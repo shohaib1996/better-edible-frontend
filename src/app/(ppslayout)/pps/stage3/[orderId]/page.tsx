@@ -278,7 +278,7 @@ export default function WorkerStage3OrderPage({
 <head>
   <meta charset="utf-8" />
   <style>
-    @page { size: 4in 6in; margin: 0; }
+    @page { size: 4in 2in; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { width: 4in; font-family: sans-serif; }
   </style>
@@ -428,7 +428,7 @@ export default function WorkerStage3OrderPage({
       {/* Hidden label for print */}
       {labelData && (
         <div ref={printLabelRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
-          <PrintLabel type="production" data={labelData} />
+          <PrintLabel type="bagging" data={labelData} />
         </div>
       )}
 
@@ -437,10 +437,10 @@ export default function WorkerStage3OrderPage({
         <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
           <DialogContent className="max-w-lg rounded-xs">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Production Label</DialogTitle>
+              <DialogTitle className="text-2xl">Bagging Label</DialogTitle>
             </DialogHeader>
             <div className="flex justify-center py-2">
-              <PrintLabel type="production" data={labelData} />
+              <PrintLabel type="bagging" data={labelData} />
             </div>
             <Button
               className="w-full rounded-xs text-xl h-14"

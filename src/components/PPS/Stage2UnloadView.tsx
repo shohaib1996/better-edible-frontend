@@ -86,7 +86,7 @@ function printProductionLabel(item: IUnloadCookItem, labelRef: HTMLDivElement | 
 <head>
   <meta charset="utf-8" />
   <style>
-    @page { size: 4in 6in; margin: 0; }
+    @page { size: 4in 3in; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { width: 4in; font-family: sans-serif; }
   </style>
