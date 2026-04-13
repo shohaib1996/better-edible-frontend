@@ -1,196 +1,13 @@
 "use client";
 
-import { use, useState, useRef, useCallback, useEffect } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Html5Qrcode } from "html5-qrcode";
-import {
-  ArrowLeft,
-  PackageCheck,
-  CheckCircle2,
-  Loader2,
-  ScanLine,
-  Camera,
-  X,
-  Timer,
-} from "lucide-react";
-import { toast } from "sonner";
+import { ArrowLeft, PackageCheck, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { getPPSUser, isAdminUser } from "@/lib/ppsUser";
-import CookItemHistory from "@/components/PPS/CookItemHistory";
-import PrintLabel from "@/components/PPS/PrintLabel";
-import {
-  useGetStage3CookItemsQuery,
-  useStartBaggingMutation,
-  useStartSealingMutation,
-  useCompleteBagSealMutation,
-} from "@/redux/api/PrivateLabel/ppsApi";
-import { COOK_ITEM_STATUS_COLORS, COOK_ITEM_STATUS_LABELS } from "@/constants/privateLabel";
-import type { IStage3CookItem, ICookItem } from "@/types/privateLabel/pps";
-
-// ─── Elapsed Timer ────────────────────────────────────────────────────────────
-
-function ElapsedTimer({ since }: { since: string }) {
-  const [elapsed, setElapsed] = useState(() => Date.now() - new Date(since).getTime());
-  useEffect(() => {
-    const id = setInterval(() => setElapsed(Date.now() - new Date(since).getTime()), 1000);
-    return () => clearInterval(id);
-  }, [since]);
-  const hours = Math.floor(elapsed / 3_600_000);
-  const minutes = Math.floor((elapsed % 3_600_000) / 60_000);
-  const seconds = Math.floor((elapsed % 60_000) / 1_000);
-  const timeStr = hours > 0
-    ? `${hours}h ${String(minutes).padStart(2, "0")}m`
-    : minutes > 0
-    ? `${minutes}m ${String(seconds).padStart(2, "0")}s`
-    : `${seconds}s`;
-  return (
-    <div className="flex items-center gap-2 px-4 py-4 rounded-xs bg-blue-50 border border-blue-200 text-blue-800 text-base">
-      <Timer className="w-5 h-5 shrink-0" />
-      <span>Demolded </span>
-      <span className="font-bold font-mono tabular-nums">{timeStr}</span>
-      <span> ago</span>
-    </div>
-  );
-}
-
-// ─── Cook Item Card ────────────────────────────────────────────────────────────
-
-interface CookItemCardProps {
-  item: IStage3CookItem;
-  isAdmin: boolean;
-}
-
-function CookItemCard({ item, isAdmin }: CookItemCardProps) {
-  const [startSealing, { isLoading: isStartingSealing }] = useStartSealingMutation();
-  const [completeBagSeal, { isLoading: isCompleting }] = useCompleteBagSealMutation();
-
-  const handleFinishBagging = async () => {
-    try {
-      await startSealing({ cookItemId: item.cookItemId, performedBy: getPPSUser() }).unwrap();
-      toast.success(`${item.flavor} — sealing started`);
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to start sealing");
-    }
-  };
-
-  const handleFinishSealing = async () => {
-    try {
-      await completeBagSeal({ cookItemId: item.cookItemId, performedBy: getPPSUser() }).unwrap();
-      toast.success("Item sealed — ready for packaging");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to complete bag & seal");
-    }
-  };
-
-  const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
-  const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
-
-  const isDone = item.status === "bag_seal_complete";
-  const isSealing = item.status === "sealing";
-  const isBagging = item.status === "bagging";
-  const isDemolded = item.status === "demolding_complete";
-
-  return (
-    <div className={`flex flex-col gap-0 rounded-xs border bg-card ${isDone ? "opacity-75" : ""}`}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-4xl font-bold leading-tight truncate">{item.flavor}</p>
-          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
-        </div>
-        <Badge variant="outline" className={`shrink-0 text-base px-3 py-1.5 ${statusColor}`}>
-          {statusLabel}
-        </Badge>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-0 border-t border-b divide-x mx-5">
-        <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Qty</p>
-          <p className="text-3xl font-bold">{item.quantity.toLocaleString()}</p>
-        </div>
-        <div className="px-3 py-4">
-          <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1">Molds</p>
-          <p className="text-3xl font-bold">{item.assignedMoldIds.length}</p>
-        </div>
-      </div>
-
-      <div className="px-5 py-5 flex flex-col gap-4">
-        {/* ── elapsed time since demolding ── */}
-        {!isDone && item.demoldingCompletionTimestamp && (
-          <ElapsedTimer since={item.demoldingCompletionTimestamp} />
-        )}
-
-        {/* ── demolding_complete: waiting for scan ── */}
-        {isDemolded && (
-          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-orange-50 border border-orange-200 text-orange-700">
-            <ScanLine className="w-10 h-10 shrink-0" />
-            <p className="text-xl font-semibold">Scan barcode to start bagging &amp; print label</p>
-          </div>
-        )}
-
-        {/* ── bagging: label printed, show Finish Bagging button ── */}
-        {isBagging && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-amber-50 border border-amber-200 text-amber-700">
-              <CheckCircle2 className="w-10 h-10 shrink-0" />
-              <p className="text-xl font-semibold">Label printed — bagging in progress</p>
-            </div>
-            <Button
-              size="lg"
-              disabled={isStartingSealing}
-              className="w-full text-2xl h-16 gap-3 rounded-xs bg-amber-500 hover:bg-amber-600 text-white font-bold"
-              onClick={handleFinishBagging}
-            >
-              {isStartingSealing ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-              Finish Bagging
-            </Button>
-          </div>
-        )}
-
-        {/* ── sealing: show Finish Sealing button ── */}
-        {isSealing && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-indigo-50 border border-indigo-200 text-indigo-700">
-              <CheckCircle2 className="w-10 h-10 shrink-0" />
-              <p className="text-xl font-semibold">Sealing in progress</p>
-            </div>
-            <Button
-              size="lg"
-              disabled={isCompleting}
-              className="w-full text-2xl h-16 gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white font-bold"
-              onClick={handleFinishSealing}
-            >
-              {isCompleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-              Finish Sealing
-            </Button>
-          </div>
-        )}
-
-        {/* ── bag_seal_complete ── */}
-        {isDone && (
-          <div className="flex items-center gap-4 py-4 px-3 rounded-xs bg-green-50 border border-green-200 text-green-700">
-            <CheckCircle2 className="w-10 h-10 shrink-0" />
-            <p className="text-2xl font-bold">Sealed — ready for packaging</p>
-          </div>
-        )}
-
-        {isAdmin && (
-          <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Order Detail Page ────────────────────────────────────────────────────────
+import { isAdminUser } from "@/lib/ppsUser";
+import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
+import { Stage3CookItemCard } from "@/components/PPS/Stage3CookItemCard";
+import Stage3ScannerBlock from "@/components/PPS/Stage3ScannerBlock";
 
 export default function WorkerStage3OrderPage({
   params,
@@ -202,59 +19,6 @@ export default function WorkerStage3OrderPage({
   const router = useRouter();
   const isAdmin = isAdminUser();
 
-  const scanInputRef = useRef<HTMLInputElement>(null);
-  const [scanBuffer, setScanBuffer] = useState("");
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const printLabelRef = useRef<HTMLDivElement>(null);
-  const [labelData, setLabelData] = useState<ICookItem | null>(null);
-  const [showLabelPreview, setShowLabelPreview] = useState(false);
-
-  const stopCamera = useCallback(async () => {
-    if (scannerRef.current) {
-      try { await scannerRef.current.stop(); scannerRef.current.clear(); } catch {}
-      scannerRef.current = null;
-    }
-    setCameraOpen(false);
-    setTimeout(() => scanInputRef.current?.focus(), 50);
-  }, []);
-
-  const startCamera = useCallback(() => {
-    setCameraError(null);
-    setCameraOpen(true);
-  }, []);
-
-  useEffect(() => {
-    if (!cameraOpen) return;
-    const scanner = new Html5Qrcode("stage3-worker-scanner");
-    scannerRef.current = scanner;
-    scanner.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: (w: number, h: number) => ({
-          width: Math.min(Math.floor(w * 0.9), 600),
-          height: Math.min(Math.floor(h * 0.25), 120),
-        }),
-      },
-      (decoded) => {
-        stopCamera().then(() => handleScan(decoded));
-      },
-      () => {},
-    ).catch((err: unknown) => {
-      setCameraError(err instanceof Error ? err.message : "Camera access denied");
-      setCameraOpen(false);
-      scannerRef.current = null;
-    });
-    return () => {
-      if (scannerRef.current) { scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraOpen]);
-
-  const [startBagging] = useStartBaggingMutation();
-
   const { data, isLoading, isError } = useGetStage3CookItemsQuery(undefined, {
     pollingInterval: 30000,
   });
@@ -263,73 +27,6 @@ export default function WorkerStage3OrderPage({
   const orderItems = allItems.filter((item) => item.orderId === decodedOrderId);
   const storeName = orderItems[0]?.storeName;
   const allComplete = orderItems.length > 0 && orderItems.every((i) => i.status === "bag_seal_complete");
-
-  const printLabel = useCallback((cookItem: ICookItem) => {
-    setLabelData(cookItem);
-    setShowLabelPreview(true);
-    setTimeout(() => {
-      const labelEl = printLabelRef.current;
-      if (!labelEl) return;
-      const labelHtml = labelEl.innerHTML;
-      const win = window.open("", "_blank", "width=600,height=700");
-      if (!win) return;
-      win.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>
-    @page { size: 4in 2in; margin: 0; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { width: 4in; font-family: sans-serif; }
-  </style>
-</head>
-<body>${labelHtml}</body>
-</html>`);
-      win.document.close();
-      win.focus();
-      setTimeout(() => { win.print(); win.close(); }, 300);
-    }, 100);
-  }, []);
-
-  const handleScan = useCallback(async (scannedValue: string) => {
-    const cookItemId = scannedValue.trim();
-    if (!cookItemId) return;
-
-    const item = orderItems.find((i) => i.cookItemId === cookItemId);
-    if (!item) {
-      toast.error(`Item "${cookItemId}" not found in this order`);
-      return;
-    }
-
-    const performedBy = getPPSUser();
-
-    if (item.status === "demolding_complete") {
-      try {
-        const result = await startBagging({ cookItemId, performedBy }).unwrap();
-        toast.success(`${item.flavor} — bagging started, printing label`);
-        printLabel(result.cookItem);
-      } catch (err: any) {
-        toast.error(err?.data?.message || "Failed to start bagging");
-      }
-    } else if (item.status === "bagging") {
-      toast.info(`${item.flavor} is bagging — use the Finish Bagging button on the card`);
-    } else if (item.status === "sealing") {
-      toast.info(`${item.flavor} is sealing — use the Finish Sealing button on the card`);
-    } else if (item.status === "bag_seal_complete") {
-      toast.info(`${item.flavor} is already complete`);
-    } else {
-      toast.error(`${item.flavor} status is "${item.status}" — not ready for bag & seal`);
-    }
-
-    setTimeout(() => scanInputRef.current?.focus(), 50);
-  }, [orderItems, startBagging, printLabel]);
-
-  const handleScanInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleScan(scanBuffer);
-      setScanBuffer("");
-    }
-  };
 
   if (isLoading) {
     return (
@@ -366,42 +63,12 @@ export default function WorkerStage3OrderPage({
         </div>
       </div>
 
-      {/* Scanner input */}
-      <div className="mb-6 rounded-xs border bg-card p-4 flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <ScanLine className="w-5 h-5 text-primary" />
-          Scan container barcode
-        </div>
-        <div className="bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3 text-base text-amber-800">
-          Scan barcode on bag → start bagging &amp; print label · Use buttons on card to finish bagging &amp; sealing
-        </div>
-        {cameraOpen && (
-          <div className="relative w-full rounded-xs overflow-hidden border bg-black">
-            <div id="stage3-worker-scanner" className="w-full" />
-            <Button type="button" size="sm" variant="secondary" className="absolute top-2 right-2 gap-1 z-10 rounded-xs" onClick={stopCamera}>
-              <X className="w-4 h-4" /> Close
-            </Button>
-            <p className="text-center text-xs text-white/70 pb-2">Point camera at barcode</p>
-          </div>
-        )}
-        {cameraError && <p className="text-sm text-destructive">{cameraError}</p>}
-        <div className="flex gap-2">
-          <input
-            ref={scanInputRef}
-            autoFocus
-            type="text"
-            value={scanBuffer}
-            onChange={(e) => setScanBuffer(e.target.value)}
-            onKeyDown={handleScanInput}
-            placeholder="Scan or type cook item ID…"
-            disabled={cameraOpen}
-            className="flex-1 rounded-xs border bg-background px-4 py-3 text-lg font-mono focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-          />
-          <Button type="button" variant="outline" className="h-auto px-4 rounded-xs shrink-0" onClick={cameraOpen ? stopCamera : startCamera}>
-            {cameraOpen ? <X className="w-6 h-6" /> : <Camera className="w-6 h-6" />}
-          </Button>
-        </div>
-      </div>
+      <Stage3ScannerBlock
+        orderItems={orderItems}
+        scannerId="stage3-worker-scanner"
+        labelPageSize="4in 2in"
+        labelType="bagging"
+      />
 
       {orderItems.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
@@ -416,40 +83,12 @@ export default function WorkerStage3OrderPage({
               <p className="text-2xl font-bold">All items sealed — ready for packaging</p>
             </div>
           )}
-
           <div className="flex flex-col gap-4">
             {orderItems.map((item) => (
-              <CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
+              <Stage3CookItemCard key={item._id} item={item} isAdmin={isAdmin} />
             ))}
           </div>
         </div>
-      )}
-
-      {/* Hidden label for print */}
-      {labelData && (
-        <div ref={printLabelRef} style={{ position: "absolute", left: "-9999px", top: 0, visibility: "hidden" }}>
-          <PrintLabel type="bagging" data={labelData} />
-        </div>
-      )}
-
-      {/* Label preview dialog */}
-      {labelData && (
-        <Dialog open={showLabelPreview} onOpenChange={setShowLabelPreview}>
-          <DialogContent className="max-w-lg rounded-xs">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Bagging Label</DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center py-2">
-              <PrintLabel type="bagging" data={labelData} />
-            </div>
-            <Button
-              className="w-full rounded-xs text-xl h-14"
-              onClick={() => printLabel(labelData)}
-            >
-              Print Label
-            </Button>
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );
