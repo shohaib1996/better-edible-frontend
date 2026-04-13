@@ -6,6 +6,7 @@ import type {
   IInventorySummary,
   ICreateLabelOrderRequest,
   IReceiveLabelOrderRequest,
+  IUpdateLabelOrderRequest,
   IApplyLabelsRequest,
   IPrintLabelsRequest,
   ISetReorderThresholdRequest,
@@ -387,6 +388,23 @@ export const ppsApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.ppsLabelOrders, tagTypes.ppsLabelInventory],
     }),
 
+    updateLabelOrder: builder.mutation<{ success: boolean; order: ILabelOrder }, IUpdateLabelOrderRequest>({
+      query: ({ orderId, ...body }) => ({
+        url: `/pps/package-prep/orders/${orderId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelOrders],
+    }),
+
+    deleteLabelOrder: builder.mutation<{ success: boolean }, { orderId: string }>({
+      query: ({ orderId }) => ({
+        url: `/pps/package-prep/orders/${orderId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.ppsLabelOrders],
+    }),
+
     getLabelInventory: builder.query<
       { success: boolean; inventory: ILabelInventory[] },
       { storeId?: string } | void
@@ -471,6 +489,8 @@ export const {
   useCreateLabelOrderMutation,
   useBulkCreateLabelOrdersMutation,
   useReceiveLabelOrderMutation,
+  useUpdateLabelOrderMutation,
+  useDeleteLabelOrderMutation,
   useGetLabelInventoryQuery,
   useApplyLabelsMutation,
   usePrintLabelsMutation,

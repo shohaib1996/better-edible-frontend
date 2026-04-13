@@ -91,3 +91,9 @@ export interface ISetReorderThresholdRequest {
   inventoryId: string;
   reorderThreshold: number;
 }
+
+export interface IUpdateLabelOrderRequest {
+  orderId: string;
+  quantityOrdered?: number;
+  notes?: string;
+}
