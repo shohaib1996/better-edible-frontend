@@ -1,447 +1,352 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { PackagePlus, Loader2, Search, ChevronDown, Check, ImageOff } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ImageOff,
+  Loader2,
+  PackagePlus,
+  Calculator,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useGetAllPrivateLabelClientsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetAllLabelsQuery } from "@/redux/api/PrivateLabel/labelApi";
-import { useCreateLabelOrderMutation } from "@/redux/api/PrivateLabel/ppsApi";
-import { ILabel } from "@/types/privateLabel/label";
+import { useBulkCreateLabelOrdersMutation } from "@/redux/api/PrivateLabel/ppsApi";
 import { cn } from "@/lib/utils";
+import type { ILabel } from "@/types/privateLabel/label";
 
-// ─── Searchable Private Label Store Picker ────────────────────────────────────
-
-function PLStoreSelect({
-  clients,
-  value,
-  onChange,
-}: {
-  clients: any[];
-  value: string;
-  onChange: (clientId: string, storeId: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  const filtered = clients.filter((c) =>
-    (c.store?.name ?? "").toLowerCase().includes(search.toLowerCase())
-  );
-
-  const selected = clients.find((c) => c._id === value);
-
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState<T>(value);
   useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (open) setTimeout(() => searchRef.current?.focus(), 80);
-  }, [open]);
-
-  return (
-    <div className="relative w-full" ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "flex h-9 w-full items-center justify-between rounded-xs border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-colors",
-          "hover:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
-          !selected && "text-muted-foreground"
-        )}
-      >
-        <span className="truncate">{selected ? selected.store?.name : "Select a store…"}</span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-xs border border-border bg-popover shadow-lg">
-          <div className="sticky top-0 bg-popover border-b border-border p-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder="Search stores…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-xs border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
-              />
-            </div>
-          </div>
-          <div className="max-h-56 overflow-y-auto p-1">
-            {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No stores found</p>
-            ) : (
-              filtered.map((c) => (
-                <button
-                  key={c._id}
-                  type="button"
-                  onClick={() => {
-                    onChange(c._id, c.store?._id ?? "");
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-between rounded-xs px-3 py-2 text-sm text-popover-foreground transition-colors",
-                    "hover:bg-muted hover:text-foreground",
-                    value === c._id && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <span>{c.store?.name ?? c._id}</span>
-                  {value === c._id && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
 }
 
-// ─── Label Picker ─────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-function LabelSelect({
-  labels,
-  isLoading,
-  disabled,
-  value,
+interface StoreEntry {
+  clientId: string;
+  storeId: string;
+  storeName: string;
+}
+
+// ─── Per-store expanded panel ─────────────────────────────────────────────────
+
+function StoreLabelPanel({
+  clientId,
+  quantities,
   onChange,
 }: {
-  labels: ILabel[];
-  isLoading: boolean;
-  disabled: boolean;
-  value: string;
-  onChange: (id: string) => void;
+  clientId: string;
+  quantities: Record<string, string>;
+  onChange: (labelId: string, value: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { data, isFetching } = useGetAllLabelsQuery(
+    { clientId, stage: "ready_for_production", limit: 100 },
+    { skip: !clientId }
+  );
+  const labels: ILabel[] = data?.labels ?? [];
 
-  const selected = labels.find((l) => l._id === value);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [open]);
-
-  // Close dropdown when a selection is made
-  function handleSelect(id: string) {
-    onChange(id);
-    setOpen(false);
+  if (isFetching) {
+    return (
+      <div className="flex items-center gap-2 px-5 py-4 text-muted-foreground text-sm">
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading labels…
+      </div>
+    );
   }
 
-  const thumb = selected?.labelImages?.[0]?.secureUrl;
+  if (labels.length === 0) {
+    return (
+      <p className="px-5 py-4 text-sm text-muted-foreground">
+        No approved labels for this store.
+      </p>
+    );
+  }
 
   return (
-    <div className="relative w-full" ref={containerRef}>
-      {/* Trigger */}
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && setOpen((v) => !v)}
-        className={cn(
-          "flex h-10 w-full items-center justify-between gap-2 rounded-xs border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs transition-colors",
-          "hover:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-          !selected && "text-muted-foreground"
-        )}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-          ) : selected && thumb ? (
-            <div className="relative h-6 w-6 shrink-0 rounded-xs overflow-hidden border border-border">
-              <Image src={thumb} alt={selected.flavorName} fill className="object-cover" sizes="24px" />
+    <div className="flex flex-col divide-y divide-border">
+      {labels.map((label) => {
+        const img = label.labelImages?.[0]?.secureUrl;
+        const qty = quantities[label._id] ?? "";
+        return (
+          <div
+            key={label._id}
+            className="flex items-center gap-4 px-5 py-3"
+          >
+            {/* Thumbnail */}
+            <div className="relative h-12 w-12 shrink-0 rounded-xs overflow-hidden border border-border bg-muted flex items-center justify-center">
+              {img ? (
+                <Image
+                  src={img}
+                  alt={label.flavorName}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
+              ) : (
+                <ImageOff className="h-4 w-4 text-muted-foreground" />
+              )}
             </div>
-          ) : null}
-          <span className="truncate">
-            {isLoading
-              ? "Loading labels…"
-              : selected
-              ? selected.flavorName
-              : disabled
-              ? "Select a store first"
-              : "Select a label…"}
-          </span>
-        </div>
-        {!isLoading && (
-          <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
-        )}
-      </button>
 
-      {/* Dropdown */}
-      {open && !isLoading && (
-        <div className="absolute z-50 mt-1 w-full rounded-xs border border-border bg-popover shadow-lg">
-          {labels.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-5">
-              No ready-for-production labels for this store.
+            {/* Name */}
+            <p className="flex-1 font-medium text-sm text-foreground truncate">
+              {label.flavorName}
             </p>
-          ) : (
-            <div className="max-h-64 overflow-y-auto p-1">
-              {labels.map((l) => {
-                const img = l.labelImages?.[0]?.secureUrl;
-                const isSelected = value === l._id;
-                return (
-                  <button
-                    key={l._id}
-                    type="button"
-                    onClick={() => handleSelect(l._id)}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-xs px-3 py-2.5 text-sm transition-colors",
-                      "hover:bg-muted",
-                      isSelected && "bg-primary/10"
-                    )}
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative h-10 w-10 shrink-0 rounded-xs overflow-hidden border border-border bg-muted flex items-center justify-center">
-                      {img ? (
-                        <Image src={img} alt={l.flavorName} fill className="object-cover" sizes="40px" />
-                      ) : (
-                        <ImageOff className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
 
-                    {/* Info */}
-                    <div className="flex flex-col items-start min-w-0 flex-1">
-                      <span className={cn("font-medium truncate w-full text-left", isSelected ? "text-primary" : "text-foreground")}>
-                        {l.flavorName}
-                      </span>
-                    </div>
-
-                    {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+            {/* Quantity input */}
+            <input
+              type="number"
+              min={1}
+              placeholder="Qty"
+              value={qty}
+              onChange={(e) => onChange(label._id, e.target.value)}
+              className="w-28 rounded-xs border border-input bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Selected Label Preview ───────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
-function SelectedLabelPreview({ label }: { label: ILabel }) {
-  const img = label.labelImages?.[0]?.secureUrl;
-  return (
-    <div className="flex items-center gap-3 rounded-xs border border-border bg-muted/40 px-3 py-2.5">
-      <div className="relative h-12 w-12 shrink-0 rounded-xs overflow-hidden border border-border bg-muted flex items-center justify-center">
-        {img ? (
-          <Image src={img} alt={label.flavorName} fill className="object-cover" sizes="48px" />
-        ) : (
-          <ImageOff className="h-5 w-5 text-muted-foreground" />
-        )}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-sm font-semibold text-foreground truncate">{label.flavorName}</span>
-        {label.productType && (
-          <span className="text-xs text-muted-foreground">{label.productType}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Field class ─────────────────────────────────────────────────────────────
-
-const fieldClass =
-  "w-full rounded-xs border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed";
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+const VISIBLE_COUNT = 5;
 
 export default function PackagePrepAdminOrder() {
-  const [open, setOpen] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedStoreId, setSelectedStoreId] = useState("");
-  const [selectedLabelId, setSelectedLabelId] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [notes, setNotes] = useState("");
+  const [expandedStores, setExpandedStores] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<string, Record<string, string>>>({});
+  const [calculated, setCalculated] = useState<{ totalLabels: number; totalLines: number } | null>(null);
+  const [search, setSearch] = useState("");
 
-  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({ limit: 200 });
-  const clients = clientsData?.clients ?? [];
+  const debouncedSearch = useDebounce(search, 300);
 
-  const { data: labelsData, isFetching: labelsLoading } = useGetAllLabelsQuery(
-    { clientId: selectedClientId, stage: "ready_for_production", limit: 100 },
-    { skip: !selectedClientId }
-  );
-  const labels = labelsData?.labels ?? [];
+  const { data: clientsData, isLoading: clientsLoading } =
+    useGetAllPrivateLabelClientsQuery({
+      limit: debouncedSearch.trim() ? 50 : VISIBLE_COUNT,
+      search: debouncedSearch.trim() || undefined,
+    });
 
-  const selectedLabel = labels.find((l) => l._id === selectedLabelId) ?? null;
+  const [bulkCreateLabelOrders, { isLoading: submitting }] =
+    useBulkCreateLabelOrdersMutation();
 
-  const [createLabelOrder, { isLoading }] = useCreateLabelOrderMutation();
+  // All stores sorted alphabetically
+  const stores: StoreEntry[] = useMemo(() => {
+    return (clientsData?.clients ?? [])
+      .filter((c: any) => c.store)
+      .map((c: any) => ({
+        clientId: c._id,
+        storeId: c.store._id ?? c.store,
+        storeName: c.store?.name ?? "Unknown Store",
+      }))
+      .sort((a: StoreEntry, b: StoreEntry) =>
+        a.storeName.localeCompare(b.storeName)
+      );
+  }, [clientsData]);
 
-  function reset() {
-    setSelectedClientId("");
-    setSelectedStoreId("");
-    setSelectedLabelId("");
-    setQuantity("");
-    setNotes("");
+  // API already filters + limits — just use stores directly
+  const visibleStores = stores;
+
+  function toggleStore(storeId: string) {
+    setExpandedStores((prev) => {
+      const next = new Set(prev);
+      next.has(storeId) ? next.delete(storeId) : next.add(storeId);
+      return next;
+    });
   }
 
-  function handleClose() {
-    reset();
-    setOpen(false);
+  function handleQtyChange(storeId: string, labelId: string, value: string) {
+    setCalculated(null);
+    setQuantities((prev) => ({
+      ...prev,
+      [storeId]: { ...(prev[storeId] ?? {}), [labelId]: value },
+    }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedStoreId || !selectedLabelId || !quantity) return;
+  // Build order lines from all non-empty quantities
+  function buildOrderLines() {
+    const lines: { storeId: string; clientId: string; labelId: string; quantity: number }[] = [];
+    for (const store of stores) {
+      const storeQtys = quantities[store.storeId] ?? {};
+      for (const [labelId, raw] of Object.entries(storeQtys)) {
+        const qty = parseInt(raw, 10);
+        if (!isNaN(qty) && qty > 0) {
+          lines.push({ storeId: store.storeId, clientId: store.clientId, labelId, quantity: qty });
+        }
+      }
+    }
+    return lines;
+  }
 
-    const qty = parseInt(quantity, 10);
-    if (isNaN(qty) || qty < 1) {
-      toast.error("Enter a valid quantity");
+  function handleCalculate() {
+    const lines = buildOrderLines();
+    const totalLabels = lines.reduce((s, l) => s + l.quantity, 0);
+    setCalculated({ totalLabels, totalLines: lines.length });
+  }
+
+  async function handleSubmit() {
+    const lines = buildOrderLines();
+    if (lines.length === 0) {
+      toast.error("Enter at least one quantity before submitting");
       return;
     }
-
     try {
-      await createLabelOrder({
-        storeId: selectedStoreId,
-        labelId: selectedLabelId,
-        quantityOrdered: qty,
-        notes: notes.trim() || undefined,
+      const result = await bulkCreateLabelOrders({
+        orders: lines.map((l) => ({
+          storeId: l.storeId,
+          labelId: l.labelId,
+          quantityOrdered: l.quantity,
+        })),
       }).unwrap();
-      toast.success("Label order placed");
-      handleClose();
+      toast.success(`${result.count} label order${result.count !== 1 ? "s" : ""} placed`);
+      setQuantities({});
+      setCalculated(null);
     } catch {
-      toast.error("Failed to place order");
+      toast.error("Failed to place orders");
     }
   }
 
+  if (clientsLoading) {
+    return (
+      <div className="flex items-center gap-3 py-10 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Loading stores…</span>
+      </div>
+    );
+  }
+
+  const orderLines = buildOrderLines();
+  const hasAny = orderLines.length > 0;
+
   return (
-    <>
-      {/* Trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 active:bg-primary/80 transition-colors self-start shrink-0"
-      >
-        <PackagePlus className="w-4 h-4 shrink-0" />
-        <span>Place Label Order</span>
-      </button>
+    <div className="flex flex-col gap-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center justify-center w-8 h-8 rounded-xs bg-primary/10 shrink-0">
+            <PackagePlus className="w-4 h-4 text-primary" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Bulk Label Order</p>
+            <p className="text-xs text-muted-foreground">Expand stores, enter quantities, then submit</p>
+          </div>
+        </div>
 
-      {/* Dialog */}
-      <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-        <DialogContent className="rounded-xs bg-card text-card-foreground border-border w-full max-w-sm sm:max-w-md p-0 overflow-hidden">
-          {/* Header */}
-          <DialogHeader className="px-5 pt-5 pb-4 border-b border-border bg-muted/40">
-            <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
-              <span className="flex items-center justify-center w-7 h-7 rounded-xs bg-primary/10">
-                <PackagePlus className="w-4 h-4 text-primary" />
-              </span>
-              Place Label Order
-            </DialogTitle>
-          </DialogHeader>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCalculate}
+            disabled={!hasAny}
+            className="flex items-center gap-2 px-4 py-2 rounded-xs border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Calculator className="w-4 h-4 shrink-0" />
+            Calculate
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!hasAny || submitting}
+            className="flex items-center gap-2 px-5 py-2 rounded-xs bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+            Submit Orders
+          </button>
+        </div>
+      </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-5 py-5">
-            {/* Store */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">Store</label>
-              <PLStoreSelect
-                clients={clients}
-                value={selectedClientId}
-                onChange={(clientId, storeId) => {
-                  setSelectedClientId(clientId);
-                  setSelectedStoreId(storeId);
-                  setSelectedLabelId("");
-                }}
-              />
-            </div>
+      {/* Calculate summary */}
+      {calculated && (
+        <div className="flex items-center gap-3 rounded-xs bg-primary/5 border border-primary/20 px-4 py-3 text-sm">
+          <span className="font-semibold text-foreground">
+            {calculated.totalLines} SKU{calculated.totalLines !== 1 ? "s" : ""}
+          </span>
+          <span className="text-muted-foreground">·</span>
+          <span className="font-bold text-primary text-base">
+            {calculated.totalLabels.toLocaleString()} total labels
+          </span>
+        </div>
+      )}
 
-            {/* Label / SKU */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">Label / SKU</label>
-              <LabelSelect
-                labels={labels}
-                isLoading={labelsLoading}
-                disabled={!selectedClientId}
-                value={selectedLabelId}
-                onChange={setSelectedLabelId}
-              />
-              {/* Selected label preview */}
-              {selectedLabel && <SelectedLabelPreview label={selectedLabel} />}
-            </div>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Search stores…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 rounded-xs border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
+        />
+      </div>
 
-            {/* Quantity */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">Quantity to Order</label>
-              <input
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="e.g. 1000"
-                className={fieldClass}
-                required
-              />
-            </div>
+      {/* Store list */}
+      <div className="flex flex-col gap-2">
+        {visibleStores.map((store) => {
+          const isExpanded = expandedStores.has(store.storeId);
+          const storeQtys = quantities[store.storeId] ?? {};
+          const filledCount = Object.values(storeQtys).filter(
+            (v) => parseInt(v, 10) > 0
+          ).length;
 
-            {/* Notes */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-muted-foreground">
-                Notes <span className="font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any notes for this order…"
-                className={fieldClass}
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+          return (
+            <div
+              key={store.storeId}
+              className={cn(
+                "rounded-xs border bg-card overflow-hidden transition-colors",
+                filledCount > 0 ? "border-primary/40" : "border-border"
+              )}
+            >
+              {/* Store header / toggle */}
               <button
                 type="button"
-                onClick={handleClose}
-                className="flex-1 sm:flex-none px-4 py-2 rounded-xs border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors"
+                onClick={() => toggleStore(store.storeId)}
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
               >
-                Cancel
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-semibold text-foreground truncate">
+                    {store.storeName}
+                  </span>
+                  {filledCount > 0 && (
+                    <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                      {filledCount} SKU{filledCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
+                )}
               </button>
-              <button
-                type="submit"
-                disabled={isLoading || !selectedStoreId || !selectedLabelId || !quantity}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xs bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 active:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
-                Submit Order
-              </button>
+
+              {/* Expanded label rows */}
+              {isExpanded && (
+                <div className="border-t border-border">
+                  <StoreLabelPanel
+                    clientId={store.clientId}
+                    quantities={storeQtys}
+                    onChange={(labelId, value) =>
+                      handleQtyChange(store.storeId, labelId, value)
+                    }
+                  />
+                </div>
+              )}
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+          );
+        })}
+
+        {visibleStores.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-10">
+            {search.trim() ? `No stores matching "${search}"` : "No active stores found."}
+          </p>
+        )}
+
+      </div>
+    </div>
   );
 }

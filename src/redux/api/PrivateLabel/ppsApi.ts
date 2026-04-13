@@ -363,6 +363,18 @@ export const ppsApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.ppsLabelOrders],
     }),
 
+    bulkCreateLabelOrders: builder.mutation<
+      { success: boolean; orders: ILabelOrder[]; count: number },
+      { orders: ICreateLabelOrderRequest[] }
+    >({
+      query: (body) => ({
+        url: "/pps/package-prep/orders/bulk",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsLabelOrders],
+    }),
+
     receiveLabelOrder: builder.mutation<
       { success: boolean; order: ILabelOrder; inventory: ILabelInventory },
       IReceiveLabelOrderRequest
@@ -457,6 +469,7 @@ export const {
   useUpdateTrayStatusMutation,
   useGetActiveLabelOrdersQuery,
   useCreateLabelOrderMutation,
+  useBulkCreateLabelOrdersMutation,
   useReceiveLabelOrderMutation,
   useGetLabelInventoryQuery,
   useApplyLabelsMutation,

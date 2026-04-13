@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Loader2, AlertTriangle, Pencil, Check, X, ImageOff, Eye } from "lucide-react";
+import { Loader2, AlertTriangle, Pencil, Check, X, ImageOff, Eye, PackagePlus, ChevronDown } from "lucide-react";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -197,7 +197,6 @@ function UnprocessedTab({ isAdmin, compact }: { isAdmin: boolean; compact?: bool
   async function handleApply(inv: ILabelInventory) {
     const qty = parseInt(applyQty[inv._id] ?? "", 10);
     if (isNaN(qty) || qty < 1) { toast.error("Enter a valid quantity"); return; }
-    if (qty > inv.unprocessed) { toast.error(`Only ${inv.unprocessed} available`); return; }
     try {
       await applyLabels({ storeId: inv.storeId, labelId: inv.labelId, quantity: qty }).unwrap();
       toast.success(`${qty} labels moved to labeled`);
@@ -266,7 +265,6 @@ function UnprocessedTab({ isAdmin, compact }: { isAdmin: boolean; compact?: bool
                     <input
                       type="number"
                       min={1}
-                      max={inv.unprocessed}
                       value={applyQty[inv._id] ?? ""}
                       onChange={(e) => setApplyQty((q) => ({ ...q, [inv._id]: e.target.value }))}
                       className={cn(fieldClass, "flex-1")}
@@ -310,7 +308,7 @@ function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?: boole
   const { data, isLoading, isError } = useGetLabelInventoryQuery();
   const [printLabels, { isLoading: printing }] = usePrintLabelsMutation();
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [forms, setForms] = useState<Record<string, { qty: string }>>({});
+  const [forms, setForms] = useState<Record<string, { qty: string; lotNumber: string; thcPercent: string; testDate: string }>>({});
   const [previewImage, setPreviewImage] = useState<PreviewImage>(null);
 
   if (isLoading) return <LoadingState />;
@@ -326,7 +324,7 @@ function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?: boole
   if (items.length === 0) return <EmptyState msg="No labeled bags awaiting printing." />;
 
   function getForm(id: string, labeled: number) {
-    return forms[id] ?? { qty: String(labeled) };
+    return forms[id] ?? { qty: String(labeled), lotNumber: "", thcPercent: "", testDate: "" };
   }
 
   function setForm(id: string, patch: Partial<(typeof forms)[string]>) {
@@ -339,7 +337,14 @@ function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?: boole
     if (isNaN(qty) || qty < 1) { toast.error("Enter a valid quantity"); return; }
     if (qty > inv.labeled) { toast.error(`Only ${inv.labeled} labeled bags available`); return; }
     try {
-      await printLabels({ storeId: inv.storeId, labelId: inv.labelId, quantity: qty }).unwrap();
+      await printLabels({
+        storeId: inv.storeId,
+        labelId: inv.labelId,
+        quantity: qty,
+        lotNumber: form.lotNumber || undefined,
+        thcPercent: form.thcPercent || undefined,
+        testDate: form.testDate || undefined,
+      }).unwrap();
       toast.success(`${qty} bags marked as printed`);
       setExpandedId(null);
     } catch {
@@ -399,7 +404,6 @@ function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?: boole
                     <input
                       type="number"
                       min={1}
-                      max={inv.labeled}
                       value={form.qty}
                       onChange={(e) => setForm(inv._id, { qty: e.target.value })}
                       className={cn(fieldClass, "flex-1")}
@@ -412,6 +416,7 @@ function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?: boole
                       All
                     </button>
                   </div>
+
                   <div className="flex flex-col-reverse sm:flex-row gap-2">
                     <button onClick={() => setExpandedId(null)} className="px-4 py-2 rounded-xs border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors">
                       Cancel
@@ -582,6 +587,7 @@ function EmptyState({ msg }: { msg: string }) {
 
 export default function PackagePrepView({ isAdmin, compact }: { isAdmin: boolean; compact?: boolean }) {
   const [active, setActive] = useState<Tab>("on_order");
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const { data: inventoryData } = useGetLabelInventoryQuery();
   const belowCount = (inventoryData?.inventory ?? []).filter(
@@ -590,7 +596,26 @@ export default function PackagePrepView({ isAdmin, compact }: { isAdmin: boolean
 
   return (
     <div className="flex flex-col gap-4">
-      {isAdmin && <PackagePrepAdminOrder />}
+      {isAdmin && (
+        <div className="flex flex-col gap-0 rounded-xs border border-border overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setBulkOpen((v) => !v)}
+            className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <PackagePlus className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-semibold text-foreground">Place Bulk Label Order</span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform shrink-0", bulkOpen && "rotate-180")} />
+          </button>
+          {bulkOpen && (
+            <div className="border-t border-border p-4">
+              <PackagePrepAdminOrder />
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && belowCount > 0 && (
         <div className="flex items-center gap-2 rounded-xs bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
