@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { getPPSUser } from "@/lib/ppsUser";
-import DigitCounter from "@/components/PPS/DigitCounter";
-import PrintLabel from "@/components/PPS/PrintLabel";
-import CookItemHistory from "@/components/PPS/CookItemHistory";
+import DigitCounter from "@/components/PPS/shared/DigitCounter";
+import PrintLabel from "@/components/PPS/shared/PrintLabel";
+import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import {
   useGetStage4CookItemsQuery,
   useConfirmCountMutation,

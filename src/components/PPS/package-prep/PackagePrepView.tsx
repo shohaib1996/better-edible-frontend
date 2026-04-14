@@ -74,7 +74,7 @@ function Thumbnail({
 
 type OnOrderPanel = "receive" | "edit" | "delete" | null;
 
-function OnOrderTab({ compact }: { compact?: boolean }) {
+function OnOrderTab({ compact, isAdmin }: { compact?: boolean; isAdmin: boolean }) {
   const { data, isLoading, isError } = useGetActiveLabelOrdersQuery();
   const [receiveOrder, { isLoading: receiving }] = useReceiveLabelOrderMutation();
   const [updateOrder, { isLoading: updating }] = useUpdateLabelOrderMutation();
@@ -181,20 +181,24 @@ function OnOrderTab({ compact }: { compact?: boolean }) {
                 {/* Right: all three buttons in one row, hidden while panel open */}
                 {!isThisExpanded && (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => openPanel(order._id, "edit", order)}
-                      className="p-2 rounded-xs border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      title="Edit order"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => openPanel(order._id, "delete", order)}
-                      className="p-2 rounded-xs border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors"
-                      title="Cancel order"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => openPanel(order._id, "edit", order)}
+                          className="p-2 rounded-xs border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          title="Edit order"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openPanel(order._id, "delete", order)}
+                          className="p-2 rounded-xs border border-border bg-background text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors"
+                          title="Cancel order"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => openPanel(order._id, "receive", order)}
                       className="px-4 py-2 rounded-xs bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
@@ -772,7 +776,7 @@ export default function PackagePrepView({ isAdmin, compact }: { isAdmin: boolean
         ))}
       </div>
 
-      {active === "on_order" && <OnOrderTab compact={compact} />}
+      {active === "on_order" && <OnOrderTab compact={compact} isAdmin={isAdmin} />}
       {active === "unprocessed" && <UnprocessedTab isAdmin={isAdmin} compact={compact} />}
       {active === "apply_label" && <ApplyLabelTab isAdmin={isAdmin} compact={compact} />}
       {active === "printed" && <PrintedTab isAdmin={isAdmin} compact={compact} />}

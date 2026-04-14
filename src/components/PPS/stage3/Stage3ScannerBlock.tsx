@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import PrintLabel from "@/components/PPS/PrintLabel";
+import PrintLabel from "@/components/PPS/shared/PrintLabel";
 import Barcode from "react-barcode";
 import { getPPSUser } from "@/lib/ppsUser";
 import { useStartBaggingMutation } from "@/redux/api/PrivateLabel/ppsApi";

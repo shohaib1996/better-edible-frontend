@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, ScanLine, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { getPPSUser } from "@/lib/ppsUser";
-import CookItemHistory from "@/components/PPS/CookItemHistory";
+import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import {
   useCompleteBagSealMutation,
   useStartSealingMutation,

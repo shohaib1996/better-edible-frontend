@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2, Thermometer, ArrowRight, CheckCircle2, Package } from "lucide-react";
+import { Loader2, Thermometer, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import {
@@ -174,15 +174,6 @@ export default function Stage3View({ basePath = "/admin/pps", compact, isAdmin }
             </span>
           )}
         </div>
-        {isAdmin && (
-          <button
-            onClick={() => router.push(`${basePath}/package-prep`)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground font-semibold ${compact ? "text-xs" : "text-sm"}`}
-          >
-            <Package className={compact ? "w-3 h-3" : "w-4 h-4"} />
-            Package Prep
-          </button>
-        )}
       </div>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {Array.from(orderGroups.entries()).map(([orderId, items]) => (

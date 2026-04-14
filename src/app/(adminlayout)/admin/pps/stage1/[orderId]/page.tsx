@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import Stage1OrderDetail from "@/components/PPS/Stage1OrderDetail";
+import Stage1OrderDetail from "@/components/PPS/stage1/Stage1OrderDetail";
 
 export default function Stage1OrderPage({
   params,

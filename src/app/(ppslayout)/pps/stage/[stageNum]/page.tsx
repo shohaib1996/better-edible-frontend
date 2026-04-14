@@ -16,10 +16,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Stage1View from "@/components/PPS/Stage1View";
-import Stage2View from "@/components/PPS/Stage2View";
-import Stage3View from "@/components/PPS/Stage3View";
-import Stage4View from "@/components/PPS/Stage4View";
+import Stage1View from "@/components/PPS/stage1/Stage1View";
+import Stage2View from "@/components/PPS/stage2/Stage2View";
+import Stage3View from "@/components/PPS/stage3/Stage3View";
+import Stage4View from "@/components/PPS/stage4/Stage4View";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { useMidnightLogout } from "@/lib/useMidnightLogout";
 

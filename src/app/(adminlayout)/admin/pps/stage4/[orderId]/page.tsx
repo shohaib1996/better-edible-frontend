@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/ppsUser";
-import { CookItemCard } from "@/components/PPS/Stage4View";
+import { CookItemCard } from "@/components/PPS/stage4/Stage4View";
 import { useGetStage4CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 
 export default function AdminStage4OrderPage({

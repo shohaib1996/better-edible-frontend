@@ -1,7 +1,7 @@
 "use client";
 
 import { Package } from "lucide-react";
-import PackagePrepView from "@/components/PPS/PackagePrepView";
+import PackagePrepView from "@/components/PPS/package-prep/PackagePrepView";
 
 export default function AdminPackagePrepPage() {
   return (

@@ -3,27 +3,29 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Factory } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Stage1View from "@/components/PPS/Stage1View";
-import Stage2View from "@/components/PPS/Stage2View";
-import Stage3View from "@/components/PPS/Stage3View";
-import Stage4View from "@/components/PPS/Stage4View";
+import Stage1View from "@/components/PPS/stage1/Stage1View";
+import Stage2View from "@/components/PPS/stage2/Stage2View";
+import Stage3View from "@/components/PPS/stage3/Stage3View";
+import Stage4View from "@/components/PPS/stage4/Stage4View";
 import ResourcesView from "@/components/PPS/ResourcesView";
+import PackagePrepView from "@/components/PPS/package-prep/PackagePrepView";
 
-type Tab = "stage1" | "stage2" | "stage3" | "stage4" | "resources";
+type Tab = "stage1" | "stage2" | "stage3" | "stage4" | "resources" | "package-prep";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "stage1", label: "Stage 1 — Cooking & Molding" },
   { id: "stage2", label: "Stage 2 — Dehydrator Loading" },
   { id: "stage3", label: "Stage 3 — Container & Label" },
   { id: "stage4", label: "Stage 4 — Packaging" },
+  { id: "package-prep", label: "Package Prep" },
   { id: "resources", label: "Resources" },
 ];
 
 const PARAM_TO_TAB: Record<string, Tab> = {
-  "1": "stage1", "2": "stage2", "3": "stage3", "4": "stage4", "resources": "resources",
+  "1": "stage1", "2": "stage2", "3": "stage3", "4": "stage4", "resources": "resources", "package-prep": "package-prep",
 };
 const TAB_TO_PARAM: Record<Tab, string> = {
-  stage1: "1", stage2: "2", stage3: "3", stage4: "4", resources: "resources",
+  stage1: "1", stage2: "2", stage3: "3", stage4: "4", resources: "resources", "package-prep": "package-prep",
 };
 
 export default function PPSPage() {
@@ -71,6 +73,7 @@ export default function PPSPage() {
           {active === "stage2" && <Stage2View compact />}
           {active === "stage3" && <Stage3View compact isAdmin />}
           {active === "stage4" && <Stage4View basePath="/admin/pps" compact />}
+          {active === "package-prep" && <PackagePrepView isAdmin compact />}
           {active === "resources" && <ResourcesView />}
         </div>
       </div>

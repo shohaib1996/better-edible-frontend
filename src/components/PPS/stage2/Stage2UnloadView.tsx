@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
-import PrintLabel from "@/components/PPS/PrintLabel";
+import PrintLabel from "@/components/PPS/shared/PrintLabel";
 import {
   useGetStage2UnloadItemsQuery,
   useCompleteUnloadMutation,

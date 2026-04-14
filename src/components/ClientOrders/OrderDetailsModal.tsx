@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import CookItemHistory from "@/components/PPS/CookItemHistory";
+import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import {
   Dialog,
   DialogContent,

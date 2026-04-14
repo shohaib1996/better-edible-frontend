@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
+import BarcodeScannerInput from "@/components/PPS/shared/BarcodeScannerInput";
 import type { IDehydratorUnit } from "@/types/privateLabel/pps";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

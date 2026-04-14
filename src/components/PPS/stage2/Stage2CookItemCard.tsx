@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
-import CookItemHistory from "@/components/PPS/CookItemHistory";
-import Stage2TraySlot from "@/components/PPS/Stage2TraySlot";
+import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
+import Stage2TraySlot from "@/components/PPS/stage2/Stage2TraySlot";
 import {
   useProcessMoldMutation,
   useUnprocessMoldMutation,

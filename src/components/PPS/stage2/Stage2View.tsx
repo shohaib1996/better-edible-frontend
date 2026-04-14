@@ -12,7 +12,7 @@ import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
 } from "@/constants/privateLabel";
-import Stage2UnloadView from "@/components/PPS/Stage2UnloadView";
+import Stage2UnloadView from "@/components/PPS/stage2/Stage2UnloadView";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
 // ─── Group cook items by orderId ──────────────────────────────────────────────

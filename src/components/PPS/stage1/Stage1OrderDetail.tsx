@@ -6,7 +6,7 @@ import { ArrowLeft, ChefHat, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/ppsUser";
 import { useGetStage1CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
-import Stage1CookItemCard from "@/components/PPS/Stage1CookItemCard";
+import Stage1CookItemCard from "@/components/PPS/stage1/Stage1CookItemCard";
 
 export interface Stage1OrderDetailProps {
   orderId: string;

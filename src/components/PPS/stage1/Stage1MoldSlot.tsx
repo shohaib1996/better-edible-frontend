@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { CheckCircle2, Loader2, X } from "lucide-react";
-import BarcodeScannerInput from "@/components/PPS/BarcodeScannerInput";
+import BarcodeScannerInput from "@/components/PPS/shared/BarcodeScannerInput";
 
 export interface Stage1MoldSlotProps {
   index: number;

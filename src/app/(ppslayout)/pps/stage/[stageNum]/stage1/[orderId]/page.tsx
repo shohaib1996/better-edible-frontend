@@ -4,7 +4,7 @@ import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Stage1OrderDetail from "@/components/PPS/Stage1OrderDetail";
+import Stage1OrderDetail from "@/components/PPS/stage1/Stage1OrderDetail";
 
 export default function LockedStage1OrderPage({
   params,

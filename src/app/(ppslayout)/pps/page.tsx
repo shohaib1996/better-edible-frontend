@@ -3,21 +3,24 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { ChefHat, Wind, Thermometer, Package, LogOut, User, Sun, Moon } from "lucide-react";
+import { ChefHat, Wind, Thermometer, Package, LogOut, User, Sun, Moon, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Stage1View from "@/components/PPS/Stage1View";
-import Stage2View from "@/components/PPS/Stage2View";
-import Stage3View from "@/components/PPS/Stage3View";
-import Stage4View from "@/components/PPS/Stage4View";
+import Stage1View from "@/components/PPS/stage1/Stage1View";
+import Stage2View from "@/components/PPS/stage2/Stage2View";
+import Stage3View from "@/components/PPS/stage3/Stage3View";
+import Stage4View from "@/components/PPS/stage4/Stage4View";
+import PackagePrepView from "@/components/PPS/package-prep/PackagePrepView";
+import { isAdminUser } from "@/lib/ppsUser";
 
-type Stage = "stage1" | "stage2" | "stage3" | "stage4";
+type Stage = "stage1" | "stage2" | "stage3" | "stage4" | "package-prep";
 
 const TABS: { id: Stage; label: string; icon: React.ElementType; short: string }[] = [
   { id: "stage1", label: "Cooking & Molding", short: "Stage 1", icon: ChefHat },
   { id: "stage2", label: "Dehydrator Loading", short: "Stage 2", icon: Wind },
   { id: "stage3", label: "Container & Label", short: "Stage 3", icon: Thermometer },
   { id: "stage4", label: "Packaging", short: "Stage 4", icon: Package },
+  { id: "package-prep", label: "Package Prep", short: "Pkg Prep", icon: Tag },
 ];
 
 function stageFromParam(param: string | null): Stage {
@@ -28,7 +31,11 @@ function stageFromParam(param: string | null): Stage {
 export default function PPSStaffPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [active, setActive] = useState<Stage>(() => stageFromParam(searchParams.get("stage")));
+  const [active, setActive] = useState<Stage>(() => {
+    const p = searchParams.get("stage");
+    if (p === "package-prep") return "package-prep";
+    return stageFromParam(p);
+  });
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
 
@@ -126,6 +133,7 @@ export default function PPSStaffPage() {
         {active === "stage2" && <Stage2View basePath="/pps" />}
         {active === "stage3" && <Stage3View basePath="/pps" />}
         {active === "stage4" && <Stage4View basePath="/pps" />}
+        {active === "package-prep" && <PackagePrepView isAdmin={isAdminUser()} />}
       </div>
 
       {/* Bottom tab bar */}
@@ -137,8 +145,8 @@ export default function PPSStaffPage() {
               key={id}
               onClick={() => {
                 setActive(id);
-                const num = id.replace("stage", "");
-                router.replace(`/pps?stage=${num}`);
+                const param = id === "package-prep" ? "package-prep" : id.replace("stage", "");
+                router.replace(`/pps?stage=${param}`);
               }}
               className={cn(
                 "flex-1 flex flex-col items-center justify-center gap-1.5 py-4 font-semibold transition-colors select-none",

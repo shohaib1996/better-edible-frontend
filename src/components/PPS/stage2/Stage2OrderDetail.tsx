@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/ppsUser";
 import { useGetStage2CookItemsQuery, ppsApi } from "@/redux/api/PrivateLabel/ppsApi";
 import { useAppDispatch } from "@/redux/hooks/hooks";
-import Stage2CookItemCard, { type NextShelf } from "@/components/PPS/Stage2CookItemCard";
+import Stage2CookItemCard, { type NextShelf } from "@/components/PPS/stage2/Stage2CookItemCard";
 
 export interface Stage2OrderDetailProps {
   orderId: string;

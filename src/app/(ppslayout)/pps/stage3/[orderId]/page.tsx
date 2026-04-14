@@ -6,8 +6,8 @@ import { ArrowLeft, PackageCheck, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/ppsUser";
 import { useGetStage3CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
-import { Stage3CookItemCard } from "@/components/PPS/Stage3CookItemCard";
-import Stage3ScannerBlock from "@/components/PPS/Stage3ScannerBlock";
+import { Stage3CookItemCard } from "@/components/PPS/stage3/Stage3CookItemCard";
+import Stage3ScannerBlock from "@/components/PPS/stage3/Stage3ScannerBlock";
 
 export default function WorkerStage3OrderPage({
   params,
