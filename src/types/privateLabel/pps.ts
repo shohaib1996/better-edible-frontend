@@ -289,3 +289,93 @@ export interface IBulkCreateResourceResponse {
   created: number;
   skipped: number;
 }
+
+// ──────────────────────────────
+// Oil Container
+// ──────────────────────────────
+export type CannabisType = "BioMax" | "Rosin";
+export type ContainerStatus = "active" | "empty" | "cleaning";
+export type WasteReason = "cleaning" | "spillage" | "other";
+
+export interface IOilContainerHistoryEntry {
+  action: "created" | "refilled" | "drawdown" | "cleaned" | "manual_adjustment";
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  performedBy: { userId: string; userName: string };
+  note?: string;
+  timestamp: string;
+}
+
+export interface IOilContainer {
+  _id: string;
+  containerId: string;
+  name: string;
+  cannabisType: CannabisType;
+  potency: number;
+  totalAmount: number;
+  remainingAmount: number;
+  status: ContainerStatus;
+  createdBy: string;
+  history?: IOilContainerHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICalculatePullResponse {
+  success: boolean;
+  containerId: string;
+  containerName: string;
+  amountToUse: number;
+  remainingAfter: number;
+  instruction: string;
+}
+
+// ──────────────────────────────
+// Waste Log
+// ──────────────────────────────
+export interface IWasteLog {
+  _id: string;
+  date: string;
+  material: CannabisType;
+  amount: number;
+  reason: WasteReason;
+  sourceContainerId: string;
+  loggedBy: { userId: string; userName: string };
+  notes?: string;
+  isAutomatic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ──────────────────────────────
+// Oil API Request Types
+// ──────────────────────────────
+export interface ICreateContainerRequest {
+  containerId: string;
+  name: string;
+  cannabisType: CannabisType;
+  potency: number;
+  totalAmount: number;
+  performedBy?: { userId: string; userName: string };
+}
+
+export interface IRefillContainerRequest {
+  amount: number;
+  performedBy?: { userId: string; userName: string };
+}
+
+export interface ICleanContainerRequest {
+  notes?: string;
+  performedBy?: { userId: string; userName: string };
+}
+
+export interface ICreateWasteLogRequest {
+  date: string;
+  material: CannabisType;
+  amount: number;
+  reason: WasteReason;
+  sourceContainerId: string;
+  notes?: string;
+  performedBy?: { userId: string; userName: string };
+}

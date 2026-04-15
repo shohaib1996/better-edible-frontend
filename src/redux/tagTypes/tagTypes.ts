@@ -21,4 +21,6 @@ export const tagTypes = {
   ppsUnits: "ppsUnits",
   ppsLabelOrders: "ppsLabelOrders",
   ppsLabelInventory: "ppsLabelInventory",
+  oilContainers: "oilContainers",
+  oilWasteLogs: "oilWasteLogs",
 };
