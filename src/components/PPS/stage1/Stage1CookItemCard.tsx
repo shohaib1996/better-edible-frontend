@@ -196,7 +196,7 @@ export default function Stage1CookItemCard({
               </p>
             </div>
             {item.oilContainerId && item.oilActualAmount ? (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-50 border border-amber-200 text-amber-800 ${c ? "text-xs" : "text-sm"}`}>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-400/10 border border-amber-400/30 text-amber-500 ${c ? "text-xs" : "text-sm"}`}>
                 <FlaskConical className="w-3.5 h-3.5 shrink-0" />
                 <span>Oil used: <span className="font-semibold">{item.oilActualAmount}g</span> from <span className="font-mono">{item.oilContainerId}</span></span>
               </div>
@@ -263,7 +263,7 @@ export default function Stage1CookItemCard({
         ) : effectiveMode === "molding" ? (
           <div className="flex flex-col gap-3">
             {oilSelection && (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-50 border border-amber-200 text-amber-800 ${c ? "text-xs" : "text-sm"}`}>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-400/10 border border-amber-400/30 text-amber-500 ${c ? "text-xs" : "text-sm"}`}>
                 <FlaskConical className="w-3.5 h-3.5 shrink-0" />
                 <span>Oil confirmed: <span className="font-semibold">{oilSelection.actualAmount}g</span> from <span className="font-mono">{oilSelection.containerId}</span></span>
               </div>

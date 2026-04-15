@@ -52,7 +52,7 @@ export default function OilContainerSelect({
 
   if (confirmed && pullData) {
     return (
-      <div className={`flex items-center gap-3 px-4 ${c ? "py-3" : "py-4"} rounded-xs bg-green-50 border border-green-200 text-green-700`}>
+      <div className={`flex items-center gap-3 px-4 ${c ? "py-3" : "py-4"} rounded-xs bg-green-500/10 border border-green-500/30 text-green-500`}>
         <CheckCircle2 className={`${c ? "w-5 h-5" : "w-6 h-6"} shrink-0`} />
         <p className={c ? "text-sm font-semibold" : "text-base font-semibold"}>
           Oil confirmed — {pullData.amountToUse}g from {pullData.containerName}
@@ -62,11 +62,11 @@ export default function OilContainerSelect({
   }
 
   return (
-    <div className={`flex flex-col ${c ? "gap-3" : "gap-4"} rounded-xs border border-amber-300 bg-amber-400/10 px-4 ${c ? "py-4" : "py-5"}`}>
+    <div className={`flex flex-col ${c ? "gap-3" : "gap-4"} rounded-xs border border-amber-400/40 bg-amber-400/10 px-4 ${c ? "py-4" : "py-5"}`}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <FlaskConical className={`${c ? "w-4 h-4" : "w-5 h-5"} text-amber-700 shrink-0`} />
-        <p className={`${c ? "text-sm" : "text-base"} font-semibold text-amber-800`}>
+        <FlaskConical className={`${c ? "w-4 h-4" : "w-5 h-5"} text-amber-500 shrink-0`} />
+        <p className={`${c ? "text-sm" : "text-base"} font-semibold text-amber-500`}>
           Select the oil container in front of you
         </p>
       </div>
@@ -93,7 +93,7 @@ export default function OilContainerSelect({
                 onClick={() => setSelectedContainerId(container.containerId)}
                 className={`flex items-center justify-between px-4 ${c ? "py-3" : "py-4"} rounded-xs border text-left transition-colors ${
                   isSelected
-                    ? "border-amber-500 bg-amber-50"
+                    ? "border-amber-500/60 bg-amber-400/15"
                     : "border-border bg-card hover:bg-muted/50"
                 }`}
               >
@@ -106,7 +106,7 @@ export default function OilContainerSelect({
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-0.5 shrink-0">
-                  <span className={`${c ? "text-base" : "text-lg"} font-bold text-blue-600`}>
+                  <span className={`${c ? "text-base" : "text-lg"} font-bold text-primary`}>
                     {container.remainingAmount}g
                   </span>
                   <span className="text-xs text-muted-foreground">remaining</span>
@@ -121,8 +121,8 @@ export default function OilContainerSelect({
       {selectedContainerId && (
         <div className={`rounded-xs border px-4 ${c ? "py-3" : "py-4"} ${
           calcError
-            ? "border-destructive/40 bg-destructive/5"
-            : "border-blue-200 bg-blue-50"
+            ? "border-destructive/40 bg-destructive/10"
+            : "border-border bg-muted/50"
         }`}>
           {isCalculating ? (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -135,7 +135,7 @@ export default function OilContainerSelect({
               <span className="text-sm">Insufficient oil in this container — select another.</span>
             </div>
           ) : pullData ? (
-            <p className={`${c ? "text-base" : "text-lg"} font-bold text-blue-800`}>
+            <p className={`${c ? "text-base" : "text-lg"} font-bold`}>
               {pullData.instruction}
             </p>
           ) : null}

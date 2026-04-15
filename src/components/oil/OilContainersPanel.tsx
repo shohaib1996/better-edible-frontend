@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, RefreshCw, Trash2, Loader2, AlertCircle, FlaskConical } from "lucide-react";
+import {
+  Plus,
+  RefreshCw,
+  Trash2,
+  Loader2,
+  AlertCircle,
+  FlaskConical,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +64,13 @@ function NewBatchDialog({
         totalAmount: Number(form.totalAmount),
       }).unwrap();
       toast.success("Container created");
-      setForm({ containerId: "", name: "", cannabisType: "BioMax", potency: "", totalAmount: "" });
+      setForm({
+        containerId: "",
+        name: "",
+        cannabisType: "BioMax",
+        potency: "",
+        totalAmount: "",
+      });
       onClose();
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to create container");
@@ -76,7 +89,9 @@ function NewBatchDialog({
             <Input
               placeholder="e.g. OIL-001"
               value={form.containerId}
-              onChange={(e) => setForm((f) => ({ ...f, containerId: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, containerId: e.target.value }))
+              }
               required
               className="rounded-xs"
             />
@@ -120,7 +135,9 @@ function NewBatchDialog({
                 max={100}
                 step={0.1}
                 value={form.potency}
-                onChange={(e) => setForm((f) => ({ ...f, potency: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, potency: e.target.value }))
+                }
                 required
                 className="rounded-xs"
               />
@@ -133,14 +150,22 @@ function NewBatchDialog({
                 min={0.1}
                 step={0.1}
                 value={form.totalAmount}
-                onChange={(e) => setForm((f) => ({ ...f, totalAmount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, totalAmount: e.target.value }))
+                }
                 required
                 className="rounded-xs"
               />
             </div>
           </div>
-          <Button type="submit" disabled={isLoading} className="rounded-xs mt-1">
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="rounded-xs mt-1"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : null}
             Create Container
           </Button>
         </form>
@@ -164,7 +189,10 @@ function RefillDialog({
     e.preventDefault();
     if (!container) return;
     try {
-      await refill({ containerId: container.containerId, amount: Number(amount) }).unwrap();
+      await refill({
+        containerId: container.containerId,
+        amount: Number(amount),
+      }).unwrap();
       toast.success(`Refilled ${container.name} with ${amount}g`);
       setAmount("");
       onClose();
@@ -194,7 +222,9 @@ function RefillDialog({
             />
           </div>
           <Button type="submit" disabled={isLoading} className="rounded-xs">
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : null}
             Confirm Refill
           </Button>
         </form>
@@ -217,8 +247,13 @@ function CleanDialog({
   const handleConfirm = async () => {
     if (!container) return;
     try {
-      await clean({ containerId: container.containerId, notes: notes || undefined }).unwrap();
-      toast.success(`${container.name} cleaned — ${container.remainingAmount}g logged as waste`);
+      await clean({
+        containerId: container.containerId,
+        notes: notes || undefined,
+      }).unwrap();
+      toast.success(
+        `${container.name} cleaned — ${container.remainingAmount}g logged as waste`,
+      );
       setNotes("");
       onClose();
     } catch (err: any) {
@@ -234,7 +269,9 @@ function CleanDialog({
         </DialogHeader>
         <div className="flex flex-col gap-4 mt-2">
           <div className="rounded-xs border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            This will zero out the remaining balance ({container?.remainingAmount}g) and log it as waste. This cannot be undone.
+            This will zero out the remaining balance (
+            {container?.remainingAmount}g) and log it as waste. This cannot be
+            undone.
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Notes (optional)</Label>
@@ -252,7 +289,9 @@ function CleanDialog({
               disabled={isLoading}
               className="flex-1 rounded-xs"
             >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
               Zero Out & Log Waste
             </Button>
             <Button variant="outline" onClick={onClose} className="rounded-xs">
@@ -277,7 +316,8 @@ export default function OilContainersPanel() {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
-        <Loader2 className="w-5 h-5 animate-spin" /><span>Loading containers…</span>
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span>Loading containers…</span>
       </div>
     );
   }
@@ -285,7 +325,8 @@ export default function OilContainersPanel() {
   if (isError) {
     return (
       <div className="flex items-center gap-2 text-destructive py-12 justify-center">
-        <AlertCircle className="w-5 h-5" /><span>Failed to load containers.</span>
+        <AlertCircle className="w-5 h-5" />
+        <span>Failed to load containers.</span>
       </div>
     );
   }
@@ -312,26 +353,41 @@ export default function OilContainersPanel() {
         {containers.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
             <FlaskConical className="w-10 h-10 opacity-40" />
-            <p className="text-sm">No containers yet. Create one to get started.</p>
+            <p className="text-sm">
+              No containers yet. Create one to get started.
+            </p>
           </div>
         )}
 
         {/* Container cards */}
         {containers.map((container: IOilContainer) => {
-          const pct = container.totalAmount > 0
-            ? Math.round((container.remainingAmount / container.totalAmount) * 100)
-            : 0;
+          const pct =
+            container.totalAmount > 0
+              ? Math.round(
+                  (container.remainingAmount / container.totalAmount) * 100,
+                )
+              : 0;
 
           return (
-            <div key={container.containerId} className="rounded-xs border bg-card flex flex-col gap-0">
+            <div
+              key={container.containerId}
+              className="rounded-xs border bg-card flex flex-col gap-0"
+            >
               {/* Card header */}
               <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xl font-bold leading-tight">{container.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono mt-0.5">{container.containerId}</p>
+                  <p className="text-xl font-bold leading-tight">
+                    {container.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                    {container.containerId}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="outline" className={`text-xs ${STATUS_COLORS[container.status]}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${STATUS_COLORS[container.status]}`}
+                  >
                     {container.status}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
@@ -342,13 +398,21 @@ export default function OilContainersPanel() {
 
               {/* Stats row */}
               <div className="grid grid-cols-3 gap-0 border-t border-b divide-x mx-5">
-                {([
-                  ["Remaining", `${container.remainingAmount}g`, pct < 20 ? "text-destructive" : "text-green-600"],
-                  ["Total", `${container.totalAmount}g`, ""],
-                  ["Balance", `${pct}%`, pct < 20 ? "text-destructive" : ""],
-                ] as const).map(([label, value, color]) => (
+                {(
+                  [
+                    [
+                      "Remaining",
+                      `${container.remainingAmount}g`,
+                      pct < 20 ? "text-destructive" : "text-green-600",
+                    ],
+                    ["Total", `${container.totalAmount}g`, ""],
+                    ["Balance", `${pct}%`, pct < 20 ? "text-destructive" : ""],
+                  ] as const
+                ).map(([label, value, color]) => (
                   <div key={label} className="px-3 py-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                      {label}
+                    </p>
                     <p className={`text-xl font-bold ${color}`}>{value}</p>
                   </div>
                 ))}
@@ -378,8 +442,11 @@ export default function OilContainersPanel() {
                   size="sm"
                   variant="outline"
                   onClick={() => setCleanTarget(container)}
-                  disabled={container.status === "cleaning" || container.remainingAmount === 0}
-                  className="gap-1.5 rounded-xs text-xs text-destructive hover:text-destructive"
+                  disabled={
+                    container.status === "cleaning" ||
+                    container.remainingAmount === 0
+                  }
+                  className="gap-1.5 rounded-xs text-xs text-destructive hover:text-white"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Clean / Zero Out
@@ -390,9 +457,18 @@ export default function OilContainersPanel() {
         })}
       </div>
 
-      <NewBatchDialog open={showNewBatch} onClose={() => setShowNewBatch(false)} />
-      <RefillDialog container={refillTarget} onClose={() => setRefillTarget(null)} />
-      <CleanDialog container={cleanTarget} onClose={() => setCleanTarget(null)} />
+      <NewBatchDialog
+        open={showNewBatch}
+        onClose={() => setShowNewBatch(false)}
+      />
+      <RefillDialog
+        container={refillTarget}
+        onClose={() => setRefillTarget(null)}
+      />
+      <CleanDialog
+        container={cleanTarget}
+        onClose={() => setCleanTarget(null)}
+      />
     </>
   );
 }
