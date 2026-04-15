@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import Stage1MoldSlot from "@/components/PPS/stage1/Stage1MoldSlot";
+import OilContainerSelect from "@/components/PPS/stage1/OilContainerSelect";
+import type { OilSelection } from "@/components/PPS/stage1/OilContainerSelect";
 import {
   useAssignMoldMutation,
   useUnassignMoldMutation,
@@ -25,7 +27,7 @@ function moldsNeeded(quantity: number) {
   return Math.ceil(quantity / UNITS_PER_MOLD);
 }
 
-type CardMode = "idle" | "molding" | "confirming" | "done";
+type CardMode = "idle" | "oil" | "molding" | "confirming" | "done";
 
 export interface Stage1CookItemCardProps {
   item: ICookItem;
@@ -55,6 +57,7 @@ export default function Stage1CookItemCard({
     item.moldingTimestamps.map((t) => t.unitsPerMold ?? 70),
   );
   const [cancellingMoldId, setCancellingMoldId] = useState<string | null>(null);
+  const [oilSelection, setOilSelection] = useState<OilSelection | null>(null);
 
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
   const [unassignMold] = useUnassignMoldMutation();
@@ -63,7 +66,7 @@ export default function Stage1CookItemCard({
   const totalMolds = moldsNeeded(item.quantity) + extraMolds;
   const assignedCount = item.assignedMoldIds.length;
   const allMoldsAssigned = assignedCount >= totalMolds;
-  const effectiveMode: CardMode = mode === "idle" && batchStarted ? "molding" : mode;
+  const effectiveMode: CardMode = mode === "idle" && batchStarted ? "oil" : mode;
 
   useEffect(() => {
     setMoldUnits((prev) => {
@@ -125,6 +128,11 @@ export default function Stage1CookItemCard({
     try {
       await completeStage1({
         cookItemId: item.cookItemId,
+        ...(oilSelection && {
+          oilContainerId: oilSelection.containerId,
+          oilCalculatedAmount: oilSelection.calculatedAmount,
+          oilActualAmount: oilSelection.actualAmount,
+        }),
         performedBy: getPPSUser(),
       } as any).unwrap();
       setMode("done");
@@ -132,7 +140,7 @@ export default function Stage1CookItemCard({
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to complete Stage 1");
     }
-  }, [completeStage1, item.cookItemId, onItemDone]);
+  }, [completeStage1, item.cookItemId, oilSelection, onItemDone]);
 
   const handleUnitsChange = useCallback((index: number, units: number) => {
     setMoldUnits((prev) => {
@@ -217,12 +225,25 @@ export default function Stage1CookItemCard({
               </Button>
             </div>
           </div>
+        ) : effectiveMode === "oil" ? (
+          <OilContainerSelect
+            moldCount={totalMolds}
+            compact={compact}
+            onConfirmed={(selection) => {
+              setOilSelection(selection);
+              setMode("molding");
+            }}
+            onSkip={() => {
+              setOilSelection(null);
+              setMode("molding");
+            }}
+          />
         ) : effectiveMode === "idle" ? (
           <Button
             size="lg"
             variant="outline"
             className={`w-full ${c ? "text-xl h-14" : "text-2xl h-16 font-bold"} rounded-xs`}
-            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("molding"); }}
+            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("oil"); }}
           >
             Start
           </Button>
