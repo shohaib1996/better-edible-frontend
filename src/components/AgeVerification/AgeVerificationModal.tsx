@@ -45,7 +45,7 @@ const AgeVerificationModal = () => {
           <DialogTitle className="text-center text-2xl font-bold">
             You must be 21 years or older to enter this site.
           </DialogTitle>
-          <DialogDescription className="text-center text-3xl font-bold text-gray-900 py-4">
+          <DialogDescription className="text-center text-3xl font-bold text-gray-900 dark:text-white py-4">
             I am 21+ years old
           </DialogDescription>
         </DialogHeader>
