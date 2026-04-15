@@ -73,14 +73,20 @@ export const ppsApi = baseApi.injectEndpoints({
 
     completeStage1: builder.mutation<
       { success: boolean; cookItem: ICookItem },
-      { cookItemId: string }
+      {
+        cookItemId: string;
+        oilContainerId?: string;
+        oilCalculatedAmount?: number;
+        oilActualAmount?: number;
+        performedBy?: any;
+      }
     >({
       query: (body) => ({
         url: "/pps/stage-1/complete",
         method: "PATCH",
         body,
       }),
-      invalidatesTags: [tagTypes.ppsCookItems],
+      invalidatesTags: [tagTypes.ppsCookItems, tagTypes.oilContainers],
     }),
 
     // ─── Stage 2 ──────────────────────────
