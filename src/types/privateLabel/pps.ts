@@ -79,6 +79,11 @@ export interface ICookItem {
   containerPackedTimestamp?: string;
   labelPrintTimestamp?: string;
   demoldingCompletionTimestamp?: string;
+  // Oil Usage (Stage 1)
+  oilContainerId?: string;
+  oilCalculatedAmount?: number;
+  oilActualAmount?: number;
+
   baggingStartTimestamp?: string;
   sealingStartTimestamp?: string;
   packagingStartTimestamp?: string;

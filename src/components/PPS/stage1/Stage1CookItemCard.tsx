@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2, Plus } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -187,12 +187,25 @@ export default function Stage1CookItemCard({
       {/* Action area */}
       <div className={`px-5 ${c ? "py-4 gap-3" : "py-5 gap-4"} flex flex-col`}>
         {effectiveMode === "done" || isComplete ? (
-          <div className={`flex items-center gap-${c ? "3" : "4"} py-4 text-green-600`}>
-            <CheckCircle2 className={`${c ? "w-8 h-8" : "w-10 h-10"} shrink-0`} />
-            <p className={c ? "text-xl font-semibold" : "text-2xl font-bold"}>
-              Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""},{" "}
-              {qtyProduced.toLocaleString()} units
-            </p>
+          <div className="flex flex-col gap-2">
+            <div className={`flex items-center gap-${c ? "3" : "4"} py-4 text-green-600`}>
+              <CheckCircle2 className={`${c ? "w-8 h-8" : "w-10 h-10"} shrink-0`} />
+              <p className={c ? "text-xl font-semibold" : "text-2xl font-bold"}>
+                Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""},{" "}
+                {qtyProduced.toLocaleString()} units
+              </p>
+            </div>
+            {item.oilContainerId && item.oilActualAmount ? (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-50 border border-amber-200 text-amber-800 ${c ? "text-xs" : "text-sm"}`}>
+                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
+                <span>Oil used: <span className="font-semibold">{item.oilActualAmount}g</span> from <span className="font-mono">{item.oilContainerId}</span></span>
+              </div>
+            ) : (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-muted border border-border text-muted-foreground ${c ? "text-xs" : "text-sm"}`}>
+                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
+                <span>No oil recorded</span>
+              </div>
+            )}
           </div>
         ) : effectiveMode === "confirming" ? (
           <div className={`flex flex-col ${c ? "gap-3" : "gap-4"}`}>
@@ -249,6 +262,12 @@ export default function Stage1CookItemCard({
           </Button>
         ) : effectiveMode === "molding" ? (
           <div className="flex flex-col gap-3">
+            {oilSelection && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-50 border border-amber-200 text-amber-800 ${c ? "text-xs" : "text-sm"}`}>
+                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
+                <span>Oil confirmed: <span className="font-semibold">{oilSelection.actualAmount}g</span> from <span className="font-mono">{oilSelection.containerId}</span></span>
+              </div>
+            )}
             {Array.from({ length: totalMolds }).map((_, i) => (
               <Stage1MoldSlot
                 key={i}
