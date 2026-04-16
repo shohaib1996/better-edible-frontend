@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FlaskConical } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FlaskConical, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import OilContainersPanel from "@/components/oil/OilContainersPanel";
 import WasteLogPanel from "@/components/oil/WasteLogPanel";
@@ -15,11 +16,19 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function OilPage() {
   const [active, setActive] = useState<Tab>("containers");
+  const router = useRouter();
 
   return (
     <div className="p-4 md:p-8 bg-background min-h-screen">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
+        <button
+          onClick={() => router.push("/admin/pps?stage=cannabis-oil")}
+          className="p-1.5 rounded-xs hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          aria-label="Back to PPS"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
         <FlaskConical className="w-8 h-8 text-primary" />
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold">Cannabis Oil Inventory</h1>
