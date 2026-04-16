@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { useGetWasteLogsQuery, useCreateWasteLogMutation, useGetOilContainersQuery } from "@/redux/api/oil/oilApi";
 import type { IWasteLog, CannabisType, WasteReason } from "@/types/privateLabel/pps";
+import { getPPSUser } from "@/lib/ppsUser";
 
 const REASON_LABELS: Record<WasteReason, string> = {
   cleaning: "Cleaning",
@@ -59,6 +60,7 @@ function ManualWasteDialog({
         reason: form.reason,
         sourceContainerId: form.sourceContainerId,
         notes: form.notes || undefined,
+        performedBy: getPPSUser(),
       }).unwrap();
       toast.success("Waste entry logged");
       setForm({ date: new Date().toISOString().slice(0, 10), material: "BioMax", amount: "", reason: "spillage", sourceContainerId: "", notes: "" });
@@ -183,7 +185,9 @@ export default function WasteLogPanel() {
   const [showManual, setShowManual] = useState(false);
 
   const { data, isLoading, isError } = useGetWasteLogsQuery();
-  const wasteLogs = data?.wasteLogs ?? [];
+  const wasteLogs = [...(data?.wasteLogs ?? [])].sort((a, b) =>
+    b._id > a._id ? 1 : -1
+  );
 
   if (isLoading) {
     return (

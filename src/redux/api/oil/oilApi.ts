@@ -99,7 +99,7 @@ export const oilApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: [tagTypes.oilWasteLogs],
+      invalidatesTags: [tagTypes.oilWasteLogs, tagTypes.oilContainers],
     }),
   }),
 });

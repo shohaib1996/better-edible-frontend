@@ -27,6 +27,7 @@ import {
   useCleanOilContainerMutation,
 } from "@/redux/api/oil/oilApi";
 import type { IOilContainer, CannabisType } from "@/types/privateLabel/pps";
+import { getPPSUser } from "@/lib/ppsUser";
 
 // ─── Status badge ────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
@@ -62,6 +63,7 @@ function NewBatchDialog({
         cannabisType: form.cannabisType,
         potency: Number(form.potency),
         totalAmount: Number(form.totalAmount),
+        performedBy: getPPSUser(),
       }).unwrap();
       toast.success("Container created");
       setForm({
@@ -192,6 +194,7 @@ function RefillDialog({
       await refill({
         containerId: container.containerId,
         amount: Number(amount),
+        performedBy: getPPSUser(),
       }).unwrap();
       toast.success(`Refilled ${container.name} with ${amount}g`);
       setAmount("");
@@ -250,6 +253,7 @@ function CleanDialog({
       await clean({
         containerId: container.containerId,
         notes: notes || undefined,
+        performedBy: getPPSUser(),
       }).unwrap();
       toast.success(
         `${container.name} cleaned — ${container.remainingAmount}g logged as waste`,
