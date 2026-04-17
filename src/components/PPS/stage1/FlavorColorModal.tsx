@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
+import { useGetFlavorsQuery, useFindOrCreateBlendMutation } from "@/redux/api/flavor/flavorsApi";
 import { useGetColorsQuery } from "@/redux/api/color/colorsApi";
 import {
   useSetFlavorColorMutation,
@@ -65,7 +65,8 @@ export default function FlavorColorModal({
 
   const [setFlavorColor, { isLoading: isSetting }] = useSetFlavorColorMutation();
   const [editFlavorColor, { isLoading: isEditing }] = useEditFlavorColorMutation();
-  const isLoading = isSetting || isEditing;
+  const [findOrCreateBlend, { isLoading: isBlending }] = useFindOrCreateBlendMutation();
+  const isLoading = isSetting || isEditing || isBlending;
 
   // ── Local state ───────────────────────────────────────────────────────────
   const [flavorRows, setFlavorRows] = useState<FlavorRow[]>([]);
@@ -125,9 +126,28 @@ export default function FlavorColorModal({
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    const flavorAmounts: IFlavorAmount[] = flavorRows
-      .filter((r) => r.flavorId && r.amountGrams !== "")
-      .map((r) => ({ flavorId: r.flavorId, amountGrams: Number(r.amountGrams) }));
+    const validFlavorRows = flavorRows.filter((r) => r.flavorId && r.amountGrams !== "");
+
+    let flavorAmounts: IFlavorAmount[];
+
+    if (validFlavorRows.length > 1) {
+      // Multiple flavors — resolve to a single blend entry
+      const totalGrams = validFlavorRows.reduce((sum, r) => sum + Number(r.amountGrams), 0);
+      try {
+        const res = await findOrCreateBlend({
+          blendOf: validFlavorRows.map((r) => r.flavorId),
+        }).unwrap();
+        flavorAmounts = [{ flavorId: res.flavor.flavorId, amountGrams: totalGrams }];
+      } catch (err: any) {
+        toast.error(err?.data?.message || "Failed to resolve blend");
+        return;
+      }
+    } else {
+      flavorAmounts = validFlavorRows.map((r) => ({
+        flavorId: r.flavorId,
+        amountGrams: Number(r.amountGrams),
+      }));
+    }
 
     const colorAmounts: IColorAmount[] = colorRows
       .filter((r) => r.colorId && r.amountGrams !== "")
@@ -193,7 +213,13 @@ export default function FlavorColorModal({
                 <div key={i} className="flex gap-2 items-center">
                   <Select
                     value={row.flavorId}
-                    onValueChange={(v) => setFlavorRow(i, { flavorId: v })}
+                    onValueChange={(v) => {
+                      const def = activeFlavors.find((f) => f.flavorId === v)?.defaultAmount;
+                      setFlavorRow(i, {
+                        flavorId: v,
+                        ...(row.amountGrams === "" && def !== undefined && { amountGrams: String(def) }),
+                      });
+                    }}
                   >
                     <SelectTrigger className="flex-1 rounded-xs h-9 text-sm w-0 bg-input border-primary">
                       <SelectValue placeholder="Select flavor…" />
@@ -276,7 +302,13 @@ export default function FlavorColorModal({
                   <div key={i} className="flex gap-2 items-center">
                     <Select
                       value={row.colorId}
-                      onValueChange={(v) => setColorRow(i, { colorId: v })}
+                      onValueChange={(v) => {
+                        const def = activeColors.find((c) => c.colorId === v)?.defaultAmount;
+                        setColorRow(i, {
+                          colorId: v,
+                          ...(row.amountGrams === "" && def !== undefined && { amountGrams: String(def) }),
+                        });
+                      }}
                     >
                       <SelectTrigger className="flex-1 rounded-xs h-9 text-sm w-0 bg-input border-primary">
                         <SelectValue placeholder="Select color…" />

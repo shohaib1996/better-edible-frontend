@@ -16,6 +16,8 @@ import {
   useUnassignMoldMutation,
   useCompleteStage1Mutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
+import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
+import { useGetColorsQuery } from "@/redux/api/color/colorsApi";
 import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
@@ -64,6 +66,11 @@ export default function Stage1CookItemCard({
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
   const [unassignMold] = useUnassignMoldMutation();
   const [completeStage1, { isLoading: isCompleting }] = useCompleteStage1Mutation();
+
+  const { data: flavorsData } = useGetFlavorsQuery();
+  const { data: colorsData } = useGetColorsQuery();
+  const flavorNameMap = new Map((flavorsData?.flavors ?? []).map((f) => [f.flavorId, f.name]));
+  const colorNameMap = new Map((colorsData?.colors ?? []).map((c) => [c.colorId, c.name]));
 
   const totalMolds = moldsNeeded(item.quantity) + extraMolds;
   const assignedCount = item.assignedMoldIds.length;
@@ -190,6 +197,8 @@ export default function Stage1CookItemCard({
       <FlavorColorBlock
         item={item}
         compact={compact}
+        flavorNameMap={flavorNameMap}
+        colorNameMap={colorNameMap}
         onOpen={() => setFlavorColorOpen(true)}
       />
 
@@ -331,10 +340,14 @@ export default function Stage1CookItemCard({
 function FlavorColorBlock({
   item,
   compact,
+  flavorNameMap,
+  colorNameMap,
   onOpen,
 }: {
   item: ICookItem;
   compact?: boolean;
+  flavorNameMap: Map<string, string>;
+  colorNameMap: Map<string, string>;
   onOpen: () => void;
 }) {
   const c = compact;
@@ -384,7 +397,7 @@ function FlavorColorBlock({
         <div key={i} className="flex items-center gap-2">
           <FlaskConical className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-amber-500 shrink-0`} />
           <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
-            {fa.flavorId}
+            {flavorNameMap.get(fa.flavorId) ?? fa.flavorId}
           </span>
           <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
             {fa.amountGrams}g
@@ -398,7 +411,7 @@ function FlavorColorBlock({
           <div key={i} className="flex items-center gap-2">
             <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-purple-500 shrink-0`} />
             <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
-              {ca.colorId}
+              {colorNameMap.get(ca.colorId) ?? ca.colorId}
             </span>
             <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
               {ca.amountGrams}g

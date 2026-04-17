@@ -164,8 +164,8 @@ export default function Stage2View({ basePath = "/admin/pps", compact }: { baseP
   const { data: unloadData } = useGetStage2UnloadItemsQuery();
   const { data: loadData } = useGetStage2CookItemsQuery();
 
-  const unloadCount = unloadData?.cookItems?.length ?? 0;
-  const loadCount = loadData?.cookItems?.length ?? 0;
+  const unloadCount = new Set(unloadData?.cookItems?.map((i) => i.orderId) ?? []).size;
+  const loadCount = new Set(loadData?.cookItems?.map((i) => i.orderId) ?? []).size;
 
   return (
     <div className="flex flex-col gap-4">

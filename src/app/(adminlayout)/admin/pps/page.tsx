@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Factory } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGetStage1CookItemsQuery } from "@/redux/api/PrivateLabel/ppsApi";
 import Stage1View from "@/components/PPS/stage1/Stage1View";
 import Stage2View from "@/components/PPS/stage2/Stage2View";
 import Stage3View from "@/components/PPS/stage3/Stage3View";
@@ -64,6 +65,11 @@ export default function PPSPage() {
   const active: Tab = PARAM_TO_TAB[searchParams.get("stage") ?? ""] ?? "stage1";
   const [oilTab, setOilTab] = useState<OilTab>("containers");
 
+  const { data: stage1Data } = useGetStage1CookItemsQuery(undefined, { refetchOnMountOrArgChange: true });
+  const editedCount = (stage1Data?.cookItems ?? []).filter(
+    (item) => (item.flavorColorEditHistory?.length ?? 0) > 0
+  ).length;
+
   return (
     <div className="p-4 md:p-8 bg-background min-h-screen">
       {/* Header */}
@@ -82,22 +88,35 @@ export default function PPSPage() {
       <div className="flex flex-col md:flex-row gap-6">
         {/* Nav */}
         <nav className="flex flex-col gap-1 w-full md:w-56 shrink-0">
-          {TABS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() =>
-                router.replace(`/admin/pps?stage=${TAB_TO_PARAM[id]}`)
-              }
-              className={cn(
-                "w-full text-center md:text-left px-4 py-2.5 rounded-xs text-sm font-medium transition-colors",
-                active === id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
+          {TABS.map(({ id, label }) => {
+            const badge = id === "stage1" && editedCount > 0 ? editedCount : null;
+            return (
+              <button
+                key={id}
+                onClick={() =>
+                  router.replace(`/admin/pps?stage=${TAB_TO_PARAM[id]}`)
+                }
+                className={cn(
+                  "w-full text-center md:text-left px-4 py-2.5 rounded-xs text-sm font-medium transition-colors flex items-center justify-center md:justify-between gap-2",
+                  active === id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+                )}
+              >
+                <span>{label}</span>
+                {badge !== null && (
+                  <span className={cn(
+                    "shrink-0 min-w-5 h-5 px-1 rounded-xs text-xs font-bold flex items-center justify-center",
+                    active === id
+                      ? "bg-white/25 text-white"
+                      : "bg-primary text-primary-foreground",
+                  )}>
+                    {badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Content */}
