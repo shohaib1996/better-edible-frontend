@@ -49,6 +49,16 @@ export interface ITrayRemoval {
   removalTimestamp: string;
 }
 
+export interface IFlavorAmount {
+  flavorId: string;
+  amountGrams: number;
+}
+
+export interface IColorAmount {
+  colorId: string;
+  amountGrams: number;
+}
+
 // ──────────────────────────────
 // Cook Item
 // ──────────────────────────────
@@ -83,6 +93,19 @@ export interface ICookItem {
   oilContainerId?: string;
   oilCalculatedAmount?: number;
   oilActualAmount?: number;
+
+  // Flavor & Color (Stage 1 — cook entry)
+  flavorIds: string[];
+  flavorAmounts: IFlavorAmount[];
+  colorIds: string[];
+  colorAmounts: IColorAmount[];
+  flavorColorSetAt?: string;
+  flavorColorSetBy?: { userId: string; userName: string };
+  flavorColorEditHistory: {
+    editedBy: { userId: string; userName: string };
+    editedAt: string;
+    note?: string;
+  }[];
 
   baggingStartTimestamp?: string;
   sealingStartTimestamp?: string;
@@ -383,4 +406,79 @@ export interface ICreateWasteLogRequest {
   sourceContainerId: string;
   notes?: string;
   performedBy?: { userId: string; userName: string };
+}
+
+// ──────────────────────────────
+// Flavor Library
+// ──────────────────────────────
+export interface IFlavor {
+  _id: string;
+  flavorId: string;
+  name: string;
+  isBlend: boolean;
+  blendOf: string[];
+  defaultAmount?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICreateFlavorRequest {
+  name: string;
+  defaultAmount?: number;
+}
+
+export interface IFindOrCreateBlendRequest {
+  blendOf: string[];
+  name?: string;
+  defaultAmount?: number;
+}
+
+export interface IUpdateFlavorRequest {
+  name?: string;
+  defaultAmount?: number;
+}
+
+// ──────────────────────────────
+// Color Library
+// ──────────────────────────────
+export interface IProductColor {
+  _id: string;
+  colorId: string;
+  name: string;
+  hexPreview?: string;
+  defaultAmount?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ICreateColorRequest {
+  name: string;
+  hexPreview?: string;
+  defaultAmount?: number;
+}
+
+export interface IUpdateColorRequest {
+  name?: string;
+  hexPreview?: string;
+  defaultAmount?: number;
+}
+
+// ──────────────────────────────
+// Flavor/Color Cook Entry
+// ──────────────────────────────
+export interface ISetFlavorColorRequest {
+  cookItemId: string;
+  flavorAmounts: IFlavorAmount[];
+  colorAmounts: IColorAmount[];
+  performedBy?: any;
+}
+
+export interface IEditFlavorColorRequest {
+  cookItemId: string;
+  flavorAmounts: IFlavorAmount[];
+  colorAmounts: IColorAmount[];
+  note?: string;
+  performedBy?: any;
 }

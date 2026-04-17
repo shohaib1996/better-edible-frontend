@@ -5,12 +5,16 @@ import { cn } from "@/lib/utils";
 import MoldsPanel from "./resources/MoldsPanel";
 import TraysPanel from "./resources/TraysPanel";
 import UnitsPanel from "./resources/UnitsPanel";
+import FlavorsPanel from "./resources/FlavorsPanel";
+import ColorsPanel from "./resources/ColorsPanel";
 
-type Tab = "molds" | "trays" | "units";
+type Tab = "molds" | "trays" | "units" | "flavors" | "colors";
 const TABS: { id: Tab; label: string }[] = [
   { id: "molds", label: "Molds" },
   { id: "trays", label: "Trays" },
   { id: "units", label: "Dehydrators" },
+  { id: "flavors", label: "Flavors" },
+  { id: "colors", label: "Colors" },
 ];
 
 export default function ResourcesView() {
@@ -45,6 +49,8 @@ export default function ResourcesView() {
       {active === "molds" && <MoldsPanel />}
       {active === "trays" && <TraysPanel />}
       {active === "units" && <UnitsPanel />}
+      {active === "flavors" && <FlavorsPanel />}
+      {active === "colors" && <ColorsPanel />}
     </div>
   );
 }

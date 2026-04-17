@@ -31,6 +31,8 @@ import type {
   IBulkCreateMoldsRequest,
   IBulkCreateResourceRequest,
   IBulkCreateResourceResponse,
+  ISetFlavorColorRequest,
+  IEditFlavorColorRequest,
 } from "@/types/privateLabel/pps";
 
 export const ppsApi = baseApi.injectEndpoints({
@@ -87,6 +89,30 @@ export const ppsApi = baseApi.injectEndpoints({
         body,
       }),
       invalidatesTags: [tagTypes.ppsCookItems, tagTypes.oilContainers],
+    }),
+
+    setFlavorColor: builder.mutation<
+      { success: boolean; cookItem: ICookItem },
+      ISetFlavorColorRequest
+    >({
+      query: (body) => ({
+        url: "/pps/stage-1/set-flavor-color",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsCookItems],
+    }),
+
+    editFlavorColor: builder.mutation<
+      { success: boolean; cookItem: ICookItem },
+      IEditFlavorColorRequest
+    >({
+      query: (body) => ({
+        url: "/pps/stage-1/edit-flavor-color",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsCookItems],
     }),
 
     // ─── Stage 2 ──────────────────────────
@@ -466,6 +492,8 @@ export const {
   useAssignMoldMutation,
   useUnassignMoldMutation,
   useCompleteStage1Mutation,
+  useSetFlavorColorMutation,
+  useEditFlavorColorMutation,
   useGetStage2CookItemsQuery,
   useProcessMoldMutation,
   useUnprocessMoldMutation,

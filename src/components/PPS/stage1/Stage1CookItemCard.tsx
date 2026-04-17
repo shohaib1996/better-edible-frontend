@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2, Plus, FlaskConical } from "lucide-react";
+import { CheckCircle2, Loader2, Plus, FlaskConical, Palette, Pencil, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { getPPSUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import Stage1MoldSlot from "@/components/PPS/stage1/Stage1MoldSlot";
 import OilContainerSelect from "@/components/PPS/stage1/OilContainerSelect";
+import FlavorColorModal from "@/components/PPS/stage1/FlavorColorModal";
 import type { OilSelection } from "@/components/PPS/stage1/OilContainerSelect";
 import {
   useAssignMoldMutation,
@@ -58,6 +59,7 @@ export default function Stage1CookItemCard({
   );
   const [cancellingMoldId, setCancellingMoldId] = useState<string | null>(null);
   const [oilSelection, setOilSelection] = useState<OilSelection | null>(null);
+  const [flavorColorOpen, setFlavorColorOpen] = useState(false);
 
   const [assignMold, { isLoading: isAssigning }] = useAssignMoldMutation();
   const [unassignMold] = useUnassignMoldMutation();
@@ -184,6 +186,21 @@ export default function Stage1CookItemCard({
         ))}
       </div>
 
+      {/* Flavor & Color block */}
+      <FlavorColorBlock
+        item={item}
+        compact={compact}
+        onOpen={() => setFlavorColorOpen(true)}
+      />
+
+      {/* Flavor & Color modal */}
+      <FlavorColorModal
+        open={flavorColorOpen}
+        onClose={() => setFlavorColorOpen(false)}
+        cookItem={item}
+        compact={compact}
+      />
+
       {/* Action area */}
       <div className={`px-5 ${c ? "py-4 gap-3" : "py-5 gap-4"} flex flex-col`}>
         {effectiveMode === "done" || isComplete ? (
@@ -305,6 +322,95 @@ export default function Stage1CookItemCard({
       <div className="px-5 pb-5">
         <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
       </div>
+    </div>
+  );
+}
+
+// ─── Flavor & Color Info Block ────────────────────────────────────────────────
+
+function FlavorColorBlock({
+  item,
+  compact,
+  onOpen,
+}: {
+  item: ICookItem;
+  compact?: boolean;
+  onOpen: () => void;
+}) {
+  const c = compact;
+  const hasData = (item.flavorIds?.length ?? 0) > 0;
+
+  if (!hasData) {
+    return (
+      <div className={`mx-5 mb-3 flex items-center justify-between gap-3 px-4 ${c ? "py-3" : "py-4"} rounded-xs border border-dashed border-amber-400/50 bg-amber-400/5`}>
+        <div className="flex items-center gap-2 text-amber-700">
+          <AlertCircle className={`${c ? "w-4 h-4" : "w-5 h-5"} shrink-0`} />
+          <p className={c ? "text-xs font-medium" : "text-sm font-medium"}>
+            No flavor &amp; color recorded
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className={`shrink-0 rounded-xs gap-1.5 ${c ? "text-xs h-7" : "text-sm h-9"} border-amber-400/50 text-amber-700 hover:bg-amber-400/10`}
+          onClick={onOpen}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`mx-5 mb-3 rounded-xs border bg-muted/30 ${c ? "px-4 py-3" : "px-4 py-4"} space-y-2`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className={`${c ? "text-xs" : "text-sm"} font-semibold text-foreground`}>
+          Flavor &amp; Color
+        </p>
+        <Button
+          size="sm"
+          variant="ghost"
+          className={`shrink-0 rounded-xs gap-1 ${c ? "text-xs h-6 px-2" : "text-xs h-7 px-2"} text-muted-foreground`}
+          onClick={onOpen}
+        >
+          <Pencil className="w-3 h-3" />
+          Edit
+        </Button>
+      </div>
+
+      {/* Flavors */}
+      {(item.flavorAmounts ?? []).map((fa, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <FlaskConical className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-amber-500 shrink-0`} />
+          <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
+            {fa.flavorId}
+          </span>
+          <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
+            {fa.amountGrams}g
+          </span>
+        </div>
+      ))}
+
+      {/* Colors */}
+      {(item.colorAmounts ?? []).length > 0 ? (
+        (item.colorAmounts ?? []).map((ca, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-purple-500 shrink-0`} />
+            <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
+              {ca.colorId}
+            </span>
+            <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
+              {ca.amountGrams}g
+            </span>
+          </div>
+        ))
+      ) : (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} shrink-0`} />
+          <span className={c ? "text-xs" : "text-sm"}>No color</span>
+        </div>
+      )}
     </div>
   );
 }
