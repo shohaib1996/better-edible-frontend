@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Loader2, FlaskConical, Palette, GitMerge } from "lucide-react";
+import { Plus, X, Loader2, FlaskConical, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetFlavorsQuery, useFindOrCreateBlendMutation } from "@/redux/api/flavor/flavorsApi";
+import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { useGetColorsQuery } from "@/redux/api/color/colorsApi";
 import {
   useSetFlavorColorMutation,
@@ -65,8 +65,7 @@ export default function FlavorColorModal({
 
   const [setFlavorColor, { isLoading: isSetting }] = useSetFlavorColorMutation();
   const [editFlavorColor, { isLoading: isEditing }] = useEditFlavorColorMutation();
-  const [findOrCreateBlend, { isLoading: isBlending }] = useFindOrCreateBlendMutation();
-  const isLoading = isSetting || isEditing || isBlending;
+  const isLoading = isSetting || isEditing;
 
   // ── Local state ───────────────────────────────────────────────────────────
   const [flavorRows, setFlavorRows] = useState<FlavorRow[]>([]);
@@ -117,8 +116,6 @@ export default function FlavorColorModal({
     setColorRows((prev) => prev.filter((_, idx) => idx !== i));
 
   // ── Validation ────────────────────────────────────────────────────────────
-  const isBlend = flavorRows.filter((r) => r.flavorId).length > 1;
-
   const canSave =
     flavorRows.some((r) => r.flavorId && r.amountGrams !== "") &&
     flavorRows.every((r) => !r.flavorId || (r.flavorId && r.amountGrams !== "")) &&
@@ -128,26 +125,10 @@ export default function FlavorColorModal({
   const handleSave = async () => {
     const validFlavorRows = flavorRows.filter((r) => r.flavorId && r.amountGrams !== "");
 
-    let flavorAmounts: IFlavorAmount[];
-
-    if (validFlavorRows.length > 1) {
-      // Multiple flavors — resolve to a single blend entry
-      const totalGrams = validFlavorRows.reduce((sum, r) => sum + Number(r.amountGrams), 0);
-      try {
-        const res = await findOrCreateBlend({
-          blendOf: validFlavorRows.map((r) => r.flavorId),
-        }).unwrap();
-        flavorAmounts = [{ flavorId: res.flavor.flavorId, amountGrams: totalGrams }];
-      } catch (err: any) {
-        toast.error(err?.data?.message || "Failed to resolve blend");
-        return;
-      }
-    } else {
-      flavorAmounts = validFlavorRows.map((r) => ({
-        flavorId: r.flavorId,
-        amountGrams: Number(r.amountGrams),
-      }));
-    }
+    const flavorAmounts: IFlavorAmount[] = validFlavorRows.map((r) => ({
+      flavorId: r.flavorId,
+      amountGrams: Number(r.amountGrams),
+    }));
 
     const colorAmounts: IColorAmount[] = colorRows
       .filter((r) => r.colorId && r.amountGrams !== "")
@@ -200,12 +181,6 @@ export default function FlavorColorModal({
             <div className="flex items-center gap-2">
               <FlaskConical className="w-4 h-4 text-amber-500 shrink-0" />
               <p className="text-sm font-semibold text-foreground">Flavors</p>
-              {isBlend && (
-                <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-xs">
-                  <GitMerge className="w-3 h-3" />
-                  Blend
-                </span>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -269,11 +244,6 @@ export default function FlavorColorModal({
               Add another flavor
             </button>
 
-            {isBlend && (
-              <p className="text-xs text-blue-600 bg-blue-500/10 border border-blue-500/20 rounded-xs px-3 py-2">
-                Multiple flavors will create or reuse a blend in the library.
-              </p>
-            )}
           </div>
 
           {/* ── Divider ─────────────────────────────────────────────────── */}

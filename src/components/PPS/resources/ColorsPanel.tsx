@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, Palette, Pencil } from "lucide-react";
+import { Plus, Loader2, Palette, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useGetColorsQuery,
   useCreateColorMutation,
   useToggleColorMutation,
   useUpdateColorMutation,
+  useDeleteColorMutation,
 } from "@/redux/api/color/colorsApi";
 import type { IProductColor } from "@/types/privateLabel/pps";
 
@@ -125,10 +136,12 @@ export default function ColorsPanel() {
   const [newName, setNewName] = useState("");
   const [newHex, setNewHex] = useState("");
   const [newDefaultAmount, setNewDefaultAmount] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<IProductColor | null>(null);
 
   const { data, isLoading } = useGetColorsQuery();
   const [createColor, { isLoading: isCreating }] = useCreateColorMutation();
   const [toggleColor] = useToggleColorMutation();
+  const [deleteColor] = useDeleteColorMutation();
 
   const colors = data?.colors ?? [];
   const activeCount = colors.filter((c) => c.isActive).length;
@@ -160,6 +173,17 @@ export default function ColorsPanel() {
       );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to update color");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteColor(deleteTarget.colorId).unwrap();
+      toast.success(`"${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to delete color");
     }
   };
 
@@ -282,6 +306,14 @@ export default function ColorsPanel() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <EditColorDialog color={color} />
+                    <button
+                      type="button"
+                      className="p-1 rounded-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Delete color"
+                      onClick={() => setDeleteTarget(color)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                     <Badge
                       variant="outline"
                       className={
@@ -318,6 +350,29 @@ export default function ColorsPanel() {
           ))}
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Color</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xs bg-destructive hover:bg-destructive/90 text-white"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

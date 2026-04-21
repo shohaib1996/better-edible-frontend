@@ -405,6 +405,11 @@ function FlavorColorBlock({
         </div>
       ))}
 
+      {/* Divider */}
+      {(item.colorAmounts ?? []).length > 0 && (
+        <div className="border-t my-1" />
+      )}
+
       {/* Colors */}
       {(item.colorAmounts ?? []).length > 0 ? (
         (item.colorAmounts ?? []).map((ca, i) => (

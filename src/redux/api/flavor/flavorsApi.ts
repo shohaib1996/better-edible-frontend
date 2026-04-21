@@ -71,6 +71,17 @@ export const flavorsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.flavorLibrary],
     }),
+
+    deleteFlavor: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (flavorId) => ({
+        url: `/flavors/${flavorId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.flavorLibrary],
+    }),
   }),
 });
 
@@ -80,4 +91,5 @@ export const {
   useFindOrCreateBlendMutation,
   useToggleFlavorMutation,
   useUpdateFlavorMutation,
+  useDeleteFlavorMutation,
 } = flavorsApi;

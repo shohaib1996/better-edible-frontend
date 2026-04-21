@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, FlaskConical, GitMerge, Pencil } from "lucide-react";
+import { Plus, Loader2, FlaskConical, GitMerge, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useGetFlavorsQuery,
   useCreateFlavorMutation,
   useToggleFlavorMutation,
   useUpdateFlavorMutation,
+  useDeleteFlavorMutation,
 } from "@/redux/api/flavor/flavorsApi";
 import type { IFlavor } from "@/types/privateLabel/pps";
 
@@ -103,10 +114,12 @@ export default function FlavorsPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDefaultAmount, setNewDefaultAmount] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<IFlavor | null>(null);
 
   const { data, isLoading } = useGetFlavorsQuery();
   const [createFlavor, { isLoading: isCreating }] = useCreateFlavorMutation();
   const [toggleFlavor] = useToggleFlavorMutation();
+  const [deleteFlavor] = useDeleteFlavorMutation();
 
   const flavors = data?.flavors ?? [];
   const baseFlavors = flavors.filter((f) => !f.isBlend);
@@ -141,6 +154,17 @@ export default function FlavorsPanel() {
       );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to update flavor");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteFlavor(deleteTarget.flavorId).unwrap();
+      toast.success(`"${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to delete flavor");
     }
   };
 
@@ -234,6 +258,7 @@ export default function FlavorsPanel() {
                 key={flavor._id}
                 flavor={flavor}
                 onToggle={() => handleToggle(flavor)}
+                onDelete={() => setDeleteTarget(flavor)}
                 flavorMap={flavorMap}
               />
             ))}
@@ -254,12 +279,36 @@ export default function FlavorsPanel() {
                 key={flavor._id}
                 flavor={flavor}
                 onToggle={() => handleToggle(flavor)}
+                onDelete={() => setDeleteTarget(flavor)}
                 flavorMap={flavorMap}
               />
             ))}
           </div>
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Flavor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xs bg-destructive hover:bg-destructive/90 text-white"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -269,10 +318,12 @@ export default function FlavorsPanel() {
 function FlavorCard({
   flavor,
   onToggle,
+  onDelete,
   flavorMap,
 }: {
   flavor: IFlavor;
   onToggle: () => void;
+  onDelete: () => void;
   flavorMap: Map<string, string>;
 }) {
   return (
@@ -292,6 +343,14 @@ function FlavorCard({
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <EditFlavorDialog flavor={flavor} />
+            <button
+              type="button"
+              className="p-1 rounded-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Delete flavor"
+              onClick={onDelete}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
             <Badge
               variant="outline"
               className={

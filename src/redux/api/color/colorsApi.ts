@@ -53,6 +53,17 @@ export const colorsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.colorLibrary],
     }),
+
+    deleteColor: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (colorId) => ({
+        url: `/colors/${colorId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.colorLibrary],
+    }),
   }),
 });
 
@@ -61,4 +72,5 @@ export const {
   useCreateColorMutation,
   useToggleColorMutation,
   useUpdateColorMutation,
+  useDeleteColorMutation,
 } = colorsApi;
