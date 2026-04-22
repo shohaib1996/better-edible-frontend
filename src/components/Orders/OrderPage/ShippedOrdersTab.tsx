@@ -73,6 +73,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   const [endDate, setEndDate] = useState<Date | undefined>(today);
   const [selectedRepName, setSelectedRepName] = useState<string | undefined>();
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<"both" | "orders" | "samples">("both");
 
   // Set default date range and trigger initial filter
   useEffect(() => {
@@ -111,7 +112,14 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
     onPageChange?.(1);
   };
 
-  const shippedTotal = orders.reduce(
+  const filteredOrders =
+    viewMode === "orders"
+      ? orders.filter((o) => !o.isSample)
+      : viewMode === "samples"
+      ? orders.filter((o) => o.isSample)
+      : orders;
+
+  const shippedTotal = filteredOrders.reduce(
     (sum, o) => (o?.status === "shipped" ? sum + (Number(o?.total) || 0) : sum),
     0
   );
@@ -170,6 +178,19 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
     <TooltipProvider>
       <div className="space-y-3">
         <div className="grid grid-cols-2 md:flex md:justify-end items-center gap-2 my-4">
+          <Select
+            value={viewMode}
+            onValueChange={(v) => setViewMode(v as "both" | "orders" | "samples")}
+          >
+            <SelectTrigger className="w-44 rounded-xs border border-border col-span-2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xs">
+              <SelectItem value="both" className="rounded-xs">Orders &amp; Samples</SelectItem>
+              <SelectItem value="orders" className="rounded-xs">Orders</SelectItem>
+              <SelectItem value="samples" className="rounded-xs">Samples</SelectItem>
+            </SelectContent>
+          </Select>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -241,10 +262,10 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
             <div className="flex items-center justify-between pr-1">
               <div className="flex gap-3 text-sm font-semibold">
                 <span className="text-primary">
-                  {orders.filter((o) => !(o as any).isSample).length} Orders
+                  {filteredOrders.filter((o) => !(o as any).isSample).length} Orders
                 </span>
                 <span className="text-purple-600 dark:text-purple-400">
-                  {orders.filter((o) => (o as any).isSample).length} Samples
+                  {filteredOrders.filter((o) => (o as any).isSample).length} Samples
                 </span>
               </div>
               <div className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -259,7 +280,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
             {(() => {
               let orderIndex = 0;
               let sampleIndex = 0;
-              return orders.map((order) => {
+              return filteredOrders.map((order) => {
               const isSample = (order as any).isSample === true;
               const displayNumber = isSample ? ++sampleIndex : ++orderIndex;
               const isOwnOrder = isRepView
