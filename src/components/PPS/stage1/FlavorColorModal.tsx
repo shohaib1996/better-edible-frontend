@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, X, Loader2, FlaskConical, Palette } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, X, Loader2, FlaskConical, Palette, ChevronsUpDown, Check, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { useGetColorsQuery } from "@/redux/api/color/colorsApi";
 import {
@@ -30,21 +29,106 @@ import type { ICookItem, IFlavorAmount, IColorAmount } from "@/types/privateLabe
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface FlavorRow {
-  flavorId: string;
-  amountGrams: string;
-}
-
-interface ColorRow {
-  colorId: string;
-  amountGrams: string;
-}
+interface FlavorRow { flavorId: string; amountGrams: string; }
+interface ColorRow  { colorId: string;  amountGrams: string; }
 
 interface FlavorColorModalProps {
   open: boolean;
   onClose: () => void;
   cookItem: ICookItem;
   compact?: boolean;
+}
+
+// ─── Searchable Combobox ──────────────────────────────────────────────────────
+
+interface ComboboxOption { value: string; label: string; sub?: string; }
+
+function SearchableCombobox({
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  options: ComboboxOption[];
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const filtered = options.filter((o) =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selected = options.find((o) => o.value === value);
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (v) setTimeout(() => inputRef.current?.focus(), 50); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex-1 min-w-0 flex items-center justify-between gap-1 h-9 px-3 rounded-xs border border-primary bg-input text-sm text-left truncate hover:bg-input/80 transition-colors"
+        >
+          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            {selected ? selected.label : placeholder}
+          </span>
+          <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 rounded-xs w-(--radix-popover-trigger-width)"
+        align="start"
+        side="bottom"
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b">
+          <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <input
+            ref={inputRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search…"
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch("")} className="text-muted-foreground hover:text-foreground">
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Options list */}
+        <div className="max-h-48 overflow-y-auto scrollbar-hidden">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">No results</p>
+          ) : (
+            filtered.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => handleSelect(o.value)}
+                className={cn(
+                  "w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
+                  value === o.value && "bg-muted"
+                )}
+              >
+                <span className="truncate">{o.label}</span>
+                {value === o.value && <Check className="w-3.5 h-3.5 shrink-0 text-primary" />}
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -57,7 +141,6 @@ export default function FlavorColorModal({
 }: FlavorColorModalProps) {
   const isEdit = (cookItem.flavorIds?.length ?? 0) > 0;
 
-  // ── Data ──────────────────────────────────────────────────────────────────
   const { data: flavorsData } = useGetFlavorsQuery({ isActive: true });
   const { data: colorsData } = useGetColorsQuery({ isActive: true });
   const activeFlavors = flavorsData?.flavors ?? [];
@@ -67,27 +150,15 @@ export default function FlavorColorModal({
   const [editFlavorColor, { isLoading: isEditing }] = useEditFlavorColorMutation();
   const isLoading = isSetting || isEditing;
 
-  // ── Local state ───────────────────────────────────────────────────────────
   const [flavorRows, setFlavorRows] = useState<FlavorRow[]>([]);
   const [colorRows, setColorRows] = useState<ColorRow[]>([]);
   const [editNote, setEditNote] = useState("");
 
-  // Pre-fill when editing
   useEffect(() => {
     if (!open) return;
     if (isEdit && cookItem.flavorAmounts?.length) {
-      setFlavorRows(
-        cookItem.flavorAmounts.map((fa) => ({
-          flavorId: fa.flavorId,
-          amountGrams: String(fa.amountGrams),
-        }))
-      );
-      setColorRows(
-        (cookItem.colorAmounts ?? []).map((ca) => ({
-          colorId: ca.colorId,
-          amountGrams: String(ca.amountGrams),
-        }))
-      );
+      setFlavorRows(cookItem.flavorAmounts.map((fa) => ({ flavorId: fa.flavorId, amountGrams: String(fa.amountGrams) })));
+      setColorRows((cookItem.colorAmounts ?? []).map((ca) => ({ colorId: ca.colorId, amountGrams: String(ca.amountGrams) })));
     } else {
       setFlavorRows([{ flavorId: "", amountGrams: "" }]);
       setColorRows([]);
@@ -95,7 +166,6 @@ export default function FlavorColorModal({
     setEditNote("");
   }, [open]);
 
-  // ── Flavor rows ──────────────────────────────────────────────────────────
   const setFlavorRow = (i: number, patch: Partial<FlavorRow>) =>
     setFlavorRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
@@ -105,7 +175,6 @@ export default function FlavorColorModal({
   const removeFlavorRow = (i: number) =>
     setFlavorRows((prev) => prev.filter((_, idx) => idx !== i));
 
-  // ── Color rows ────────────────────────────────────────────────────────────
   const setColorRow = (i: number, patch: Partial<ColorRow>) =>
     setColorRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
 
@@ -115,20 +184,15 @@ export default function FlavorColorModal({
   const removeColorRow = (i: number) =>
     setColorRows((prev) => prev.filter((_, idx) => idx !== i));
 
-  // ── Validation ────────────────────────────────────────────────────────────
   const canSave =
     flavorRows.some((r) => r.flavorId && r.amountGrams !== "") &&
     flavorRows.every((r) => !r.flavorId || (r.flavorId && r.amountGrams !== "")) &&
     colorRows.every((r) => !r.colorId || (r.colorId && r.amountGrams !== ""));
 
-  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
-    const validFlavorRows = flavorRows.filter((r) => r.flavorId && r.amountGrams !== "");
-
-    const flavorAmounts: IFlavorAmount[] = validFlavorRows.map((r) => ({
-      flavorId: r.flavorId,
-      amountGrams: Number(r.amountGrams),
-    }));
+    const flavorAmounts: IFlavorAmount[] = flavorRows
+      .filter((r) => r.flavorId && r.amountGrams !== "")
+      .map((r) => ({ flavorId: r.flavorId, amountGrams: Number(r.amountGrams) }));
 
     const colorAmounts: IColorAmount[] = colorRows
       .filter((r) => r.colorId && r.amountGrams !== "")
@@ -159,7 +223,17 @@ export default function FlavorColorModal({
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // Build option lists
+  const flavorOptions: ComboboxOption[] = activeFlavors.map((f) => ({
+    value: f.flavorId,
+    label: f.name + (f.isBlend ? " (blend)" : ""),
+  }));
+
+  const colorOptions: ComboboxOption[] = activeColors.map((c) => ({
+    value: c.colorId,
+    label: c.name,
+  }));
+
   const c = compact;
 
   return (
@@ -174,9 +248,9 @@ export default function FlavorColorModal({
           <p className="text-sm text-muted-foreground">{cookItem.flavor}</p>
         </DialogHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto scrollbar-hidden">
 
-          {/* ── Flavor section ──────────────────────────────────────────── */}
+          {/* ── Flavor section ──────────────────────────────────────── */}
           <div className="px-5 py-4 space-y-3">
             <div className="flex items-center gap-2">
               <FlaskConical className="w-4 h-4 text-amber-500 shrink-0" />
@@ -186,27 +260,18 @@ export default function FlavorColorModal({
             <div className="space-y-2">
               {flavorRows.map((row, i) => (
                 <div key={i} className="flex gap-2 items-center">
-                  <Select
+                  <SearchableCombobox
                     value={row.flavorId}
-                    onValueChange={(v) => {
+                    options={flavorOptions}
+                    placeholder="Select flavor…"
+                    onChange={(v) => {
                       const def = activeFlavors.find((f) => f.flavorId === v)?.defaultAmount;
                       setFlavorRow(i, {
                         flavorId: v,
                         ...(row.amountGrams === "" && def !== undefined && { amountGrams: String(def) }),
                       });
                     }}
-                  >
-                    <SelectTrigger className="flex-1 rounded-xs h-9 text-sm w-0 bg-input border-primary">
-                      <SelectValue placeholder="Select flavor…" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xs">
-                      {activeFlavors.map((f) => (
-                        <SelectItem key={f.flavorId} value={f.flavorId} className="rounded-xs">
-                          {f.name}{f.isBlend ? " (blend)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
 
                   <div className="relative w-24 shrink-0">
                     <Input
@@ -243,13 +308,12 @@ export default function FlavorColorModal({
               <Plus className="w-3.5 h-3.5" />
               Add another flavor
             </button>
-
           </div>
 
-          {/* ── Divider ─────────────────────────────────────────────────── */}
+          {/* ── Divider ─────────────────────────────────────────────── */}
           <div className="border-t" />
 
-          {/* ── Color section ──────────────────────────────────────────── */}
+          {/* ── Color section ───────────────────────────────────────── */}
           <div className="px-5 py-4 space-y-3">
             <div className="flex items-center gap-2">
               <Palette className="w-4 h-4 text-purple-500 shrink-0" />
@@ -270,27 +334,18 @@ export default function FlavorColorModal({
               <div className="space-y-2">
                 {colorRows.map((row, i) => (
                   <div key={i} className="flex gap-2 items-center">
-                    <Select
+                    <SearchableCombobox
                       value={row.colorId}
-                      onValueChange={(v) => {
-                        const def = activeColors.find((c) => c.colorId === v)?.defaultAmount;
+                      options={colorOptions}
+                      placeholder="Select color…"
+                      onChange={(v) => {
+                        const def = activeColors.find((col) => col.colorId === v)?.defaultAmount;
                         setColorRow(i, {
                           colorId: v,
                           ...(row.amountGrams === "" && def !== undefined && { amountGrams: String(def) }),
                         });
                       }}
-                    >
-                      <SelectTrigger className="flex-1 rounded-xs h-9 text-sm w-0 bg-input border-primary">
-                        <SelectValue placeholder="Select color…" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xs">
-                        {activeColors.map((col) => (
-                          <SelectItem key={col.colorId} value={col.colorId} className="rounded-xs">
-                            {col.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
 
                     <div className="relative w-24 shrink-0">
                       <Input
@@ -325,7 +380,7 @@ export default function FlavorColorModal({
             )}
           </div>
 
-          {/* ── Edit note ─────────────────────────────────────────────── */}
+          {/* ── Edit note ───────────────────────────────────────────── */}
           {isEdit && (
             <>
               <div className="border-t" />
@@ -342,7 +397,7 @@ export default function FlavorColorModal({
           )}
         </div>
 
-        {/* ── Actions ──────────────────────────────────────────────────── */}
+        {/* ── Actions ─────────────────────────────────────────────────── */}
         <div className="flex gap-3 px-5 py-4 border-t bg-card">
           <Button
             className="flex-1 rounded-xs"
