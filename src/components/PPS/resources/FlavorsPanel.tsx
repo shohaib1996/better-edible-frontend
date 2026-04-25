@@ -62,7 +62,8 @@ export default function FlavorsPanel() {
     try {
       const res = await createFlavor({
         name: newName.trim(),
-        defaultAmount: newDefaultAmount !== "" ? Number(newDefaultAmount) : undefined,
+        defaultAmount:
+          newDefaultAmount !== "" ? Number(newDefaultAmount) : undefined,
       }).unwrap();
       toast.success(`Flavor "${res.flavor.name}" created`);
       setNewName("");
@@ -76,7 +77,9 @@ export default function FlavorsPanel() {
   const handleToggle = async (flavor: IFlavor) => {
     try {
       const res = await toggleFlavor(flavor.flavorId).unwrap();
-      toast.success(`"${res.flavor.name}" ${res.flavor.isActive ? "activated" : "deactivated"}`);
+      toast.success(
+        `"${res.flavor.name}" ${res.flavor.isActive ? "activated" : "deactivated"}`,
+      );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to update flavor");
     }
@@ -106,7 +109,8 @@ export default function FlavorsPanel() {
         <div>
           <h3 className="font-medium">Flavors ({totalItems})</h3>
           <p className="text-sm text-muted-foreground">
-            {baseFlavors.length} base · {blendFlavors.length} blend{blendFlavors.length !== 1 ? "s" : ""} on this page
+            {baseFlavors.length} base · {blendFlavors.length} blend
+            {blendFlavors.length !== 1 ? "s" : ""} on this page
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -150,7 +154,9 @@ export default function FlavorsPanel() {
                   onClick={handleCreate}
                   disabled={isCreating || !newName.trim()}
                 >
-                  {isCreating && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {isCreating && (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  )}
                   Create Flavor
                 </Button>
               </div>
@@ -159,7 +165,7 @@ export default function FlavorsPanel() {
         </div>
       </div>
 
-      {/* Loading */}
+      {/* Load */}
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -171,7 +177,9 @@ export default function FlavorsPanel() {
       {!isLoading && flavors.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
           <FlaskConical className="w-10 h-10 opacity-30" />
-          <p className="text-sm">No flavors yet. Add your first flavor above.</p>
+          <p className="text-sm">
+            No flavors yet. Add your first flavor above.
+          </p>
         </div>
       )}
 
@@ -230,14 +238,19 @@ export default function FlavorsPanel() {
       )}
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => !v && setDeleteTarget(null)}
+      >
         <AlertDialogContent className="rounded-xs">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Flavor</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete{" "}
-              <span className="font-semibold text-foreground">"{deleteTarget?.name}"</span>?
-              This cannot be undone.
+              <span className="font-semibold text-foreground">
+                "{deleteTarget?.name}"
+              </span>
+              ? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
