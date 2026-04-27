@@ -11,7 +11,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +48,9 @@ export default function TraysPanel() {
   const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteTraysMutation();
   const [updateStatus] = useUpdateTrayStatusMutation();
 
-  const { data: s1Data } = useGetStage1CookItemsQuery({ status: "in-progress,cooking_molding_complete" });
+  const { data: s1Data } = useGetStage1CookItemsQuery({
+    status: "in-progress,cooking_molding_complete",
+  });
   const { data: s2Data } = useGetStage2CookItemsQuery();
   const { data: s3Data } = useGetStage3CookItemsQuery();
   const { data: s4Data } = useGetStage4CookItemsQuery();
@@ -54,7 +61,7 @@ export default function TraysPanel() {
       ...(s2Data?.cookItems ?? []),
       ...(s3Data?.cookItems ?? []),
       ...(s4Data?.cookItems ?? []),
-    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }])
+    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }]),
   );
 
   const trays = data?.trays ?? [];
@@ -119,9 +126,13 @@ export default function TraysPanel() {
       return;
     }
     try {
-      const res = await bulkCreate({ startNumber: start, endNumber: end, prefix }).unwrap();
+      const res = await bulkCreate({
+        startNumber: start,
+        endNumber: end,
+        prefix,
+      }).unwrap();
       toast.success(
-        `Created ${res.created} tray${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`
+        `Created ${res.created} tray${res.created !== 1 ? "s" : ""}${res.skipped > 0 ? ` (${res.skipped} skipped)` : ""}`,
       );
       setShowAddModal(false);
       setStartNumber("");
@@ -171,7 +182,10 @@ export default function TraysPanel() {
                 onCheckedChange={toggleSelectAll}
                 id="select-all-trays"
               />
-              <label htmlFor="select-all-trays" className="text-sm cursor-pointer select-none">
+              <label
+                htmlFor="select-all-trays"
+                className="text-sm cursor-pointer select-none"
+              >
                 Select All
               </label>
             </div>
@@ -200,7 +214,13 @@ export default function TraysPanel() {
               Delete ({selected.size})
             </Button>
           )}
-          <Button variant="outline" size="sm" className="rounded-xs bg-accent text-white" onClick={handlePrintAll} disabled={trays.length === 0}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-xs bg-accent text-white"
+            onClick={handlePrintAll}
+            disabled={trays.length === 0}
+          >
             <Printer className="w-4 h-4 mr-1" />
             Print All Labels
           </Button>
@@ -255,7 +275,11 @@ export default function TraysPanel() {
                       {previewCount !== 1 ? "s" : ""}:
                     </p>
                     <p className="text-muted-foreground">
-                      {prefix}{String(Number(startNumber)).padStart(3,"0")}, {prefix}{String(Number(startNumber)+1).padStart(3,"0")}, … {prefix}{String(Number(endNumber)).padStart(3,"0")}
+                      {prefix}
+                      {String(Number(startNumber)).padStart(3, "0")}, {prefix}
+                      {String(Number(startNumber) + 1).padStart(3, "0")}, …{" "}
+                      {prefix}
+                      {String(Number(endNumber)).padStart(3, "0")}
                     </p>
                   </div>
                 )}
@@ -313,33 +337,45 @@ export default function TraysPanel() {
                 </div>
 
                 <div className="flex justify-center my-2">
-                  <Barcode value={tray.trayId} format="CODE128" width={1.5} height={40} fontSize={9} margin={2} displayValue={true} />
+                  <Barcode
+                    value={tray.trayId}
+                    format="CODE128"
+                    width={1.5}
+                    height={40}
+                    fontSize={9}
+                    margin={2}
+                    displayValue={true}
+                  />
                 </div>
 
                 {tray.status === "in-use" && (
                   <>
-                    {tray.currentCookItemId && (() => {
-                      const ci = cookItemMap.get(tray.currentCookItemId);
-                      return ci ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="text-xs text-center font-medium truncate cursor-default">
+                    {tray.currentCookItemId &&
+                      (() => {
+                        const ci = cookItemMap.get(tray.currentCookItemId);
+                        return ci ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-xs text-center font-medium truncate cursor-default">
+                                  {ci.storeName} · {ci.flavor}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent>
                                 {ci.storeName} · {ci.flavor}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent>{ci.storeName} · {ci.flavor}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <p className="text-xs text-muted-foreground text-center truncate">
-                          {tray.currentCookItemId}
-                        </p>
-                      );
-                    })()}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <p className="text-xs text-muted-foreground text-center truncate">
+                            {tray.currentCookItemId}
+                          </p>
+                        );
+                      })()}
                     {tray.currentDehydratorUnitId && (
                       <p className="text-xs text-muted-foreground text-center">
-                        {tray.currentDehydratorUnitId}, Shelf {tray.currentShelfPosition}
+                        {tray.currentDehydratorUnitId}, Shelf{" "}
+                        {tray.currentShelfPosition}
                       </p>
                     )}
                   </>
@@ -353,7 +389,9 @@ export default function TraysPanel() {
                 {/* Force release — only shown for in-use trays */}
                 {tray.status === "in-use" && (
                   <div className="flex items-center justify-between mt-2 pt-2 border-t">
-                    <span className="text-xs text-muted-foreground">Force release</span>
+                    <span className="text-xs text-muted-foreground">
+                      Force release
+                    </span>
                     <Switch
                       checked={false}
                       onCheckedChange={() => handleStatusChange(tray.trayId)}
@@ -370,7 +408,15 @@ export default function TraysPanel() {
       <div ref={printRef} className="hidden">
         {trays.map((tray) => (
           <div key={tray._id} className="label">
-            <Barcode value={tray.trayId} format="CODE128" width={2} height={50} fontSize={11} margin={4} displayValue={true} />
+            <Barcode
+              value={tray.trayId}
+              format="CODE128"
+              width={2}
+              height={50}
+              fontSize={11}
+              margin={4}
+              displayValue={true}
+            />
           </div>
         ))}
       </div>
