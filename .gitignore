@@ -62,3 +62,8 @@ plans/
 PPS_USER_STORY.txt
 voice-note-plan.txt
 digital-assets-plan.txt
+
+# graphify
+graphify-out/
+src/graphify-out/
+.graphify_python
