@@ -104,7 +104,7 @@ export const EditClientInfoModal = ({
             </p>
           </div>
 
-          {/* Contact Email */}
+          {/* Contact Email (required) */}
           <div className="space-y-2">
             <Label htmlFor="contactEmail">Contact Email</Label>
             <Input
