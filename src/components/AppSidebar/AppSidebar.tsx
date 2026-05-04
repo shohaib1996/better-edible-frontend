@@ -17,6 +17,7 @@ import {
   Users,
   Factory,
   ImageIcon,
+  PenTool,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -64,6 +65,7 @@ const adminItems = [
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
   { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
+  { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
 ];
 
 const repItems = [
