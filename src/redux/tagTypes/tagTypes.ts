@@ -25,4 +25,7 @@ export const tagTypes = {
   oilWasteLogs: "oilWasteLogs",
   flavorLibrary: "flavorLibrary",
   colorLibrary: "colorLibrary",
+  storeAuth: "storeAuth",
+  digitalAssets: "digitalAssets",
+  designRequests: "designRequests",
 };
