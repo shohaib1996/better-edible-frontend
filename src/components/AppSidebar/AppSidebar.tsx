@@ -16,6 +16,7 @@ import {
   Gift,
   Users,
   Factory,
+  ImageIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -62,6 +63,7 @@ const adminItems = [
   // { title: "Samples List", url: "/admin/samples", icon: Gift },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
+  { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
 ];
 
 const repItems = [
