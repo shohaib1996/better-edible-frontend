@@ -13,7 +13,6 @@ import {
   Truck,
   LogOut,
   CalendarSync,
-  Gift,
   Users,
   Factory,
   ImageIcon,
@@ -76,6 +75,7 @@ const repItems = [
   { title: "Delivery", url: "/rep/delivery", icon: Truck },
   { title: "Stores", url: "/rep/stores", icon: Briefcase },
   { title: "Sample Lists", url: "/rep/sample-lists", icon: Grid },
+  { title: "Design Requests", url: "/rep/design-requests", icon: PenTool },
   // { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
