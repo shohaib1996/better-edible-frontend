@@ -1,4 +1,4 @@
-export type RepType = "rep" | "delivery" | "both";
+export type RepType = "rep" | "delivery" | "both" | "designer";
 export type RepStatus = "active" | "inactive" | "suspended";
 
 export interface IRep extends Document {

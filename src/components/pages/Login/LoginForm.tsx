@@ -25,6 +25,7 @@ import { useLoginAdminMutation } from "@/redux/api/admin/authApi";
 import { useLoginRepMutation } from "@/redux/api/RepLogin/repAuthApi";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 const loginSchema = z.object({
@@ -66,6 +67,7 @@ export function LoginForm() {
         const dest = repType === "pps" ? "/pps"
           : repType === "production" ? "/pps/stage/1"
           : repType === "packaging" ? "/pps/stage/3"
+          : repType === "designer" ? "/designer"
           : "/rep/orders";
         router.push(dest);
         return;
@@ -168,6 +170,15 @@ export function LoginForm() {
             </Button>
           </form>
         </Form>
+
+        <div className="mt-4 text-center">
+          <Link
+            href="/store/login"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+          >
+            Store Portal →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
