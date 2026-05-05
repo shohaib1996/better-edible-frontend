@@ -350,7 +350,7 @@ export default function Stage4View({
                     <Button
                       size="lg"
                       className={`w-full ${compact ? "text-base h-10" : "text-2xl h-16"} rounded-xs font-bold`}
-                      onClick={printCaseLabels}
+                      onClick={() => printCaseLabels(result.cases)}
                     >
                       Print Case Labels ({result.cases.length})
                     </Button>

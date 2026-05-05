@@ -285,7 +285,7 @@ export function CookItemCard({
                 <Button
                   size="lg"
                   className="w-full text-xl h-14 rounded-xs"
-                  onClick={printCaseLabels}
+                  onClick={() => printCaseLabels(result.cases)}
                 >
                   Print Case Labels ({result.cases.length})
                 </Button>

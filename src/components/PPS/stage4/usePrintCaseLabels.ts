@@ -1,9 +1,30 @@
 import { useRef, useCallback } from "react";
+import { usePrintBridge, isPrintBridgeConfigured } from "@/hooks/usePrintBridge";
+import type { ICaseLabelData } from "@/types/privateLabel/pps";
 
 export function usePrintCaseLabels() {
   const printRef = useRef<HTMLDivElement>(null);
+  const { printLabel: printViaBridge } = usePrintBridge();
 
-  const printCaseLabels = useCallback(() => {
+  // ── Bridge print: one request per case label ──────────────────────────────
+
+  const printCaseLabelsBridge = useCallback(
+    async (cases: { caseId: string; unitCount: number; caseNumber: number; labelData: ICaseLabelData }[]) => {
+      for (const c of cases) {
+        await printViaBridge({
+          printerKey: "case_label",
+          labelType: "case_label",
+          copies: 1,
+          data: c.labelData,
+        });
+      }
+    },
+    [printViaBridge]
+  );
+
+  // ── Browser popup fallback ────────────────────────────────────────────────
+
+  const printCaseLabelsBrowser = useCallback(() => {
     const el = printRef.current;
     if (!el) return;
     const win = window.open("", "_blank", "width=600,height=700");
@@ -29,6 +50,20 @@ export function usePrintCaseLabels() {
       win.close();
     }, 300);
   }, []);
+
+  // ── Main: bridge first, browser fallback ─────────────────────────────────
+
+  const printCaseLabels = useCallback(
+    async (cases?: { caseId: string; unitCount: number; caseNumber: number; labelData: ICaseLabelData }[]) => {
+      if (isPrintBridgeConfigured() && cases && cases.length > 0) {
+        await printCaseLabelsBridge(cases);
+        return;
+      }
+      // Fall back to browser popup (when bridge not configured or no cases array passed)
+      printCaseLabelsBrowser();
+    },
+    [printCaseLabelsBridge, printCaseLabelsBrowser]
+  );
 
   return { printRef, printCaseLabels };
 }

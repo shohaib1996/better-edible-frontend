@@ -15,6 +15,7 @@ import PrintLabel from "@/components/PPS/shared/PrintLabel";
 import Barcode from "react-barcode";
 import { getPPSUser } from "@/lib/ppsUser";
 import { useStartBaggingMutation } from "@/redux/api/PrivateLabel/ppsApi";
+import { usePrintBridge, isPrintBridgeConfigured } from "@/hooks/usePrintBridge";
 import type { ICookItem } from "@/types/privateLabel/pps";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ export default function Stage3ScannerBlock({
   const [showLabelPreview, setShowLabelPreview] = useState(false);
 
   const [startBagging] = useStartBaggingMutation();
+  const { printLabel: printViaBridge } = usePrintBridge();
 
   const stopCamera = useCallback(async () => {
     if (scannerRef.current) {
@@ -65,9 +67,23 @@ export default function Stage3ScannerBlock({
     setCameraOpen(true);
   }, []);
 
-  const printLabel = useCallback((cookItem: ICookItem) => {
+  const printLabel = useCallback(async (cookItem: ICookItem) => {
     setLabelData(cookItem);
     setShowLabelPreview(true);
+
+    // Try bridge first — if configured and succeeds, skip browser popup
+    if (isPrintBridgeConfigured()) {
+      const sent = await printViaBridge({
+        printerKey: "bagging_label",
+        labelType: "bagging_label",
+        copies: 1,
+        data: cookItem,
+      });
+      if (sent) return;
+      // Bridge failed — fall through to browser popup as fallback
+    }
+
+    // Browser popup fallback (used when bridge not configured or unavailable)
     setTimeout(() => {
       const labelEl = printLabelRef.current;
       if (!labelEl) return;
@@ -90,7 +106,7 @@ export default function Stage3ScannerBlock({
       win.focus();
       setTimeout(() => { win.print(); win.close(); }, 300);
     }, 100);
-  }, [labelPageSize]);
+  }, [labelPageSize, printViaBridge]);
 
   const handleScan = useCallback(async (scannedValue: string) => {
     const cookItemId = scannedValue.trim();
