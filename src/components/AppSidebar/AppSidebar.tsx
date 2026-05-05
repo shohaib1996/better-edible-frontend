@@ -63,8 +63,8 @@ const adminItems = [
   // { title: "Samples List", url: "/admin/samples", icon: Gift },
   { title: "Deliveries", url: "/admin/deliveries", icon: Truck },
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
-  { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
-  { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
+  // { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
+  // { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
 ];
 
 const repItems = [
@@ -75,7 +75,7 @@ const repItems = [
   { title: "Delivery", url: "/rep/delivery", icon: Truck },
   { title: "Stores", url: "/rep/stores", icon: Briefcase },
   { title: "Sample Lists", url: "/rep/sample-lists", icon: Grid },
-  { title: "Design Requests", url: "/rep/design-requests", icon: PenTool },
+  // { title: "Design Requests", url: "/rep/design-requests", icon: PenTool },
   // { title: "Profile", url: "/rep/profile", icon: User },
 ];
 
