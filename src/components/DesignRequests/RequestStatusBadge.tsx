@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { DesignRequestStatus } from "@/types/designRequests/designRequests";
 
-const STATUS_CONFIG: Record<DesignRequestStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<
+  DesignRequestStatus,
+  { label: string; className: string }
+> = {
   pending: {
     label: "Pending",
     className: "bg-gray-100 text-gray-700 border-gray-200",
@@ -19,16 +22,23 @@ const STATUS_CONFIG: Record<DesignRequestStatus, { label: string; className: str
     className: "bg-green-100 text-green-800 border-green-200",
   },
 };
+// request status badge component
 
 interface RequestStatusBadgeProps {
   status: DesignRequestStatus;
   className?: string;
 }
 
-export function RequestStatusBadge({ status, className }: RequestStatusBadgeProps) {
+export function RequestStatusBadge({
+  status,
+  className,
+}: RequestStatusBadgeProps) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   return (
-    <Badge variant="outline" className={`rounded-xs text-xs font-medium ${config.className} ${className ?? ""}`}>
+    <Badge
+      variant="outline"
+      className={`rounded-xs text-xs font-medium ${config.className} ${className ?? ""}`}
+    >
       {config.label}
     </Badge>
   );
