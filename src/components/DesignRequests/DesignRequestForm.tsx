@@ -1,5 +1,10 @@
 "use client";
 
+// Shared design request submission form used by:
+// - Store portal: /store/design-requests/new (source="store", allowTypeToggle=true)
+// - Admin modal: /admin/design-requests (source="admin", forcedType="inhouse")
+// - Rep page: /rep/design-requests (source="rep", forcedType="inhouse")
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +34,7 @@ import { toast } from "sonner";
 
 const PRODUCT_LINES = ["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"];
 
+// productLine is only required when requestType = "free" (free requests are company products only)
 const schema = z.object({
   requestType: z.enum(["free", "paid", "inhouse"] as const),
   productLine: z.string().optional(),
@@ -38,14 +44,16 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 interface DesignRequestFormProps {
+  // Who is submitting and from where — determines queueType on the backend
   source: DesignRequestSource;
-  submittedBy: string;
-  submittedByName: string;
-  storeId?: string;
-  storeName?: string;
-  contactId?: string;
+  submittedBy: string;       // userId
+  submittedByName: string;   // display name
+  storeId?: string;          // required when source="store"
+  storeName?: string;        // denormalized for quick display in request list
+  contactId?: string;        // required when source="store" (links request to contact)
+  // When true, shows Free/Paid toggle (store users). When false or forcedType is set, toggle is hidden.
   allowTypeToggle?: boolean;
-  forcedType?: DesignRequestType;
+  forcedType?: DesignRequestType; // admin/rep always submit "inhouse" — no toggle shown
   onSuccess?: () => void;
 }
 
@@ -63,6 +71,7 @@ export function DesignRequestForm({
   const [files, setFiles] = useState<File[]>([]);
   const [submitRequest, { isLoading: isSubmitting }] = useSubmitDesignRequestMutation();
   const [uploadFiles, { isLoading: isUploading }] = useUploadRequestFilesMutation();
+  // Single loading flag covers both the request creation and the file upload steps
   const isLoading = isSubmitting || isUploading;
 
   const form = useForm<FormValues>({
@@ -75,10 +84,12 @@ export function DesignRequestForm({
   });
 
   const requestType = form.watch("requestType");
+  // Product line dropdown only appears for free requests (company products only)
   const showProductLine = requestType === "free";
 
   async function onSubmit(values: FormValues) {
     try {
+      // Step 1: create the request record
       const result = await submitRequest({
         requestType: values.requestType,
         source,
@@ -91,6 +102,7 @@ export function DesignRequestForm({
         description: values.description,
       }).unwrap();
 
+      // Step 2: upload reference files if any were attached (uses the new request's _id)
       if (files.length > 0) {
         const fd = new FormData();
         files.forEach((f) => fd.append("files", f));
@@ -109,6 +121,7 @@ export function DesignRequestForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Free/Paid toggle — only shown to store users, hidden when forcedType is set */}
         {allowTypeToggle && !forcedType && (
           <FormField
             control={form.control}
@@ -137,6 +150,7 @@ export function DesignRequestForm({
           />
         )}
 
+        {/* Product line — required for free requests (company products only) */}
         {showProductLine && (
           <FormField
             control={form.control}
@@ -180,6 +194,7 @@ export function DesignRequestForm({
           )}
         />
 
+        {/* Optional reference files — uploaded to Cloudinary after request is created */}
         <FileUploadZone
           files={files}
           onChange={setFiles}
