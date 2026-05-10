@@ -4,6 +4,7 @@
 // - Store portal: /store/design-requests/new (source="store", allowTypeToggle=true)
 // - Admin modal: /admin/design-requests (source="admin", forcedType="inhouse")
 // - Rep page: /rep/design-requests (source="rep", forcedType="inhouse")
+// - Design requests modal: /admin/design-requests (source="admin", forcedType="inhouse")
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -27,7 +28,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUploadZone } from "./FileUploadZone";
-import { DesignRequestType, DesignRequestSource } from "@/types/designRequests/designRequests";
+import {
+  DesignRequestType,
+  DesignRequestSource,
+} from "@/types/designRequests/designRequests";
 import { useSubmitDesignRequestMutation } from "@/redux/api/DesignRequests/designRequestsApi";
 import { useUploadRequestFilesMutation } from "@/redux/api/DesignRequests/designRequestsApi";
 import { toast } from "sonner";
@@ -38,7 +42,9 @@ const PRODUCT_LINES = ["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"];
 const schema = z.object({
   requestType: z.enum(["free", "paid", "inhouse"] as const),
   productLine: z.string().optional(),
-  description: z.string().min(10, "Please describe what you need (at least 10 characters)"),
+  description: z
+    .string()
+    .min(10, "Please describe what you need (at least 10 characters)"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -46,11 +52,11 @@ type FormValues = z.infer<typeof schema>;
 interface DesignRequestFormProps {
   // Who is submitting and from where — determines queueType on the backend
   source: DesignRequestSource;
-  submittedBy: string;       // userId
-  submittedByName: string;   // display name
-  storeId?: string;          // required when source="store"
-  storeName?: string;        // denormalized for quick display in request list
-  contactId?: string;        // required when source="store" (links request to contact)
+  submittedBy: string; // userId
+  submittedByName: string; // display name
+  storeId?: string; // required when source="store"
+  storeName?: string; // denormalized for quick display in request list
+  contactId?: string; // required when source="store" (links request to contact)
   // When true, shows Free/Paid toggle (store users). When false or forcedType is set, toggle is hidden.
   allowTypeToggle?: boolean;
   forcedType?: DesignRequestType; // admin/rep always submit "inhouse" — no toggle shown
@@ -69,8 +75,10 @@ export function DesignRequestForm({
   onSuccess,
 }: DesignRequestFormProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [submitRequest, { isLoading: isSubmitting }] = useSubmitDesignRequestMutation();
-  const [uploadFiles, { isLoading: isUploading }] = useUploadRequestFilesMutation();
+  const [submitRequest, { isLoading: isSubmitting }] =
+    useSubmitDesignRequestMutation();
+  const [uploadFiles, { isLoading: isUploading }] =
+    useUploadRequestFilesMutation();
   // Single loading flag covers both the request creation and the file upload steps
   const isLoading = isSubmitting || isUploading;
 
@@ -158,7 +166,10 @@ export function DesignRequestForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Product Line</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className="rounded-xs">
                       <SelectValue placeholder="Select product line" />
@@ -166,7 +177,9 @@ export function DesignRequestForm({
                   </FormControl>
                   <SelectContent>
                     {PRODUCT_LINES.map((pl) => (
-                      <SelectItem key={pl} value={pl}>{pl}</SelectItem>
+                      <SelectItem key={pl} value={pl}>
+                        {pl}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -201,7 +214,12 @@ export function DesignRequestForm({
           label="Reference Files (optional)"
         />
 
-        <Button type="submit" className="w-full rounded-xs" disabled={isLoading} size="lg">
+        <Button
+          type="submit"
+          className="w-full rounded-xs"
+          disabled={isLoading}
+          size="lg"
+        >
           {isLoading ? "Submitting..." : "Submit Request"}
         </Button>
       </form>
