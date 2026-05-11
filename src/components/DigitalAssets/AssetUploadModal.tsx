@@ -36,13 +36,13 @@ import {
   useUpdateDigitalAssetMutation,
 } from "@/redux/api/DigitalAssets/digitalAssetsApi";
 
-const CATEGORIES: AssetCategory[] = ["social-media", "print", "email", "video", "logo", "other"];
+const CATEGORIES: AssetCategory[] = ["Banner", "ProductImage", "Video", "Email", "Flyer", "Social", "Text", "Other"];
 const PRODUCT_LINES: ProductLine[] = ["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"];
 
 const schema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  category: z.enum(["social-media", "print", "email", "video", "logo", "other"] as const),
+  category: z.enum(["Banner", "ProductImage", "Video", "Email", "Flyer", "Social", "Text", "Other"] as const),
   productLine: z.enum(["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"] as const).optional(),
   assetType: z.enum(["file", "text"] as const),
   textContent: z.string().optional(),
@@ -70,7 +70,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
     defaultValues: {
       title: editing?.title ?? "",
       description: editing?.description ?? "",
-      category: editing?.category ?? "other",
+      category: editing?.category ?? "Other",
       productLine: editing?.productLine ?? undefined,
       assetType: editing?.assetType ?? "file",
       textContent: editing?.textContent ?? "",

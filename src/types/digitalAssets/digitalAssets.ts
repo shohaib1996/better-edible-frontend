@@ -1,4 +1,4 @@
-export type AssetCategory = "social-media" | "print" | "email" | "video" | "logo" | "other";
+export type AssetCategory = "Banner" | "ProductImage" | "Video" | "Email" | "Flyer" | "Social" | "Text" | "Other";
 export type AssetType = "file" | "text";
 export type AssetStatus = "active" | "archived";
 export type ProductLine = "CannaCrispy" | "FiftyOneFifty" | "Bliss" | "YummyGummy";
