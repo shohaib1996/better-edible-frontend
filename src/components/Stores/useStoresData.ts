@@ -121,10 +121,13 @@ export const useStoresData = (isAdmin: boolean) => {
 
   const handleSubmit = async (values: any) => {
     try {
+      // Strip read-only/non-editable fields that should never be sent in updates
+      const { contacts: _c, _id, storeId, notesCount, totalPurchase, totalPaid, dueAmount, paymentStatus, createdAt, updatedAt, __v, ...cleanValues } = values;
+
       const payload = isAdmin
-        ? { ...values }
+        ? cleanValues
         : {
-            ...values,
+            ...cleanValues,
             contacts: [
               {
                 name: values.contactName,
