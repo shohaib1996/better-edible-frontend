@@ -12,6 +12,7 @@ import {
   useProcessMoldMutation,
   useUnprocessMoldMutation,
 } from "@/redux/api/PrivateLabel/ppsApi";
+import { usePrintTrayLabel } from "@/hooks/usePrintTrayLabel";
 import {
   COOK_ITEM_STATUS_COLORS,
   COOK_ITEM_STATUS_LABELS,
@@ -67,6 +68,7 @@ export default function Stage2CookItemCard({
 
   const [processMold, { isLoading: isProcessing }] = useProcessMoldMutation();
   const [unprocessMold, { isLoading: isUnprocessing }] = useUnprocessMoldMutation();
+  const { printTrayLabel } = usePrintTrayLabel();
 
   const handleUnprocessMold = useCallback(async (moldId: string) => {
     try {
@@ -103,6 +105,14 @@ export default function Stage2CookItemCard({
               : s,
           ),
         );
+        printTrayLabel({
+          cookItem: item,
+          trayId,
+          moldId,
+          dehydratorUnitId: shelf.dehydratorUnitId,
+          shelfPosition: shelf.shelfPosition,
+          loadTimestamp: new Date().toISOString(),
+        });
         return true;
       } catch (err: any) {
         toast.error(err?.data?.message || "Tray not found or already in use");

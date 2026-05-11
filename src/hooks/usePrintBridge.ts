@@ -6,7 +6,7 @@ import { toast } from "sonner";
 const BRIDGE_URL = process.env.NEXT_PUBLIC_PRINT_BRIDGE_URL ?? "";
 const BRIDGE_KEY = process.env.NEXT_PUBLIC_PRINT_BRIDGE_KEY ?? "";
 
-export type PrintLabelType = "bagging_label" | "case_label";
+export type PrintLabelType = "tray_label" | "bagging_label" | "case_label";
 
 export interface PrintBridgePayload {
   printerKey: PrintLabelType;
