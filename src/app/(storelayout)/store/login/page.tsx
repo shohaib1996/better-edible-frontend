@@ -168,7 +168,7 @@ export default function StoreLoginPage() {
                 </button>
               </div>
             ) : (
-              <Form {...magicForm}>
+              <Form key="magic-form" {...magicForm}>
                 <form onSubmit={magicForm.handleSubmit(onMagicSubmit)} className="space-y-4">
                   <FormField
                     control={magicForm.control}
@@ -200,7 +200,7 @@ export default function StoreLoginPage() {
             {!magicSent && (
               <div className="mt-4 text-center">
                 <button
-                  onClick={() => { setMagicMode(!magicMode); setMagicSent(false); }}
+                  onClick={() => { setMagicMode(!magicMode); setMagicSent(false); magicForm.reset(); loginForm.reset(); }}
                   className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
                 >
                   {magicMode ? "Sign in with password instead" : "Sign in with magic link"}
