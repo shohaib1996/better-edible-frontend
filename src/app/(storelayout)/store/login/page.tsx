@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail } from "lucide-react";
-import { useLoginStoreMutation, useSendMagicLinkMutation } from "@/redux/api/StoreAuth/storeAuthApi";
+import { useLoginStoreMutation, useSendMagicLinkMutation, useVerifyMagicLinkMutation } from "@/redux/api/StoreAuth/storeAuthApi";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -34,13 +34,41 @@ type LoginValues = z.infer<typeof loginSchema>;
 type MagicValues = z.infer<typeof magicSchema>;
 
 export default function StoreLoginPage() {
+  return (
+    <Suspense>
+      <StoreLoginForm />
+    </Suspense>
+  );
+}
+
+function StoreLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [magicMode, setMagicMode] = useState(false);
   const [magicSent, setMagicSent] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const [loginStore, { isLoading: isLoginLoading }] = useLoginStoreMutation();
   const [sendMagicLink, { isLoading: isMagicLoading }] = useSendMagicLinkMutation();
+  const [verifyMagicLink] = useVerifyMagicLinkMutation();
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (!token) return;
+    setVerifying(true);
+    verifyMagicLink({ token })
+      .unwrap()
+      .then((result) => {
+        localStorage.setItem("better-store-user", JSON.stringify(result.user));
+        toast.success(`Welcome back, ${result.user.name}!`);
+        router.replace("/store/assets");
+      })
+      .catch((err) => {
+        toast.error(err?.data?.message || "Magic link is invalid or has expired");
+        setVerifying(false);
+      });
+  }, []);
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -71,6 +99,17 @@ export default function StoreLoginPage() {
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to send magic link");
     }
+  }
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+        <div className="flex flex-col items-center gap-3">
+          <Image src="/logo.png" alt="Better Edibles" width={48} height={48} className="rounded-xs" />
+          <p className="text-sm text-muted-foreground">Signing you in…</p>
+        </div>
+      </div>
+    );
   }
 
   return (
