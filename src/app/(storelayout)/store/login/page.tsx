@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -52,10 +52,12 @@ function StoreLoginForm() {
   const [loginStore, { isLoading: isLoginLoading }] = useLoginStoreMutation();
   const [sendMagicLink, { isLoading: isMagicLoading }] = useSendMagicLinkMutation();
   const [verifyMagicLink] = useVerifyMagicLinkMutation();
+  const verifyCalledRef = useRef(false);
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (!token) return;
+    if (!token || verifyCalledRef.current) return;
+    verifyCalledRef.current = true;
     setVerifying(true);
     verifyMagicLink({ token })
       .unwrap()
