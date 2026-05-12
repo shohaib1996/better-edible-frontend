@@ -1,7 +1,8 @@
 {
   "permissions": {
     "additionalDirectories": [
-      "D:\\Web Development\\Upwork\\better-edibles-print-bridge"
+      "D:\\Web Development\\Upwork\\better-edibles-print-bridge",
+      "D:\\Web Development\\Upwork\\better-edibles-backend\\src\\controllers"
     ]
   }
 }
