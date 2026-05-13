@@ -84,7 +84,7 @@ function StoreLoginForm() {
 
   async function onLoginSubmit(values: LoginValues) {
     try {
-      const result = await loginStore(values).unwrap();
+      const result = await loginStore({ ...values, email: values.email.toLowerCase().trim() }).unwrap();
       localStorage.setItem("better-store-user", JSON.stringify(result.user));
       toast.success("Welcome back!");
       router.push("/store/assets");
@@ -95,7 +95,7 @@ function StoreLoginForm() {
 
   async function onMagicSubmit(values: MagicValues) {
     try {
-      await sendMagicLink(values).unwrap();
+      await sendMagicLink({ email: values.email.toLowerCase().trim() }).unwrap();
       setMagicSent(true);
       toast.success("Magic link sent — check your email");
     } catch (err: any) {
