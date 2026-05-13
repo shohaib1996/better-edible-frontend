@@ -144,10 +144,10 @@ export default function AdminDigitalAssetsPage() {
         </div>
       ) : (
         <>
-          <div className="border border-border rounded-xs overflow-hidden">
+          <div className="border border-border rounded-xs overflow-hidden bg-card shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/40">
+                <tr className="border-b border-border bg-muted/50">
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Product Line</th>
@@ -159,7 +159,7 @@ export default function AdminDigitalAssetsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {assets.map((asset) => (
-                  <tr key={asset._id} className="hover:bg-muted/20 transition-colors">
+                  <tr key={asset._id} className="bg-card hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium truncate max-w-[200px]">{asset.title}</td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <span className="text-muted-foreground">{asset.category}</span>
@@ -246,7 +246,7 @@ export default function AdminDigitalAssetsPage() {
 
       {/* View Asset Modal */}
       <Dialog open={!!viewing} onOpenChange={(o) => { if (!o) setViewing(null); }}>
-        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] rounded-xs scrollbar-hidden max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent className="max-w-lg w-[calc(100vw-2rem)] rounded-xs scrollbar-hidden max-h-[90vh] overflow-y-auto overflow-x-hidden bg-card text-card-foreground">
           <DialogHeader>
             <DialogTitle className="truncate pr-6">{viewing?.title}</DialogTitle>
           </DialogHeader>
@@ -356,7 +356,7 @@ export default function AdminDigitalAssetsPage() {
       </Dialog>
 
       <AlertDialog open={!!archiveTarget} onOpenChange={(o) => { if (!o) setArchiveTarget(null); }}>
-        <AlertDialogContent className="rounded-xs">
+        <AlertDialogContent className="rounded-xs bg-card text-card-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>Archive this asset?</AlertDialogTitle>
             <AlertDialogDescription>

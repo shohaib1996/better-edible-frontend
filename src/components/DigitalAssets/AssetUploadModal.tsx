@@ -140,7 +140,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] rounded-xs max-h-[90vh] overflow-y-auto overflow-x-hidden scrollbar-hidden">
+      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] rounded-xs max-h-[90vh] overflow-y-auto overflow-x-hidden scrollbar-hidden bg-card text-card-foreground">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit Asset" : "Upload Asset"}</DialogTitle>
         </DialogHeader>
@@ -154,7 +154,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input className="rounded-xs" placeholder="Asset title" {...field} />
+                    <Input className="rounded-xs border border-border bg-background" placeholder="Asset title" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,7 +170,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                     <FormLabel>Category</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xs w-full">
+                        <SelectTrigger className="rounded-xs w-full border border-border bg-background">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                       </FormControl>
@@ -193,7 +193,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                     <FormLabel>Product Line</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value ?? ""}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xs w-full">
+                        <SelectTrigger className="rounded-xs w-full border border-border bg-background">
                           <SelectValue placeholder="Any" />
                         </SelectTrigger>
                       </FormControl>
@@ -291,7 +291,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                     <FormLabel>Text Content</FormLabel>
                     <FormControl>
                       <Textarea
-                        className="rounded-xs min-h-[100px]"
+                        className="rounded-xs min-h-[100px] border border-border bg-background"
                         placeholder="Paste text, caption, or copy here..."
                         {...field}
                       />
@@ -309,7 +309,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                 <FormItem>
                   <FormLabel>Description <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                   <FormControl>
-                    <Input className="rounded-xs" placeholder="Short description" {...field} />
+                    <Input className="rounded-xs border border-border bg-background" placeholder="Short description" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
