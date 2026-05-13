@@ -36,6 +36,7 @@ export interface IDigitalAssetResponse {
 export interface IGetDigitalAssetsParams {
   category?: AssetCategory;
   productLine?: ProductLine;
+  assetType?: AssetType;
   search?: string;
   status?: AssetStatus;
   page?: number;

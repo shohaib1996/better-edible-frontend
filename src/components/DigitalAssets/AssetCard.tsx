@@ -3,8 +3,7 @@
 import { IDigitalAsset } from "@/types/digitalAssets/digitalAssets";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Download, Copy, ImageIcon, Video, FileText } from "lucide-react";
+import { Download, Copy, ImageIcon, Video, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cloudinaryViewUrl, cloudinaryDownloadUrl } from "@/lib/cloudinaryUrl";
 
@@ -24,16 +23,22 @@ function getFileType(asset: IDigitalAsset): "image" | "video" | "pdf" | "other" 
 function AssetPreview({ asset }: { asset: IDigitalAsset }) {
   if (asset.assetType === "text") {
     return (
-      <div className="h-36 bg-muted rounded-xs flex items-center justify-center p-4">
-        <p className="text-sm text-muted-foreground line-clamp-4 text-center">{asset.textContent}</p>
+      <div className="h-44 bg-muted/60 flex items-center justify-center p-5">
+        <p className="text-sm text-muted-foreground line-clamp-5 text-center leading-relaxed italic">
+          &ldquo;{asset.textContent}&rdquo;
+        </p>
       </div>
     );
   }
 
   if (asset.previewUrl) {
     return (
-      <div className="h-36 bg-muted rounded-xs overflow-hidden">
-        <img src={cloudinaryViewUrl(asset.previewUrl)} alt={asset.title} className="w-full h-full object-cover" />
+      <div className="h-44 bg-muted overflow-hidden">
+        <img
+          src={cloudinaryViewUrl(asset.previewUrl)}
+          alt={asset.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
       </div>
     );
   }
@@ -43,9 +48,11 @@ function AssetPreview({ asset }: { asset: IDigitalAsset }) {
   const label = type === "video" ? "Video" : type === "pdf" ? "PDF" : type === "image" ? "Image" : "File";
 
   return (
-    <div className="h-36 bg-muted rounded-xs flex flex-col items-center justify-center gap-2">
-      <Icon className="w-10 h-10 text-muted-foreground" />
-      <span className="text-xs text-muted-foreground">{label}</span>
+    <div className="h-44 bg-muted/60 flex flex-col items-center justify-center gap-2">
+      <div className="w-12 h-12 rounded-xs bg-background/80 flex items-center justify-center shadow-sm">
+        <Icon className="w-6 h-6 text-muted-foreground" />
+      </div>
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -58,48 +65,62 @@ export function AssetCard({ asset }: AssetCardProps) {
   }
 
   return (
-    <Card className="rounded-xs border border-border/50 hover:shadow-md transition-shadow flex flex-col">
-      <CardContent className="p-3 flex flex-col gap-3 flex-1">
+    <div className="group rounded-xs border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden">
+      {/* Preview */}
+      <div className="relative overflow-hidden">
         <AssetPreview asset={asset} />
+        {/* Category pill overlay */}
+        <div className="absolute top-2 left-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wider bg-background/90 backdrop-blur-sm text-foreground px-2 py-0.5 rounded-xs border border-border/50">
+            {asset.category}
+          </span>
+        </div>
+      </div>
 
-        <div className="flex-1 space-y-1.5">
-          <p className="font-medium text-sm leading-snug line-clamp-2">{asset.title}</p>
-          <div className="flex flex-wrap gap-1">
-            <Badge variant="secondary" className="text-xs rounded-xs px-1.5 py-0">
-              {asset.category}
+      {/* Body */}
+      <div className="flex flex-col gap-3 p-3 flex-1">
+        <div className="flex-1 space-y-1">
+          <p className="font-semibold text-sm leading-snug line-clamp-2">{asset.title}</p>
+          {asset.productLine && (
+            <Badge variant="outline" className="text-[10px] rounded-xs px-1.5 py-0 h-4">
+              {asset.productLine}
             </Badge>
-            {asset.productLine && (
-              <Badge variant="outline" className="text-xs rounded-xs px-1.5 py-0">
-                {asset.productLine}
-              </Badge>
-            )}
-          </div>
+          )}
+          {asset.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{asset.description}</p>
+          )}
         </div>
 
+        {/* Actions */}
         {asset.assetType === "file" ? (
-          <Button size="sm" className="w-full rounded-xs" disabled={!asset.fileUrl} asChild>
-            <a
-              href={asset.fileUrl ? cloudinaryDownloadUrl(asset.fileUrl) : "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              Download
-            </a>
-          </Button>
+          <div className="flex gap-1.5">
+            <Button size="sm" className="flex-1 rounded-xs h-8 text-xs" disabled={!asset.fileUrl} asChild>
+              <a href={asset.fileUrl ? cloudinaryDownloadUrl(asset.fileUrl) : "#"} target="_blank" rel="noopener noreferrer">
+                <Download className="w-3.5 h-3.5 mr-1" />
+                Download
+              </a>
+            </Button>
+            {asset.fileUrl && (
+              <Button size="sm" variant="outline" className="rounded-xs h-8 w-8 p-0 shrink-0" asChild>
+                <a href={cloudinaryViewUrl(asset.fileUrl)} target="_blank" rel="noopener noreferrer" title="Open file">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </Button>
+            )}
+          </div>
         ) : (
           <Button
             size="sm"
             variant="outline"
-            className="w-full rounded-xs"
+            className="w-full rounded-xs h-8 text-xs"
             onClick={handleCopy}
             disabled={!asset.textContent}
           >
-            <Copy className="w-3.5 h-3.5 mr-1.5" />
+            <Copy className="w-3.5 h-3.5 mr-1" />
             Copy Text
           </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
