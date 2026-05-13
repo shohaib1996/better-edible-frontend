@@ -17,9 +17,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Eye, EyeOff, Mail } from "lucide-react";
-import { useLoginStoreMutation, useSendMagicLinkMutation, useVerifyMagicLinkMutation } from "@/redux/api/StoreAuth/storeAuthApi";
+import {
+  useLoginStoreMutation,
+  useSendMagicLinkMutation,
+  useVerifyMagicLinkMutation,
+} from "@/redux/api/StoreAuth/storeAuthApi";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -50,7 +60,8 @@ function StoreLoginForm() {
   const [verifying, setVerifying] = useState(false);
 
   const [loginStore, { isLoading: isLoginLoading }] = useLoginStoreMutation();
-  const [sendMagicLink, { isLoading: isMagicLoading }] = useSendMagicLinkMutation();
+  const [sendMagicLink, { isLoading: isMagicLoading }] =
+    useSendMagicLinkMutation();
   const [verifyMagicLink] = useVerifyMagicLinkMutation();
   const verifyCalledRef = useRef(false);
 
@@ -67,7 +78,9 @@ function StoreLoginForm() {
         router.replace("/store/assets");
       })
       .catch((err) => {
-        toast.error(err?.data?.message || "Magic link is invalid or has expired");
+        toast.error(
+          err?.data?.message || "Magic link is invalid or has expired",
+        );
         setVerifying(false);
       });
   }, []);
@@ -84,7 +97,10 @@ function StoreLoginForm() {
 
   async function onLoginSubmit(values: LoginValues) {
     try {
-      const result = await loginStore({ ...values, email: values.email.toLowerCase().trim() }).unwrap();
+      const result = await loginStore({
+        ...values,
+        email: values.email.toLowerCase().trim(),
+      }).unwrap();
       localStorage.setItem("better-store-user", JSON.stringify(result.user));
       toast.success("Welcome back!");
       router.push("/store/assets");
@@ -95,7 +111,9 @@ function StoreLoginForm() {
 
   async function onMagicSubmit(values: MagicValues) {
     try {
-      await sendMagicLink({ email: values.email.toLowerCase().trim() }).unwrap();
+      await sendMagicLink({
+        email: values.email.toLowerCase().trim(),
+      }).unwrap();
       setMagicSent(true);
       toast.success("Magic link sent — check your email");
     } catch (err: any) {
@@ -107,7 +125,13 @@ function StoreLoginForm() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/logo.png" alt="Better Edibles" width={48} height={48} className="rounded-xs" />
+          <Image
+            src="/logo.png"
+            alt="Better Edibles"
+            width={80}
+            height={80}
+            className="rounded-xs"
+          />
           <p className="text-sm text-muted-foreground">Signing you in…</p>
         </div>
       </div>
@@ -118,7 +142,13 @@ function StoreLoginForm() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3">
-          <Image src="/logo.png" alt="Better Edibles" width={48} height={48} className="rounded-xs" />
+          <Image
+            src="/logo.png"
+            alt="Better Edibles"
+            width={80}
+            height={80}
+            className="rounded-xs"
+          />
           <div className="text-center">
             <h1 className="text-xl font-bold">Store Portal</h1>
             <p className="text-sm text-muted-foreground">Better Edibles</p>
@@ -127,7 +157,9 @@ function StoreLoginForm() {
 
         <Card className="rounded-xs shadow-lg border border-border/50">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-lg">{magicMode ? "Magic Link Sign In" : "Sign In"}</CardTitle>
+            <CardTitle className="text-lg">
+              {magicMode ? "Magic Link Sign In" : "Sign In"}
+            </CardTitle>
             <CardDescription>
               {magicMode
                 ? "We'll send a sign-in link to your email"
@@ -138,7 +170,10 @@ function StoreLoginForm() {
           <CardContent>
             {!magicMode ? (
               <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <form
+                  onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={loginForm.control}
                     name="email"
@@ -180,7 +215,11 @@ function StoreLoginForm() {
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                         <FormMessage />
@@ -188,7 +227,12 @@ function StoreLoginForm() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full rounded-xs" disabled={isLoginLoading} size="lg">
+                  <Button
+                    type="submit"
+                    className="w-full rounded-xs"
+                    disabled={isLoginLoading}
+                    size="lg"
+                  >
                     {isLoginLoading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
@@ -202,7 +246,10 @@ function StoreLoginForm() {
                   Check your inbox for a sign-in link. It expires in 15 minutes.
                 </p>
                 <button
-                  onClick={() => { setMagicSent(false); setMagicMode(false); }}
+                  onClick={() => {
+                    setMagicSent(false);
+                    setMagicMode(false);
+                  }}
                   className="text-xs text-muted-foreground underline underline-offset-2"
                 >
                   Back to sign in
@@ -210,7 +257,10 @@ function StoreLoginForm() {
               </div>
             ) : (
               <Form key="magic-form" {...magicForm}>
-                <form onSubmit={magicForm.handleSubmit(onMagicSubmit)} className="space-y-4">
+                <form
+                  onSubmit={magicForm.handleSubmit(onMagicSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={magicForm.control}
                     name="email"
@@ -231,7 +281,12 @@ function StoreLoginForm() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full rounded-xs" disabled={isMagicLoading} size="lg">
+                  <Button
+                    type="submit"
+                    className="w-full rounded-xs"
+                    disabled={isMagicLoading}
+                    size="lg"
+                  >
                     {isMagicLoading ? "Sending..." : "Send Magic Link"}
                   </Button>
                 </form>
@@ -241,10 +296,17 @@ function StoreLoginForm() {
             {!magicSent && (
               <div className="mt-4 text-center">
                 <button
-                  onClick={() => { setMagicMode(!magicMode); setMagicSent(false); magicForm.reset(); loginForm.reset(); }}
+                  onClick={() => {
+                    setMagicMode(!magicMode);
+                    setMagicSent(false);
+                    magicForm.reset();
+                    loginForm.reset();
+                  }}
                   className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
                 >
-                  {magicMode ? "Sign in with password instead" : "Sign in with magic link"}
+                  {magicMode
+                    ? "Sign in with password instead"
+                    : "Sign in with magic link"}
                 </button>
               </div>
             )}
