@@ -178,7 +178,7 @@ function FooterUserMenu({ user }: { user: any }) {
   const [open, setOpen] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("better-user");
     router.push("/login");
   };
 
