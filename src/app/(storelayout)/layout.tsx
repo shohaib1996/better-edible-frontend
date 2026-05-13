@@ -120,9 +120,9 @@ export default function StoreLayout({
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-xs px-2 py-1.5 hover:bg-accent transition-colors outline-none">
+              <button className="flex items-center gap-2 rounded-xs px-2 py-1.5 hover:bg-muted/60 transition-colors outline-none group">
                 <Avatar className="h-8 w-8 rounded-xs">
-                  <AvatarFallback className="rounded-xs bg-primary/10 text-primary text-xs font-bold">
+                  <AvatarFallback className="rounded-xs bg-primary text-primary-foreground text-xs font-bold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -136,7 +136,7 @@ export default function StoreLayout({
                     </span>
                   )}
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden md:block" />
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden md:block group-hover:text-foreground transition-colors" />
               </button>
             </DropdownMenuTrigger>
 
