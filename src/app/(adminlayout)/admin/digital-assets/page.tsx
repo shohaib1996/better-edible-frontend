@@ -23,12 +23,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AssetUploadModal } from "@/components/DigitalAssets/AssetUploadModal";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import {
   useGetDigitalAssetsQuery,
   useUpdateDigitalAssetMutation,
 } from "@/redux/api/DigitalAssets/digitalAssetsApi";
 import { IDigitalAsset } from "@/types/digitalAssets/digitalAssets";
 import { toast } from "sonner";
+import { cloudinaryViewUrl, cloudinaryDownloadUrl } from "@/lib/cloudinaryUrl";
 
 export default function AdminDigitalAssetsPage() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -37,12 +39,22 @@ export default function AdminDigitalAssetsPage() {
   const [viewing, setViewing] = useState<IDigitalAsset | null>(null);
   const [tab, setTab] = useState<"active" | "archived">("active");
 
-  const { data, isLoading } = useGetDigitalAssetsQuery({ status: tab });
+  const [activePage, setActivePage] = useState(1);
+  const [activeLimit, setActiveLimit] = useState(10);
+  const [archivedPage, setArchivedPage] = useState(1);
+  const [archivedLimit, setArchivedLimit] = useState(10);
+
+  const page = tab === "active" ? activePage : archivedPage;
+  const limit = tab === "active" ? activeLimit : archivedLimit;
+
+  const { data, isLoading } = useGetDigitalAssetsQuery({ status: tab, page, limit });
   const { data: allData } = useGetDigitalAssetsQuery({ status: "all" });
   const [updateAsset, { isLoading: isArchiving }] = useUpdateDigitalAssetMutation();
 
   const assets = data?.assets ?? [];
   const allAssets = allData?.assets ?? [];
+  const totalItems = data?.totalItems ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   function handleEdit(asset: IDigitalAsset) {
     setEditing(asset);
@@ -73,6 +85,20 @@ export default function AdminDigitalAssetsPage() {
     setArchiveTarget(null);
   }
 
+  function handlePageChange(p: number) {
+    if (tab === "active") setActivePage(p);
+    else setArchivedPage(p);
+  }
+
+  function handleLimitChange(l: number) {
+    if (tab === "active") { setActiveLimit(l); setActivePage(1); }
+    else { setArchivedLimit(l); setArchivedPage(1); }
+  }
+
+  function handleTabChange(t: "active" | "archived") {
+    setTab(t);
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
@@ -90,7 +116,7 @@ export default function AdminDigitalAssetsPage() {
         {(["active", "archived"] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => handleTabChange(t)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${
               tab === t
                 ? "border-primary text-primary"
@@ -117,87 +143,99 @@ export default function AdminDigitalAssetsPage() {
           </Button>
         </div>
       ) : (
-        <div className="border border-border rounded-xs overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Product Line</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Date</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {assets.map((asset) => (
-                <tr key={asset._id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium truncate max-w-[200px]">{asset.title}</td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-muted-foreground">{asset.category}</span>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    {asset.productLine ? (
-                      <Badge variant="outline" className="rounded-xs text-xs">{asset.productLine}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell">
-                    <Badge variant="secondary" className="rounded-xs text-xs">{asset.assetType}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      variant={asset.status === "active" ? "default" : "outline"}
-                      className="rounded-xs text-xs"
-                    >
-                      {asset.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                    {new Date(asset.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 justify-end">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="rounded-xs h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                        title="View asset"
-                        onClick={() => setViewing(asset)}
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="rounded-xs h-8 w-8 p-0"
-                        onClick={() => handleEdit(asset)}
-                        title="Edit asset"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="rounded-xs h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleArchiveClick(asset)}
-                        title={asset.status === "active" ? "Archive" : "Restore"}
-                      >
-                        {asset.status === "active" ? (
-                          <Archive className="w-3.5 h-3.5" />
-                        ) : (
-                          <ArchiveRestore className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </td>
+        <>
+          <div className="border border-border rounded-xs overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Category</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Product Line</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Type</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden lg:table-cell">Date</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {assets.map((asset) => (
+                  <tr key={asset._id} className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3 font-medium truncate max-w-[200px]">{asset.title}</td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      <span className="text-muted-foreground">{asset.category}</span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {asset.productLine ? (
+                        <Badge variant="outline" className="rounded-xs text-xs">{asset.productLine}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <Badge variant="secondary" className="rounded-xs text-xs">{asset.assetType}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        variant={asset.status === "active" ? "default" : "outline"}
+                        className="rounded-xs text-xs"
+                      >
+                        {asset.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                      {new Date(asset.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 justify-end">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-xs h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          title="View asset"
+                          onClick={() => setViewing(asset)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-xs h-8 w-8 p-0"
+                          onClick={() => handleEdit(asset)}
+                          title="Edit asset"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-xs h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => handleArchiveClick(asset)}
+                          title={asset.status === "active" ? "Archive" : "Restore"}
+                        >
+                          {asset.status === "active" ? (
+                            <Archive className="w-3.5 h-3.5" />
+                          ) : (
+                            <ArchiveRestore className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <GlobalPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={limit}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            limitOptions={[10, 25, 50, 100]}
+          />
+        </>
       )}
 
       <AssetUploadModal
@@ -219,7 +257,7 @@ export default function AdminDigitalAssetsPage() {
               {viewing.previewUrl && (
                 <div className="rounded-xs overflow-hidden border border-border bg-muted/30">
                   <img
-                    src={viewing.previewUrl}
+                    src={cloudinaryViewUrl(viewing.previewUrl)}
                     alt={viewing.title}
                     className="w-full object-contain max-h-56"
                   />
@@ -290,13 +328,13 @@ export default function AdminDigitalAssetsPage() {
               {viewing.assetType === "file" && viewing.fileUrl && (
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" className="rounded-xs flex-1" asChild>
-                    <a href={viewing.fileUrl} target="_blank" rel="noopener noreferrer">
+                    <a href={cloudinaryViewUrl(viewing.fileUrl)} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                       Open File
                     </a>
                   </Button>
                   <Button size="sm" variant="outline" className="rounded-xs flex-1" asChild>
-                    <a href={viewing.fileUrl} download>
+                    <a href={cloudinaryDownloadUrl(viewing.fileUrl)} target="_blank" rel="noopener noreferrer">
                       <Download className="w-3.5 h-3.5 mr-1.5" />
                       Download
                     </a>

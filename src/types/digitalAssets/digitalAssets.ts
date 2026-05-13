@@ -23,6 +23,9 @@ export interface IDigitalAsset {
 export interface IDigitalAssetsResponse {
   success: boolean;
   assets: IDigitalAsset[];
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 export interface IDigitalAssetResponse {
@@ -35,4 +38,6 @@ export interface IGetDigitalAssetsParams {
   productLine?: ProductLine;
   search?: string;
   status?: AssetStatus;
+  page?: number;
+  limit?: number;
 }
