@@ -105,7 +105,20 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
   async function onSubmit(values: FormValues) {
     try {
       if (editing) {
-        const body: any = { ...values, status: values.status ?? editing.status };
+        let body: FormData | any;
+        if (file) {
+          body = new FormData();
+          body.append("title", values.title);
+          if (values.description) body.append("description", values.description);
+          body.append("category", values.category);
+          if (values.productLine) body.append("productLine", values.productLine);
+          body.append("assetType", values.assetType);
+          if (values.textContent) body.append("textContent", values.textContent);
+          body.append("status", values.status ?? editing.status);
+          body.append("file", file);
+        } else {
+          body = { ...values, status: values.status ?? editing.status };
+        }
         await updateAsset({ id: editing._id, body }).unwrap();
         toast.success("Asset updated");
       } else {

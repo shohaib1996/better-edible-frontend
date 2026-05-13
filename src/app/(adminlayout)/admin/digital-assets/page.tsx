@@ -137,10 +137,16 @@ export default function AdminDigitalAssetsPage() {
       ) : assets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border rounded-xs">
           <ImageIcon className="w-10 h-10 text-muted-foreground mb-3" />
-          <p className="text-muted-foreground text-sm">No assets yet</p>
-          <Button variant="outline" size="sm" className="rounded-xs mt-3" onClick={handleAdd}>
-            Upload your first asset
-          </Button>
+          {tab === "archived" ? (
+            <p className="text-muted-foreground text-sm">No archived assets</p>
+          ) : (
+            <>
+              <p className="text-muted-foreground text-sm">No assets yet</p>
+              <Button variant="outline" size="sm" className="rounded-xs mt-3" onClick={handleAdd}>
+                Upload your first asset
+              </Button>
+            </>
+          )}
         </div>
       ) : (
         <>
