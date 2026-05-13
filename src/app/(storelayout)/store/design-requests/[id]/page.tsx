@@ -3,11 +3,35 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { RequestDetailView } from "@/components/DesignRequests/RequestDetailView";
+import { RequestStatusBadge } from "@/components/DesignRequests/RequestStatusBadge";
 import { useGetDesignRequestByIdQuery } from "@/redux/api/DesignRequests/designRequestsApi";
 import { getStoreUser } from "@/lib/storeUser";
 import { IStoreUser } from "@/types/storeAuth/storeAuth";
+
+function SkeletonDetail() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="rounded-xs border border-border bg-card px-6 py-5 space-y-3">
+        <div className="h-4 bg-muted rounded-xs w-1/4" />
+        <div className="h-6 bg-muted rounded-xs w-2/3" />
+        <div className="h-3 bg-muted rounded-xs w-1/3" />
+      </div>
+      <div className="rounded-xs border border-border bg-card px-6 py-5 space-y-3">
+        <div className="h-3 bg-muted rounded-xs w-1/5" />
+        <div className="h-4 bg-muted rounded-xs w-full" />
+        <div className="h-4 bg-muted rounded-xs w-4/5" />
+      </div>
+      <div className="rounded-xs border border-border bg-card px-6 py-5 space-y-3">
+        <div className="h-3 bg-muted rounded-xs w-1/5" />
+        {[1, 2].map((i) => (
+          <div key={i} className="h-16 bg-muted rounded-xs" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function StoreDesignRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +50,8 @@ export default function StoreDesignRequestDetailPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="max-w-2xl mx-auto space-y-5">
+      {/* Back */}
       <Link
         href="/store/design-requests"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -35,12 +60,39 @@ export default function StoreDesignRequestDetailPage() {
         Back to requests
       </Link>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      {/* Hero strip */}
+      <div className="rounded-xs overflow-hidden relative px-6 py-5 bg-linear-to-r from-primary to-secondary dark:from-[#003049] dark:via-[#002838] dark:to-[#001d2e] dark:border dark:border-border">
+        <div className="absolute inset-0 opacity-15 dark:opacity-0 pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #fff 0%, transparent 60%)" }} />
+        <div className="absolute inset-0 opacity-0 dark:opacity-100 pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle at 10% 50%, rgba(247,127,0,0.15) 0%, transparent 60%)" }} />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-4 h-4 text-white/80 dark:text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/80 dark:text-primary">Design Request</span>
+          </div>
+          {isLoading || !request ? (
+            <div className="h-6 bg-white/20 rounded-xs w-1/2 animate-pulse" />
+          ) : (
+            <>
+              <p className="text-white dark:text-foreground font-bold text-lg leading-snug line-clamp-2">
+                {request.description}
+              </p>
+              <div className="mt-2">
+                <RequestStatusBadge status={request.status} />
+              </div>
+            </>
+          )}
         </div>
+      </div>
+
+      {isLoading ? (
+        <SkeletonDetail />
       ) : !request ? (
-        <p className="text-sm text-muted-foreground py-10 text-center">Request not found.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-card border border-border rounded-xs">
+          <p className="font-semibold">Request not found</p>
+          <p className="text-sm text-muted-foreground mt-1">This request may have been removed.</p>
+        </div>
       ) : (
         <RequestDetailView
           request={request}

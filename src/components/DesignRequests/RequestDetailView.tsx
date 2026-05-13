@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, AlertTriangle } from "lucide-react";
+import { Download, AlertTriangle, FileText, CheckCircle2, RefreshCw, User, Calendar, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RequestStatusBadge } from "./RequestStatusBadge";
@@ -30,68 +30,95 @@ export function RequestDetailView({
 }: RequestDetailViewProps) {
   const [revisionOpen, setRevisionOpen] = useState(false);
 
-  const showRevisionButton =
-    isStore && request.status === "completed";
+  const showRevisionButton = isStore && request.status === "completed";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Revision requested banner */}
       {request.status === "revision-requested" && (
         <div className="flex items-start gap-3 bg-amber-400/10 border border-amber-400/30 rounded-xs px-4 py-3">
-          <AlertTriangle className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
-          <p className="text-sm text-amber-800">
-            Store has requested changes. Please review the latest comment and upload a revised file.
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            You've requested changes. Our designer will review and upload a revised file shortly.
           </p>
         </div>
       )}
 
-      {/* Request info */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Completed banner */}
+      {request.status === "completed" && (
+        <div className="flex items-start gap-3 bg-green-500/10 border border-green-500/20 rounded-xs px-4 py-3">
+          <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-green-800 dark:text-green-300">
+            Your design is complete. Download the files below or request changes if needed.
+          </p>
+        </div>
+      )}
+
+      {/* Meta card */}
+      <div className="bg-card border border-border rounded-xs divide-y divide-border">
+        {/* Badges row */}
+        <div className="px-4 py-3 flex flex-wrap gap-2">
           <RequestStatusBadge status={request.status} />
           <Badge variant="outline" className="rounded-xs text-xs capitalize">{request.requestType}</Badge>
-          <Badge variant="secondary" className="rounded-xs text-xs capitalize">{request.source}</Badge>
           {request.productLine && (
-            <Badge variant="outline" className="rounded-xs text-xs">{request.productLine}</Badge>
+            <Badge variant="secondary" className="rounded-xs text-xs">{request.productLine}</Badge>
+          )}
+          {request.revisionCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-orange-600 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-xs px-1.5 py-0.5">
+              <RefreshCw className="w-2.5 h-2.5" />
+              {request.revisionCount} revision{request.revisionCount > 1 ? "s" : ""}
+            </span>
           )}
         </div>
 
-        {request.storeName && (
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Store:</span> {request.storeName}
-          </p>
-        )}
+        {/* Submitted by */}
+        <div className="px-4 py-3 flex items-center gap-3 text-sm text-muted-foreground">
+          <User className="w-3.5 h-3.5 shrink-0" />
+          <span>Submitted by <span className="font-medium text-foreground">{request.submittedByName}</span></span>
+          <span className="mx-1">·</span>
+          <Calendar className="w-3.5 h-3.5 shrink-0" />
+          <span>{new Date(request.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+        </div>
 
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Description</p>
+        {/* Description */}
+        <div className="px-4 py-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Description</p>
           <p className="text-sm leading-relaxed">{request.description}</p>
         </div>
-
-        <p className="text-xs text-muted-foreground">
-          Submitted by <span className="font-medium">{request.submittedByName}</span> on{" "}
-          {new Date(request.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-          {request.revisionCount > 0 && (
-            <span className="ml-2 text-orange-600">· {request.revisionCount} revision{request.revisionCount > 1 ? "s" : ""} requested</span>
-          )}
-        </p>
       </div>
 
-      {/* Uploaded reference files */}
+      {/* Reference files */}
       {request.uploadedFiles.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Reference Files</p>
-          <ul className="space-y-1.5">
+        <div className="bg-card border border-border rounded-xs">
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Reference Files</p>
+          </div>
+          <ul className="divide-y divide-border">
             {request.uploadedFiles.map((f) => (
-              <li key={f._id} className="flex items-center gap-2 text-sm bg-muted/40 rounded-xs px-3 py-2">
-                <span className="flex-1 truncate">{f.fileName}</span>
-                <a
-                  href={f.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
+              <li key={f._id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-8 h-8 rounded-xs bg-muted flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="flex-1 text-sm truncate">{f.fileName}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Preview"
+                    className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <a
+                    href={f.url}
+                    download
+                    title="Download"
+                    className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </li>
             ))}
           </ul>
@@ -100,53 +127,61 @@ export function RequestDetailView({
 
       {/* Completed files */}
       {request.completedFiles.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Completed Files</p>
-          <ul className="space-y-1.5">
+        <div className="bg-card border border-green-200 dark:border-green-900 rounded-xs">
+          <div className="px-4 py-3 border-b border-green-200 dark:border-green-900 bg-green-50/60 dark:bg-green-950/20 flex items-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+            <p className="text-[11px] font-bold uppercase tracking-widest text-green-700 dark:text-green-400">Completed Files</p>
+          </div>
+          <ul className="divide-y divide-border">
             {request.completedFiles.map((f) => (
-              <li key={f._id} className="flex items-center gap-2 text-sm bg-green-50 border border-green-200 rounded-xs px-3 py-2">
-                <span className="flex-1 truncate">{f.fileName}</span>
-                {f.sent && (
-                  <Badge variant="outline" className="rounded-xs text-xs text-green-700 border-green-300 bg-green-50">
-                    Sent
-                  </Badge>
-                )}
-                <Badge variant="outline" className="rounded-xs text-xs">v{f.version}</Badge>
-                <a
-                  href={f.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
+              <li key={f._id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-8 h-8 rounded-xs bg-green-100 dark:bg-green-950/40 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="flex-1 text-sm truncate">{f.fileName}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge variant="outline" className="rounded-xs text-xs">v{f.version}</Badge>
+                  {f.sent && (
+                    <Badge variant="outline" className="rounded-xs text-xs text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/40">
+                      Sent
+                    </Badge>
+                  )}
+                  <a
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download
+                  </a>
+                </div>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Revision button for store */}
+      {/* Request changes button */}
       {showRevisionButton && (
         <Button
           variant="outline"
-          className="rounded-xs border-orange-300 text-orange-700 hover:bg-orange-50"
+          className="rounded-xs w-full border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/30 gap-2"
           onClick={() => setRevisionOpen(true)}
         >
+          <RefreshCw className="w-4 h-4" />
           Request Changes
         </Button>
       )}
 
       {/* Comment thread */}
-      <div className="border-t border-border pt-5">
-        <CommentThread
-          requestId={request._id}
-          comments={request.comments}
-          authorId={authorId}
-          authorName={authorName}
-          authorRole={authorRole}
-        />
-      </div>
+      <CommentThread
+        requestId={request._id}
+        comments={request.comments}
+        authorId={authorId}
+        authorName={authorName}
+        authorRole={authorRole}
+      />
 
       <RequestRevisionModal
         open={revisionOpen}
