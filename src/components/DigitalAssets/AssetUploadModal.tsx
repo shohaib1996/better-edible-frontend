@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -46,6 +46,7 @@ const schema = z.object({
   productLine: z.enum(["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"] as const).optional(),
   assetType: z.enum(["file", "text"] as const),
   textContent: z.string().optional(),
+  status: z.enum(["active", "archived"] as const).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -77,6 +78,21 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: editing?.title ?? "",
+        description: editing?.description ?? "",
+        category: editing?.category ?? "Other",
+        productLine: editing?.productLine ?? undefined,
+        assetType: editing?.assetType ?? "file",
+        textContent: editing?.textContent ?? "",
+        status: (editing?.status === "archived" ? "archived" : "active") as "active" | "archived",
+      });
+      setFile(null);
+    }
+  }, [open, editing]);
+
   const assetType = form.watch("assetType");
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -89,7 +105,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
   async function onSubmit(values: FormValues) {
     try {
       if (editing) {
-        const body: any = { ...values };
+        const body: any = { ...values, status: values.status ?? editing.status };
         await updateAsset({ id: editing._id, body }).unwrap();
         toast.success("Asset updated");
       } else {
@@ -124,13 +140,13 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg rounded-xs">
+      <DialogContent className="max-w-lg w-[calc(100vw-2rem)] rounded-xs max-h-[90vh] overflow-y-auto overflow-x-hidden scrollbar-hidden">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit Asset" : "Upload Asset"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 min-w-0">
             <FormField
               control={form.control}
               name="title"
@@ -152,9 +168,9 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xs">
+                        <SelectTrigger className="rounded-xs w-full">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                       </FormControl>
@@ -175,9 +191,9 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Product Line</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
                       <FormControl>
-                        <SelectTrigger className="rounded-xs">
+                        <SelectTrigger className="rounded-xs w-full">
                           <SelectValue placeholder="Any" />
                         </SelectTrigger>
                       </FormControl>
@@ -222,6 +238,13 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
             {assetType === "file" ? (
               <div>
                 <FormLabel>File</FormLabel>
+                {editing?.fileUrl && !file && (
+                  <div className="mt-1.5 mb-2 flex items-center gap-2 px-3 py-2 bg-muted rounded-xs border border-border">
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate flex-1">Current file: {editing.fileUrl.split("/").pop()}</span>
+                    <a href={editing.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline shrink-0">View</a>
+                  </div>
+                )}
                 <div
                   onDrop={handleDrop}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -247,7 +270,7 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                     <div className="space-y-1">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">
-                        Drag & drop or <span className="text-primary underline">browse</span>
+                        {editing?.fileUrl ? "Upload a replacement file, or leave empty to keep current" : <>Drag & drop or <span className="text-primary underline">browse</span></>}
                       </p>
                     </div>
                   )}
@@ -292,6 +315,36 @@ export function AssetUploadModal({ open, onClose, editing }: AssetUploadModalPro
                 </FormItem>
               )}
             />
+
+            {editing && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <div className="flex gap-2">
+                      {(["active", "archived"] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => field.onChange(s)}
+                          className={`flex-1 py-1.5 rounded-xs text-sm border transition-colors ${
+                            field.value === s
+                              ? s === "active"
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-destructive text-destructive-foreground border-destructive"
+                              : "border-border text-muted-foreground hover:border-foreground"
+                          }`}
+                        >
+                          {s === "active" ? "Active" : "Archived"}
+                        </button>
+                      ))}
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex gap-2 pt-1">
               <Button type="button" variant="outline" className="flex-1 rounded-xs" onClick={handleClose}>

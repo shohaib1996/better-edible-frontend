@@ -1,6 +1,6 @@
 export type AssetCategory = "Banner" | "ProductImage" | "Video" | "Email" | "Flyer" | "Social" | "Text" | "Other";
 export type AssetType = "file" | "text";
-export type AssetStatus = "active" | "archived";
+export type AssetStatus = "active" | "archived" | "all";
 export type ProductLine = "CannaCrispy" | "FiftyOneFifty" | "Bliss" | "YummyGummy";
 
 export interface IDigitalAsset {
