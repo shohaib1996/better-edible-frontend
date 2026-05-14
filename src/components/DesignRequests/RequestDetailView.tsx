@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Download, AlertTriangle, FileText, CheckCircle2, RefreshCw, User, Calendar, ExternalLink } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, AlertTriangle, FileText, CheckCircle2, RefreshCw, User, Calendar, ExternalLink, Upload, Loader2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RequestStatusBadge } from "./RequestStatusBadge";
 import { CommentThread } from "./CommentThread";
 import { RequestRevisionModal } from "./RequestRevisionModal";
 import { IDesignRequest, CommentAuthorRole } from "@/types/designRequests/designRequests";
+import { useUploadRequestFilesMutation } from "@/redux/api/DesignRequests/designRequestsApi";
+import { toast } from "sonner";
 
 interface RequestDetailViewProps {
   request: IDesignRequest;
@@ -29,8 +31,24 @@ export function RequestDetailView({
   authorRole,
 }: RequestDetailViewProps) {
   const [revisionOpen, setRevisionOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadFiles, { isLoading: isUploading }] = useUploadRequestFilesMutation();
 
   const showRevisionButton = isStore && request.status === "completed";
+
+  async function handleReferenceUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fd = new FormData();
+    Array.from(files).forEach((f) => fd.append("files", f));
+    try {
+      await uploadFiles({ id: request._id, files: fd }).unwrap();
+      toast.success("Reference files uploaded");
+      e.target.value = "";
+    } catch {
+      toast.error("Upload failed");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -88,40 +106,77 @@ export function RequestDetailView({
       </div>
 
       {/* Reference files */}
-      {request.uploadedFiles.length > 0 && (
+      {(request.uploadedFiles.length > 0 || isStore) && (
         <div className="bg-card border border-border rounded-xs">
-          <div className="px-4 py-3 border-b border-border">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Reference Files</p>
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Reference Files</p>
+              {request.uploadedFiles.length > 0 && (
+                <Badge variant="outline" className="rounded-xs text-xs h-5">{request.uploadedFiles.length}</Badge>
+              )}
+            </div>
+            {isStore && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xs h-7 text-xs gap-1.5 px-2.5"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Upload className="w-3 h-3" />
+                  }
+                  {isUploading ? "Uploading…" : "Add Files"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleReferenceUpload}
+                />
+              </>
+            )}
           </div>
-          <ul className="divide-y divide-border">
-            {request.uploadedFiles.map((f) => (
-              <li key={f._id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-xs bg-muted flex items-center justify-center shrink-0">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <span className="flex-1 text-sm truncate">{f.fileName}</span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <a
-                    href={f.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Preview"
-                    className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  <a
-                    href={f.url}
-                    download
-                    title="Download"
-                    className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {request.uploadedFiles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Paperclip className="w-7 h-7 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">No reference files yet</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">Upload files to help the designer understand your request.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {request.uploadedFiles.map((f) => (
+                <li key={f._id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-xs bg-muted flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <span className="flex-1 text-sm truncate">{f.fileName}</span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <a
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Preview"
+                      className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={f.url}
+                      download
+                      title="Download"
+                      className="w-7 h-7 flex items-center justify-center rounded-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

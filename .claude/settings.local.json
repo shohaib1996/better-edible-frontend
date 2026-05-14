@@ -1,11 +1,12 @@
 {
   "permissions": {
+    "allow": [
+      "WebFetch(domain:community.cloudinary.com)",
+      "Read(//d/Web Development/Upwork/better-edibles-backend/src/**)"
+    ],
     "additionalDirectories": [
       "D:\\Web Development\\Upwork\\better-edibles-print-bridge",
       "D:\\Web Development\\Upwork\\better-edibles-backend\\src\\controllers"
-    ],
-    "allow": [
-      "WebFetch(domain:community.cloudinary.com)"
     ]
   }
 }
