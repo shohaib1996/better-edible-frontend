@@ -171,7 +171,7 @@ export function DesignRequestForm({
                   defaultValue={field.value}
                 >
                   <FormControl>
-                    <SelectTrigger className="rounded-xs">
+                    <SelectTrigger className="rounded-xs border border-border bg-background">
                       <SelectValue placeholder="Select product line" />
                     </SelectTrigger>
                   </FormControl>
@@ -198,7 +198,7 @@ export function DesignRequestForm({
               <FormControl>
                 <Textarea
                   placeholder="Describe what you need — include dimensions, colors, text, references, etc."
-                  className="rounded-xs min-h-[120px]"
+                  className="rounded-xs min-h-[120px] border border-border bg-background"
                   {...field}
                 />
               </FormControl>
