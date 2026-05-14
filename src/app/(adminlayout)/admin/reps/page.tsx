@@ -16,7 +16,7 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock, FileText, LogIn, Pen, Trash2, Timer } from "lucide-react";
+import { Clock, FileText, LogIn, Pen, Trash2, Timer, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -93,6 +93,7 @@ export default function RepsPage() {
             { label: "PPS (All Stages)", value: "pps" },
             { label: "Production (Stages 1 & 2)", value: "production" },
             { label: "Packaging (Stages 3 & 4)", value: "packaging" },
+            { label: "Designer", value: "designer" },
           ],
         },
         {
@@ -124,6 +125,7 @@ export default function RepsPage() {
             { label: "PPS (All Stages)", value: "pps" },
             { label: "Production (Stages 1 & 2)", value: "production" },
             { label: "Packaging (Stages 3 & 4)", value: "packaging" },
+            { label: "Designer", value: "designer" },
           ],
         },
         { name: "territory", label: "Territory", type: "text" as const },
