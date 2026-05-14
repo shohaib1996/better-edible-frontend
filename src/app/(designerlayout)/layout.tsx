@@ -2,9 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import { LogOut, Palette } from "lucide-react";
+import { LogOut, Palette, User, ChevronDown } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function DesignerLayout({
   children,
@@ -62,28 +70,43 @@ export default function DesignerLayout({
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
-            {/* Avatar chip */}
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xs bg-muted border border-border">
-              <div className="w-6 h-6 rounded-xs bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold leading-none">
-                {initials}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 px-2.5 py-1 rounded-xs bg-muted border border-border hover:border-primary/40 transition-colors outline-none">
+                <div className="w-6 h-6 rounded-xs bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold leading-none shrink-0">
+                  {initials}
+                </div>
+                <span className="text-sm font-medium hidden sm:inline">
+                  {designerName}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:block" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 rounded-xs">
+              <div className="px-3 py-2 border-b border-border">
+                <p className="text-xs font-semibold truncate">{designerName}</p>
+                <p className="text-[10px] text-muted-foreground">Designer</p>
               </div>
-              <span className="text-sm font-medium hidden sm:inline">
-                {designerName}
-              </span>
-            </div>
-
-            <AnimatedThemeToggler className="flex items-center justify-center w-8 h-8 rounded-xs text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors [&>svg]:w-4 [&>svg]:h-4" />
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xs text-sm text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent hover:border-border transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs">Logout</span>
-            </button>
-          </div>
+              <Link href="/designer/profile">
+                <DropdownMenuItem className="gap-2 cursor-pointer rounded-xs">
+                  <User className="w-3.5 h-3.5" />
+                  Profile
+                </DropdownMenuItem>
+              </Link>
+              <div className="flex items-center justify-between px-2 py-1.5 text-sm gap-2">
+                <span className="text-muted-foreground">Theme</span>
+                <AnimatedThemeToggler className="flex items-center justify-center w-7 h-7 rounded-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors [&>svg]:w-3.5 [&>svg]:h-3.5" />
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="gap-2 cursor-pointer text-destructive focus:text-destructive rounded-xs"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
