@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { LogOut, Palette, User, ChevronDown } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LogOut, Palette, User, ChevronDown, ClipboardList, ImageIcon } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ export default function DesignerLayout({
 }) {
   const router = useRouter();
   const [designerName, setDesignerName] = useState<string | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -68,6 +70,30 @@ export default function DesignerLayout({
               <span className="font-semibold text-sm">Designer Portal</span>
             </div>
           </div>
+
+          {/* Nav links */}
+          <nav className="hidden sm:flex items-center gap-0.5 flex-1 justify-center">
+            {[
+              { href: "/designer", label: "Requests", icon: ClipboardList },
+              { href: "/designer/digital-assets", label: "Digital Assets", icon: ImageIcon },
+            ].map(({ href, label, icon: Icon }) => {
+              const active = href === "/designer" ? pathname === "/designer" : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xs text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
 
           {/* Right side */}
           <DropdownMenu>
