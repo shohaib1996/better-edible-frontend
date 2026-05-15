@@ -106,7 +106,7 @@ export function RequestDetailView({
       </div>
 
       {/* Reference files */}
-      {(request.uploadedFiles.length > 0 || isStore) && (
+      {(request.uploadedFiles.length > 0 || isStore || isAdmin) && (
         <div className="bg-card border border-border rounded-xs">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export function RequestDetailView({
                 <Badge variant="outline" className="rounded-xs text-xs h-5">{request.uploadedFiles.length}</Badge>
               )}
             </div>
-            {isStore && (
+            {(isStore || isAdmin) && (
               <>
                 <Button
                   size="sm"
