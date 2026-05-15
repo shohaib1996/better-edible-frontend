@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RequestStatusBadge } from "@/components/DesignRequests/RequestStatusBadge";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { useGetDesignRequestsQuery } from "@/redux/api/DesignRequests/designRequestsApi";
 import type {
   DesignRequestType,
@@ -59,97 +60,71 @@ const STAT_CONFIG: {
   icon: React.ElementType;
   dot: string;
   value: string;
-  text: string;
 }[] = [
-  {
-    status: "pending",
-    label: "Pending",
-    icon: Clock,
-    dot: "bg-amber-400",
-    value: "text-amber-600 dark:text-amber-400",
-    text: "text-muted-foreground",
-  },
-  {
-    status: "in-progress",
-    label: "In Progress",
-    icon: Pencil,
-    dot: "bg-blue-500",
-    value: "text-blue-600 dark:text-blue-400",
-    text: "text-muted-foreground",
-  },
-  {
-    status: "revision-requested",
-    label: "Revision",
-    icon: RotateCcw,
-    dot: "bg-orange-500",
-    value: "text-orange-600 dark:text-orange-400",
-    text: "text-muted-foreground",
-  },
-  {
-    status: "completed",
-    label: "Completed",
-    icon: CheckCircle2,
-    dot: "bg-green-500",
-    value: "text-green-600 dark:text-green-400",
-    text: "text-muted-foreground",
-  },
+  { status: "pending", label: "Pending", icon: Clock, dot: "bg-amber-400", value: "text-amber-600 dark:text-amber-400" },
+  { status: "in-progress", label: "In Progress", icon: Pencil, dot: "bg-blue-500", value: "text-blue-600 dark:text-blue-400" },
+  { status: "revision-requested", label: "Revision", icon: RotateCcw, dot: "bg-orange-500", value: "text-orange-600 dark:text-orange-400" },
+  { status: "completed", label: "Completed", icon: CheckCircle2, dot: "bg-green-500", value: "text-green-600 dark:text-green-400" },
 ];
 
-function useStatCounts() {
-  const { data: inhouse } = useGetDesignRequestsQuery({ queue: "inhouse", limit: 200 });
-  const { data: free } = useGetDesignRequestsQuery({ queue: "free", limit: 200 });
-  const { data: paid } = useGetDesignRequestsQuery({ queue: "paid", limit: 200 });
+export default function DesignerQueuePage() {
+  const [activeTab, setActiveTab] = useState<QueueTab>("inhouse");
+  const [statusFilter, setStatusFilter] = useState<DesignRequestStatus | "all">("all");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
-  const all: IDesignRequest[] = [
-    ...(inhouse?.requests ?? []),
-    ...(free?.requests ?? []),
-    ...(paid?.requests ?? []),
-  ];
+  const { data, isLoading } = useGetDesignRequestsQuery({
+    queue: activeTab,
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    page,
+    limit,
+  });
 
+  // Unpaginated counts for the active tab
+  const { data: countsData } = useGetDesignRequestsQuery({ queue: activeTab, limit: 1000 });
+
+  const requests = data?.requests ?? [];
+  const totalItems = data?.total ?? 0;
+  const totalPages = data?.pages ?? 1;
+
+  const allForCounts = countsData?.requests ?? [];
   const counts: Record<DesignRequestStatus, number> = {
     pending: 0,
     "in-progress": 0,
     "revision-requested": 0,
     completed: 0,
   };
-  for (const r of all) counts[r.status] = (counts[r.status] ?? 0) + 1;
-  return { counts, total: all.length };
-}
+  for (const r of allForCounts) counts[r.status] = (counts[r.status] ?? 0) + 1;
 
-export default function DesignerQueuePage() {
-  const [activeTab, setActiveTab] = useState<QueueTab>("inhouse");
-  const [statusFilter, setStatusFilter] = useState<DesignRequestStatus | "all">("all");
+  function handleTabChange(t: QueueTab) {
+    setActiveTab(t);
+    setPage(1);
+  }
 
-  const { data, isLoading } = useGetDesignRequestsQuery({
-    queue: activeTab,
-    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-  });
+  function handleStatusChange(v: DesignRequestStatus | "all") {
+    setStatusFilter(v);
+    setPage(1);
+  }
 
-  const { counts } = useStatCounts();
-  const requests = data?.requests ?? [];
+  function handleLimitChange(l: number) {
+    setLimit(l);
+    setPage(1);
+  }
 
   return (
     <div className="space-y-6">
       {/* Hero strip */}
       <div className="rounded-xs overflow-hidden relative px-6 py-5 bg-linear-to-r from-primary to-secondary dark:from-[#003049] dark:via-[#002838] dark:to-[#001d2e] dark:border dark:border-border">
-        <div
-          className="absolute inset-0 opacity-15 dark:opacity-0 pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #fff 0%, transparent 60%)" }}
-        />
-        <div
-          className="absolute inset-0 opacity-0 dark:opacity-100 pointer-events-none"
-          style={{ backgroundImage: "radial-gradient(circle at 10% 50%, rgba(247,127,0,0.15) 0%, transparent 60%)" }}
-        />
+        <div className="absolute inset-0 opacity-15 dark:opacity-0 pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle at 80% 50%, #fff 0%, transparent 60%)" }} />
+        <div className="absolute inset-0 opacity-0 dark:opacity-100 pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle at 10% 50%, rgba(247,127,0,0.15) 0%, transparent 60%)" }} />
         <div className="relative">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-white/80 dark:text-primary" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-white/80 dark:text-primary">
-              Design Studio
-            </span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/80 dark:text-primary">Design Studio</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white dark:text-foreground">
-            Designer Queue
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white dark:text-foreground">Designer Queue</h1>
           <p className="text-sm text-white/75 dark:text-muted-foreground mt-0.5">
             Manage and work through all incoming design requests.
           </p>
@@ -158,17 +133,12 @@ export default function DesignerQueuePage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {STAT_CONFIG.map(({ status, label, icon: Icon, dot, value, text }) => (
-          <div
-            key={status}
-            className="bg-card border border-border rounded-xs px-4 py-3 flex items-center gap-3"
-          >
+        {STAT_CONFIG.map(({ status, label, dot, value }) => (
+          <div key={status} className="bg-card border border-border rounded-xs px-4 py-3 flex items-center gap-3">
             <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", dot)} />
             <div>
-              <p className={cn("text-lg font-bold leading-none", value)}>
-                {counts[status]}
-              </p>
-              <p className={cn("text-xs mt-0.5", text)}>{label}</p>
+              <p className={cn("text-lg font-bold leading-none", value)}>{counts[status]}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
             </div>
           </div>
         ))}
@@ -180,7 +150,7 @@ export default function DesignerQueuePage() {
           {TABS.map(({ id, label }) => (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => handleTabChange(id)}
               className={cn(
                 "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
                 activeTab === id
@@ -192,20 +162,14 @@ export default function DesignerQueuePage() {
             </button>
           ))}
         </div>
-
         <div className="pb-2">
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as DesignRequestStatus | "all")}
-          >
+          <Select value={statusFilter} onValueChange={(v) => handleStatusChange(v as DesignRequestStatus | "all")}>
             <SelectTrigger className="rounded-xs w-44 h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPTIONS.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
+                <SelectItem key={value} value={value}>{label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -226,63 +190,56 @@ export default function DesignerQueuePage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {requests.map((req) => (
-            <Link
-              key={req._id}
-              href={`/designer/requests/${req._id}`}
-              className="group block bg-card border border-border rounded-xs hover:border-primary/40 hover:shadow-md transition-all duration-200"
-            >
-              <div className="px-4 py-4 flex items-center gap-4">
-                {/* status bar */}
-                <div
-                  className={cn(
-                    "w-1 self-stretch rounded-full shrink-0",
-                    STATUS_BAR_COLOR[req.status]
-                  )}
-                />
-
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <p className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">
-                    {req.description}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <RequestStatusBadge status={req.status} />
-                    {req.storeName && (
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {req.storeName}
-                      </Badge>
-                    )}
-                    {req.productLine && (
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {req.productLine}
-                      </Badge>
-                    )}
-                    {req.revisionCount > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="rounded-xs text-xs text-orange-700 border-orange-300 bg-orange-50 dark:text-orange-400 dark:border-orange-800 dark:bg-orange-950/30"
-                      >
-                        {req.revisionCount} revision{req.revisionCount > 1 ? "s" : ""}
-                      </Badge>
-                    )}
+        <>
+          <div className="space-y-2">
+            {requests.map((req) => (
+              <Link
+                key={req._id}
+                href={`/designer/requests/${req._id}`}
+                className="group block bg-card border border-border rounded-xs hover:border-primary/40 hover:shadow-md transition-all duration-200"
+              >
+                <div className="px-4 py-4 flex items-center gap-4">
+                  <div className={cn("w-1 self-stretch rounded-full shrink-0", STATUS_BAR_COLOR[req.status])} />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <p className="text-sm font-semibold line-clamp-1 group-hover:text-primary transition-colors">
+                      {req.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <RequestStatusBadge status={req.status} />
+                      {req.storeName && (
+                        <Badge variant="outline" className="rounded-xs text-xs">{req.storeName}</Badge>
+                      )}
+                      {req.productLine && (
+                        <Badge variant="outline" className="rounded-xs text-xs">{req.productLine}</Badge>
+                      )}
+                      {req.revisionCount > 0 && (
+                        <Badge variant="outline" className="rounded-xs text-xs text-orange-700 border-orange-300 bg-orange-50 dark:text-orange-400 dark:border-orange-800 dark:bg-orange-950/30">
+                          {req.revisionCount} revision{req.revisionCount > 1 ? "s" : ""}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(req.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                 </div>
-
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(req.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+          <GlobalPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onLimitChange={handleLimitChange}
+            limitOptions={[10, 20, 50]}
+          />
+        </>
       )}
     </div>
   );
