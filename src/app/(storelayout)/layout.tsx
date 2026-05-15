@@ -8,12 +8,13 @@ import {
   LayoutGrid,
   ClipboardList,
   LogOut,
-  User,
   KeyRound,
   ChevronDown,
   Sun,
   Moon,
   Monitor,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
@@ -27,8 +28,18 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getStoreUser, clearStoreUser } from "@/lib/storeUser";
+import { useChangePasswordMutation } from "@/redux/api/StoreAuth/storeAuthApi";
+import { toast } from "sonner";
 
 const NAV_ITEMS = [
   { href: "/store/assets", label: "Assets", icon: LayoutGrid },
@@ -45,6 +56,17 @@ export default function StoreLayout({
   const { setTheme, theme } = useTheme();
   const [storeName, setStoreName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [contactId, setContactId] = useState<string | null>(null);
+
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [changePassword, { isLoading: isChanging }] = useChangePasswordMutation();
 
   useEffect(() => {
     if (pathname === "/store/login") return;
@@ -55,7 +77,37 @@ export default function StoreLayout({
     }
     setStoreName(user.storeName);
     setEmail((user as any).email ?? null);
+    setContactId((user as any).contactId ?? null);
   }, [router, pathname]);
+
+  function resetPwModal() {
+    setCurrentPw("");
+    setNewPw("");
+    setConfirmPw("");
+    setShowCurrent(false);
+    setShowNew(false);
+    setShowConfirm(false);
+    setPwOpen(false);
+  }
+
+  async function handleChangePassword() {
+    if (!contactId) return;
+    if (newPw !== confirmPw) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (newPw.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+    try {
+      await changePassword({ contactId, currentPassword: currentPw, newPassword: newPw }).unwrap();
+      toast.success("Password updated successfully");
+      resetPwModal();
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to update password");
+    }
+  }
 
   function handleLogout() {
     clearStoreUser();
@@ -154,13 +206,11 @@ export default function StoreLayout({
               <DropdownMenuSeparator />
 
               <DropdownMenuItem
-                asChild
                 className="rounded-xs cursor-pointer gap-2"
+                onClick={() => setPwOpen(true)}
               >
-                <Link href="/store/change-password">
-                  <KeyRound className="w-4 h-4" />
-                  Change Password
-                </Link>
+                <KeyRound className="w-4 h-4" />
+                Change Password
               </DropdownMenuItem>
 
               {/* Theme submenu */}
@@ -232,6 +282,108 @@ export default function StoreLayout({
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8">
         {children}
       </main>
+
+      {/* Change Password Modal */}
+      <Dialog open={pwOpen} onOpenChange={(o) => { if (!o) resetPwModal(); }}>
+        <DialogContent className="max-w-sm w-[calc(100vw-2rem)] rounded-xs bg-card text-card-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4" />
+              Change Password
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 pt-1">
+            {/* Current password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                Current Password
+              </label>
+              <div className="relative">
+                <Input
+                  type={showCurrent ? "text" : "password"}
+                  placeholder="Enter current password"
+                  value={currentPw}
+                  onChange={(e) => setCurrentPw(e.target.value)}
+                  className="rounded-xs pr-9 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* New password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                New Password
+              </label>
+              <div className="relative">
+                <Input
+                  type={showNew ? "text" : "password"}
+                  placeholder="At least 6 characters"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  className="rounded-xs pr-9 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm new password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <Input
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="Repeat new password"
+                  value={confirmPw}
+                  onChange={(e) => setConfirmPw(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleChangePassword(); }}
+                  className="rounded-xs pr-9 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                variant="outline"
+                className="rounded-xs flex-1"
+                onClick={resetPwModal}
+                disabled={isChanging}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="rounded-xs flex-1"
+                onClick={handleChangePassword}
+                disabled={isChanging || !currentPw || !newPw || !confirmPw}
+              >
+                {isChanging ? "Saving…" : "Update Password"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
