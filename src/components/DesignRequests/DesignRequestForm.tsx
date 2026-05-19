@@ -37,11 +37,24 @@ import { useUploadRequestFilesMutation } from "@/redux/api/DesignRequests/design
 import { toast } from "sonner";
 
 const PRODUCT_LINES = ["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"];
+const FORMAT_OPTIONS = [
+  "Social Media Post",
+  "Banner",
+  "Flyer",
+  "Label",
+  "Menu",
+  "Poster",
+  "Business Card",
+  "Logo",
+  "Email Template",
+  "Other",
+];
 
 // productLine is only required when requestType = "free" (free requests are company products only)
 const schema = z.object({
   requestType: z.enum(["free", "paid", "inhouse"] as const),
   productLine: z.string().optional(),
+  format: z.string().min(1, "Please select a format"),
   description: z
     .string()
     .min(10, "Please describe what you need (at least 10 characters)"),
@@ -87,6 +100,7 @@ export function DesignRequestForm({
     defaultValues: {
       requestType: forcedType ?? "free",
       productLine: undefined,
+      format: "",
       description: "",
     },
   });
@@ -107,6 +121,7 @@ export function DesignRequestForm({
         submittedBy,
         submittedByName,
         productLine: values.productLine,
+        format: values.format,
         description: values.description,
       }).unwrap();
 
@@ -188,6 +203,31 @@ export function DesignRequestForm({
             )}
           />
         )}
+
+        <FormField
+          control={form.control}
+          name="format"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Format</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger className="rounded-xs border border-border bg-background">
+                    <SelectValue placeholder="Select format (e.g. Social Media Post, Banner…)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {FORMAT_OPTIONS.map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

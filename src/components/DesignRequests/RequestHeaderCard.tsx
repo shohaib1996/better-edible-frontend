@@ -82,6 +82,11 @@ export function RequestHeaderCard({ request }: RequestHeaderCardProps) {
             >
               {request.requestType}
             </Badge>
+            {request.format && (
+              <Badge variant="outline" className="rounded-xs text-xs bg-white/10 text-white border-white/20">
+                {request.format}
+              </Badge>
+            )}
             {request.productLine && (
               <Badge variant="outline" className="rounded-xs text-xs bg-white/10 text-white border-white/20">
                 {request.productLine}

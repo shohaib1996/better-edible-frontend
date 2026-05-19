@@ -33,6 +33,12 @@ export const storeAuthApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+    adminResetStorePassword: builder.mutation<{ success: boolean; message: string }, string>({
+      query: (contactId) => ({
+        url: `/store-auth/${contactId}/reset-password`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -41,4 +47,5 @@ export const {
   useSendMagicLinkMutation,
   useVerifyMagicLinkMutation,
   useChangePasswordMutation,
+  useAdminResetStorePasswordMutation,
 } = storeAuthApi;

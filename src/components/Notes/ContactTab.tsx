@@ -6,14 +6,25 @@ import {
   useUpdateContactMutation,
   useDeleteContactMutation,
 } from "@/redux/api/Contacts/contactsApi";
+import { useAdminResetStorePasswordMutation } from "@/redux/api/StoreAuth/storeAuthApi";
 import { toast } from "sonner";
-import { Loader2, Pencil, Trash, Plus, RefreshCw } from "lucide-react";
+import { Loader2, Pencil, Trash, Plus, RefreshCw, KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ContactItem = {
   _id?: string;
@@ -47,8 +58,11 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
   const [createContact] = useCreateContactMutation();
   const [updateContact] = useUpdateContactMutation();
   const [deleteContact] = useDeleteContactMutation();
+  const [adminResetStorePassword] = useAdminResetStorePasswordMutation();
 
   const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [resetTarget, setResetTarget] = useState<{ id: string; name: string } | null>(null);
+  const [resettingId, setResettingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isActive) {
@@ -186,7 +200,21 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
     }
   };
 
+  async function confirmResetPassword() {
+    if (!resetTarget) return;
+    setResettingId(resetTarget.id);
+    setResetTarget(null);
+    try {
+      await adminResetStorePassword(resetTarget.id).unwrap();
+      toast.success(`Password reset. ${resetTarget.name} can now log in with their store's ZIP code.`);
+    } catch {
+      toast.error("Failed to reset password");
+    }
+    setResettingId(null);
+  }
+
   return (
+    <>
     <div className="space-y-4 max-h-[60vh] overflow-y-auto scrollbar-hidden p-0.5 flex-1 min-h-0">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-foreground">
@@ -316,7 +344,7 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                 </div>
 
                 <div className="flex lg:flex-col items-center lg:items-end justify-end gap-2 lg:min-w-[100px]">
-                  {c.saving || c.deleting ? (
+                  {c.saving || c.deleting || resettingId === c._id ? (
                     <Loader2 className="animate-spin h-5 w-5 text-primary" />
                   ) : (
                     <>
@@ -349,6 +377,19 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
                         </div>
                       )}
 
+                      {c._id && !c.isNew && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setResetTarget({ id: c._id!, name: c.name })}
+                          title="Reset password to store ZIP"
+                          className="rounded-xs border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/30 cursor-pointer"
+                        >
+                          <KeyRound className="h-4 w-4 mr-2" />
+                          Reset PW
+                        </Button>
+                      )}
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -369,5 +410,26 @@ export const ContactTab = ({ storeId, isActive }: ContactTabProps) => {
       )}
       <div className="pt-4" />
     </div>
+
+    <AlertDialog open={!!resetTarget} onOpenChange={(o) => { if (!o) setResetTarget(null); }}>
+      <AlertDialogContent className="rounded-xs bg-card text-card-foreground">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Reset password for {resetTarget?.name}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will clear their current password. They will need to log in using their store&apos;s ZIP code as the new password.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="rounded-xs bg-amber-600 text-white hover:bg-amber-700"
+            onClick={confirmResetPassword}
+          >
+            Reset Password
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

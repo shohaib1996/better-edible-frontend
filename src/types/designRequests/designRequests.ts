@@ -44,6 +44,7 @@ export interface IDesignRequest {
   submittedBy: string;
   submittedByName: string;
   productLine?: string;
+  format?: string;
   description: string;
   status: DesignRequestStatus;
   uploadedFiles: IUploadedFile[];
@@ -84,6 +85,7 @@ export interface ISubmitDesignRequestBody {
   submittedBy: string;
   submittedByName: string;
   productLine?: string;
+  format: string;
   description: string;
 }
 

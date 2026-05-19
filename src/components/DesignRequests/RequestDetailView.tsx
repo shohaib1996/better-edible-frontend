@@ -78,6 +78,9 @@ export function RequestDetailView({
         <div className="px-4 py-3 flex flex-wrap gap-2">
           <RequestStatusBadge status={request.status} />
           <Badge variant="outline" className="rounded-xs text-xs capitalize">{request.requestType}</Badge>
+          {request.format && (
+            <Badge variant="outline" className="rounded-xs text-xs">{request.format}</Badge>
+          )}
           {request.productLine && (
             <Badge variant="secondary" className="rounded-xs text-xs">{request.productLine}</Badge>
           )}

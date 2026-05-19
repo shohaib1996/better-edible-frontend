@@ -1,4 +1,4 @@
-import { Store, User, Calendar, Package } from "lucide-react";
+import { Store, User, Calendar, Package, Layout } from "lucide-react";
 import { IDesignRequest } from "@/types/designRequests/designRequests";
 
 interface RequestBriefPanelProps {
@@ -22,6 +22,15 @@ export function RequestBriefPanel({ request }: RequestBriefPanelProps) {
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Store</p>
               <p className="text-sm font-medium">{request.storeName}</p>
+            </div>
+          </div>
+        )}
+        {request.format && (
+          <div className="px-4 py-3 flex items-center gap-2.5">
+            <Layout className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Format</p>
+              <p className="text-sm font-medium">{request.format}</p>
             </div>
           </div>
         )}
