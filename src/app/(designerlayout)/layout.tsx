@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogOut, Palette, User, ChevronDown, ClipboardList, ImageIcon } from "lucide-react";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { ImpersonationBanner } from "@/components/ImpersonationBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,7 @@ export default function DesignerLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <ImpersonationBanner />
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           {/* Brand */}
