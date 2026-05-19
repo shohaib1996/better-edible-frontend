@@ -66,9 +66,15 @@ export default function RepsPage() {
 
     localStorage.setItem("better-user", JSON.stringify(repSession));
 
-    // Open in a new tab
+    const dest =
+      rep.repType === "pps" ? "/pps"
+      : rep.repType === "production" ? "/pps/stage/1"
+      : rep.repType === "packaging" ? "/pps/stage/3"
+      : rep.repType === "designer" ? "/designer"
+      : "/rep/today-contact";
+
     setTimeout(() => {
-      window.open("/rep/today-contact", "_blank");
+      window.open(dest, "_blank");
     }, 30);
   };
 
