@@ -85,6 +85,14 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
+
+    deleteCompletedFile: builder.mutation<{ success: boolean; completedFiles: IDesignRequest["completedFiles"] }, { id: string; fileId: string }>({
+      query: ({ id, fileId }) => ({
+        url: `/design-requests/${id}/completed-files/${fileId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.designRequests],
+    }),
   }),
 });
 
@@ -99,4 +107,5 @@ export const {
   useSendFilesToStoreMutation,
   usePostCommentMutation,
   useRequestRevisionMutation,
+  useDeleteCompletedFileMutation,
 } = designRequestsApi;

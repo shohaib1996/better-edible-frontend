@@ -1,12 +1,23 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, Download, Send, Loader2, FileText } from "lucide-react";
+import { Upload, Download, Send, Loader2, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useUploadCompletedFilesMutation,
   useSendFilesToStoreMutation,
+  useDeleteCompletedFileMutation,
 } from "@/redux/api/DesignRequests/designRequestsApi";
 import { ICompletedFile } from "@/types/designRequests/designRequests";
 import { toast } from "sonner";
@@ -30,6 +41,9 @@ export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelPro
 
   const [uploadCompleted, { isLoading: isUploading }] = useUploadCompletedFilesMutation();
   const [sendFiles, { isLoading: isSending }] = useSendFilesToStoreMutation();
+  const [deleteFile] = useDeleteCompletedFileMutation();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const versionGroups = groupByVersion(files);
   const versions = Object.keys(versionGroups).map(Number).sort((a, b) => b - a);
@@ -60,6 +74,20 @@ export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelPro
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeletingId(deleteTarget.id);
+    setDeleteTarget(null);
+    try {
+      await deleteFile({ id: requestId, fileId: deleteTarget.id }).unwrap();
+      toast.success("File deleted");
+      setSelectedFileIds((prev) => prev.filter((x) => x !== deleteTarget.id));
+    } catch {
+      toast.error("Failed to delete file");
+    }
+    setDeletingId(null);
+  }
+
   function toggleFile(fileId: string) {
     setSelectedFileIds((prev) =>
       prev.includes(fileId) ? prev.filter((x) => x !== fileId) : [...prev, fileId],
@@ -67,6 +95,7 @@ export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelPro
   }
 
   return (
+    <>
     <div className="bg-card border border-border rounded-xs overflow-hidden">
       <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -159,15 +188,28 @@ export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelPro
                           Sent
                         </Badge>
                       ) : (
-                        <a
-                          href={f.url}
-                          download
-                          className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                          title="Download"
-                        >
-                          <Download className="w-3 h-3" />
-                        </a>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                          <a
+                            href={f.url}
+                            download
+                            className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download"
+                          >
+                            <Download className="w-3 h-3" />
+                          </a>
+                          <button
+                            className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: f._id, name: f.fileName }); }}
+                            disabled={deletingId === f._id}
+                            title="Delete"
+                          >
+                            {deletingId === f._id
+                              ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : <Trash2 className="w-3 h-3" />
+                            }
+                          </button>
+                        </div>
                       )}
                     </li>
                   ))}
@@ -187,5 +229,26 @@ export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelPro
         )}
       </div>
     </div>
+
+    <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialogContent className="rounded-xs bg-card text-card-foreground">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="font-medium text-foreground">&ldquo;{deleteTarget?.name}&rdquo;</span> will be permanently removed. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="rounded-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={confirmDelete}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
