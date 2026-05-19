@@ -20,7 +20,6 @@ import { useGetDesignRequestsQuery } from "@/redux/api/DesignRequests/designRequ
 import type {
   DesignRequestType,
   DesignRequestStatus,
-  IDesignRequest,
 } from "@/types/designRequests/designRequests";
 import {
   Select,
@@ -31,12 +30,13 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type QueueTab = DesignRequestType;
+type QueueTab = DesignRequestType | "completed";
 
 const TABS: { id: QueueTab; label: string }[] = [
   { id: "inhouse", label: "In-House" },
   { id: "free", label: "Free" },
   { id: "paid", label: "Paid" },
+  { id: "completed", label: "Completed" },
 ];
 
 const STATUS_OPTIONS: { value: DesignRequestStatus | "all"; label: string }[] = [
@@ -73,15 +73,37 @@ export default function DesignerQueuePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
-  const { data, isLoading } = useGetDesignRequestsQuery({
-    queue: activeTab,
-    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-    page,
-    limit,
-  });
+  const isCompletedTab = activeTab === "completed";
 
-  // Unpaginated counts for the active tab
-  const { data: countsData } = useGetDesignRequestsQuery({ queue: activeTab, limit: 1000 });
+  const { data, isLoading } = useGetDesignRequestsQuery(
+    isCompletedTab
+      ? { status: "completed", page, limit }
+      : {
+          queue: activeTab as DesignRequestType,
+          ...(statusFilter !== "all"
+            ? { status: statusFilter }
+            : { excludeStatus: "completed" as DesignRequestStatus }),
+          page,
+          limit,
+        }
+  );
+
+  // Unpaginated counts for the active tab (status stats row) — not needed for completed tab
+  const { data: countsData } = useGetDesignRequestsQuery(
+    { queue: activeTab as DesignRequestType, limit: 1000 },
+    { skip: isCompletedTab }
+  );
+
+  // Total counts per tab for the tab badges (exclude completed from queue tabs)
+  const { data: inhouseTotal } = useGetDesignRequestsQuery({ queue: "inhouse", excludeStatus: "completed", limit: 1 });
+  const { data: freeTotal } = useGetDesignRequestsQuery({ queue: "free", excludeStatus: "completed", limit: 1 });
+  const { data: paidTotal } = useGetDesignRequestsQuery({ queue: "paid", excludeStatus: "completed", limit: 1 });
+  const tabCounts: Record<QueueTab, number> = {
+    inhouse: inhouseTotal?.total ?? 0,
+    free: freeTotal?.total ?? 0,
+    paid: paidTotal?.total ?? 0,
+    completed: 0,
+  };
 
   const requests = data?.requests ?? [];
   const totalItems = data?.total ?? 0;
@@ -152,28 +174,40 @@ export default function DesignerQueuePage() {
               key={id}
               onClick={() => handleTabChange(id)}
               className={cn(
-                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+                "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-2",
                 activeTab === id
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
               {label}
+              {id !== "completed" && tabCounts[id] > 0 && (
+                <span className={cn(
+                  "inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold",
+                  activeTab === id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {tabCounts[id]}
+                </span>
+              )}
             </button>
           ))}
         </div>
-        <div className="pb-2">
-          <Select value={statusFilter} onValueChange={(v) => handleStatusChange(v as DesignRequestStatus | "all")}>
-            <SelectTrigger className="rounded-xs w-44 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!isCompletedTab && (
+          <div className="pb-2">
+            <Select value={statusFilter} onValueChange={(v) => handleStatusChange(v as DesignRequestStatus | "all")}>
+              <SelectTrigger className="rounded-xs w-44 h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map(({ value, label }) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Request list */}

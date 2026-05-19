@@ -71,6 +71,7 @@ export interface IDesignRequestResponse {
 export interface IGetDesignRequestsParams {
   queue?: DesignRequestType;
   status?: DesignRequestStatus;
+  excludeStatus?: DesignRequestStatus;
   storeId?: string;
   page?: number;
   limit?: number;
