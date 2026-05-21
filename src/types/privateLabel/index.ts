@@ -12,3 +12,6 @@ export * from "./clientOrder";
 
 // all pps types
 export * from "./pps";
+
+// Gummy builder / private label store types
+export * from "./gummyBuilder";
