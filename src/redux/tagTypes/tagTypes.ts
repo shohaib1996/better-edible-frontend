@@ -28,4 +28,7 @@ export const tagTypes = {
   storeAuth: "storeAuth",
   digitalAssets: "digitalAssets",
   designRequests: "designRequests",
+  storeLabels: "storeLabels",
+  storePools: "storePools",
+  storeOrders: "storeOrders",
 };
