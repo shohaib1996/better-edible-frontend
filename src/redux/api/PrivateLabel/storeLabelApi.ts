@@ -1,0 +1,69 @@
+import { baseApi } from "../baseApi";
+import { tagTypes } from "../../tagTypes/tagTypes";
+import type {
+  IStoreDraftLabel,
+  ICreateDraftLabelPayload,
+  IUpdateDraftLabelPayload,
+  ISubmitLinePayload,
+} from "@/types/privateLabel/gummyBuilder";
+
+export const storeLabelApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    // GET /api/store/labels?storeId=
+    getMyLabels: builder.query<{ labels: IStoreDraftLabel[] }, string>({
+      query: (storeId) => ({
+        url: "/store/labels",
+        params: { storeId },
+      }),
+      providesTags: [tagTypes.storeLabels],
+    }),
+
+    // POST /api/store/labels
+    createDraftLabel: builder.mutation<{ message: string; label: IStoreDraftLabel }, ICreateDraftLabelPayload>({
+      query: (body) => ({
+        url: "/store/labels",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.storeLabels],
+    }),
+
+    // PUT /api/store/labels/:id
+    updateDraftLabel: builder.mutation<{ message: string; label: IStoreDraftLabel }, IUpdateDraftLabelPayload>({
+      query: ({ id, ...body }) => ({
+        url: `/store/labels/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: [tagTypes.storeLabels],
+    }),
+
+    // DELETE /api/store/labels/:id
+    deleteDraftLabel: builder.mutation<{ message: string }, { id: string; storeId: string }>({
+      query: ({ id, storeId }) => ({
+        url: `/store/labels/${id}`,
+        method: "DELETE",
+        params: { storeId },
+      }),
+      invalidatesTags: [tagTypes.storeLabels],
+    }),
+
+    // POST /api/store/labels/submit
+    submitLine: builder.mutation<{ message: string; count: number }, ISubmitLinePayload>({
+      query: (body) => ({
+        url: "/store/labels/submit",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.storeLabels, tagTypes.storePools],
+    }),
+  }),
+});
+
+export const {
+  useGetMyLabelsQuery,
+  useCreateDraftLabelMutation,
+  useUpdateDraftLabelMutation,
+  useDeleteDraftLabelMutation,
+  useSubmitLineMutation,
+} = storeLabelApi;
