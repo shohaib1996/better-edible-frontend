@@ -9,6 +9,7 @@ interface Props {
   orders: IStoreOrder[];
   isLoadingLabels: boolean;
   isLoadingOrders: boolean;
+  view: "labels" | "orders";
 }
 
 const LABEL_STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -43,77 +44,12 @@ function SkeletonCard() {
   return <div className="rounded-xs border border-border bg-card p-4 h-24 animate-pulse" />;
 }
 
-export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrders }: Props) {
+export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrders, view }: Props) {
   const submittedLabels = labels.filter((l) => l.labelStatus === "submitted");
 
-  return (
-    <div className="space-y-8">
-      {/* Submitted Labels */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">My Labels</h2>
-          {!isLoadingLabels && (
-            <span className="text-xs text-muted-foreground ml-auto">
-              {submittedLabels.length} submitted
-            </span>
-          )}
-        </div>
-
-        {isLoadingLabels ? (
-          <div className="space-y-3">
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : submittedLabels.length === 0 ? (
-          <div className="rounded-xs border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
-            No labels submitted yet.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {submittedLabels.map((label) => {
-              const status = LABEL_STATUS_MAP[label.labelStatus] ?? LABEL_STATUS_MAP.submitted;
-              return (
-                <div
-                  key={label._id}
-                  className="rounded-xs border border-border bg-card p-4 flex items-start justify-between gap-4"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="font-medium text-sm truncate">{label.flavorName}</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.oilType === "rosin" ? "Rosin" : "BioMax"}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.size === "xl" ? "XL" : "Standard"}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
-                      </Badge>
-                      {label.cannabinoids.map((c) => (
-                        <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">
-                          {c.name} {c.mg}mg
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 text-xs font-medium px-2 py-1 rounded-xs ${status.color}`}
-                  >
-                    {status.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Orders */}
-      <section className="space-y-3">
+  if (view === "orders") {
+    return (
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-primary" />
           <h2 className="font-semibold text-sm">My Orders</h2>
@@ -177,6 +113,74 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
                     </span>
                     <span className="font-bold">${(order.totalCost ?? 0).toFixed(2)}</span>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Submitted Labels */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="w-4 h-4 text-primary" />
+          <h2 className="font-semibold text-sm">My Labels</h2>
+          {!isLoadingLabels && (
+            <span className="text-xs text-muted-foreground ml-auto">
+              {submittedLabels.length} submitted
+            </span>
+          )}
+        </div>
+
+        {isLoadingLabels ? (
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : submittedLabels.length === 0 ? (
+          <div className="rounded-xs border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
+            No labels submitted yet.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {submittedLabels.map((label) => {
+              const status = LABEL_STATUS_MAP[label.labelStatus] ?? LABEL_STATUS_MAP.submitted;
+              return (
+                <div
+                  key={label._id}
+                  className="rounded-xs border border-border bg-card p-4 flex items-start justify-between gap-4"
+                >
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="font-medium text-sm truncate">{label.flavorName}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="rounded-xs text-xs">
+                        {label.oilType === "rosin" ? "Rosin" : "BioMax"}
+                      </Badge>
+                      <Badge variant="outline" className="rounded-xs text-xs">
+                        {label.size === "xl" ? "XL" : "Standard"}
+                      </Badge>
+                      <Badge variant="outline" className="rounded-xs text-xs">
+                        {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
+                      </Badge>
+                      {label.cannabinoids.map((c) => (
+                        <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">
+                          {c.name} {c.mg}mg
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs font-medium px-2 py-1 rounded-xs ${status.color}`}
+                  >
+                    {status.label}
+                  </span>
                 </div>
               );
             })}

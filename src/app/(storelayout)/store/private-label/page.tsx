@@ -10,7 +10,7 @@ import { SavedGummiesList } from "@/components/PrivateLabel/SavedGummiesList";
 import { SubmitSummary } from "@/components/PrivateLabel/SubmitSummary";
 import { ActiveDashboard } from "@/components/PrivateLabel/ActiveDashboard";
 
-type Tab = "build" | "my-line" | "submit" | "dashboard";
+type Tab = "build" | "my-line" | "submit" | "labels" | "orders";
 
 export default function PrivateLabelPage() {
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -44,7 +44,8 @@ export default function PrivateLabelPage() {
     { id: "build", label: "Builder" },
     { id: "my-line", label: "My Line", count: draftLabels.length },
     { id: "submit", label: "Submit", hidden: draftLabels.length === 0 },
-    { id: "dashboard", label: "Dashboard", hidden: submittedLabels.length === 0 && orders.length === 0 },
+    { id: "labels", label: "My Labels", count: submittedLabels.length, hidden: submittedLabels.length === 0 },
+    { id: "orders", label: "My Orders", count: orders.length, hidden: orders.length === 0 },
   ];
 
   function handleSaved() {
@@ -54,7 +55,7 @@ export default function PrivateLabelPage() {
 
   function handleSubmitted() {
     refetchLabels();
-    setActive("dashboard");
+    setActive("labels");
   }
 
   if (!storeId) {
@@ -154,12 +155,23 @@ export default function PrivateLabelPage() {
           </div>
         )}
 
-        {active === "dashboard" && (
+        {active === "labels" && (
           <ActiveDashboard
             labels={allLabels}
             orders={orders}
             isLoadingLabels={isLoadingLabels}
             isLoadingOrders={isLoadingOrders}
+            view="labels"
+          />
+        )}
+
+        {active === "orders" && (
+          <ActiveDashboard
+            labels={allLabels}
+            orders={orders}
+            isLoadingLabels={isLoadingLabels}
+            isLoadingOrders={isLoadingOrders}
+            view="orders"
           />
         )}
       </div>
