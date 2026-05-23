@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   LayoutGrid,
   ClipboardList,
+  FlaskConical,
   LogOut,
   KeyRound,
   ChevronDown,
@@ -44,6 +45,7 @@ import { toast } from "sonner";
 const NAV_ITEMS = [
   { href: "/store/assets", label: "Assets", icon: LayoutGrid },
   { href: "/store/design-requests", label: "My Requests", icon: ClipboardList },
+  { href: "/store/private-label", label: "Private Label", icon: FlaskConical },
 ];
 
 export default function StoreLayout({
