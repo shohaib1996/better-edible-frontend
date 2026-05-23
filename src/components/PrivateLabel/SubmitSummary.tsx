@@ -42,19 +42,25 @@ export function SubmitSummary({ storeId, labels, onSubmitted }: Props) {
   const [logoUrl, setLogoUrl] = useState("");
   const [submitLine, { isLoading }] = useSubmitLineMutation();
 
-  const grandTotal = labels.reduce((sum, l) => sum + l.totalCost, 0);
-  const testingFeeTotal = labels.reduce((sum, l) => sum + (l.testingFeeWaived ? 0 : l.testingFee), 0);
+  const grandTotal = labels.reduce((sum, l) => sum + (l.totalCost ?? 0), 0);
+  const testingFeeTotal = labels.reduce((sum, l) => sum + (l.testingFeeWaived ? 0 : (l.testingFee ?? 0)), 0);
 
   async function handleSubmit() {
     if (labels.length === 0) {
       toast.error("Add at least one gummy before submitting");
       return;
     }
+    // auto-derive production mode per label
+    const productionChoices = labels.map((l) => ({
+      labelId: l._id,
+      productionMode: l.isRatio && !l.testingFeeWaived ? "custom_run" : "standard",
+    }));
     try {
       const res = await submitLine({
         storeId,
         logoStatus,
         logoUrl: logoStatus === "uploaded" ? logoUrl : undefined,
+        productionChoices,
       }).unwrap();
       toast.success(res.message ?? "Line submitted successfully");
       onSubmitted();
@@ -115,10 +121,10 @@ export function SubmitSummary({ storeId, labels, onSubmitted }: Props) {
                   {label.unitsOrdered.toLocaleString()}
                 </td>
                 <td className="px-4 py-3 text-right text-muted-foreground">
-                  ${label.unitCost.toFixed(4)}
+                  ${(label.unitCost ?? 0).toFixed(4)}
                 </td>
                 <td className="px-4 py-3 text-right font-semibold">
-                  ${label.totalCost.toFixed(2)}
+                  ${(label.totalCost ?? 0).toFixed(2)}
                 </td>
               </tr>
             ))}

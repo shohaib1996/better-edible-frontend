@@ -97,7 +97,7 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
                       ))}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {label.unitsOrdered.toLocaleString()} units · ${label.unitCost.toFixed(4)}/ea · ${label.totalCost.toFixed(2)} total
+                      {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
                     </div>
                   </div>
                   <span
@@ -163,7 +163,7 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
                           {item.label?.flavorName ?? "—"}
                         </span>
                         <span className="shrink-0 ml-4">
-                          {item.quantity.toLocaleString()} units · ${item.lineTotal.toFixed(2)}
+                          {item.quantity.toLocaleString()} units · ${(item.lineTotal ?? 0).toFixed(2)}
                         </span>
                       </div>
                     ))}
@@ -175,7 +175,7 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
                         ? `Production starts ${new Date(order.productionStartDate).toLocaleDateString()}`
                         : "Production date TBD"}
                     </span>
-                    <span className="font-bold">${order.totalCost.toFixed(2)}</span>
+                    <span className="font-bold">${(order.totalCost ?? 0).toFixed(2)}</span>
                   </div>
                 </div>
               );

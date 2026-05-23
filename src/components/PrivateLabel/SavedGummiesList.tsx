@@ -148,8 +148,8 @@ function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId: strin
         </div>
         <div className="text-right">
           <span className="text-muted-foreground text-xs">Total: </span>
-          <span className="font-semibold">${label.totalCost.toFixed(2)}</span>
-          <span className="text-muted-foreground text-xs ml-1">(${label.unitCost.toFixed(4)}/ea)</span>
+          <span className="font-semibold">${(label.totalCost ?? 0).toFixed(2)}</span>
+          <span className="text-muted-foreground text-xs ml-1">(${(label.unitCost ?? 0).toFixed(4)}/ea)</span>
         </div>
       </div>
 

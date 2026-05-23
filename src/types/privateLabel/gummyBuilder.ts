@@ -98,6 +98,7 @@ export interface ISubmitLinePayload {
   storeId: string;
   logoStatus: "uploaded" | "pending_email" | "use_existing";
   logoUrl?: string;
+  productionChoices?: { labelId: string; productionMode: string }[];
 }
 
 // ─────────────────────────────

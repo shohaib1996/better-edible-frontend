@@ -95,7 +95,7 @@ export default function PrivateLabelPage() {
       </div>
 
       {/* Tab nav */}
-      <div className="flex items-center gap-1 border-b border-border pb-0">
+      <div className="flex justify-center items-center gap-1 border-b border-border pb-0">
         {tabs
           .filter((t) => !t.hidden)
           .map((tab) => (
@@ -119,7 +119,7 @@ export default function PrivateLabelPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl">
+      <div className="w-full">
         {active === "build" && (
           <div className="rounded-xs border border-border bg-card p-5">
             <GummyBuilder storeId={storeId} onSaved={handleSaved} />
