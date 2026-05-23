@@ -2,14 +2,22 @@
 
 import { Package, FlaskConical, ShoppingCart, Clock, CheckCircle2, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import type { IStoreDraftLabel, IStoreOrder } from "@/types/privateLabel/gummyBuilder";
+import type { IPagination } from "@/redux/api/PrivateLabel/storeLabelApi";
 
 interface Props {
+  view: "labels" | "orders";
   labels: IStoreDraftLabel[];
   orders: IStoreOrder[];
   isLoadingLabels: boolean;
   isLoadingOrders: boolean;
-  view: "labels" | "orders";
+  labelsPagination?: IPagination;
+  onLabelsPageChange: (page: number) => void;
+  onLabelsLimitChange: (limit: number) => void;
+  ordersPagination?: IPagination;
+  onOrdersPageChange: (page: number) => void;
+  onOrdersLimitChange: (limit: number) => void;
 }
 
 const LABEL_STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -44,18 +52,28 @@ function SkeletonCard() {
   return <div className="rounded-xs border border-border bg-card p-4 h-24 animate-pulse" />;
 }
 
-export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrders, view }: Props) {
-  const submittedLabels = labels.filter((l) => l.labelStatus === "submitted");
-
+export function ActiveDashboard({
+  view,
+  labels,
+  orders,
+  isLoadingLabels,
+  isLoadingOrders,
+  labelsPagination,
+  onLabelsPageChange,
+  onLabelsLimitChange,
+  ordersPagination,
+  onOrdersPageChange,
+  onOrdersLimitChange,
+}: Props) {
   if (view === "orders") {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-primary" />
           <h2 className="font-semibold text-sm">My Orders</h2>
-          {!isLoadingOrders && (
+          {!isLoadingOrders && ordersPagination && (
             <span className="text-xs text-muted-foreground ml-auto">
-              {orders.length} order{orders.length !== 1 ? "s" : ""}
+              {ordersPagination.totalItems} order{ordersPagination.totalItems !== 1 ? "s" : ""}
             </span>
           )}
         </div>
@@ -63,91 +81,105 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
         {isLoadingOrders ? (
           <div className="space-y-3">
             <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : orders.length === 0 ? (
           <div className="rounded-xs border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
             No orders placed yet.
           </div>
         ) : (
-          <div className="space-y-3">
-            {orders.map((order) => {
-              const statusMeta = ORDER_STATUS_MAP[order.status] ?? ORDER_STATUS_MAP.pending;
-              return (
-                <div
-                  key={order._id}
-                  className="rounded-xs border border-border bg-card p-4 space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">
-                        Order #{order._id.slice(-6).toUpperCase()}
-                      </span>
-                    </div>
-                    <span
-                      className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-xs ${statusMeta.color}`}
-                    >
-                      {statusMeta.icon}
-                      {statusMeta.label}
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-border">
-                    {order.items.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 text-sm">
-                        <span className="text-muted-foreground truncate">
-                          {item.label?.flavorName ?? "—"}
-                        </span>
-                        <span className="shrink-0 ml-4">
-                          {item.quantity.toLocaleString()} units · ${(item.lineTotal ?? 0).toFixed(2)}
+          <>
+            <div className="space-y-3">
+              {orders.map((order) => {
+                const statusMeta = ORDER_STATUS_MAP[order.status] ?? ORDER_STATUS_MAP.pending;
+                return (
+                  <div
+                    key={order._id}
+                    className="rounded-xs border border-border bg-card p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">
+                          Order #{order._id.slice(-6).toUpperCase()}
                         </span>
                       </div>
-                    ))}
-                  </div>
+                      <span
+                        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-xs ${statusMeta.color}`}
+                      >
+                        {statusMeta.icon}
+                        {statusMeta.label}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center justify-between text-sm border-t border-border pt-2">
-                    <span className="text-muted-foreground text-xs">
-                      {order.productionStartDate
-                        ? `Production starts ${new Date(order.productionStartDate).toLocaleDateString()}`
-                        : "Production date TBD"}
-                    </span>
-                    <span className="font-bold">${(order.totalCost ?? 0).toFixed(2)}</span>
+                    <div className="divide-y divide-border">
+                      {order.items.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center py-2 text-sm">
+                          <span className="text-muted-foreground truncate">
+                            {item.label?.flavorName ?? "—"}
+                          </span>
+                          <span className="shrink-0 ml-4">
+                            {item.quantity.toLocaleString()} units · ${(item.lineTotal ?? 0).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm border-t border-border pt-2">
+                      <span className="text-muted-foreground text-xs">
+                        {order.productionStartDate
+                          ? `Production starts ${new Date(order.productionStartDate).toLocaleDateString()}`
+                          : "Production date TBD"}
+                      </span>
+                      <span className="font-bold">${(order.totalCost ?? 0).toFixed(2)}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {ordersPagination && ordersPagination.totalPages > 1 && (
+              <GlobalPagination
+                currentPage={ordersPagination.page}
+                totalPages={ordersPagination.totalPages}
+                totalItems={ordersPagination.totalItems}
+                itemsPerPage={ordersPagination.limit}
+                onPageChange={onOrdersPageChange}
+                onLimitChange={onOrdersLimitChange}
+                limitOptions={[5, 10, 25]}
+              />
+            )}
+          </>
         )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Submitted Labels */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-primary" />
-          <h2 className="font-semibold text-sm">My Labels</h2>
-          {!isLoadingLabels && (
-            <span className="text-xs text-muted-foreground ml-auto">
-              {submittedLabels.length} submitted
-            </span>
-          )}
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <FlaskConical className="w-4 h-4 text-primary" />
+        <h2 className="font-semibold text-sm">My Labels</h2>
+        {!isLoadingLabels && labelsPagination && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {labelsPagination.totalItems} submitted
+          </span>
+        )}
+      </div>
 
-        {isLoadingLabels ? (
+      {isLoadingLabels ? (
+        <div className="space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : labels.length === 0 ? (
+        <div className="rounded-xs border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
+          No labels submitted yet.
+        </div>
+      ) : (
+        <>
           <div className="space-y-3">
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : submittedLabels.length === 0 ? (
-          <div className="rounded-xs border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
-            No labels submitted yet.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {submittedLabels.map((label) => {
+            {labels.map((label) => {
               const status = LABEL_STATUS_MAP[label.labelStatus] ?? LABEL_STATUS_MAP.submitted;
               return (
                 <div
@@ -176,17 +208,27 @@ export function ActiveDashboard({ labels, orders, isLoadingLabels, isLoadingOrde
                       {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
                     </div>
                   </div>
-                  <span
-                    className={`shrink-0 text-xs font-medium px-2 py-1 rounded-xs ${status.color}`}
-                  >
+                  <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-xs ${status.color}`}>
                     {status.label}
                   </span>
                 </div>
               );
             })}
           </div>
-        )}
-      </section>
+
+          {labelsPagination && labelsPagination.totalPages > 1 && (
+            <GlobalPagination
+              currentPage={labelsPagination.page}
+              totalPages={labelsPagination.totalPages}
+              totalItems={labelsPagination.totalItems}
+              itemsPerPage={labelsPagination.limit}
+              onPageChange={onLabelsPageChange}
+              onLimitChange={onLabelsLimitChange}
+              limitOptions={[5, 10, 25]}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

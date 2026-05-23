@@ -1,6 +1,7 @@
 import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
 import type { IStoreOrder } from "@/types/privateLabel/gummyBuilder";
+import type { IPagination } from "./storeLabelApi";
 
 interface IPlaceOrderPayload {
   storeId: string;
@@ -8,13 +9,28 @@ interface IPlaceOrderPayload {
   expectedDeliveryDate?: string;
 }
 
+interface IGetMyOrdersParams {
+  storeId: string;
+  page?: number;
+  limit?: number;
+}
+
+interface IGetMyOrdersResponse {
+  orders: IStoreOrder[];
+  pagination?: IPagination;
+}
+
 export const storeOrderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // GET /api/store/orders?storeId=
-    getMyOrders: builder.query<{ orders: IStoreOrder[] }, string>({
-      query: (storeId) => ({
+    // GET /api/store/orders?storeId=&page=&limit=
+    getMyOrders: builder.query<IGetMyOrdersResponse, IGetMyOrdersParams>({
+      query: ({ storeId, page, limit }) => ({
         url: "/store/orders",
-        params: { storeId },
+        params: {
+          storeId,
+          ...(page !== undefined && { page }),
+          ...(limit !== undefined && { limit }),
+        },
       }),
       providesTags: [tagTypes.storeOrders],
     }),

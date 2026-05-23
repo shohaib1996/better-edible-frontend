@@ -85,7 +85,7 @@ export const GlobalPagination = ({
           value={itemsPerPage.toString()}
           onValueChange={(value) => onLimitChange(Number(value))}
         >
-          <SelectTrigger className="w-[80px] border-accent rounded-xs">
+          <SelectTrigger className="w-20 border-accent rounded-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

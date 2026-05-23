@@ -17,6 +17,12 @@ export default function PrivateLabelPage() {
   const [storeName, setStoreName] = useState<string | null>(null);
   const [active, setActive] = useState<Tab>("build");
 
+  // Pagination state
+  const [labelsPage, setLabelsPage] = useState(1);
+  const [labelsLimit, setLabelsLimit] = useState(10);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersLimit, setOrdersLimit] = useState(10);
+
   useEffect(() => {
     const user = getStoreUser();
     if (user) {
@@ -25,37 +31,76 @@ export default function PrivateLabelPage() {
     }
   }, []);
 
-  const { data: labelsData, isLoading: isLoadingLabels, refetch: refetchLabels } = useGetMyLabelsQuery(
-    storeId ?? "",
+  // Draft labels — no pagination, used for My Line / Submit tabs
+  const {
+    data: draftData,
+    isLoading: isLoadingDrafts,
+    refetch: refetchDrafts,
+  } = useGetMyLabelsQuery(
+    { storeId: storeId ?? "", status: "draft" },
     { skip: !storeId }
   );
 
+  // Submitted labels — paginated, used for My Labels tab
+  const {
+    data: submittedData,
+    isLoading: isLoadingSubmitted,
+    refetch: refetchSubmitted,
+  } = useGetMyLabelsQuery(
+    { storeId: storeId ?? "", status: "submitted", page: labelsPage, limit: labelsLimit },
+    { skip: !storeId }
+  );
+
+  // Orders — paginated
   const { data: ordersData, isLoading: isLoadingOrders } = useGetMyOrdersQuery(
-    storeId ?? "",
+    { storeId: storeId ?? "", page: ordersPage, limit: ordersLimit },
     { skip: !storeId }
   );
 
-  const allLabels = labelsData?.labels ?? [];
-  const draftLabels = allLabels.filter((l) => l.labelStatus === "draft");
-  const submittedLabels = allLabels.filter((l) => l.labelStatus === "submitted");
+  const draftLabels = draftData?.labels ?? [];
+  const submittedLabels = submittedData?.labels ?? [];
+  const labelsPagination = submittedData?.pagination;
   const orders = ordersData?.orders ?? [];
+  const ordersPagination = ordersData?.pagination;
+
+  const totalSubmitted = labelsPagination?.totalItems ?? submittedLabels.length;
+  const totalOrders = ordersPagination?.totalItems ?? orders.length;
 
   const tabs: { id: Tab; label: string; count?: number; hidden?: boolean }[] = [
     { id: "build", label: "Builder" },
     { id: "my-line", label: "My Line", count: draftLabels.length },
     { id: "submit", label: "Submit", hidden: draftLabels.length === 0 },
-    { id: "labels", label: "My Labels", count: submittedLabels.length, hidden: submittedLabels.length === 0 },
-    { id: "orders", label: "My Orders", count: orders.length, hidden: orders.length === 0 },
+    { id: "labels", label: "My Labels", count: totalSubmitted || undefined, hidden: !isLoadingSubmitted && totalSubmitted === 0 },
+    { id: "orders", label: "My Orders", count: totalOrders || undefined, hidden: !isLoadingOrders && totalOrders === 0 },
   ];
 
   function handleSaved() {
-    refetchLabels();
+    refetchDrafts();
     setActive("my-line");
   }
 
   function handleSubmitted() {
-    refetchLabels();
+    refetchDrafts();
+    refetchSubmitted();
     setActive("labels");
+  }
+
+  function handleLabelsPageChange(page: number) {
+    setLabelsPage(page);
+  }
+
+  function handleLabelsLimitChange(limit: number) {
+    setLabelsPage(1);
+    setLabelsLimit(limit);
+  }
+
+  function handleOrdersPageChange(page: number) {
+    setOrdersPage(page);
+  }
+
+  function handleOrdersLimitChange(limit: number) {
+    setOrdersPage(1);
+    setOrdersLimit(limit);
   }
 
   if (!storeId) {
@@ -132,7 +177,7 @@ export default function PrivateLabelPage() {
             <SavedGummiesList
               storeId={storeId}
               labels={draftLabels}
-              isLoading={isLoadingLabels}
+              isLoading={isLoadingDrafts}
             />
             {draftLabels.length > 0 && (
               <button
@@ -157,21 +202,33 @@ export default function PrivateLabelPage() {
 
         {active === "labels" && (
           <ActiveDashboard
-            labels={allLabels}
-            orders={orders}
-            isLoadingLabels={isLoadingLabels}
-            isLoadingOrders={isLoadingOrders}
             view="labels"
+            labels={submittedLabels}
+            orders={orders}
+            isLoadingLabels={isLoadingSubmitted}
+            isLoadingOrders={isLoadingOrders}
+            labelsPagination={labelsPagination}
+            onLabelsPageChange={handleLabelsPageChange}
+            onLabelsLimitChange={handleLabelsLimitChange}
+            ordersPagination={ordersPagination}
+            onOrdersPageChange={handleOrdersPageChange}
+            onOrdersLimitChange={handleOrdersLimitChange}
           />
         )}
 
         {active === "orders" && (
           <ActiveDashboard
-            labels={allLabels}
-            orders={orders}
-            isLoadingLabels={isLoadingLabels}
-            isLoadingOrders={isLoadingOrders}
             view="orders"
+            labels={submittedLabels}
+            orders={orders}
+            isLoadingLabels={isLoadingSubmitted}
+            isLoadingOrders={isLoadingOrders}
+            labelsPagination={labelsPagination}
+            onLabelsPageChange={handleLabelsPageChange}
+            onLabelsLimitChange={handleLabelsLimitChange}
+            ordersPagination={ordersPagination}
+            onOrdersPageChange={handleOrdersPageChange}
+            onOrdersLimitChange={handleOrdersLimitChange}
           />
         )}
       </div>

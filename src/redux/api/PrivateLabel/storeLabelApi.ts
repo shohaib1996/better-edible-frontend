@@ -7,13 +7,39 @@ import type {
   ISubmitLinePayload,
 } from "@/types/privateLabel/gummyBuilder";
 
+export interface IPagination {
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+interface IGetMyLabelsParams {
+  storeId: string;
+  status?: "draft" | "submitted";
+  page?: number;
+  limit?: number;
+}
+
+interface IGetMyLabelsResponse {
+  labels: IStoreDraftLabel[];
+  clientStatus: string | null;
+  clientId?: string;
+  pagination?: IPagination;
+}
+
 export const storeLabelApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // GET /api/store/labels?storeId=
-    getMyLabels: builder.query<{ labels: IStoreDraftLabel[] }, string>({
-      query: (storeId) => ({
+    // GET /api/store/labels?storeId=&status=&page=&limit=
+    getMyLabels: builder.query<IGetMyLabelsResponse, IGetMyLabelsParams>({
+      query: ({ storeId, status, page, limit }) => ({
         url: "/store/labels",
-        params: { storeId },
+        params: {
+          storeId,
+          ...(status !== undefined && { status }),
+          ...(page !== undefined && { page }),
+          ...(limit !== undefined && { limit }),
+        },
       }),
       providesTags: [tagTypes.storeLabels],
     }),
