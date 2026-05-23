@@ -31,4 +31,5 @@ export const tagTypes = {
   storeLabels: "storeLabels",
   storePools: "storePools",
   storeOrders: "storeOrders",
+  storeSubmissions: "storeSubmissions",
 };

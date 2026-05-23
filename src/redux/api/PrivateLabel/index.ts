@@ -19,6 +19,7 @@ export * from "./ppsApi";
 export * from "./storeLabelApi";
 export * from "./storeOrderApi";
 export * from "./poolApi";
+export * from "./storeSubmissionsApi";
 
 // Re-export types from @/types for convenience
 export type {
