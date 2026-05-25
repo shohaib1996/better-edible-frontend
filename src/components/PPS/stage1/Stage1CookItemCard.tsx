@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2, Plus, FlaskConical, Palette, Pencil, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
-import Stage1MoldSlot from "@/components/PPS/stage1/Stage1MoldSlot";
-import OilContainerSelect from "@/components/PPS/stage1/OilContainerSelect";
-import FlavorColorModal from "@/components/PPS/stage1/FlavorColorModal";
-import type { OilSelection } from "@/components/PPS/stage1/OilContainerSelect";
+import FlavorColorModal from "./FlavorColorModal";
+import FlavorColorBlock from "./FlavorColorBlock";
+import Stage1ActionArea from "./Stage1ActionArea";
+import type { OilSelection } from "./OilContainerSelect";
 import {
   useAssignMoldMutation,
   useUnassignMoldMutation,
@@ -30,7 +28,7 @@ function moldsNeeded(quantity: number) {
   return Math.ceil(quantity / UNITS_PER_MOLD);
 }
 
-type CardMode = "idle" | "oil" | "molding" | "confirming" | "done";
+export type CardMode = "idle" | "oil" | "molding" | "confirming" | "done";
 
 export interface Stage1CookItemCardProps {
   item: ICookItem;
@@ -48,16 +46,12 @@ export default function Stage1CookItemCard({
   compact,
 }: Stage1CookItemCardProps) {
   const isComplete = item.status === "cooking_molding_complete";
-  const initialMode: CardMode = isComplete
-    ? "done"
-    : item.status === "in-progress"
-      ? "molding"
-      : "idle";
+  const initialMode: CardMode = isComplete ? "done" : item.status === "in-progress" ? "molding" : "idle";
 
   const [mode, setMode] = useState<CardMode>(initialMode);
   const [extraMolds, setExtraMolds] = useState(0);
   const [moldUnits, setMoldUnits] = useState<number[]>(() =>
-    item.moldingTimestamps.map((t) => t.unitsPerMold ?? 70),
+    item.moldingTimestamps.map((t) => t.unitsPerMold ?? 70)
   );
   const [cancellingMoldId, setCancellingMoldId] = useState<string | null>(null);
   const [oilSelection, setOilSelection] = useState<OilSelection | null>(null);
@@ -111,7 +105,7 @@ export default function Stage1CookItemCard({
         return false;
       }
     },
-    [assignMold, item.cookItemId, assignedCount, moldUnits],
+    [assignMold, item.cookItemId, assignedCount, moldUnits]
   );
 
   const handleUnassignMold = useCallback(
@@ -130,7 +124,7 @@ export default function Stage1CookItemCard({
         setCancellingMoldId(null);
       }
     },
-    [unassignMold, item.cookItemId],
+    [unassignMold, item.cookItemId]
   );
 
   const handleFinish = useCallback(async () => {
@@ -162,8 +156,7 @@ export default function Stage1CookItemCard({
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
   const qtyProduced = moldUnits.slice(0, assignedCount).reduce((sum, u) => sum + (u || 0), 0);
-
-  const c = compact; // shorthand
+  const c = compact;
 
   return (
     <div className="flex flex-col gap-0 rounded-xs border bg-card">
@@ -193,242 +186,52 @@ export default function Stage1CookItemCard({
         ))}
       </div>
 
-      {/* Flavor & Color block */}
+      {/* Flavor & Color */}
       <FlavorColorBlock
         item={item}
-        compact={compact}
+        compact={c}
         flavorNameMap={flavorNameMap}
         colorNameMap={colorNameMap}
         onOpen={() => setFlavorColorOpen(true)}
       />
-
-      {/* Flavor & Color modal */}
       <FlavorColorModal
         open={flavorColorOpen}
         onClose={() => setFlavorColorOpen(false)}
         cookItem={item}
-        compact={compact}
+        compact={c}
       />
 
       {/* Action area */}
       <div className={`px-5 ${c ? "py-4 gap-3" : "py-5 gap-4"} flex flex-col`}>
-        {effectiveMode === "done" || isComplete ? (
-          <div className="flex flex-col gap-2">
-            <div className={`flex items-center gap-${c ? "3" : "4"} py-4 text-green-600`}>
-              <CheckCircle2 className={`${c ? "w-8 h-8" : "w-10 h-10"} shrink-0`} />
-              <p className={c ? "text-xl font-semibold" : "text-2xl font-bold"}>
-                Molding Complete — {assignedCount} mold{assignedCount !== 1 ? "s" : ""},{" "}
-                {qtyProduced.toLocaleString()} units
-              </p>
-            </div>
-            {item.oilContainerId && item.oilActualAmount ? (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-400/10 border border-amber-400/30 text-amber-500 ${c ? "text-xs" : "text-sm"}`}>
-                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
-                <span>Oil used: <span className="font-semibold">{item.oilActualAmount}g</span> from <span className="font-mono">{item.oilContainerId}</span></span>
-              </div>
-            ) : (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-muted border border-border text-muted-foreground ${c ? "text-xs" : "text-sm"}`}>
-                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
-                <span>No oil recorded</span>
-              </div>
-            )}
-          </div>
-        ) : effectiveMode === "confirming" ? (
-          <div className={`flex flex-col ${c ? "gap-3" : "gap-4"}`}>
-            <div className={`flex items-center ${c ? "gap-3 px-4 py-4" : "gap-4 px-5 py-5"} rounded-xs bg-green-50 border border-green-200`}>
-              <CheckCircle2 className={`${c ? "w-7 h-7" : "w-9 h-9"} text-green-600 shrink-0`} />
-              <p className={`${c ? "text-lg font-semibold" : "text-xl font-bold"} text-green-800`}>
-                Molding for <span className="font-bold">{item.flavor}</span> is finished.
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                size="lg"
-                onClick={handleFinish}
-                disabled={isCompleting}
-                className={`flex-1 ${c ? "text-xl h-14" : "text-2xl h-16 font-bold"} gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-40`}
-              >
-                {isCompleting
-                  ? <Loader2 className={`${c ? "w-5 h-5" : "w-6 h-6"} animate-spin`} />
-                  : <CheckCircle2 className={`${c ? "w-5 h-5" : "w-6 h-6"}`} />}
-                Finish
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => setMode("molding")}
-                disabled={isCompleting}
-                className={`${c ? "text-base h-14 px-6" : "text-lg h-16 px-8 font-semibold"} rounded-xs`}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : effectiveMode === "oil" ? (
-          <OilContainerSelect
-            moldCount={totalMolds}
-            compact={compact}
-            onConfirmed={(selection) => {
-              setOilSelection(selection);
-              setMode("molding");
-            }}
-            onSkip={() => {
-              setOilSelection(null);
-              setMode("molding");
-            }}
-          />
-        ) : effectiveMode === "idle" ? (
-          <Button
-            size="lg"
-            variant="outline"
-            className={`w-full ${c ? "text-xl h-14" : "text-2xl h-16 font-bold"} rounded-xs`}
-            onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMode("oil"); }}
-          >
-            Start
-          </Button>
-        ) : effectiveMode === "molding" ? (
-          <div className="flex flex-col gap-3">
-            {oilSelection && (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xs bg-amber-400/10 border border-amber-400/30 text-amber-500 ${c ? "text-xs" : "text-sm"}`}>
-                <FlaskConical className="w-3.5 h-3.5 shrink-0" />
-                <span>Oil confirmed: <span className="font-semibold">{oilSelection.actualAmount}g</span> from <span className="font-mono">{oilSelection.containerId}</span></span>
-              </div>
-            )}
-            {Array.from({ length: totalMolds }).map((_, i) => (
-              <Stage1MoldSlot
-                key={i}
-                index={i}
-                total={totalMolds}
-                isActive={i === assignedCount}
-                isAssigned={i < assignedCount}
-                assignedId={item.assignedMoldIds[i]}
-                units={moldUnits[i] ?? UNITS_PER_MOLD}
-                onUnitsChange={(u) => handleUnitsChange(i, u)}
-                isAssigning={isAssigning}
-                isCancelling={cancellingMoldId === item.assignedMoldIds[i]}
-                onSubmit={handleAssignMold}
-                onCancel={() => handleUnassignMold(item.assignedMoldIds[i])}
-                focusKey={i === assignedCount ? assignedCount : -i}
-                compact={compact}
-              />
-            ))}
-            <Button
-              size={c ? "sm" : "lg"}
-              variant="outline"
-              className={`self-start ${c ? "gap-1.5 text-sm" : "gap-2 text-lg h-12 px-5"} rounded-xs`}
-              onClick={() => {
-                setExtraMolds((n) => n + 1);
-                setMoldUnits((prev) => [...prev, UNITS_PER_MOLD]);
-              }}
-            >
-              <Plus className={c ? "w-4 h-4" : "w-5 h-5"} />
-              Add Mold
-            </Button>
-          </div>
-        ) : null}
+        <Stage1ActionArea
+          item={item}
+          effectiveMode={effectiveMode}
+          isComplete={isComplete}
+          compact={c}
+          assignedCount={assignedCount}
+          totalMolds={totalMolds}
+          qtyProduced={qtyProduced}
+          oilSelection={oilSelection}
+          moldUnits={moldUnits}
+          isAssigning={isAssigning}
+          isCompleting={isCompleting}
+          cancellingMoldId={cancellingMoldId}
+          onAssignMold={handleAssignMold}
+          onUnassignMold={handleUnassignMold}
+          onFinish={handleFinish}
+          onSetMode={setMode}
+          onAddMold={() => {
+            setExtraMolds((n) => n + 1);
+            setMoldUnits((prev) => [...prev, UNITS_PER_MOLD]);
+          }}
+          onUnitsChange={handleUnitsChange}
+          onOilConfirmed={(sel) => setOilSelection(sel ?? null)}
+        />
       </div>
 
       <div className="px-5 pb-5">
         <CookItemHistory cookItemId={item.cookItemId} isAdmin={isAdmin} />
       </div>
-    </div>
-  );
-}
-
-// ─── Flavor & Color Info Block ────────────────────────────────────────────────
-
-function FlavorColorBlock({
-  item,
-  compact,
-  flavorNameMap,
-  colorNameMap,
-  onOpen,
-}: {
-  item: ICookItem;
-  compact?: boolean;
-  flavorNameMap: Map<string, string>;
-  colorNameMap: Map<string, string>;
-  onOpen: () => void;
-}) {
-  const c = compact;
-  const hasData = (item.flavorIds?.length ?? 0) > 0;
-
-  if (!hasData) {
-    return (
-      <div className={`mx-5 mb-3 flex items-center justify-between gap-3 px-4 ${c ? "py-3" : "py-4"} rounded-xs border border-dashed border-amber-400/50 bg-amber-400/5`}>
-        <div className="flex items-center gap-2 text-amber-700">
-          <AlertCircle className={`${c ? "w-4 h-4" : "w-5 h-5"} shrink-0`} />
-          <p className={c ? "text-xs font-medium" : "text-sm font-medium"}>
-            No flavor &amp; color recorded
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className={`shrink-0 rounded-xs gap-1.5 ${c ? "text-xs h-7" : "text-sm h-9"} border-amber-400/50 text-amber-700 hover:bg-amber-400/10`}
-          onClick={onOpen}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`mx-5 mb-3 rounded-xs border bg-muted/30 ${c ? "px-4 py-3" : "px-4 py-4"} space-y-2`}>
-      <div className="flex items-center justify-between gap-2">
-        <p className={`${c ? "text-xs" : "text-sm"} font-semibold text-foreground`}>
-          Flavor &amp; Color
-        </p>
-        <Button
-          size="sm"
-          variant="ghost"
-          className={`shrink-0 rounded-xs gap-1 ${c ? "text-xs h-6 px-2" : "text-xs h-7 px-2"} text-muted-foreground`}
-          onClick={onOpen}
-        >
-          <Pencil className="w-3 h-3" />
-          Edit
-        </Button>
-      </div>
-
-      {/* Flavors */}
-      {(item.flavorAmounts ?? []).map((fa, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <FlaskConical className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-amber-500 shrink-0`} />
-          <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
-            {flavorNameMap.get(fa.flavorId) ?? fa.flavorId}
-          </span>
-          <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
-            {fa.amountGrams}g
-          </span>
-        </div>
-      ))}
-
-      {/* Divider */}
-      {(item.colorAmounts ?? []).length > 0 && (
-        <div className="border-t my-1" />
-      )}
-
-      {/* Colors */}
-      {(item.colorAmounts ?? []).length > 0 ? (
-        (item.colorAmounts ?? []).map((ca, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-purple-500 shrink-0`} />
-            <span className={`${c ? "text-xs" : "text-sm"} font-medium flex-1 truncate`}>
-              {colorNameMap.get(ca.colorId) ?? ca.colorId}
-            </span>
-            <span className={`${c ? "text-xs" : "text-sm"} font-semibold tabular-nums text-foreground`}>
-              {ca.amountGrams}g
-            </span>
-          </div>
-        ))
-      ) : (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} shrink-0`} />
-          <span className={c ? "text-xs" : "text-sm"}>No color</span>
-        </div>
-      )}
     </div>
   );
 }
