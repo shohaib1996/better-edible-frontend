@@ -18,7 +18,7 @@ export type GummySize = "standard" | "xl";
 export type GummyOilType = "biomax" | "rosin";
 export type GummyEffect = "hybrid" | "indica" | "sativa";
 export type GummyFlavorMode = "single" | "mix";
-export type GummyProductionMode = "custom" | "pool";
+export type GummyProductionMode = "standard" | "custom_run" | "pool";
 export type GummyLabelStatus = "draft" | "submitted";
 
 // ─────────────────────────────
