@@ -359,7 +359,7 @@ export const DeliveryModal = ({
               placeholder="Add any notes or special instructions..."
               value={formData.notes}
               onChange={(e) => handleChange("notes", e.target.value)}
-              className="border border-border rounded-xs bg-input text-foreground resize-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary min-h-[80px]"
+              className="border border-border rounded-xs bg-input text-foreground resize-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary min-h-20"
               rows={3}
             />
           </div>
