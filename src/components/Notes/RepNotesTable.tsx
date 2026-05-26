@@ -189,7 +189,7 @@ export function RepNotesTable({ repId }: RepNotesTableProps) {
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full sm:w-[240px] justify-start text-left font-normal rounded-xs bg-accent text-white dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90",
+                  "w-full sm:w-60 justify-start text-left font-normal rounded-xs bg-accent text-white dark:bg-accent hover:bg-accent/90 dark:hover:bg-accent/90",
                   !selectedDate && "text-muted-foreground"
                 )}
               >

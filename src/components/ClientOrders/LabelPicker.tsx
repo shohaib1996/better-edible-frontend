@@ -12,7 +12,7 @@ interface Props {
   isLoading: boolean;
   selectedLabels: OrderItem[];
   onToggle: (label: ILabel) => void;
-  onPreviewImage: (url: string, filename: string) => void;
+  onPreviewImage?: (url: string, filename: string) => void;
 }
 
 export function LabelPicker({
@@ -60,7 +60,7 @@ export function LabelPicker({
               className="relative w-12 h-12 shrink-0 overflow-hidden rounded-xs bg-muted cursor-pointer group border border-border"
               onClick={(e) => {
                 e.stopPropagation();
-                if (label.labelImages?.length > 0) {
+                if (onPreviewImage && label.labelImages?.length > 0) {
                   const img = label.labelImages[0];
                   onPreviewImage(
                     img.secureUrl || img.url,

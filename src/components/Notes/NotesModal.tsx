@@ -164,7 +164,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                       <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                         <Calendar
                           size={12}
-                          className="sm:w-[14px] sm:h-[14px]"
+                          className="sm:w-3.5 sm:h-3.5"
                         />
                         <span>
                           {note.date
@@ -198,7 +198,7 @@ export const NotesModal = ({ open, onClose, entityId }: NotesModalProps) => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                        <User size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <User size={12} className="sm:w-3.5 sm:h-3.5" />
                         <span>
                           {(typeof note.author === "object" &&
                             note.author.name) ||
