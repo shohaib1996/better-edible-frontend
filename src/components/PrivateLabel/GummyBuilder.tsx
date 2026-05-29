@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { calculateGummyPrice, CANNABINOID_OPTIONS, ALL_CANNABINOIDS } from "@/lib/gummyPricing";
+import { calculateGummyPrice, CANNABINOID_OPTIONS, ALL_CANNABINOIDS, CANNABINOID_PRICES } from "@/lib/gummyPricing";
 import { useCreateDraftLabelMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
 import type {
   GummySize,
@@ -109,6 +109,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   );
   const effectiveKey =
     availableOptions.some((o) => o.key === selectedKey) ? selectedKey : (availableOptions[0]?.key ?? "");
+  const [_selName, _selMg] = effectiveKey.split("-") as [CannabinoidName, string];
+  const selectedPriceAdd = CANNABINOID_PRICES[_selName]?.[Number(_selMg)] ?? 0;
 
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
 
@@ -236,7 +238,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         )}
 
         {availableOptions.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Select value={effectiveKey} onValueChange={setSelectedKey}>
               <SelectTrigger className="w-auto min-w-[130px] h-9 rounded-xs text-sm">
                 <SelectValue />
@@ -254,6 +256,11 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
                 ))}
               </SelectContent>
             </Select>
+            {selectedPriceAdd > 0 && (
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                +${selectedPriceAdd.toFixed(2)}/unit
+              </span>
+            )}
             <Button type="button" variant="outline" size="sm" className="rounded-xs gap-1.5" onClick={handleAddCannabinoid}>
               <Plus className="w-3.5 h-3.5" />
               {cannabinoids.length === 0 ? "Add" : "Add Another"}
