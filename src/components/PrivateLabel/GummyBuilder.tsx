@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Trash2, FlaskConical, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, FlaskConical, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,18 @@ interface Props {
 }
 
 type OptionBtn<T> = { value: T; label: string; sub?: string };
+
+type QueuedGummy = {
+  id: string;
+  flavorName: string;
+  size: GummySize;
+  oilType: GummyOilType;
+  effect: GummyEffect;
+  flavorMode: GummyFlavorMode;
+  cannabinoids: { name: CannabinoidName; mg: number }[];
+  unitsOrdered: number;
+  grandTotal: number;
+};
 
 const SIZES: OptionBtn<GummySize>[] = [
   { value: "standard", label: "Standard" },
@@ -95,6 +107,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   const [unitsOrdered, setUnitsOrdered] = useState(630);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
   const [selectedKey, setSelectedKey] = useState("CBD-100");
+  const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
   const [createDraft, { isLoading }] = useCreateDraftLabelMutation();
 
@@ -114,6 +127,16 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
 
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
 
+  function resetForm() {
+    setFlavorName("");
+    setSize("standard");
+    setOilType("biomax");
+    setEffect("hybrid");
+    setFlavorMode("single");
+    setUnitsOrdered(630);
+    setCannabinoids([]);
+  }
+
   function handleAddCannabinoid() {
     const opt = availableOptions.find((o) => o.key === effectiveKey);
     if (!opt) return;
@@ -126,24 +149,63 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     setCannabinoids((prev) => prev.filter((c) => c.name !== name));
   }
 
-  async function handleSave() {
+  function handleQueueCurrent() {
     if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
     if (unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
+    setQueue((prev) => [
+      ...prev,
+      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal },
+    ]);
+    toast.success(`"${flavorName.trim()}" queued — configure your next gummy`);
+    resetForm();
+  }
+
+  function handleRemoveFromQueue(id: string) {
+    setQueue((prev) => prev.filter((q) => q.id !== id));
+  }
+
+  async function handleSave() {
+    const hasCurrentForm = flavorName.trim() !== "";
+    if (!hasCurrentForm && queue.length === 0) {
+      toast.error("Flavor name is required");
+      return;
+    }
+    if (hasCurrentForm && unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
+
+    const toSave: QueuedGummy[] = [
+      ...queue,
+      ...(hasCurrentForm
+        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
+        : []),
+    ];
+
     try {
-      await createDraft({ storeId, flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered }).unwrap();
-      toast.success("Gummy saved to your line");
-      setFlavorName("");
-      setSize("standard");
-      setOilType("biomax");
-      setEffect("hybrid");
-      setFlavorMode("single");
-      setUnitsOrdered(630);
-      setCannabinoids([]);
+      for (const item of toSave) {
+        await createDraft({
+          storeId,
+          flavorName: item.flavorName,
+          size: item.size,
+          oilType: item.oilType,
+          effect: item.effect,
+          flavorMode: item.flavorMode,
+          cannabinoids: item.cannabinoids,
+          unitsOrdered: item.unitsOrdered,
+        }).unwrap();
+      }
+      toast.success(
+        toSave.length > 1
+          ? `${toSave.length} gummies saved to your line`
+          : "Gummy saved to your line",
+      );
+      setQueue([]);
+      resetForm();
       onSaved();
     } catch (err: any) {
       toast.error(err?.data?.message ?? "Failed to save gummy");
     }
   }
+
+  const totalQueued = queue.length + (flavorName.trim() ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -187,7 +249,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
       <div>
         <SectionLabel>Units Ordered</SectionLabel>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {/* Presets — 4-col on mobile, inline on desktop */}
           <div className="grid grid-cols-4 sm:flex gap-2 sm:gap-1.5">
             {UNIT_PRESETS.map((p) => (
               <button
@@ -204,7 +265,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
               </button>
             ))}
           </div>
-          {/* Custom input */}
           <Input
             type="number"
             min={1}
@@ -311,14 +371,68 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </div>
       </div>
 
-      <Button
-        onClick={handleSave}
-        disabled={isLoading || !flavorName.trim()}
-        className="rounded-xs w-full h-12 gap-2 text-base font-semibold"
-      >
-        <FlaskConical className="w-4 h-4" />
-        {isLoading ? "Saving…" : "Save to My Line"}
-      </Button>
+      {/* Queue preview */}
+      {queue.length > 0 && (
+        <div className="rounded-xs border border-border overflow-hidden">
+          <div className="px-4 py-2.5 bg-muted/40 border-b border-border flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Queued — {queue.length} gummy{queue.length !== 1 ? "s" : ""}
+            </p>
+            <span className="text-xs text-muted-foreground font-mono">
+              ${queue.reduce((s, q) => s + q.grandTotal, 0).toFixed(2)}
+            </span>
+          </div>
+          <div className="divide-y divide-border">
+            {queue.map((item) => (
+              <div key={item.id} className="px-4 py-2.5 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{item.flavorName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.oilType === "rosin" ? "Rosin" : "BioMax"} · {item.size === "xl" ? "XL" : "Std"} · {item.effect} · {item.unitsOrdered.toLocaleString()} units
+                    {item.cannabinoids.length > 0 && ` · ${item.cannabinoids.map((c) => `${c.name} ${c.mg}mg`).join(", ")}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-semibold font-mono">${item.grandTotal.toFixed(2)}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFromQueue(item.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleQueueCurrent}
+          disabled={isLoading || !flavorName.trim()}
+          className="rounded-xs flex-1 h-12 gap-2 text-sm font-semibold"
+        >
+          <Plus className="w-4 h-4" />
+          Add Another Gummy
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={isLoading || (!flavorName.trim() && queue.length === 0)}
+          className="rounded-xs flex-1 h-12 gap-2 text-base font-semibold"
+        >
+          <FlaskConical className="w-4 h-4" />
+          {isLoading
+            ? "Saving…"
+            : totalQueued > 1
+            ? `Save All (${totalQueued}) to My Line`
+            : "Save to My Line"}
+        </Button>
+      </div>
 
     </div>
   );
