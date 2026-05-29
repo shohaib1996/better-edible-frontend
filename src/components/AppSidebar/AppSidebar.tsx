@@ -66,7 +66,6 @@ const adminItems = [
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
   { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
   { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
-  { title: "Store Submissions", url: "/admin/store-submissions", icon: FlaskConical },
 ];
 
 const repItems = [

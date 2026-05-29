@@ -10,6 +10,7 @@ import { AddLabelModal } from "./AddLabelModal";
 import { EditClientInfoModal } from "./EditClientInfoModal";
 import { RecurringScheduleSection } from "./RecurringScheduleSection";
 import { BulkStageUpdateSection } from "./BulkStageUpdateSection";
+import { ClientSubmissionsTab } from "./ClientSubmissionsTab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -167,6 +168,12 @@ export const SingleClientPage = ({
             Labels
           </TabsTrigger>
           <TabsTrigger
+            value="submissions"
+            className="flex-1 sm:flex-initial rounded-xs text-xs sm:text-sm"
+          >
+            Submissions
+          </TabsTrigger>
+          <TabsTrigger
             value="schedule"
             className="flex-1 sm:flex-initial rounded-xs text-xs sm:text-sm"
           >
@@ -223,6 +230,11 @@ export const SingleClientPage = ({
               No labels yet. Add a label to get started.
             </div>
           )}
+        </TabsContent>
+
+        {/* Submissions Tab */}
+        <TabsContent value="submissions" className="mt-4">
+          <ClientSubmissionsTab clientId={clientId} />
         </TabsContent>
 
         {/* Schedule Tab */}

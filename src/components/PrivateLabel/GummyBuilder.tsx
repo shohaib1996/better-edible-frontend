@@ -54,13 +54,13 @@ function SegmentGroup<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2">
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`flex flex-col items-start px-3 py-2 rounded-xs border transition-all text-left ${
+          className={`flex-1 sm:flex-none flex flex-col items-center sm:items-start justify-center px-3 py-3 sm:py-2 rounded-xs border transition-all text-center sm:text-left min-h-14 sm:min-h-0 ${
             value === o.value
               ? "bg-primary text-primary-foreground border-primary shadow-sm"
               : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -68,7 +68,7 @@ function SegmentGroup<T extends string>({
         >
           <span className="text-sm font-semibold leading-tight">{o.label}</span>
           {o.sub && (
-            <span className={`text-[10px] leading-tight mt-0.5 ${value === o.value ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+            <span className={`text-[11px] leading-tight mt-0.5 ${value === o.value ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
               {o.sub}
             </span>
           )}
@@ -80,7 +80,7 @@ function SegmentGroup<T extends string>({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
       {children}
     </p>
   );
@@ -146,7 +146,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
 
       {/* Flavor name */}
       <div>
@@ -155,29 +155,29 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
           placeholder="e.g. Mango Haze"
           value={flavorName}
           onChange={(e) => setFlavorName(e.target.value)}
-          className="rounded-xs h-11 text-base"
+          className="rounded-xs h-12 text-base"
         />
       </div>
 
-      {/* Size + Oil Type — 2 col */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xs bg-muted/20 border border-border">
+      {/* Size + Oil Type */}
+      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <SectionLabel>Gummy Size</SectionLabel>
           <SegmentGroup options={SIZES} value={size} onChange={setSize} />
         </div>
-        <div>
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
           <SectionLabel>Oil Type</SectionLabel>
           <SegmentGroup options={OIL_TYPES} value={oilType} onChange={setOilType} />
         </div>
       </div>
 
-      {/* Effect + Flavor Mode — 2 col */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xs bg-muted/20 border border-border">
+      {/* Effect + Flavor Mode */}
+      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <SectionLabel>Effect</SectionLabel>
           <SegmentGroup options={EFFECTS} value={effect} onChange={setEffect} />
         </div>
-        <div>
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
           <SectionLabel>Flavor Mode</SectionLabel>
           <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={setFlavorMode} />
         </div>
@@ -186,31 +186,36 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
       {/* Units */}
       <div>
         <SectionLabel>Units Ordered</SectionLabel>
-        <div className="flex items-center gap-2 flex-wrap">
-          {UNIT_PRESETS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setUnitsOrdered(p)}
-              className={`px-3 py-1.5 rounded-xs text-xs font-semibold border transition-all ${
-                unitsOrdered === p
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              {p.toLocaleString()}
-            </button>
-          ))}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          {/* Presets — 4-col on mobile, inline on desktop */}
+          <div className="grid grid-cols-4 sm:flex gap-2 sm:gap-1.5">
+            {UNIT_PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setUnitsOrdered(p)}
+                className={`py-3 sm:py-1.5 sm:px-3 rounded-xs text-sm font-semibold border transition-all ${
+                  unitsOrdered === p
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {p >= 1000 ? `${p / 1000}k` : p}
+              </button>
+            ))}
+          </div>
+          {/* Custom input */}
           <Input
             type="number"
             min={1}
             value={unitsOrdered}
             onChange={(e) => setUnitsOrdered(Number(e.target.value))}
-            className="rounded-xs w-28 h-8 text-sm"
+            className="rounded-xs h-11 sm:h-8 sm:w-28 text-sm"
+            placeholder="Custom"
           />
         </div>
         {pricing.isRatio && pricing.testingFeeWaived && (
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 flex items-center gap-1">
+          <p className="text-xs text-green-600 dark:text-green-400 mt-2 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5" /> Testing fee waived — 3,000+ units
           </p>
         )}
@@ -224,9 +229,9 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </SectionLabel>
 
         {cannabinoids.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2 p-2.5 rounded-xs bg-muted/30 border border-border">
+          <div className="flex flex-wrap gap-2 mb-3 p-2.5 rounded-xs bg-muted/30 border border-border">
             {cannabinoids.map((c) => (
-              <Badge key={c.name} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1">
+              <Badge key={c.name} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1.5">
                 <span className="font-semibold text-xs">{c.name}</span>
                 <span className="text-muted-foreground text-xs">{c.mg}mg</span>
                 <button type="button" onClick={() => handleRemoveCannabinoid(c.name)} className="ml-0.5 hover:text-destructive transition-colors">
@@ -238,9 +243,9 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         )}
 
         {availableOptions.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <Select value={effectiveKey} onValueChange={setSelectedKey}>
-              <SelectTrigger className="w-auto min-w-[130px] h-9 rounded-xs text-sm">
+              <SelectTrigger className="flex-1 sm:flex-none sm:w-auto sm:min-w-40 h-11 sm:h-9 rounded-xs text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xs">
@@ -256,25 +261,31 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
                 ))}
               </SelectContent>
             </Select>
-            {selectedPriceAdd > 0 && (
-              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                +${selectedPriceAdd.toFixed(2)}/unit
-              </span>
-            )}
-            <Button type="button" variant="outline" size="sm" className="rounded-xs gap-1.5" onClick={handleAddCannabinoid}>
-              <Plus className="w-3.5 h-3.5" />
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xs gap-1.5 h-11 shrink-0 px-4"
+              onClick={handleAddCannabinoid}
+            >
+              <Plus className="w-4 h-4" />
               {cannabinoids.length === 0 ? "Add" : "Add Another"}
             </Button>
           </div>
+        )}
+
+        {selectedPriceAdd > 0 && availableOptions.length > 0 && (
+          <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-1.5">
+            +${selectedPriceAdd.toFixed(2)}/unit added to price
+          </p>
         )}
       </div>
 
       {/* Pricing card */}
       <div className="rounded-xs border border-border overflow-hidden">
         <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Live Pricing</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Live Pricing</p>
         </div>
-        <div className="px-4 py-3 space-y-1.5 text-sm">
+        <div className="px-4 py-3 space-y-2 text-sm">
           <div className="flex justify-between text-muted-foreground">
             <span>Unit cost</span>
             <span className="font-mono font-medium text-foreground">${pricing.unitCost.toFixed(4)}</span>
@@ -303,11 +314,12 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
       <Button
         onClick={handleSave}
         disabled={isLoading || !flavorName.trim()}
-        className="rounded-xs w-full h-11 gap-2 text-sm font-semibold"
+        className="rounded-xs w-full h-12 gap-2 text-base font-semibold"
       >
         <FlaskConical className="w-4 h-4" />
         {isLoading ? "Saving…" : "Save to My Line"}
       </Button>
+
     </div>
   );
 }

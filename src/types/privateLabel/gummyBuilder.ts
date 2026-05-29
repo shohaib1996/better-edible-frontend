@@ -21,6 +21,25 @@ export type GummyFlavorMode = "single" | "mix";
 export type GummyProductionMode = "standard" | "custom_run" | "pool";
 export type GummyLabelStatus = "draft" | "submitted";
 
+export type LabelStage =
+  | "design_in_progress"
+  | "awaiting_store_approval"
+  | "store_approved"
+  | "submitted_to_olcc"
+  | "olcc_approved"
+  | "print_order_submitted"
+  | "ready_for_production";
+
+export const LABEL_STAGES: LabelStage[] = [
+  "design_in_progress",
+  "awaiting_store_approval",
+  "store_approved",
+  "submitted_to_olcc",
+  "olcc_approved",
+  "print_order_submitted",
+  "ready_for_production",
+];
+
 // ─────────────────────────────
 // PRICING RESULT
 // ─────────────────────────────
@@ -62,6 +81,7 @@ export interface IStoreDraftLabel {
   testingFeeWaived: boolean;
   productionMode: GummyProductionMode;
   labelStatus: GummyLabelStatus;
+  currentStage: LabelStage;
   submittedAt?: string;
   createdAt: string;
   updatedAt: string;
