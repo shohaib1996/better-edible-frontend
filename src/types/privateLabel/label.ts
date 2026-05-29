@@ -13,6 +13,16 @@ export type LabelStage =
   | "print_order_submitted"
   | "ready_for_production";
 
+export const LABEL_STAGES: LabelStage[] = [
+  "design_in_progress",
+  "awaiting_store_approval",
+  "store_approved",
+  "submitted_to_olcc",
+  "olcc_approved",
+  "print_order_submitted",
+  "ready_for_production",
+];
+
 // ─────────────────────────────
 // LABEL IMAGE (Cloudinary)
 // ─────────────────────────────

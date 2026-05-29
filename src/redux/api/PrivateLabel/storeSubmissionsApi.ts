@@ -1,6 +1,7 @@
 import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
-import type { IStoreDraftLabel, LabelStage } from "@/types/privateLabel/gummyBuilder";
+import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
+import type { LabelStage } from "@/types/privateLabel/label";
 
 export interface IStoreSubmission {
   storeId: string;

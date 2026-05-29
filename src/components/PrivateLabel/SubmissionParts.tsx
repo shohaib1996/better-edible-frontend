@@ -16,8 +16,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAdvanceLabelStageMutation } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import type { IStoreSubmission } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
-import type { IStoreDraftLabel, LabelStage } from "@/types/privateLabel/gummyBuilder";
-import { LABEL_STAGES } from "@/types/privateLabel/gummyBuilder";
+import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
+import type { LabelStage } from "@/types/privateLabel/label";
+import { LABEL_STAGES } from "@/types/privateLabel/label";
 
 // ─── Stage config ─────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ export function StageStepper({
     <div className="mt-3 pt-3 border-t border-border space-y-3">
       {/* Pipeline dots */}
       <div className="flex items-center gap-0">
-        {LABEL_STAGES.map((stage, idx) => {
+        {LABEL_STAGES.map((stage: LabelStage, idx: number) => {
           const done = idx < currentIdx;
           const active = idx === currentIdx;
           const meta = STAGE_META[stage];
