@@ -12,7 +12,7 @@ interface IGummyConfig {
   unitsOrdered: number;
 }
 
-const CANNABINOID_PRICES: Record<CannabinoidName, Record<number, number>> = {
+export const CANNABINOID_PRICES: Record<CannabinoidName, Record<number, number>> = {
   CBD: { 100: 0.25, 200: 0.5, 300: 0.75, 400: 1.0 },
   CBG: { 100: 0.5, 200: 1.0 },
   CBN: { 50: 0.6, 100: 1.0 },
