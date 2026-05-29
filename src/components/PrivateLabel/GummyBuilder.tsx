@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Trash2, FlaskConical, CheckCircle2, X } from "lucide-react";
+import { Plus, FlaskConical, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { calculateGummyPrice, CANNABINOID_OPTIONS, ALL_CANNABINOIDS, CANNABINOID_PRICES } from "@/lib/gummyPricing";
+import { calculateGummyPrice } from "@/lib/gummyPricing";
 import { useCreateDraftLabelMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
 import type {
   GummySize,
@@ -16,86 +14,16 @@ import type {
   GummyFlavorMode,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
+import { SIZES, OIL_TYPES, EFFECTS, FLAVOR_MODES, UNIT_PRESETS } from "@/lib/gummyBuilderConfig";
+import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
+import { SegmentGroup, SectionLabel } from "./SegmentGroup";
+import { CannabinoidSelector } from "./CannabinoidSelector";
+import { GummyPricingCard } from "./GummyPricingCard";
+import { GummyQueue } from "./GummyQueue";
 
 interface Props {
   storeId: string;
   onSaved: () => void;
-}
-
-type OptionBtn<T> = { value: T; label: string; sub?: string };
-
-type QueuedGummy = {
-  id: string;
-  flavorName: string;
-  size: GummySize;
-  oilType: GummyOilType;
-  effect: GummyEffect;
-  flavorMode: GummyFlavorMode;
-  cannabinoids: { name: CannabinoidName; mg: number }[];
-  unitsOrdered: number;
-  grandTotal: number;
-};
-
-const SIZES: OptionBtn<GummySize>[] = [
-  { value: "standard", label: "Standard" },
-  { value: "xl", label: "XL", sub: "+$0.05/unit" },
-];
-const OIL_TYPES: OptionBtn<GummyOilType>[] = [
-  { value: "biomax", label: "BioMax", sub: "$1.75/unit" },
-  { value: "rosin", label: "Rosin", sub: "$2.50/unit" },
-];
-const EFFECTS: OptionBtn<GummyEffect>[] = [
-  { value: "hybrid", label: "Hybrid" },
-  { value: "indica", label: "Indica", sub: "+$0.05" },
-  { value: "sativa", label: "Sativa", sub: "+$0.05" },
-];
-const FLAVOR_MODES: OptionBtn<GummyFlavorMode>[] = [
-  { value: "single", label: "Single Flavor" },
-  { value: "mix", label: "Mix Flavors", sub: "+$0.05" },
-];
-
-const UNIT_PRESETS = [630, 1000, 2000, 3000];
-
-function SegmentGroup<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: OptionBtn<T>[];
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="flex gap-2">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          className={`flex-1 sm:flex-none flex flex-col items-center sm:items-start justify-center px-3 py-3 sm:py-2 rounded-xs border transition-all text-center sm:text-left min-h-14 sm:min-h-0 ${
-            value === o.value
-              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-              : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
-          }`}
-        >
-          <span className="text-sm font-semibold leading-tight">{o.label}</span>
-          {o.sub && (
-            <span className={`text-[11px] leading-tight mt-0.5 ${value === o.value ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-              {o.sub}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
-      {children}
-    </p>
-  );
 }
 
 export function GummyBuilder({ storeId, onSaved }: Props) {
@@ -106,7 +34,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   const [flavorMode, setFlavorMode] = useState<GummyFlavorMode>("single");
   const [unitsOrdered, setUnitsOrdered] = useState(630);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
-  const [selectedKey, setSelectedKey] = useState("CBD-100");
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
   const [createDraft, { isLoading }] = useCreateDraftLabelMutation();
@@ -115,15 +42,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     () => calculateGummyPrice({ size, oilType, effect, flavorMode, cannabinoids, unitsOrdered }),
     [size, oilType, effect, flavorMode, cannabinoids, unitsOrdered],
   );
-
-  const usedNames = new Set(cannabinoids.map((c) => c.name));
-  const availableOptions = ALL_CANNABINOIDS.filter((n) => !usedNames.has(n)).flatMap((n) =>
-    CANNABINOID_OPTIONS[n].map((mg) => ({ key: `${n}-${mg}`, name: n as CannabinoidName, mg })),
-  );
-  const effectiveKey =
-    availableOptions.some((o) => o.key === selectedKey) ? selectedKey : (availableOptions[0]?.key ?? "");
-  const [_selName, _selMg] = effectiveKey.split("-") as [CannabinoidName, string];
-  const selectedPriceAdd = CANNABINOID_PRICES[_selName]?.[Number(_selMg)] ?? 0;
 
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
 
@@ -137,39 +55,24 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     setCannabinoids([]);
   }
 
-  function handleAddCannabinoid() {
-    const opt = availableOptions.find((o) => o.key === effectiveKey);
-    if (!opt) return;
-    setCannabinoids((prev) => [...prev, { name: opt.name, mg: opt.mg }]);
-    const next = availableOptions.find((o) => o.key !== effectiveKey);
-    setSelectedKey(next?.key ?? "CBD-100");
-  }
-
-  function handleRemoveCannabinoid(name: CannabinoidName) {
-    setCannabinoids((prev) => prev.filter((c) => c.name !== name));
-  }
-
   function handleQueueCurrent() {
     if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
     if (unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
     setQueue((prev) => [
       ...prev,
-      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal },
+      {
+        id: Date.now().toString(),
+        flavorName: flavorName.trim(),
+        size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal,
+      },
     ]);
     toast.success(`"${flavorName.trim()}" queued — configure your next gummy`);
     resetForm();
   }
 
-  function handleRemoveFromQueue(id: string) {
-    setQueue((prev) => prev.filter((q) => q.id !== id));
-  }
-
   async function handleSave() {
     const hasCurrentForm = flavorName.trim() !== "";
-    if (!hasCurrentForm && queue.length === 0) {
-      toast.error("Flavor name is required");
-      return;
-    }
+    if (!hasCurrentForm && queue.length === 0) { toast.error("Flavor name is required"); return; }
     if (hasCurrentForm && unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
 
     const toSave: QueuedGummy[] = [
@@ -193,9 +96,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         }).unwrap();
       }
       toast.success(
-        toSave.length > 1
-          ? `${toSave.length} gummies saved to your line`
-          : "Gummy saved to your line",
+        toSave.length > 1 ? `${toSave.length} gummies saved to your line` : "Gummy saved to your line",
       );
       setQueue([]);
       resetForm();
@@ -281,132 +182,18 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         )}
       </div>
 
-      {/* Cannabinoid Add-ons */}
-      <div>
-        <SectionLabel>
-          Cannabinoid Add-ons{" "}
-          <span className="normal-case font-normal text-muted-foreground/60 tracking-normal">(optional)</span>
-        </SectionLabel>
+      {/* Cannabinoid add-ons */}
+      <CannabinoidSelector
+        cannabinoids={cannabinoids}
+        onAdd={(entry) => setCannabinoids((prev) => [...prev, entry])}
+        onRemove={(name) => setCannabinoids((prev) => prev.filter((c) => c.name !== name))}
+      />
 
-        {cannabinoids.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3 p-2.5 rounded-xs bg-muted/30 border border-border">
-            {cannabinoids.map((c) => (
-              <Badge key={c.name} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1.5">
-                <span className="font-semibold text-xs">{c.name}</span>
-                <span className="text-muted-foreground text-xs">{c.mg}mg</span>
-                <button type="button" onClick={() => handleRemoveCannabinoid(c.name)} className="ml-0.5 hover:text-destructive transition-colors">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {availableOptions.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Select value={effectiveKey} onValueChange={setSelectedKey}>
-              <SelectTrigger className="flex-1 sm:flex-none sm:w-auto sm:min-w-40 h-11 sm:h-9 rounded-xs text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xs">
-                {ALL_CANNABINOIDS.filter((n) => !usedNames.has(n)).map((name) => (
-                  <SelectGroup key={name}>
-                    <SelectLabel className="text-xs font-bold text-foreground px-2 py-1">{name}</SelectLabel>
-                    {CANNABINOID_OPTIONS[name].map((mg) => (
-                      <SelectItem key={`${name}-${mg}`} value={`${name}-${mg}`} className="rounded-xs pl-4">
-                        {name} {mg}mg
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xs gap-1.5 h-11 shrink-0 px-4"
-              onClick={handleAddCannabinoid}
-            >
-              <Plus className="w-4 h-4" />
-              {cannabinoids.length === 0 ? "Add" : "Add Another"}
-            </Button>
-          </div>
-        )}
-
-        {selectedPriceAdd > 0 && availableOptions.length > 0 && (
-          <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-1.5">
-            +${selectedPriceAdd.toFixed(2)}/unit added to price
-          </p>
-        )}
-      </div>
-
-      {/* Pricing card */}
-      <div className="rounded-xs border border-border overflow-hidden">
-        <div className="px-4 py-2.5 bg-muted/40 border-b border-border">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Live Pricing</p>
-        </div>
-        <div className="px-4 py-3 space-y-2 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Unit cost</span>
-            <span className="font-mono font-medium text-foreground">${pricing.unitCost.toFixed(4)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>× {unitsOrdered.toLocaleString()} units</span>
-            <span className="font-mono">${pricing.totalCost.toFixed(2)}</span>
-          </div>
-          {pricing.isRatio && (
-            <div className="flex justify-between text-muted-foreground">
-              <span>Testing fee</span>
-              {pricing.testingFeeWaived ? (
-                <span className="text-green-600 dark:text-green-400 font-medium">Waived</span>
-              ) : (
-                <span className="text-amber-600 dark:text-amber-400">+${pricing.testingFee}</span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="px-4 py-3 bg-primary/5 border-t border-border flex items-center justify-between">
-          <span className="text-sm font-semibold">Total</span>
-          <span className="text-2xl font-bold text-primary">${grandTotal.toFixed(2)}</span>
-        </div>
-      </div>
+      {/* Live pricing */}
+      <GummyPricingCard pricing={pricing} unitsOrdered={unitsOrdered} grandTotal={grandTotal} />
 
       {/* Queue preview */}
-      {queue.length > 0 && (
-        <div className="rounded-xs border border-border overflow-hidden">
-          <div className="px-4 py-2.5 bg-muted/40 border-b border-border flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Queued — {queue.length} gummy{queue.length !== 1 ? "s" : ""}
-            </p>
-            <span className="text-xs text-muted-foreground font-mono">
-              ${queue.reduce((s, q) => s + q.grandTotal, 0).toFixed(2)}
-            </span>
-          </div>
-          <div className="divide-y divide-border">
-            {queue.map((item) => (
-              <div key={item.id} className="px-4 py-2.5 flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{item.flavorName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.oilType === "rosin" ? "Rosin" : "BioMax"} · {item.size === "xl" ? "XL" : "Std"} · {item.effect} · {item.unitsOrdered.toLocaleString()} units
-                    {item.cannabinoids.length > 0 && ` · ${item.cannabinoids.map((c) => `${c.name} ${c.mg}mg`).join(", ")}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-semibold font-mono">${item.grandTotal.toFixed(2)}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFromQueue(item.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <GummyQueue queue={queue} onRemove={(id) => setQueue((prev) => prev.filter((q) => q.id !== id))} />
 
       {/* Actions */}
       <div className="flex gap-2">
