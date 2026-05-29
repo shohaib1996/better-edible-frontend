@@ -30,6 +30,11 @@ interface IGetMyLabelsResponse {
 
 export const storeLabelApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    // GET /api/store/labels/my-rep?storeId=
+    getMyRep: builder.query<{ rep: { name: string; email: string } | null }, string>({
+      query: (storeId) => ({ url: "/store/labels/my-rep", params: { storeId } }),
+    }),
+
     // GET /api/store/labels?storeId=&status=&page=&limit=
     getMyLabels: builder.query<IGetMyLabelsResponse, IGetMyLabelsParams>({
       query: ({ storeId, status, page, limit }) => ({
@@ -83,13 +88,24 @@ export const storeLabelApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.storeLabels, tagTypes.storePools],
     }),
+
+    // POST /api/store/labels/upload-logo
+    uploadLogo: builder.mutation<{ success: boolean; url: string }, FormData>({
+      query: (formData) => ({
+        url: "/store/labels/upload-logo",
+        method: "POST",
+        body: formData,
+      }),
+    }),
   }),
 });
 
 export const {
+  useGetMyRepQuery,
   useGetMyLabelsQuery,
   useCreateDraftLabelMutation,
   useUpdateDraftLabelMutation,
   useDeleteDraftLabelMutation,
   useSubmitLineMutation,
+  useUploadLogoMutation,
 } = storeLabelApi;
