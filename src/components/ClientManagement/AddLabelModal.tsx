@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useAddLabelForm } from "./useAddLabelForm";
-import { ComponentListField } from "./ComponentListField";
+import { LabelComponentList } from "./LabelComponentList";
 import { LabelImageUpload } from "./LabelImageUpload";
 
 interface Props {
@@ -112,16 +112,16 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess }: Props) => 
           </div>
 
           {/* Flavor Components */}
-          <ComponentListField
+          <LabelComponentList
             label="Flavor Components"
-            components={form.flavorComponents}
+            items={form.flavorComponents}
             onChange={form.setFlavorComponents}
           />
 
           {/* Color Components */}
-          <ComponentListField
+          <LabelComponentList
             label="Color Components"
-            components={form.colorComponents}
+            items={form.colorComponents}
             onChange={form.setColorComponents}
           />
 

@@ -57,25 +57,7 @@ import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewMod
 import { EditLabelModal } from "./EditLabelModal";
 import { StageHistoryModal } from "./StageHistoryModal";
 
-// Helper to get user info from localStorage
-const getUserFromStorage = (): {
-  userId: string;
-  userType: "admin" | "rep";
-} | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const storedUser = localStorage.getItem("better-user");
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      const userType =
-        user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
-      return { userId: user.id, userType };
-    }
-  } catch {
-    console.error("Failed to parse user from localStorage");
-  }
-  return null;
-};
+import { getUserFromStorage } from "@/lib/getUserFromStorage";
 
 interface LabelCardProps {
   label: ILabel;

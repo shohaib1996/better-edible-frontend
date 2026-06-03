@@ -22,7 +22,7 @@ import { Loader2 } from "lucide-react";
 import { useUpdateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { ILabel } from "@/types";
-import { LabelImageUpload } from "./LabelImageUpload";
+import { EditLabelImageUpload } from "./EditLabelImageUpload";
 import { LabelComponentList, type ComponentEntry } from "./LabelComponentList";
 
 interface EditLabelModalProps {
@@ -156,14 +156,13 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
           </div>
 
           {/* Images */}
-          <LabelImageUpload
+          <EditLabelImageUpload
             labelImages={label.labelImages}
-            flavorName={flavorName}
             existingImages={existingImages}
             newFiles={newFiles}
-            onRemoveExisting={(id) => setExistingImages((prev) => prev.filter((x) => x !== id))}
-            onRemoveNew={(idx) => setNewFiles((prev) => prev.filter((_, i) => i !== idx))}
-            onAddFiles={(files) => setNewFiles((prev) => [...prev, ...files])}
+            onRemoveExisting={(id: string) => setExistingImages((prev) => prev.filter((x) => x !== id))}
+            onRemoveNew={(idx: number) => setNewFiles((prev) => prev.filter((_, i) => i !== idx))}
+            onAddFiles={(files: File[]) => setNewFiles((prev) => [...prev, ...files])}
           />
 
           {/* Flavor Components */}

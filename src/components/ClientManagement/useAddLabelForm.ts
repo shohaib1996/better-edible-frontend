@@ -4,24 +4,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCreateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
-
-function getUserFromStorage(): { userId: string; userType: "admin" | "rep" } | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem("better-user");
-    if (raw) {
-      const user = JSON.parse(raw);
-      const userType =
-        user.role === "superadmin" || user.role === "manager" ? "admin" : "rep";
-      return { userId: user.id, userType };
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
-export type ComponentEntry = { name: string; percentage: string };
+import { getUserFromStorage } from "@/lib/getUserFromStorage";
+import type { ComponentEntry } from "./LabelComponentList";
 
 export function useAddLabelForm(
   clientId: string,
