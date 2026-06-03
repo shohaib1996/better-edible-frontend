@@ -1,21 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCreateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { getUserFromStorage } from "@/lib/getUserFromStorage";
 import type { ComponentEntry } from "./LabelComponentList";
 
+export interface AddLabelInitialValues {
+  flavorName?: string;
+  cannabinoidMix?: string;
+  specialInstructions?: string;
+  productTypeKeyword?: string;
+}
+
 export function useAddLabelForm(
   clientId: string,
   onSuccess: () => void,
   onClose: () => void,
+  initialValues?: AddLabelInitialValues,
 ) {
-  const [flavorName, setFlavorName] = useState("");
+  const [flavorName, setFlavorName] = useState(initialValues?.flavorName ?? "");
   const [productType, setProductType] = useState("");
-  const [specialInstructions, setSpecialInstructions] = useState("");
-  const [cannabinoidMix, setCannabinoidMix] = useState("");
+  const [specialInstructions, setSpecialInstructions] = useState(initialValues?.specialInstructions ?? "");
+  const [cannabinoidMix, setCannabinoidMix] = useState(initialValues?.cannabinoidMix ?? "");
   const [color, setColor] = useState("");
   const [flavorComponents, setFlavorComponents] = useState<ComponentEntry[]>([]);
   const [colorComponents, setColorComponents] = useState<ComponentEntry[]>([]);
@@ -26,6 +34,17 @@ export function useAddLabelForm(
   const [createLabel, { isLoading }] = useCreateLabelMutation();
 
   const products = productsData?.products ?? [];
+
+  // Auto-select product type by keyword (works for any current or future oil type)
+  useEffect(() => {
+    if (products.length > 0 && !productType && initialValues?.productTypeKeyword) {
+      const keyword = initialValues.productTypeKeyword.toLowerCase();
+      const match = products.find((p: { name: string }) =>
+        p.name.toLowerCase().includes(keyword)
+      );
+      if (match) setProductType(match.name);
+    }
+  }, [products]);
 
   function resetForm() {
     setFlavorName("");

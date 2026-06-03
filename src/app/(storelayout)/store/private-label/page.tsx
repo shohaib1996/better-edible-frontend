@@ -10,14 +10,13 @@ import { SavedGummiesList } from "@/components/PrivateLabel/SavedGummiesList";
 import { SubmitSummary } from "@/components/PrivateLabel/SubmitSummary";
 import { ActiveDashboard } from "@/components/PrivateLabel/ActiveDashboard";
 
-type Tab = "build" | "my-line" | "submit" | "labels" | "orders";
+type Tab = "build" | "submit" | "labels" | "orders";
 
 export default function PrivateLabelPage() {
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
   const [active, setActive] = useState<Tab>("build");
 
-  // Pagination state
   const [labelsPage, setLabelsPage] = useState(1);
   const [labelsLimit, setLabelsLimit] = useState(10);
   const [ordersPage, setOrdersPage] = useState(1);
@@ -31,7 +30,6 @@ export default function PrivateLabelPage() {
     }
   }, []);
 
-  // Draft labels — no pagination, used for My Line / Submit tabs
   const {
     data: draftData,
     isLoading: isLoadingDrafts,
@@ -41,7 +39,6 @@ export default function PrivateLabelPage() {
     { skip: !storeId }
   );
 
-  // Submitted labels — paginated, used for My Labels tab
   const {
     data: submittedData,
     isLoading: isLoadingSubmitted,
@@ -51,7 +48,6 @@ export default function PrivateLabelPage() {
     { skip: !storeId }
   );
 
-  // Orders — paginated
   const { data: ordersData, isLoading: isLoadingOrders } = useGetMyOrdersQuery(
     { storeId: storeId ?? "", page: ordersPage, limit: ordersLimit },
     { skip: !storeId }
@@ -68,39 +64,19 @@ export default function PrivateLabelPage() {
 
   const tabs: { id: Tab; label: string; count?: number; hidden?: boolean }[] = [
     { id: "build", label: "Builder" },
-    { id: "my-line", label: "My Line", count: draftLabels.length },
-    { id: "submit", label: "Submit", hidden: draftLabels.length === 0 },
+    { id: "submit", label: "Submit My Line", hidden: draftLabels.length === 0 },
     { id: "labels", label: "My Labels", count: totalSubmitted || undefined, hidden: !isLoadingSubmitted && totalSubmitted === 0 },
     { id: "orders", label: "My Orders", count: totalOrders || undefined, hidden: !isLoadingOrders && totalOrders === 0 },
   ];
 
   function handleSaved() {
     refetchDrafts();
-    setActive("my-line");
   }
 
   function handleSubmitted() {
     refetchDrafts();
     refetchSubmitted();
     setActive("labels");
-  }
-
-  function handleLabelsPageChange(page: number) {
-    setLabelsPage(page);
-  }
-
-  function handleLabelsLimitChange(limit: number) {
-    setLabelsPage(1);
-    setLabelsLimit(limit);
-  }
-
-  function handleOrdersPageChange(page: number) {
-    setOrdersPage(page);
-  }
-
-  function handleOrdersLimitChange(limit: number) {
-    setOrdersPage(1);
-    setOrdersLimit(limit);
   }
 
   if (!storeId) {
@@ -140,6 +116,36 @@ export default function PrivateLabelPage() {
         <FlaskConical className="w-10 h-10 text-white/30 dark:text-primary/30 shrink-0 hidden sm:block" />
       </div>
 
+      {/* My Line — always visible at top */}
+      <div className="rounded-xs border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">My Line</span>
+            {draftLabels.length > 0 && (
+              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
+                {draftLabels.length}
+              </span>
+            )}
+          </div>
+          {draftLabels.length > 0 && (
+            <button
+              onClick={() => setActive("submit")}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Review & Submit →
+            </button>
+          )}
+        </div>
+        <div className="p-5">
+          <SavedGummiesList
+            storeId={storeId}
+            labels={draftLabels}
+            isLoading={isLoadingDrafts}
+          />
+        </div>
+      </div>
+
       {/* Tab nav */}
       <div className="flex justify-center items-center gap-1 border-b border-border pb-0">
         {tabs
@@ -172,24 +178,6 @@ export default function PrivateLabelPage() {
           </div>
         )}
 
-        {active === "my-line" && (
-          <div className="space-y-4">
-            <SavedGummiesList
-              storeId={storeId}
-              labels={draftLabels}
-              isLoading={isLoadingDrafts}
-            />
-            {draftLabels.length > 0 && (
-              <button
-                onClick={() => setActive("submit")}
-                className="w-full rounded-xs border border-primary text-primary text-sm font-medium py-2.5 hover:bg-primary/5 transition-colors"
-              >
-                Review & Submit My Line →
-              </button>
-            )}
-          </div>
-        )}
-
         {active === "submit" && (
           <div className="rounded-xs border border-border bg-card p-5">
             <SubmitSummary
@@ -208,11 +196,11 @@ export default function PrivateLabelPage() {
             isLoadingLabels={isLoadingSubmitted}
             isLoadingOrders={isLoadingOrders}
             labelsPagination={labelsPagination}
-            onLabelsPageChange={handleLabelsPageChange}
-            onLabelsLimitChange={handleLabelsLimitChange}
+            onLabelsPageChange={(p) => setLabelsPage(p)}
+            onLabelsLimitChange={(l) => { setLabelsPage(1); setLabelsLimit(l); }}
             ordersPagination={ordersPagination}
-            onOrdersPageChange={handleOrdersPageChange}
-            onOrdersLimitChange={handleOrdersLimitChange}
+            onOrdersPageChange={(p) => setOrdersPage(p)}
+            onOrdersLimitChange={(l) => { setOrdersPage(1); setOrdersLimit(l); }}
           />
         )}
 
@@ -224,11 +212,11 @@ export default function PrivateLabelPage() {
             isLoadingLabels={isLoadingSubmitted}
             isLoadingOrders={isLoadingOrders}
             labelsPagination={labelsPagination}
-            onLabelsPageChange={handleLabelsPageChange}
-            onLabelsLimitChange={handleLabelsLimitChange}
+            onLabelsPageChange={(p) => setLabelsPage(p)}
+            onLabelsLimitChange={(l) => { setLabelsPage(1); setLabelsLimit(l); }}
             ordersPagination={ordersPagination}
-            onOrdersPageChange={handleOrdersPageChange}
-            onOrdersLimitChange={handleOrdersLimitChange}
+            onOrdersPageChange={(p) => setOrdersPage(p)}
+            onOrdersLimitChange={(l) => { setOrdersPage(1); setOrdersLimit(l); }}
           />
         )}
       </div>

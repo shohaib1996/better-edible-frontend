@@ -1,12 +1,34 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, FlaskConical, CheckCircle2 } from "lucide-react";
+import { Plus, FlaskConical, CheckCircle2, ChevronsUpDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { calculateGummyPrice } from "@/lib/gummyPricing";
 import { useCreateDraftLabelMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
+import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import type {
   GummySize,
   GummyOilType,
@@ -14,7 +36,14 @@ import type {
   GummyFlavorMode,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
-import { SIZES, OIL_TYPES, EFFECTS, FLAVOR_MODES, UNIT_PRESETS } from "@/lib/gummyBuilderConfig";
+import {
+  SIZES,
+  OIL_TYPES,
+  EFFECTS,
+  FLAVOR_MODES,
+  UNIT_OPTIONS,
+  CUSTOM_FLAVOR_KEY,
+} from "@/lib/gummyBuilderConfig";
 import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
 import { SegmentGroup, SectionLabel } from "./SegmentGroup";
 import { CannabinoidSelector } from "./CannabinoidSelector";
@@ -27,14 +56,25 @@ interface Props {
 }
 
 export function GummyBuilder({ storeId, onSaved }: Props) {
+  const [flavorOpen, setFlavorOpen] = useState(false);
+  const [flavorDropdown, setFlavorDropdown] = useState("");
   const [flavorName, setFlavorName] = useState("");
+
+  const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
+  const flavors = useMemo(
+    () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [flavorsData],
+  );
   const [size, setSize] = useState<GummySize>("standard");
   const [oilType, setOilType] = useState<GummyOilType>("biomax");
   const [effect, setEffect] = useState<GummyEffect>("hybrid");
   const [flavorMode, setFlavorMode] = useState<GummyFlavorMode>("single");
-  const [unitsOrdered, setUnitsOrdered] = useState(630);
+  const [unitsOrdered, setUnitsOrdered] = useState(UNIT_OPTIONS[0]);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
+
+  const isCustomFlavor = flavorDropdown === CUSTOM_FLAVOR_KEY;
+  const effectiveFlavorName = isCustomFlavor ? flavorName : flavorDropdown;
 
   const [createDraft, { isLoading }] = useCreateDraftLabelMutation();
 
@@ -45,40 +85,46 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
 
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
 
+  function handleFlavorSelect(value: string) {
+    setFlavorDropdown(value);
+    if (value !== CUSTOM_FLAVOR_KEY) setFlavorName(value);
+    else setFlavorName("");
+    setFlavorOpen(false);
+  }
+
   function resetForm() {
+    setFlavorDropdown("");
     setFlavorName("");
     setSize("standard");
     setOilType("biomax");
     setEffect("hybrid");
     setFlavorMode("single");
-    setUnitsOrdered(630);
+    setUnitsOrdered(UNIT_OPTIONS[0]);
     setCannabinoids([]);
   }
 
   function handleQueueCurrent() {
-    if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
-    if (unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
+    if (!effectiveFlavorName.trim()) { toast.error("Flavor name is required"); return; }
     setQueue((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
-        flavorName: flavorName.trim(),
+        flavorName: effectiveFlavorName.trim(),
         size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal,
       },
     ]);
-    toast.success(`"${flavorName.trim()}" queued — configure your next gummy`);
+    toast.success(`"${effectiveFlavorName.trim()}" queued — configure your next gummy`);
     resetForm();
   }
 
   async function handleSave() {
-    const hasCurrentForm = flavorName.trim() !== "";
+    const hasCurrentForm = effectiveFlavorName.trim() !== "";
     if (!hasCurrentForm && queue.length === 0) { toast.error("Flavor name is required"); return; }
-    if (hasCurrentForm && unitsOrdered < 1) { toast.error("Units must be at least 1"); return; }
 
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
+        ? [{ id: "current", flavorName: effectiveFlavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
         : []),
     ];
 
@@ -106,20 +152,95 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     }
   }
 
-  const totalQueued = queue.length + (flavorName.trim() ? 1 : 0);
+  const totalQueued = queue.length + (effectiveFlavorName.trim() ? 1 : 0);
 
   return (
     <div className="space-y-4">
 
-      {/* Flavor name */}
-      <div>
-        <SectionLabel>Flavor Name</SectionLabel>
-        <Input
-          placeholder="e.g. Mango Haze"
-          value={flavorName}
-          onChange={(e) => setFlavorName(e.target.value)}
-          className="rounded-xs h-12 text-base"
+      {/* Gummy visualization */}
+      <div className="flex justify-center">
+        <img
+          src="/images/gummy-preview.png"
+          alt="Gummy"
+          className="h-36 w-auto object-contain"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
         />
+      </div>
+
+      {/* Flavor */}
+      <div>
+        <SectionLabel>Flavor</SectionLabel>
+        <Popover open={flavorOpen} onOpenChange={setFlavorOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={flavorOpen}
+              className={cn(
+                "w-full justify-between rounded-xs h-10 text-sm font-normal",
+                !flavorDropdown && "text-muted-foreground",
+              )}
+            >
+              {isCustomFlavor
+                ? (flavorName || "Other (custom)…")
+                : (flavorDropdown || "Select a flavor…")}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[--radix-popover-trigger-width] p-0 rounded-xs"
+            align="start"
+          >
+            <Command className="rounded-xs">
+              <CommandInput placeholder="Search flavors…" className="h-10" />
+              <CommandList className="max-h-64">
+                <CommandEmpty>
+                  {isLoadingFlavors ? "Loading flavors…" : "No flavors found."}
+                </CommandEmpty>
+                <CommandGroup>
+                  {flavors.map((f) => (
+                    <CommandItem
+                      key={f.flavorId}
+                      value={f.name}
+                      onSelect={handleFlavorSelect}
+                      className="rounded-xs"
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          flavorDropdown === f.name ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {f.name}
+                    </CommandItem>
+                  ))}
+                  <CommandItem
+                    value={CUSTOM_FLAVOR_KEY}
+                    onSelect={handleFlavorSelect}
+                    className="rounded-xs text-muted-foreground italic"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        flavorDropdown === CUSTOM_FLAVOR_KEY ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    Other (enter custom)…
+                  </CommandItem>
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {isCustomFlavor && (
+          <Input
+            className="rounded-xs h-11 text-base mt-2"
+            placeholder="Enter custom flavor name"
+            value={flavorName}
+            onChange={(e) => setFlavorName(e.target.value)}
+            autoFocus
+          />
+        )}
       </div>
 
       {/* Size + Oil Type */}
@@ -149,32 +270,18 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
       {/* Units */}
       <div>
         <SectionLabel>Units Ordered</SectionLabel>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="grid grid-cols-4 sm:flex gap-2 sm:gap-1.5">
-            {UNIT_PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setUnitsOrdered(p)}
-                className={`py-3 sm:py-1.5 sm:px-3 rounded-xs text-sm font-semibold border transition-all ${
-                  unitsOrdered === p
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {p >= 1000 ? `${p / 1000}k` : p}
-              </button>
+        <Select value={String(unitsOrdered)} onValueChange={(v) => setUnitsOrdered(Number(v))}>
+          <SelectTrigger className="rounded-xs h-12 text-base">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="rounded-xs max-h-64">
+            {UNIT_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)} className="rounded-xs">
+                {n.toLocaleString()} units
+              </SelectItem>
             ))}
-          </div>
-          <Input
-            type="number"
-            min={1}
-            value={unitsOrdered}
-            onChange={(e) => setUnitsOrdered(Number(e.target.value))}
-            className="rounded-xs h-11 sm:h-8 sm:w-28 text-sm"
-            placeholder="Custom"
-          />
-        </div>
+          </SelectContent>
+        </Select>
         {pricing.isRatio && pricing.testingFeeWaived && (
           <p className="text-xs text-green-600 dark:text-green-400 mt-2 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5" /> Testing fee waived — 3,000+ units
@@ -201,7 +308,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
           type="button"
           variant="outline"
           onClick={handleQueueCurrent}
-          disabled={isLoading || !flavorName.trim()}
+          disabled={isLoading || !effectiveFlavorName.trim()}
           className="rounded-xs flex-1 h-12 gap-2 text-sm font-semibold"
         >
           <Plus className="w-4 h-4" />
@@ -209,7 +316,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </Button>
         <Button
           onClick={handleSave}
-          disabled={isLoading || (!flavorName.trim() && queue.length === 0)}
+          disabled={isLoading || (!effectiveFlavorName.trim() && queue.length === 0)}
           className="rounded-xs flex-1 h-12 gap-2 text-base font-semibold"
         >
           <FlaskConical className="w-4 h-4" />

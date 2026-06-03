@@ -27,7 +27,7 @@ export function calculateGummyPrice(config: IGummyConfig): IGummyPricingResult {
   const base = config.oilType === "rosin" ? 2.5 : 1.75;
   const size = config.size === "xl" ? 0.05 : 0;
   const effect = config.effect === "hybrid" ? 0 : 0.05;
-  const flavorMode = config.flavorMode === "mix" ? 0.05 : 0;
+  const flavorMode = 0; // mix flavor no longer carries a surcharge
 
   const cannabinoidBreakdown = config.cannabinoids.map((c) => ({
     name: c.name,

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { useAddLabelForm } from "./useAddLabelForm";
+import { useAddLabelForm, type AddLabelInitialValues } from "./useAddLabelForm";
 import { LabelComponentList } from "./LabelComponentList";
 import { LabelImageUpload } from "./LabelImageUpload";
 
@@ -26,16 +26,18 @@ interface Props {
   onClose: () => void;
   clientId: string;
   onSuccess: () => void;
+  initialValues?: AddLabelInitialValues;
+  title?: string;
 }
 
-export const AddLabelModal = ({ open, onClose, clientId, onSuccess }: Props) => {
-  const form = useAddLabelForm(clientId, onSuccess, onClose);
+export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValues, title }: Props) => {
+  const form = useAddLabelForm(clientId, onSuccess, onClose, initialValues);
 
   return (
     <Dialog open={open} onOpenChange={form.handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-xs border-border dark:border-white/20 dark:bg-card">
         <DialogHeader>
-          <DialogTitle>Add New Label</DialogTitle>
+          <DialogTitle>{title ?? "Add New Label"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

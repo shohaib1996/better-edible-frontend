@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CheckCircle2,
   Clock,
@@ -10,11 +11,13 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAdvanceLabelStageMutation } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
+import { AddLabelModal } from "@/components/ClientManagement/AddLabelModal";
 import type { IStoreSubmission } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
 import type { LabelStage } from "@/types/privateLabel/label";
@@ -196,10 +199,43 @@ export function RepSection({ rep }: { rep: IStoreSubmission["rep"] }) {
   );
 }
 
+// ─── Create label dialog ──────────────────────────────────────────────────────
+
+function buildCannabinoidMix(label: IStoreDraftLabel): string {
+  const base = label.oilType === "rosin" ? "THC Rosin" : "THC BioMax";
+  const extras = (label.cannabinoids ?? []).map((c) => `${c.mg}mg ${c.name}`);
+  return [base, ...extras].join(", ");
+}
+
+function buildSpecialInstructions(label: IStoreDraftLabel): string {
+  const size = label.size === "xl" ? "XL" : "Standard";
+  const effect = label.effect
+    ? label.effect.charAt(0).toUpperCase() + label.effect.slice(1)
+    : "Hybrid";
+  const flavorMode = label.flavorMode === "mix" ? "Mix Flavor" : "Single Flavor";
+  const units = label.unitsOrdered ? label.unitsOrdered.toLocaleString() + " units" : null;
+  const prodMode =
+    label.productionMode === "pool"
+      ? "Pool production"
+      : label.productionMode === "custom_run"
+      ? "Custom run"
+      : "Standard production";
+  const testing = label.isRatio
+    ? label.testingFeeWaived
+      ? "Testing fee waived"
+      : "+$250 testing fee"
+    : null;
+
+  return [size, effect, flavorMode, prodMode, units, testing]
+    .filter(Boolean)
+    .join(" | ");
+}
+
 // ─── Label row ────────────────────────────────────────────────────────────────
 
-export function LabelRow({ label }: { label: IStoreDraftLabel }) {
+export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientId: string }) {
   const [advanceStage, { isLoading }] = useAdvanceLabelStageMutation();
+  const [showCreate, setShowCreate] = useState(false);
 
   async function handleStageChange(stage: LabelStage) {
     try {
@@ -254,6 +290,33 @@ export function LabelRow({ label }: { label: IStoreDraftLabel }) {
 
       {/* Stage stepper */}
       <StageStepper label={label} onStageChange={handleStageChange} isLoading={isLoading} />
+
+      {/* Create admin label from this submission */}
+      <div className="mt-3 flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-xs h-7 text-xs gap-1.5 px-3"
+          onClick={() => setShowCreate(true)}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Create Label
+        </Button>
+      </div>
+
+      <AddLabelModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        clientId={clientId}
+        onSuccess={() => {}}
+        title="Create Label from Submission"
+        initialValues={{
+          flavorName: label.flavorName,
+          cannabinoidMix: buildCannabinoidMix(label),
+          specialInstructions: buildSpecialInstructions(label),
+          productTypeKeyword: label.oilType,
+        }}
+      />
     </div>
   );
 }

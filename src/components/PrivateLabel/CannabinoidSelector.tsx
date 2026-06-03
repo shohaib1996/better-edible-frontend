@@ -84,15 +84,18 @@ export function CannabinoidSelector({ cannabinoids, onAdd, onRemove }: Props) {
                   <SelectLabel className="text-xs font-bold text-foreground px-2 py-1">
                     {name}
                   </SelectLabel>
-                  {CANNABINOID_OPTIONS[name].map((mg) => (
-                    <SelectItem
-                      key={`${name}-${mg}`}
-                      value={`${name}-${mg}`}
-                      className="rounded-xs pl-4"
-                    >
-                      {name} {mg}mg
-                    </SelectItem>
-                  ))}
+                  {CANNABINOID_OPTIONS[name].map((mg) => {
+                    const price = CANNABINOID_PRICES[name as CannabinoidName]?.[mg] ?? 0;
+                    return (
+                      <SelectItem
+                        key={`${name}-${mg}`}
+                        value={`${name}-${mg}`}
+                        className="rounded-xs pl-4"
+                      >
+                        {name} {mg}mg — +${price.toFixed(2)}/unit
+                      </SelectItem>
+                    );
+                  })}
                 </SelectGroup>
               ))}
             </SelectContent>

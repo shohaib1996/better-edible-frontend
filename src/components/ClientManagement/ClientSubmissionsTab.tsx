@@ -63,7 +63,7 @@ export function ClientSubmissionsTab({ clientId }: Props) {
         </h3>
         <div className="rounded-xs border border-border bg-card overflow-hidden divide-y divide-border">
           {submission.labels.map((label) => (
-            <LabelRow key={label._id} label={label} />
+            <LabelRow key={label._id} label={label} clientId={clientId} />
           ))}
         </div>
       </div>

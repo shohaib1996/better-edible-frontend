@@ -44,7 +44,7 @@ const EFFECTS: OptionBtn<GummyEffect>[] = [
 ];
 const FLAVOR_MODES: OptionBtn<GummyFlavorMode>[] = [
   { value: "single", label: "Single" },
-  { value: "mix", label: "Mix", sub: "+$0.05" },
+  { value: "mix", label: "Mix" },
 ];
 const UNIT_PRESETS = [630, 1000, 2000, 3000];
 

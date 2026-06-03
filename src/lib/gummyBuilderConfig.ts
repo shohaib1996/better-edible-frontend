@@ -38,7 +38,13 @@ export const EFFECTS: OptionBtn<GummyEffect>[] = [
 
 export const FLAVOR_MODES: OptionBtn<GummyFlavorMode>[] = [
   { value: "single", label: "Single Flavor" },
-  { value: "mix", label: "Mix Flavors", sub: "+$0.05" },
+  { value: "mix", label: "Mix Flavors" },
 ];
 
-export const UNIT_PRESETS = [630, 1000, 2000, 3000];
+// 70-unit increments starting at 140 up to 4200
+export const UNIT_OPTIONS: number[] = Array.from(
+  { length: Math.floor((4200 - 140) / 70) + 1 },
+  (_, i) => 140 + i * 70,
+);
+
+export const CUSTOM_FLAVOR_KEY = "__custom__";
