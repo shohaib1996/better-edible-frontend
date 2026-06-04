@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FlaskConical, Sparkles } from "lucide-react";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
@@ -16,6 +16,7 @@ export default function PrivateLabelPage() {
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
   const [active, setActive] = useState<Tab>("build");
+  const tabSectionRef = useRef<HTMLDivElement>(null);
 
   const [labelsPage, setLabelsPage] = useState(1);
   const [labelsLimit, setLabelsLimit] = useState(10);
@@ -130,7 +131,12 @@ export default function PrivateLabelPage() {
           </div>
           {draftLabels.length > 0 && (
             <button
-              onClick={() => setActive("submit")}
+              onClick={() => {
+                setActive("submit");
+                setTimeout(() => {
+                  tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 50);
+              }}
               className="text-xs font-medium text-primary hover:underline"
             >
               Review & Submit →
@@ -147,7 +153,7 @@ export default function PrivateLabelPage() {
       </div>
 
       {/* Tab nav */}
-      <div className="flex justify-center items-center gap-1 border-b border-border pb-0">
+      <div ref={tabSectionRef} className="flex justify-center items-center gap-1 border-b border-border pb-0">
         {tabs
           .filter((t) => !t.hidden)
           .map((tab) => (

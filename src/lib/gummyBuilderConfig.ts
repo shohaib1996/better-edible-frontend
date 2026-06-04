@@ -47,4 +47,3 @@ export const UNIT_OPTIONS: number[] = Array.from(
   (_, i) => 140 + i * 70,
 );
 
-export const CUSTOM_FLAVOR_KEY = "__custom__";

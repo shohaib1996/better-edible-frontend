@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, FlaskConical, CheckCircle2, ChevronsUpDown, Check } from "lucide-react";
+import { FlaskConical, CheckCircle2, ChevronsUpDown, Check, X, Plus, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +24,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calculateGummyPrice } from "@/lib/gummyPricing";
@@ -42,7 +43,6 @@ import {
   EFFECTS,
   FLAVOR_MODES,
   UNIT_OPTIONS,
-  CUSTOM_FLAVOR_KEY,
 } from "@/lib/gummyBuilderConfig";
 import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
 import { SegmentGroup, SectionLabel } from "./SegmentGroup";
@@ -50,21 +50,18 @@ import { CannabinoidSelector } from "./CannabinoidSelector";
 import { GummyPricingCard } from "./GummyPricingCard";
 import { GummyQueue } from "./GummyQueue";
 
+const MAX_MIX_FLAVORS = 3;
+
 interface Props {
   storeId: string;
   onSaved: () => void;
 }
 
 export function GummyBuilder({ storeId, onSaved }: Props) {
-  const [flavorOpen, setFlavorOpen] = useState(false);
-  const [flavorDropdown, setFlavorDropdown] = useState("");
   const [flavorName, setFlavorName] = useState("");
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
+  const [flavorOpen, setFlavorOpen] = useState(false);
 
-  const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
-  const flavors = useMemo(
-    () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
-    [flavorsData],
-  );
   const [size, setSize] = useState<GummySize>("standard");
   const [oilType, setOilType] = useState<GummyOilType>("biomax");
   const [effect, setEffect] = useState<GummyEffect>("hybrid");
@@ -73,8 +70,16 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
-  const isCustomFlavor = flavorDropdown === CUSTOM_FLAVOR_KEY;
-  const effectiveFlavorName = isCustomFlavor ? flavorName : flavorDropdown;
+  const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
+  const allFlavors = useMemo(
+    () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [flavorsData],
+  );
+
+  // In single mode max 1 flavor; in mix mode max 3
+  const maxFlavors = flavorMode === "mix" ? MAX_MIX_FLAVORS : 1;
+  const canAddFlavor = selectedFlavors.length < maxFlavors;
+  const availableFlavors = allFlavors.filter((f) => !selectedFlavors.includes(f.name));
 
   const [createDraft, { isLoading }] = useCreateDraftLabelMutation();
 
@@ -82,19 +87,31 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     () => calculateGummyPrice({ size, oilType, effect, flavorMode, cannabinoids, unitsOrdered }),
     [size, oilType, effect, flavorMode, cannabinoids, unitsOrdered],
   );
-
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
 
-  function handleFlavorSelect(value: string) {
-    setFlavorDropdown(value);
-    if (value !== CUSTOM_FLAVOR_KEY) setFlavorName(value);
-    else setFlavorName("");
+  function handleFlavorModeChange(mode: GummyFlavorMode) {
+    setFlavorMode(mode);
+    // Trim to 1 when switching back to single
+    if (mode === "single" && selectedFlavors.length > 1) {
+      setSelectedFlavors(selectedFlavors.slice(0, 1));
+    }
+  }
+
+  function handleAddFlavor(name: string) {
+    if (!canAddFlavor) return;
+    setSelectedFlavors((prev) => [...prev, name]);
     setFlavorOpen(false);
   }
 
+  function handleRemoveFlavor(name: string) {
+    setSelectedFlavors((prev) => prev.filter((f) => f !== name));
+  }
+
+  const totalQueued = queue.length + (flavorName.trim() ? 1 : 0);
+
   function resetForm() {
-    setFlavorDropdown("");
     setFlavorName("");
+    setSelectedFlavors([]);
     setSize("standard");
     setOilType("biomax");
     setEffect("hybrid");
@@ -104,27 +121,23 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   }
 
   function handleQueueCurrent() {
-    if (!effectiveFlavorName.trim()) { toast.error("Flavor name is required"); return; }
+    if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
     setQueue((prev) => [
       ...prev,
-      {
-        id: Date.now().toString(),
-        flavorName: effectiveFlavorName.trim(),
-        size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal,
-      },
+      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal },
     ]);
-    toast.success(`"${effectiveFlavorName.trim()}" queued — configure your next gummy`);
+    toast.success(`"${flavorName.trim()}" added — configure your next gummy`);
     resetForm();
   }
 
   async function handleSave() {
-    const hasCurrentForm = effectiveFlavorName.trim() !== "";
+    const hasCurrentForm = flavorName.trim() !== "";
     if (!hasCurrentForm && queue.length === 0) { toast.error("Flavor name is required"); return; }
 
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: effectiveFlavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
+        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
         : []),
     ];
 
@@ -152,8 +165,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     }
   }
 
-  const totalQueued = queue.length + (effectiveFlavorName.trim() ? 1 : 0);
-
   return (
     <div className="space-y-4">
 
@@ -167,79 +178,91 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         />
       </div>
 
-      {/* Flavor */}
+      {/* Flavor Name */}
       <div>
-        <SectionLabel>Flavor</SectionLabel>
-        <Popover open={flavorOpen} onOpenChange={setFlavorOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={flavorOpen}
-              className={cn(
-                "w-full justify-between rounded-xs h-10 text-sm font-normal",
-                !flavorDropdown && "text-muted-foreground",
-              )}
+        <SectionLabel>Flavor Name</SectionLabel>
+        <Input
+          className="rounded-xs h-10 text-sm"
+          placeholder="e.g. Tropical Wave, Mango Madness…"
+          value={flavorName}
+          onChange={(e) => setFlavorName(e.target.value)}
+        />
+      </div>
+
+      {/* Flavors — from production library */}
+      <div>
+        <SectionLabel>
+          Flavors{" "}
+          <span className="normal-case font-normal text-muted-foreground/60 tracking-normal">
+            {flavorMode === "mix" ? `(up to ${MAX_MIX_FLAVORS})` : "(select from library)"}
+          </span>
+        </SectionLabel>
+
+        {/* Selected flavor chips */}
+        {selectedFlavors.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {selectedFlavors.map((f) => (
+              <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1">
+                <span className="text-xs font-medium">{f}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFlavor(f)}
+                  className="hover:text-destructive transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Add flavor combobox — hidden when limit reached */}
+        {canAddFlavor && (
+          <Popover open={flavorOpen} onOpenChange={setFlavorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={flavorOpen}
+                className="w-full justify-between rounded-xs h-10 text-sm font-normal text-muted-foreground"
+              >
+                {selectedFlavors.length === 0 ? "Search flavors…" : "Add another flavor…"}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] p-0 rounded-xs"
+              align="start"
             >
-              {isCustomFlavor
-                ? (flavorName || "Other (custom)…")
-                : (flavorDropdown || "Select a flavor…")}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-[--radix-popover-trigger-width] p-0 rounded-xs"
-            align="start"
-          >
-            <Command className="rounded-xs">
-              <CommandInput placeholder="Search flavors…" className="h-10" />
-              <CommandList className="max-h-64">
-                <CommandEmpty>
-                  {isLoadingFlavors ? "Loading flavors…" : "No flavors found."}
-                </CommandEmpty>
-                <CommandGroup>
-                  {flavors.map((f) => (
-                    <CommandItem
-                      key={f.flavorId}
-                      value={f.name}
-                      onSelect={handleFlavorSelect}
-                      className="rounded-xs"
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          flavorDropdown === f.name ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      {f.name}
-                    </CommandItem>
-                  ))}
-                  <CommandItem
-                    value={CUSTOM_FLAVOR_KEY}
-                    onSelect={handleFlavorSelect}
-                    className="rounded-xs text-muted-foreground italic"
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        flavorDropdown === CUSTOM_FLAVOR_KEY ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    Other (enter custom)…
-                  </CommandItem>
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        {isCustomFlavor && (
-          <Input
-            className="rounded-xs h-11 text-base mt-2"
-            placeholder="Enter custom flavor name"
-            value={flavorName}
-            onChange={(e) => setFlavorName(e.target.value)}
-            autoFocus
-          />
+              <Command className="rounded-xs">
+                <CommandInput placeholder="Search flavors…" className="h-10" />
+                <CommandList className="max-h-64">
+                  <CommandEmpty>
+                    {isLoadingFlavors ? "Loading flavors…" : "No flavors found."}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {availableFlavors.map((f) => (
+                      <CommandItem
+                        key={f.flavorId}
+                        value={f.name}
+                        onSelect={handleAddFlavor}
+                        className="rounded-xs"
+                      >
+                        <Check className="mr-2 h-4 w-4 opacity-0" />
+                        {f.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {!canAddFlavor && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Maximum {maxFlavors} flavor{maxFlavors > 1 ? "s" : ""} selected.
+          </p>
         )}
       </div>
 
@@ -263,7 +286,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </div>
         <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
           <SectionLabel>Flavor Mode</SectionLabel>
-          <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={setFlavorMode} />
+          <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={handleFlavorModeChange} />
         </div>
       </div>
 
@@ -271,7 +294,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
       <div>
         <SectionLabel>Units Ordered</SectionLabel>
         <Select value={String(unitsOrdered)} onValueChange={(v) => setUnitsOrdered(Number(v))}>
-          <SelectTrigger className="rounded-xs h-12 text-base">
+          <SelectTrigger className="rounded-xs h-10 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xs max-h-64">
@@ -308,15 +331,15 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
           type="button"
           variant="outline"
           onClick={handleQueueCurrent}
-          disabled={isLoading || !effectiveFlavorName.trim()}
+          disabled={isLoading || !flavorName.trim()}
           className="rounded-xs flex-1 h-12 gap-2 text-sm font-semibold"
         >
-          <Plus className="w-4 h-4" />
+          <Layers className="w-4 h-4" />
           Add Another Gummy
         </Button>
         <Button
           onClick={handleSave}
-          disabled={isLoading || (!effectiveFlavorName.trim() && queue.length === 0)}
+          disabled={isLoading || (!flavorName.trim() && queue.length === 0)}
           className="rounded-xs flex-1 h-12 gap-2 text-base font-semibold"
         >
           <FlaskConical className="w-4 h-4" />

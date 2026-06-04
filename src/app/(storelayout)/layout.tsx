@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   LayoutGrid,
-  ClipboardList,
   FlaskConical,
   LogOut,
   KeyRound,
@@ -43,8 +42,7 @@ import { useChangePasswordMutation } from "@/redux/api/StoreAuth/storeAuthApi";
 import { toast } from "sonner";
 
 const NAV_ITEMS = [
-  { href: "/store/assets", label: "Assets", icon: LayoutGrid },
-  { href: "/store/design-requests", label: "My Requests", icon: ClipboardList },
+  { href: "/store/assets", label: "Digital Assets", icon: LayoutGrid },
   { href: "/store/private-label", label: "Private Label", icon: FlaskConical },
 ];
 
@@ -153,7 +151,9 @@ export default function StoreLayout({
           {/* Nav */}
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const active = pathname.startsWith(href);
+              const active =
+                pathname.startsWith(href) ||
+                (href === "/store/assets" && pathname.startsWith("/store/design-requests"));
               return (
                 <Link
                   key={href}
