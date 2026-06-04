@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Search, X, SlidersHorizontal, LayoutGrid, List, Sparkles,
@@ -70,7 +71,14 @@ function RequestCard({ req }: { req: IDesignRequest }) {
 }
 
 export default function StoreAssetsPage() {
-  const [tab, setTab] = useState<Tab>("assets");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab = (searchParams.get("tab") as Tab) ?? "assets";
+
+  function setTab(t: Tab) {
+    router.replace(`/store/assets?tab=${t}`);
+  }
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [contactId, setContactId] = useState<string | null>(null);
 

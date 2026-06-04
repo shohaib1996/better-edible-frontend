@@ -117,8 +117,8 @@ export default function PrivateLabelPage() {
         <FlaskConical className="w-10 h-10 text-white/30 dark:text-primary/30 shrink-0 hidden sm:block" />
       </div>
 
-      {/* My Line — always visible at top */}
-      <div className="rounded-xs border border-border bg-card overflow-hidden">
+      {/* My Line — visible only on Builder tab */}
+      {active === "build" && <div className="rounded-xs border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FlaskConical className="w-4 h-4 text-primary" />
@@ -150,7 +150,7 @@ export default function PrivateLabelPage() {
             isLoading={isLoadingDrafts}
           />
         </div>
-      </div>
+      </div>}
 
       {/* Tab nav */}
       <div ref={tabSectionRef} className="flex justify-center items-center gap-1 border-b border-border pb-0">

@@ -78,7 +78,7 @@ export default function NewDesignRequestPage() {
     <div className="space-y-6">
       {/* Back */}
       <Link
-        href="/store/design-requests"
+        href="/store/assets?tab=requests"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -129,7 +129,7 @@ export default function NewDesignRequestPage() {
             storeName={user.storeName}
             contactId={user.contactId}
             allowTypeToggle
-            onSuccess={() => router.push("/store/design-requests")}
+            onSuccess={() => router.push("/store/assets?tab=requests")}
           />
         </div>
 

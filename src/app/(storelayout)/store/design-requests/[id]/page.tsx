@@ -53,7 +53,7 @@ export default function StoreDesignRequestDetailPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Back */}
       <Link
-        href="/store/design-requests"
+        href="/store/assets?tab=requests"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
