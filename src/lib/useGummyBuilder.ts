@@ -26,6 +26,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
   const [flavorMode, setFlavorMode] = useState<GummyFlavorMode>("single");
   const [unitsOrdered, setUnitsOrdered] = useState(UNIT_OPTIONS[0]);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
+  const [gummyHue, setGummyHue] = useState(0);
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
   const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
@@ -70,13 +71,14 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     setFlavorMode("single");
     setUnitsOrdered(UNIT_OPTIONS[0]);
     setCannabinoids([]);
+    setGummyHue(0);
   }
 
   function handleQueueCurrent() {
     if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
     setQueue((prev) => [
       ...prev,
-      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal },
+      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue },
     ]);
     toast.success(`"${flavorName.trim()}" added — configure your next gummy`);
     resetForm();
@@ -89,7 +91,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal }]
+        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue }]
         : []),
     ];
 
@@ -127,6 +129,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     flavorMode,
     unitsOrdered, setUnitsOrdered,
     cannabinoids, setCannabinoids,
+    gummyHue, setGummyHue,
     queue, setQueue,
     // flavor library
     allFlavors,

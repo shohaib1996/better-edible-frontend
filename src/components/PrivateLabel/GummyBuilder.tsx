@@ -16,6 +16,8 @@ import { CannabinoidSelector } from "./CannabinoidSelector";
 import { GummyPricingCard } from "./GummyPricingCard";
 import { GummyQueue } from "./GummyQueue";
 import { FlavorPicker } from "./FlavorPicker";
+import { GummyVisual } from "./GummyVisual";
+import { GummyColorPicker } from "./GummyColorPicker";
 import { useGummyBuilder, MAX_MIX_FLAVORS } from "@/lib/useGummyBuilder";
 
 interface Props {
@@ -33,6 +35,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     flavorMode,
     unitsOrdered, setUnitsOrdered,
     cannabinoids, setCannabinoids,
+    gummyHue, setGummyHue,
     queue, setQueue,
     allFlavors,
     isLoadingFlavors,
@@ -50,16 +53,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
 
   return (
     <div className="space-y-4">
-
-      {/* Gummy visualization */}
-      <div className="flex justify-center">
-        <img
-          src="/images/gummy-preview.png"
-          alt="Gummy"
-          className="h-36 w-auto object-contain"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
-        />
-      </div>
 
       {/* Flavor Name */}
       <div>
@@ -114,34 +107,42 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </div>
       </div>
 
-      {/* Units */}
-      <div>
-        <SectionLabel>Units Ordered</SectionLabel>
-        <Select value={String(unitsOrdered)} onValueChange={(v) => setUnitsOrdered(Number(v))}>
-          <SelectTrigger className="rounded-xs h-10 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="rounded-xs max-h-64">
-            {UNIT_OPTIONS.map((n) => (
-              <SelectItem key={n} value={String(n)} className="rounded-xs">
-                {n.toLocaleString()} units
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {pricing.isRatio && pricing.testingFeeWaived && (
-          <p className="text-xs text-green-600 dark:text-green-400 mt-2 flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Testing fee waived — 3,000+ units
-          </p>
-        )}
+      {/* Units + Color */}
+      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <SectionLabel>Units Ordered</SectionLabel>
+          <Select value={String(unitsOrdered)} onValueChange={(v) => setUnitsOrdered(Number(v))}>
+            <SelectTrigger className="rounded-xs h-10 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xs max-h-64">
+              {UNIT_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)} className="rounded-xs">
+                  {n.toLocaleString()} units
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {pricing.isRatio && pricing.testingFeeWaived && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-2 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Testing fee waived — 3,000+ units
+            </p>
+          )}
+          <div className="mt-4 pt-4 border-t border-border">
+            <CannabinoidSelector
+              cannabinoids={cannabinoids}
+              onAdd={(entry) => setCannabinoids((prev) => [...prev, entry])}
+              onRemove={(name) => setCannabinoids((prev) => prev.filter((c) => c.name !== name))}
+            />
+          </div>
+        </div>
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4 flex flex-row items-center justify-between gap-4">
+          <div className="flex-1 flex justify-center">
+            <GummyVisual size={size} hue={gummyHue} />
+          </div>
+          <GummyColorPicker hue={gummyHue} onHueChange={setGummyHue} />
+        </div>
       </div>
-
-      {/* Cannabinoid add-ons */}
-      <CannabinoidSelector
-        cannabinoids={cannabinoids}
-        onAdd={(entry) => setCannabinoids((prev) => [...prev, entry])}
-        onRemove={(name) => setCannabinoids((prev) => prev.filter((c) => c.name !== name))}
-      />
 
       {/* Live pricing */}
       <GummyPricingCard pricing={pricing} unitsOrdered={unitsOrdered} grandTotal={grandTotal} />
