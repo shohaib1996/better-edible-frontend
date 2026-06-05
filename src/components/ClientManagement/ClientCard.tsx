@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Repeat, Eye, MapPin, User, CheckCircle2, Clock } from "lucide-react";
+import { Repeat, Eye, MapPin, User, CheckCircle2, Clock, CalendarDays } from "lucide-react";
 import { IPrivateLabelClient } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,15 @@ export const ClientCard = ({ client, isRepView = false }: ClientCardProps) => {
               </span>
             </span>
           </div>
-          <div className="hidden"></div> {/* Spacer for grid */}
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">
+              Onboarded:{" "}
+              <span className="font-medium text-foreground">
+                {new Date(client.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </span>
+          </div>
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-500 shrink-0" />
             <span className="text-muted-foreground">

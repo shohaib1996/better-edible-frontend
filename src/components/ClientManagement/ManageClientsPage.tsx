@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Users, Repeat, Eye } from "lucide-react";
+import { Loader2, Users, Repeat, Eye, CalendarDays } from "lucide-react";
 import { useGetAllPrivateLabelClientsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { ClientCard } from "./ClientCard";
@@ -112,6 +112,16 @@ export const ManageClientsPage = ({
           </div>
         );
       },
+    },
+    {
+      key: "onboarded",
+      header: "Onboarded",
+      render: (client) => (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+          <span>{new Date(client.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+        </div>
+      ),
     },
     {
       key: "orders",
