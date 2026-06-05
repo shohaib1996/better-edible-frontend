@@ -1,28 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Truck,
-  Calendar,
-  Pencil,
-  Trash2,
-  FileText,
-  ClipboardList,
-  User,
-} from "lucide-react";
+import { Truck, Calendar, Pencil, Trash2, FileText, ClipboardList, User } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  useUpdateClientOrderStatusMutation,
-  usePushOrderToPPSMutation,
-  useToggleShipASAPMutation,
-  useDeleteClientOrderMutation,
-} from "@/redux/api/PrivateLabel/clientOrderApi";
 import { IClientOrder, ClientOrderStatus } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,28 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  ORDER_STATUS_LABELS,
-  canEditOrder,
-  isOrderInProduction,
-} from "@/constants/privateLabel";
+import { ORDER_STATUS_LABELS } from "@/constants/privateLabel";
 import { EditOrderModal } from "./EditOrderModal";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { ClientOrderPackingListDialog } from "./ClientOrderPackingListDialog";
 import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
-import { useLazyCheckDeliveryExistsQuery } from "@/redux/api/Deliveries/deliveryApi";
 import { generateClientOrderInvoice } from "@/utils/clientOrderInvoiceGenerator";
 import { cn } from "@/lib/utils";
+import { useOrderCard } from "@/lib/useOrderCard";
+import { OrderCardSummary } from "./OrderCardSummary";
+import { OrderCardDialogs } from "./OrderCardDialogs";
 
 interface OrderCardProps {
   order: IClientOrder;
@@ -64,111 +37,25 @@ interface OrderCardProps {
 }
 
 export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => {
-  const [updateStatus, { isLoading: updatingStatus }] =
-    useUpdateClientOrderStatusMutation();
-  const [pushToPPS, { isLoading: pushing }] = usePushOrderToPPSMutation();
-  const [toggleShipASAP, { isLoading: toggling }] = useToggleShipASAPMutation();
-  const [deleteOrder, { isLoading: deleting }] = useDeleteClientOrderMutation();
+  const {
+    showDeleteDialog, setShowDeleteDialog,
+    showEditModal, setShowEditModal,
+    showDetailsModal, setShowDetailsModal,
+    showPackingListDialog, setShowPackingListDialog,
+    showDeliveryModal, setShowDeliveryModal,
+    showShippedDialog, setShowShippedDialog,
+    showNoDeliveryWarning, setShowNoDeliveryWarning,
+    canEdit, canPushToPPS, inProduction, isOwnOrder,
+    updatingStatus, pushing, toggling, deleting, checkingDelivery,
+    handleStatusChange,
+    handleConfirmShipped,
+    handlePushToPPS,
+    handleToggleShipASAP,
+    handleDelete,
+  } = useOrderCard({ order, onUpdate, currentRepId });
 
-  const [checkDeliveryExists, { isFetching: checkingDelivery }] = useLazyCheckDeliveryExistsQuery();
-
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showPackingListDialog, setShowPackingListDialog] = useState(false);
-  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
-  const [showShippedDialog, setShowShippedDialog] = useState(false);
-  const [showNoDeliveryWarning, setShowNoDeliveryWarning] = useState(false);
-
-  const handleStatusChange = async (newStatus: ClientOrderStatus) => {
-    if (newStatus === "shipped") {
-      const result = await checkDeliveryExists({ clientOrderId: order._id }).unwrap();
-      if (!result.exists) {
-        setShowNoDeliveryWarning(true);
-      } else {
-        setShowShippedDialog(true);
-      }
-      return;
-    }
-
-    try {
-      await updateStatus({
-        id: order._id,
-        status: newStatus,
-      }).unwrap();
-      toast.success("Order status updated");
-      onUpdate();
-    } catch (error: unknown) {
-      console.error("Error updating status:", error);
-      const err = error as { data?: { message?: string } };
-      toast.error(err.data?.message || "Failed to update status");
-    }
-  };
-
-  const handleConfirmShipped = async () => {
-    try {
-      await updateStatus({
-        id: order._id,
-        status: "shipped",
-      }).unwrap();
-      toast.success("Order marked as shipped");
-      setShowShippedDialog(false);
-      onUpdate();
-    } catch (error: unknown) {
-      console.error("Error updating status:", error);
-      const err = error as { data?: { message?: string } };
-      toast.error(err.data?.message || "Failed to update status");
-    }
-  };
-
-  const handlePushToPPS = async () => {
-    try {
-      await pushToPPS(order._id).unwrap();
-      toast.success("Order pushed to production");
-      onUpdate();
-    } catch (error: unknown) {
-      console.error("Error pushing to PPS:", error);
-      const err = error as { data?: { message?: string } };
-      toast.error(err.data?.message || "Failed to push to production");
-    }
-  };
-
-  const handleToggleShipASAP = async () => {
-    try {
-      await toggleShipASAP({
-        id: order._id,
-        shipASAP: !order.shipASAP,
-      }).unwrap();
-      toast.success(
-        order.shipASAP
-          ? "Ship ASAP disabled"
-          : "Order marked for immediate shipping",
-      );
-      onUpdate();
-    } catch (error: unknown) {
-      console.error("Error toggling ship ASAP:", error);
-      const err = error as { data?: { message?: string } };
-      toast.error(err.data?.message || "Failed to update");
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteOrder(order._id).unwrap();
-      toast.success("Order deleted successfully");
-      onUpdate();
-    } catch (error: unknown) {
-      console.error("Error deleting order:", error);
-      const err = error as { data?: { message?: string } };
-      toast.error(err.data?.message || "Failed to delete order");
-    }
-  };
-
-  const canEdit = canEditOrder(order.status);
-  const canPushToPPS = order.status === "waiting";
-  const inProduction = isOrderInProduction(order.status);
-  // If currentRepId is provided (rep view), only own orders are editable
-  const isOwnOrder = currentRepId ? order.assignedRep?._id === currentRepId : true;
+  const authToast = () =>
+    toast.error("You are not authorized to change it. This is not your order.");
 
   return (
     <>
@@ -179,19 +66,12 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               {order.shipASAP && (
-                <Badge
-                  variant="destructive"
-                  className="flex items-center gap-1 rounded-xs"
-                >
-                  <Truck className="h-3 w-3" />
-                  Ship ASAP
+                <Badge variant="destructive" className="flex items-center gap-1 rounded-xs">
+                  <Truck className="h-3 w-3" /> Ship ASAP
                 </Badge>
               )}
               {order.isRecurring && (
-                <Badge
-                  variant="outline"
-                  className="rounded-xs border-primary/20 text-primary bg-primary/5"
-                >
+                <Badge variant="outline" className="rounded-xs border-primary/20 text-primary bg-primary/5">
                   Recurring
                 </Badge>
               )}
@@ -211,9 +91,7 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
               )}
             </div>
 
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              {order.orderNumber}
-            </h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">{order.orderNumber}</h3>
             <div className="text-xs text-muted-foreground mt-1">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
@@ -224,20 +102,15 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
               </span>
             </div>
 
-            {/* Rep and Created By Info - Show on left for small screens */}
+            {/* Rep info — small screens */}
             <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-2 lg:hidden">
               <span className="flex items-center gap-1">
                 <User className="h-3.5 w-3.5" />
-                Rep:{" "}
-                <span className="font-medium text-foreground">
-                  {order.assignedRep?.name || "Unassigned"}
-                </span>
+                Rep: <span className="font-medium text-foreground">{order.assignedRep?.name || "Unassigned"}</span>
               </span>
               <span>
                 <span className="font-semibold text-primary">Created by:</span>{" "}
-                <span className="font-medium text-foreground">
-                  {order.createdBy?.user?.name || "N/A"}
-                </span>
+                <span className="font-medium text-foreground">{order.createdBy?.user?.name || "N/A"}</span>
               </span>
             </div>
           </div>
@@ -246,15 +119,13 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
           <TooltipProvider>
             <div className="flex flex-col items-end gap-2">
               <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                {/* Delivery, Packing List, Invoice - Only for non-shipped */}
                 {order.status !== "shipped" && (
                   <>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => isOwnOrder ? setShowDeliveryModal(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          variant="outline" size="icon"
+                          onClick={() => isOwnOrder ? setShowDeliveryModal(true) : authToast()}
                           disabled={!isOwnOrder}
                           className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
@@ -267,9 +138,8 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => isOwnOrder ? setShowPackingListDialog(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          variant="outline" size="icon"
+                          onClick={() => isOwnOrder ? setShowPackingListDialog(true) : authToast()}
                           disabled={!isOwnOrder}
                           className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
@@ -282,11 +152,10 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon"
+                          variant="outline" size="icon"
                           disabled={!isOwnOrder}
+                          onClick={() => isOwnOrder ? generateClientOrderInvoice(order) : authToast()}
                           className={cn("h-8 w-8 rounded-xs border-none bg-accent text-accent-foreground hover:bg-primary hover:text-white dark:bg-accent dark:text-accent-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
-                          onClick={() => isOwnOrder ? generateClientOrderInvoice(order) : toast.error("You are not authorized to change it. This is not your order.")}
                         >
                           <FileText className="h-4 w-4" />
                         </Button>
@@ -296,55 +165,38 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                   </>
                 )}
 
-                {/* Status Selector - Always visible */}
                 <Select
                   value={order.status}
-                  onValueChange={(value) => {
-                    if (isOwnOrder) {
-                      handleStatusChange(value as ClientOrderStatus);
-                    } else {
-                      toast.error("You are not authorized to change it. This is not your order.");
-                    }
-                  }}
+                  onValueChange={(v) => isOwnOrder ? handleStatusChange(v as ClientOrderStatus) : authToast()}
                   disabled={updatingStatus || checkingDelivery || !isOwnOrder}
                 >
                   <SelectTrigger className={cn("h-8 w-[110px] sm:h-8.5 sm:w-[140px] text-xs sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xs border-border dark:border-white/20">
-                    {Object.entries(ORDER_STATUS_LABELS).map(
-                      ([value, label]) => (
-                        <SelectItem
-                          key={value}
-                          value={value}
-                          className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary"
-                        >
-                          {label}
-                        </SelectItem>
-                      ),
-                    )}
+                    {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value} className="rounded-xs cursor-pointer focus:bg-primary/10 focus:text-primary">
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
-                {/* Push to PPS, Ship ASAP, Edit, Delete - Only for non-shipped */}
                 {order.status !== "shipped" && (
                   <>
                     {canPushToPPS && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => isOwnOrder ? handlePushToPPS() : toast.error("You are not authorized to change it. This is not your order.")}
+                            variant="outline" size="sm"
+                            onClick={() => isOwnOrder ? handlePushToPPS() : authToast()}
                             disabled={pushing || !isOwnOrder}
                             className={cn("h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                           >
                             {pushing ? "Pushing..." : "Push to PPS"}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          Push order to production
-                        </TooltipContent>
+                        <TooltipContent>Push order to production</TooltipContent>
                       </Tooltip>
                     )}
 
@@ -353,12 +205,11 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                         <Button
                           variant={order.shipASAP ? "destructive" : "outline"}
                           size="sm"
-                          onClick={() => isOwnOrder ? handleToggleShipASAP() : toast.error("You are not authorized to change it. This is not your order.")}
+                          onClick={() => isOwnOrder ? handleToggleShipASAP() : authToast()}
                           disabled={toggling || !isOwnOrder}
                           className={cn(
                             "h-8 text-xs sm:h-8.5 sm:text-sm rounded-xs transition-all duration-200",
-                            !order.shipASAP &&
-                              "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
+                            !order.shipASAP && "border border-border dark:border-white/20 hover:border-primary hover:bg-primary/5 hover:text-primary",
                             !isOwnOrder && "opacity-50 cursor-not-allowed",
                           )}
                         >
@@ -367,18 +218,15 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {order.shipASAP
-                          ? "Disable ship ASAP"
-                          : "Mark for immediate shipping"}
+                        {order.shipASAP ? "Disable ship ASAP" : "Mark for immediate shipping"}
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => isOwnOrder ? setShowEditModal(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          variant="outline" size="icon"
+                          onClick={() => isOwnOrder ? setShowEditModal(true) : authToast()}
                           disabled={!canEdit || !isOwnOrder}
                           className={cn("h-8 w-8 rounded-xs border-none bg-secondary text-secondary-foreground hover:bg-primary hover:text-white dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-primary dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
@@ -386,20 +234,15 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {!isOwnOrder
-                          ? "Cannot edit another rep's order"
-                          : canEdit
-                          ? "Edit order"
-                          : "Cannot edit order in production"}
+                        {!isOwnOrder ? "Cannot edit another rep's order" : canEdit ? "Edit order" : "Cannot edit order in production"}
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => isOwnOrder ? setShowDeleteDialog(true) : toast.error("You are not authorized to change it. This is not your order.")}
+                          variant="outline" size="icon"
+                          onClick={() => isOwnOrder ? setShowDeleteDialog(true) : authToast()}
                           disabled={inProduction || !isOwnOrder}
                           className={cn("h-8 w-8 rounded-xs text-white border-none bg-accent hover:bg-destructive hover:text-white dark:bg-accent dark:text-white dark:hover:bg-destructive dark:hover:text-white transition-all duration-200", !isOwnOrder && "opacity-50 cursor-not-allowed")}
                         >
@@ -407,152 +250,42 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {!isOwnOrder
-                          ? "Cannot delete another rep's order"
-                          : inProduction
-                          ? "Cannot delete order in production"
-                          : "Delete order"}
+                        {!isOwnOrder ? "Cannot delete another rep's order" : inProduction ? "Cannot delete order in production" : "Delete order"}
                       </TooltipContent>
                     </Tooltip>
                   </>
                 )}
               </div>
 
-              {/* Rep and Created By Info - Show on right for large screens */}
+              {/* Rep info — large screens */}
               <div className="hidden lg:flex flex-col gap-1 text-xs text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  Rep:{" "}
-                  <span className="font-medium text-foreground">
-                    {order.assignedRep?.name || "Unassigned"}
-                  </span>
+                  Rep: <span className="font-medium text-foreground">{order.assignedRep?.name || "Unassigned"}</span>
                 </span>
                 <span>
-                  <span className="font-semibold text-primary">
-                    Created by:
-                  </span>{" "}
-                  <span className="font-medium text-foreground">
-                    {order.createdBy?.user?.name || "N/A"}
-                  </span>
+                  <span className="font-semibold text-primary">Created by:</span>{" "}
+                  <span className="font-medium text-foreground">{order.createdBy?.user?.name || "N/A"}</span>
                 </span>
               </div>
             </div>
           </TooltipProvider>
         </div>
 
-        {/* Bottom Section - Items, Pricing, Notes */}
-        <div className="bg-primary/20 dark:bg-primary/10 px-3 py-2">
-          {/* Items Summary */}
-          <div className="flex flex-col sm:flex-row sm:grid sm:grid-cols-2 lg:flex lg:flex-row justify-between gap-y-2 gap-x-4 text-xs sm:text-sm">
-            <div className="flex-1 min-w-0">
-              {order.items.map((item, idx) => (
-                <span key={idx} className="inline-block">
-                  {item.flavorName} ({item.quantity})
-                  {idx < order.items.length - 1 ? ", " : ""}
-                </span>
-              ))}
-            </div>
-            <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 shrink-0 text-right">
-              <span className="whitespace-nowrap">
-                Sub: ${order.subtotal.toFixed(2)}
-              </span>
-              {order.discountAmount > 0 && (
-                <span className="text-green-600 whitespace-nowrap">
-                  Disc: -${order.discountAmount.toFixed(2)}
-                </span>
-              )}
-              <span className="font-bold whitespace-nowrap">
-                Total: ${order.total.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          {/* Notes */}
-          {order.note && (
-            <p className="text-sm text-muted-foreground mt-1 italic">
-              Note: {order.note}
-            </p>
-          )}
-        </div>
+        <OrderCardSummary order={order} />
       </Card>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-secondary dark:bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Order</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete order {order.orderNumber}? This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-destructive hover:bg-destructive/90 text-white rounded-xs"
-            >
-              {deleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <OrderCardDialogs
+        order={order}
+        showDeleteDialog={showDeleteDialog} setShowDeleteDialog={setShowDeleteDialog}
+        showNoDeliveryWarning={showNoDeliveryWarning} setShowNoDeliveryWarning={setShowNoDeliveryWarning}
+        showShippedDialog={showShippedDialog} setShowShippedDialog={setShowShippedDialog}
+        deleting={deleting}
+        updatingStatus={updatingStatus}
+        handleDelete={handleDelete}
+        handleConfirmShipped={handleConfirmShipped}
+      />
 
-      {/* No Delivery Warning Dialog */}
-      <AlertDialog open={showNoDeliveryWarning} onOpenChange={setShowNoDeliveryWarning}>
-        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>No Delivery Assigned</AlertDialogTitle>
-            <AlertDialogDescription>
-              Order {order.orderNumber} does not have a delivery created yet. Shipping without a delivery may cause tracking issues.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowNoDeliveryWarning(false);
-                setShowShippedDialog(true);
-              }}
-              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Ship Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Mark as Shipped Dialog */}
-      <AlertDialog open={showShippedDialog} onOpenChange={setShowShippedDialog}>
-        <AlertDialogContent className="rounded-xs border-border dark:border-white/20 bg-secondary dark:bg-card">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark Order as Shipped</AlertDialogTitle>
-            <AlertDialogDescription>
-              Order {order.orderNumber} will be marked as shipped. An email
-              notification will be sent to both the client and rep.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs border-border dark:border-white/20 bg-card hover:bg-accent/50">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmShipped}
-              disabled={updatingStatus}
-              className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {updatingStatus ? "Updating..." : "Mark as Shipped"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Edit Order Modal */}
       <EditOrderModal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -560,29 +293,22 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
         onSuccess={onUpdate}
       />
 
-      {/* Order Details Modal */}
       <OrderDetailsModal
         order={showDetailsModal ? order : null}
         onClose={() => setShowDetailsModal(false)}
       />
 
-      {/* Packing List Dialog */}
       <ClientOrderPackingListDialog
         order={showPackingListDialog ? order : null}
         onClose={() => setShowPackingListDialog(false)}
       />
 
-      {/* Delivery Modal */}
       <DeliveryModal
         open={showDeliveryModal}
         onClose={() => setShowDeliveryModal(false)}
         store={
           order.client?.store
-            ? {
-                _id: order.client.store._id,
-                name: order.client.store.name,
-                address: order.client.store.address,
-              }
+            ? { _id: order.client.store._id, name: order.client.store.name, address: order.client.store.address }
             : null
         }
         clientOrderId={order._id}
