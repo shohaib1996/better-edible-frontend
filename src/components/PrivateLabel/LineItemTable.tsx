@@ -12,8 +12,8 @@ export function LineItemTable({ labels }: Props) {
   const testingFeeTotal = labels.reduce((sum, l) => sum + (l.testingFeeWaived ? 0 : (l.testingFee ?? 0)), 0);
 
   return (
-    <div className="rounded-xs border border-border overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="rounded-xs border border-border overflow-x-auto">
+      <table className="min-w-[480px] w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
             <th className="text-left px-4 py-2.5 font-semibold text-xs uppercase tracking-widest text-muted-foreground">
