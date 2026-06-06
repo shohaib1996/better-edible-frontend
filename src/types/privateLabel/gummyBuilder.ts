@@ -66,6 +66,7 @@ export interface IStoreDraftLabel {
   labelStatus: GummyLabelStatus;
   currentStage: LabelStage;
   submittedAt?: string;
+  hasAdminLabel?: boolean;
   createdAt: string;
   updatedAt: string;
 }

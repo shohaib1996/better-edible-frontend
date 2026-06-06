@@ -12,6 +12,7 @@ export interface AddLabelInitialValues {
   cannabinoidMix?: string;
   specialInstructions?: string;
   productTypeKeyword?: string;
+  submissionLabelId?: string;
 }
 
 export function useAddLabelForm(
@@ -115,6 +116,9 @@ export function useAddLabelForm(
       if (userInfo) {
         formData.append("userId", userInfo.userId);
         formData.append("userType", userInfo.userType);
+      }
+      if (initialValues?.submissionLabelId) {
+        formData.append("submissionLabelId", initialValues.submissionLabelId);
       }
       files.forEach((file) => formData.append("labelImages", file));
 

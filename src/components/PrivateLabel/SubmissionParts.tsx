@@ -237,6 +237,14 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
   const [advanceStage, { isLoading }] = useAdvanceLabelStageMutation();
   const [showCreate, setShowCreate] = useState(false);
 
+  function handleCreateClick() {
+    if (label.hasAdminLabel) {
+      toast.warning("A label has already been created from this submission. Check the Labels tab.");
+      return;
+    }
+    setShowCreate(true);
+  }
+
   async function handleStageChange(stage: LabelStage) {
     try {
       await advanceStage({ labelId: label._id, stage }).unwrap();
@@ -295,12 +303,12 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
       <div className="mt-3 flex justify-end">
         <Button
           size="sm"
-          variant="outline"
-          className="rounded-xs h-7 text-xs gap-1.5 px-3"
-          onClick={() => setShowCreate(true)}
+          variant={label.hasAdminLabel ? "ghost" : "outline"}
+          className={`rounded-xs h-7 text-xs gap-1.5 px-3 ${label.hasAdminLabel ? "text-muted-foreground" : ""}`}
+          onClick={handleCreateClick}
         >
           <Plus className="w-3.5 h-3.5" />
-          Create Label
+          {label.hasAdminLabel ? "Label Created" : "Create Label"}
         </Button>
       </div>
 
@@ -315,6 +323,7 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
           cannabinoidMix: buildCannabinoidMix(label),
           specialInstructions: buildSpecialInstructions(label),
           productTypeKeyword: label.oilType,
+          submissionLabelId: label._id,
         }}
       />
     </div>
