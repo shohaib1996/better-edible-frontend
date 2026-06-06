@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import type { IStoreDraftLabel, IStoreOrder } from "@/types/privateLabel/gummyBuilder";
 import type { IPagination } from "@/redux/api/PrivateLabel/storeLabelApi";
+import { LABEL_STAGES, type LabelStage } from "@/types/privateLabel/label";
+import { STAGE_META } from "@/lib/labelStageMeta";
 
 interface Props {
   view: "labels" | "orders";
@@ -20,10 +22,35 @@ interface Props {
   onOrdersLimitChange: (limit: number) => void;
 }
 
-const LABEL_STATUS_MAP: Record<string, { label: string; color: string }> = {
-  draft: { label: "Draft", color: "bg-muted text-muted-foreground" },
-  submitted: { label: "Submitted", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400" },
-};
+function StageDisplay({ currentStage }: { currentStage?: LabelStage }) {
+  const stage = currentStage ?? "design_in_progress";
+  const currentIdx = LABEL_STAGES.indexOf(stage);
+  const meta = STAGE_META[stage];
+
+  return (
+    <div className="shrink-0 flex flex-col items-end gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <div className={`w-2 h-2 rounded-full ${meta.color}`} />
+        <span className="text-xs font-medium text-foreground">{meta.full}</span>
+      </div>
+      <span className="text-[10px] text-muted-foreground">{currentIdx + 1} / {LABEL_STAGES.length}</span>
+      <div className="flex items-center gap-0.5">
+        {LABEL_STAGES.map((s, idx) => (
+          <div
+            key={s}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              idx < currentIdx
+                ? "bg-green-500"
+                : idx === currentIdx
+                ? meta.color
+                : "bg-muted-foreground/20"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const ORDER_STATUS_MAP: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   pending: {
@@ -179,41 +206,36 @@ export function ActiveDashboard({
       ) : (
         <>
           <div className="space-y-3">
-            {labels.map((label) => {
-              const status = LABEL_STATUS_MAP[label.labelStatus] ?? LABEL_STATUS_MAP.submitted;
-              return (
-                <div
-                  key={label._id}
-                  className="rounded-xs border border-border bg-card p-4 flex items-start justify-between gap-4"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="font-medium text-sm truncate">{label.flavorName}</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.oilType === "rosin" ? "Rosin" : "BioMax"}
+            {labels.map((label) => (
+              <div
+                key={label._id}
+                className="rounded-xs border border-border bg-card p-4 flex items-start justify-between gap-4"
+              >
+                <div className="space-y-1.5 min-w-0 flex-1">
+                  <div className="font-medium text-sm truncate">{label.flavorName}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="outline" className="rounded-xs text-xs">
+                      {label.oilType === "rosin" ? "Rosin" : "BioMax"}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-xs text-xs">
+                      {label.size === "xl" ? "XL" : "Standard"}
+                    </Badge>
+                    <Badge variant="outline" className="rounded-xs text-xs">
+                      {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
+                    </Badge>
+                    {label.cannabinoids.map((c) => (
+                      <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">
+                        {c.name} {c.mg}mg
                       </Badge>
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.size === "xl" ? "XL" : "Standard"}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-xs text-xs">
-                        {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
-                      </Badge>
-                      {label.cannabinoids.map((c) => (
-                        <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">
-                          {c.name} {c.mg}mg
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
-                    </div>
+                    ))}
                   </div>
-                  <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-xs ${status.color}`}>
-                    {status.label}
-                  </span>
+                  <div className="text-xs text-muted-foreground">
+                    {label.unitsOrdered.toLocaleString()} units · ${(label.unitCost ?? 0).toFixed(4)}/ea · ${(label.totalCost ?? 0).toFixed(2)} total
+                  </div>
                 </div>
-              );
-            })}
+                <StageDisplay currentStage={label.currentStage} />
+              </div>
+            ))}
           </div>
 
           {labelsPagination && labelsPagination.totalPages > 1 && (

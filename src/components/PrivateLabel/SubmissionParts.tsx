@@ -9,65 +9,49 @@ import {
   ImageIcon,
   Mail,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
   Plus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAdvanceLabelStageMutation } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import { AddLabelModal } from "@/components/ClientManagement/AddLabelModal";
 import type { IStoreSubmission } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
 import type { LabelStage } from "@/types/privateLabel/label";
 import { LABEL_STAGES } from "@/types/privateLabel/label";
+import { STAGE_META } from "@/lib/labelStageMeta";
 
-// ─── Stage config ─────────────────────────────────────────────────────────────
+// ─── Read-only stage pipeline ─────────────────────────────────────────────────
 
-export const STAGE_META: Record<LabelStage, { short: string; full: string; color: string }> = {
-  design_in_progress:      { short: "Design",    full: "Design in Progress",      color: "bg-blue-500" },
-  awaiting_store_approval: { short: "Review",    full: "Awaiting Store Approval",  color: "bg-amber-500" },
-  store_approved:          { short: "Approved",  full: "Store Approved",           color: "bg-green-500" },
-  submitted_to_olcc:       { short: "OLCC Sub.", full: "Submitted to OLCC",        color: "bg-purple-500" },
-  olcc_approved:           { short: "OLCC ✓",   full: "OLCC Approved",            color: "bg-green-600" },
-  print_order_submitted:   { short: "Print",     full: "Print Order Submitted",    color: "bg-indigo-500" },
-  ready_for_production:    { short: "Ready",     full: "Ready for Production",     color: "bg-emerald-600" },
-};
-
-// ─── Stage stepper ────────────────────────────────────────────────────────────
-
-export function StageStepper({
-  label,
-  onStageChange,
-  isLoading,
+function StagePipeline({
+  currentStage,
+  hasAdminLabel,
+  onCreateLabel,
 }: {
-  label: IStoreDraftLabel;
-  onStageChange: (stage: LabelStage) => void;
-  isLoading: boolean;
+  currentStage?: LabelStage;
+  hasAdminLabel?: boolean;
+  onCreateLabel?: () => void;
 }) {
-  const currentIdx = LABEL_STAGES.indexOf(label.currentStage ?? "design_in_progress");
-  const prevStage = currentIdx > 0 ? LABEL_STAGES[currentIdx - 1] : null;
-  const nextStage = currentIdx < LABEL_STAGES.length - 1 ? LABEL_STAGES[currentIdx + 1] : null;
-  const currentMeta = STAGE_META[label.currentStage ?? "design_in_progress"];
+  const stage = currentStage ?? "design_in_progress";
+  const currentIdx = LABEL_STAGES.indexOf(stage);
+  const meta = STAGE_META[stage];
 
   return (
     <div className="mt-3 pt-3 border-t border-border space-y-3">
-      {/* Pipeline dots */}
       <div className="flex items-center gap-0">
-        {LABEL_STAGES.map((stage: LabelStage, idx: number) => {
+        {LABEL_STAGES.map((s, idx) => {
           const done = idx < currentIdx;
           const active = idx === currentIdx;
-          const meta = STAGE_META[stage];
+          const m = STAGE_META[s];
           return (
-            <div key={stage} className="flex items-center flex-1 min-w-0">
+            <div key={s} className="flex items-center flex-1 min-w-0">
               <div className="flex flex-col items-center min-w-0 flex-1">
                 <div
                   className={`w-3 h-3 rounded-full shrink-0 transition-all ${
                     done
                       ? "bg-green-500"
                       : active
-                      ? `${meta.color} ring-2 ring-offset-1 ring-offset-background ring-current`
+                      ? `${m.color} ring-2 ring-offset-1 ring-offset-background ring-current`
                       : "bg-muted-foreground/20"
                   }`}
                 />
@@ -80,7 +64,7 @@ export function StageStepper({
                       : "text-muted-foreground/50"
                   }`}
                 >
-                  {meta.short}
+                  {m.short}
                 </span>
               </div>
               {idx < LABEL_STAGES.length - 1 && (
@@ -91,43 +75,28 @@ export function StageStepper({
         })}
       </div>
 
-      {/* Current stage badge + action buttons */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${currentMeta.color}`} />
-          <span className="text-xs font-medium text-foreground">{currentMeta.full}</span>
+          <div className={`w-2 h-2 rounded-full ${meta.color}`} />
+          <span className="text-xs font-medium text-foreground">{meta.full}</span>
           <span className="text-xs text-muted-foreground">({currentIdx + 1}/{LABEL_STAGES.length})</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {prevStage && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-xs h-7 text-xs gap-1 px-2"
-              disabled={isLoading}
-              onClick={() => onStageChange(prevStage)}
-            >
-              <ChevronLeft className="w-3 h-3" />
-              {STAGE_META[prevStage].short}
-            </Button>
-          )}
-          {nextStage && (
-            <Button
-              size="sm"
-              className="rounded-xs h-7 text-xs gap-1 px-3"
-              disabled={isLoading}
-              onClick={() => onStageChange(nextStage)}
-            >
-              {STAGE_META[nextStage].short}
-              <ChevronRight className="w-3 h-3" />
-            </Button>
-          )}
-          {!nextStage && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+          {currentIdx === LABEL_STAGES.length - 1 && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 ml-1">
               <CheckCircle2 className="w-3.5 h-3.5" /> Complete
             </span>
           )}
         </div>
+        {onCreateLabel && (
+          <Button
+            size="sm"
+            variant={hasAdminLabel ? "ghost" : "outline"}
+            className={`rounded-xs h-7 text-xs gap-1.5 px-3 ${hasAdminLabel ? "text-muted-foreground" : ""}`}
+            onClick={onCreateLabel}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            {hasAdminLabel ? "Label Created" : "Create Label"}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -234,7 +203,6 @@ function buildSpecialInstructions(label: IStoreDraftLabel): string {
 // ─── Label row ────────────────────────────────────────────────────────────────
 
 export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientId: string }) {
-  const [advanceStage, { isLoading }] = useAdvanceLabelStageMutation();
   const [showCreate, setShowCreate] = useState(false);
 
   function handleCreateClick() {
@@ -243,15 +211,6 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
       return;
     }
     setShowCreate(true);
-  }
-
-  async function handleStageChange(stage: LabelStage) {
-    try {
-      await advanceStage({ labelId: label._id, stage }).unwrap();
-      toast.success(`Stage updated to "${STAGE_META[stage].full}"`);
-    } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to update stage");
-    }
   }
 
   return (
@@ -296,21 +255,12 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
         </div>
       </div>
 
-      {/* Stage stepper */}
-      <StageStepper label={label} onStageChange={handleStageChange} isLoading={isLoading} />
-
-      {/* Create admin label from this submission */}
-      <div className="mt-3 flex justify-end">
-        <Button
-          size="sm"
-          variant={label.hasAdminLabel ? "ghost" : "outline"}
-          className={`rounded-xs h-7 text-xs gap-1.5 px-3 ${label.hasAdminLabel ? "text-muted-foreground" : ""}`}
-          onClick={handleCreateClick}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          {label.hasAdminLabel ? "Label Created" : "Create Label"}
-        </Button>
-      </div>
+      {/* Stage display with Create Label button */}
+      <StagePipeline
+        currentStage={label.currentStage}
+        hasAdminLabel={label.hasAdminLabel}
+        onCreateLabel={handleCreateClick}
+      />
 
       <AddLabelModal
         open={showCreate}
