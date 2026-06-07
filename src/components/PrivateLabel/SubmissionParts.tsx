@@ -200,7 +200,7 @@ function buildSpecialInstructions(label: IStoreDraftLabel): string {
     .join(" | ");
 }
 
-// ─── Label row ────────────────────────────────────────────────────────────────
+// ─── Label row function ───────────────────────────────────────────────────────
 
 export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientId: string }) {
   const [showCreate, setShowCreate] = useState(false);
