@@ -17,6 +17,7 @@ export interface IPagination {
 interface IGetMyLabelsParams {
   storeId: string;
   status?: "draft" | "submitted";
+  stageGroup?: "in_progress" | "approved";
   page?: number;
   limit?: number;
 }
@@ -37,11 +38,12 @@ export const storeLabelApi = baseApi.injectEndpoints({
 
     // GET /api/store/labels?storeId=&status=&page=&limit=
     getMyLabels: builder.query<IGetMyLabelsResponse, IGetMyLabelsParams>({
-      query: ({ storeId, status, page, limit }) => ({
+      query: ({ storeId, status, stageGroup, page, limit }) => ({
         url: "/store/labels",
         params: {
           storeId,
           ...(status !== undefined && { status }),
+          ...(stageGroup !== undefined && { stageGroup }),
           ...(page !== undefined && { page }),
           ...(limit !== undefined && { limit }),
         },

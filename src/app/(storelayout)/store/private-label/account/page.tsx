@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { LABEL_STAGES, type LabelStage } from "@/types/privateLabel/label";
 import { STAGE_META } from "@/lib/labelStageMeta";
 import type { IStoreDraftLabel, IStoreOrder } from "@/types/privateLabel/gummyBuilder";
@@ -235,6 +236,16 @@ function AccountPageInner() {
   const [labelTab, setLabelTab] = useState<LabelTab>("in_progress");
   const [orderTab, setOrderTab] = useState<OrderTab>("ongoing");
 
+  // Pagination states — one pair per sub-tab
+  const [ipPage, setIpPage] = useState(1);
+  const [ipLimit, setIpLimit] = useState(12);
+  const [apPage, setApPage] = useState(1);
+  const [apLimit, setApLimit] = useState(12);
+  const [ogPage, setOgPage] = useState(1);
+  const [ogLimit, setOgLimit] = useState(10);
+  const [cpPage, setCpPage] = useState(1);
+  const [cpLimit, setCpLimit] = useState(10);
+
   const section: Section =
     searchParams.get("myacc") === "orders" ? "orders" : "label";
 
@@ -243,33 +254,36 @@ function AccountPageInner() {
     if (user) { setStoreId(user.storeId); setStoreName(user.storeName); }
   }, []);
 
-  const { data: labelsData, isLoading: isLoadingLabels } = useGetMyLabelsQuery(
-    { storeId: storeId ?? "", status: "submitted" },
+  // Labels — two separate queries (server-side filtered + paginated)
+  const { data: ipData, isLoading: isLoadingIp } = useGetMyLabelsQuery(
+    { storeId: storeId ?? "", status: "submitted", stageGroup: "in_progress", page: ipPage, limit: ipLimit },
     { skip: !storeId }
   );
-  const { data: ordersData, isLoading: isLoadingOrders } = useGetMyOrdersQuery(
-    { storeId: storeId ?? "" },
+  const { data: apData, isLoading: isLoadingAp } = useGetMyLabelsQuery(
+    { storeId: storeId ?? "", status: "submitted", stageGroup: "approved", page: apPage, limit: apLimit },
     { skip: !storeId }
   );
 
-  const allLabels = labelsData?.labels ?? [];
-  const allOrders = ordersData?.orders ?? [];
-
-  const inProgressLabels = allLabels.filter(
-    (l) => !APPROVED_STAGES.includes(l.currentStage as LabelStage)
+  // Orders — two separate queries
+  const { data: ogData, isLoading: isLoadingOg } = useGetMyOrdersQuery(
+    { storeId: storeId ?? "", statusGroup: "ongoing", page: ogPage, limit: ogLimit },
+    { skip: !storeId }
   );
-  const approvedLabels = allLabels.filter((l) =>
-    APPROVED_STAGES.includes(l.currentStage as LabelStage)
-  );
-  const ongoingOrders = allOrders.filter(
-    (o) => !COMPLETED_ORDER_STATUSES.includes(o.status)
-  );
-  const completedOrders = allOrders.filter((o) =>
-    COMPLETED_ORDER_STATUSES.includes(o.status)
+  const { data: cpData, isLoading: isLoadingCp } = useGetMyOrdersQuery(
+    { storeId: storeId ?? "", statusGroup: "completed", page: cpPage, limit: cpLimit },
+    { skip: !storeId }
   );
 
-  const activeLabelList = labelTab === "in_progress" ? inProgressLabels : approvedLabels;
-  const activeOrderList = orderTab === "ongoing" ? ongoingOrders : completedOrders;
+  const inProgressLabels = ipData?.labels ?? [];
+  const approvedLabels = apData?.labels ?? [];
+  const ongoingOrders = ogData?.orders ?? [];
+  const completedOrders = cpData?.orders ?? [];
+
+  // Total counts from pagination metadata
+  const inProgressTotal = ipData?.pagination?.totalItems ?? inProgressLabels.length;
+  const approvedTotal = apData?.pagination?.totalItems ?? approvedLabels.length;
+  const ongoingTotal = ogData?.pagination?.totalItems ?? ongoingOrders.length;
+  const completedTotal = cpData?.pagination?.totalItems ?? completedOrders.length;
 
   if (!storeId) {
     return (
@@ -340,10 +354,10 @@ function AccountPageInner() {
           <div className="flex border-b border-border px-2 pt-1">
             {(
               [
-                { id: "in_progress" as LabelTab, icon: <Layers className="w-3.5 h-3.5" />, label: "In Progress", count: inProgressLabels.length },
-                { id: "approved" as LabelTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Approved", count: approvedLabels.length },
+                { id: "in_progress" as LabelTab, icon: <Layers className="w-3.5 h-3.5" />, label: "In Progress", count: inProgressTotal, loading: isLoadingIp },
+                { id: "approved" as LabelTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Approved", count: approvedTotal, loading: isLoadingAp },
               ]
-            ).map(({ id, icon, label, count }) => (
+            ).map(({ id, icon, label, count, loading }) => (
               <button
                 key={id}
                 onClick={() => setLabelTab(id)}
@@ -357,7 +371,7 @@ function AccountPageInner() {
                   {icon}
                 </span>
                 {label}
-                {!isLoadingLabels && (
+                {!loading && (
                   <span className={`text-[11px] font-bold rounded-full px-1.5 min-w-5 text-center tabular-nums ${
                     labelTab === id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
@@ -368,23 +382,67 @@ function AccountPageInner() {
             ))}
           </div>
           <div className="p-4">
-            {isLoadingLabels ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
-              </div>
-            ) : activeLabelList.length === 0 ? (
-              <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                <FlaskConical className="w-8 h-8 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">
-                  {labelTab === "in_progress"
-                    ? "No labels currently in progress."
-                    : "Labels appear here once OLCC approved."}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeLabelList.map((label) => <LabelCard key={label._id} label={label} />)}
-              </div>
+            {labelTab === "in_progress" && (
+              <>
+                {isLoadingIp ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : inProgressLabels.length === 0 ? (
+                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
+                    <FlaskConical className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">No labels currently in progress.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {inProgressLabels.map((label) => <LabelCard key={label._id} label={label} />)}
+                    </div>
+                    {ipData?.pagination && ipData.pagination.totalItems > 0 && (
+                      <GlobalPagination
+                        currentPage={ipPage}
+                        totalPages={ipData.pagination.totalPages}
+                        totalItems={ipData.pagination.totalItems}
+                        itemsPerPage={ipLimit}
+                        onPageChange={setIpPage}
+                        onLimitChange={(l) => { setIpPage(1); setIpLimit(l); }}
+                        limitOptions={[6, 12, 24, 48]}
+                      />
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            {labelTab === "approved" && (
+              <>
+                {isLoadingAp ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : approvedLabels.length === 0 ? (
+                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
+                    <FlaskConical className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">Labels appear here once OLCC approved.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {approvedLabels.map((label) => <LabelCard key={label._id} label={label} />)}
+                    </div>
+                    {apData?.pagination && apData.pagination.totalItems > 0 && (
+                      <GlobalPagination
+                        currentPage={apPage}
+                        totalPages={apData.pagination.totalPages}
+                        totalItems={apData.pagination.totalItems}
+                        itemsPerPage={apLimit}
+                        onPageChange={setApPage}
+                        onLimitChange={(l) => { setApPage(1); setApLimit(l); }}
+                        limitOptions={[6, 12, 24, 48]}
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -396,10 +454,10 @@ function AccountPageInner() {
           <div className="flex border-b border-border px-2 pt-1">
             {(
               [
-                { id: "ongoing" as OrderTab, icon: <Clock className="w-3.5 h-3.5" />, label: "Ongoing", count: ongoingOrders.length },
-                { id: "completed" as OrderTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Completed", count: completedOrders.length },
+                { id: "ongoing" as OrderTab, icon: <Clock className="w-3.5 h-3.5" />, label: "Ongoing", count: ongoingTotal, loading: isLoadingOg },
+                { id: "completed" as OrderTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Completed", count: completedTotal, loading: isLoadingCp },
               ]
-            ).map(({ id, icon, label, count }) => (
+            ).map(({ id, icon, label, count, loading }) => (
               <button
                 key={id}
                 onClick={() => setOrderTab(id)}
@@ -413,7 +471,7 @@ function AccountPageInner() {
                   {icon}
                 </span>
                 {label}
-                {!isLoadingOrders && (
+                {!loading && (
                   <span className={`text-[11px] font-bold rounded-full px-1.5 min-w-5 text-center tabular-nums ${
                     orderTab === id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
@@ -424,23 +482,67 @@ function AccountPageInner() {
             ))}
           </div>
           <div className="p-4">
-            {isLoadingOrders ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} tall />)}
-              </div>
-            ) : activeOrderList.length === 0 ? (
-              <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">
-                  {orderTab === "ongoing"
-                    ? "No active orders at the moment."
-                    : "No completed orders yet."}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeOrderList.map((order) => <OrderCard key={order._id} order={order} />)}
-              </div>
+            {orderTab === "ongoing" && (
+              <>
+                {isLoadingOg ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} tall />)}
+                  </div>
+                ) : ongoingOrders.length === 0 ? (
+                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
+                    <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">No active orders at the moment.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {ongoingOrders.map((order) => <OrderCard key={order._id} order={order} />)}
+                    </div>
+                    {ogData?.pagination && ogData.pagination.totalItems > 0 && (
+                      <GlobalPagination
+                        currentPage={ogPage}
+                        totalPages={ogData.pagination.totalPages}
+                        totalItems={ogData.pagination.totalItems}
+                        itemsPerPage={ogLimit}
+                        onPageChange={setOgPage}
+                        onLimitChange={(l) => { setOgPage(1); setOgLimit(l); }}
+                        limitOptions={[5, 10, 20, 50]}
+                      />
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            {orderTab === "completed" && (
+              <>
+                {isLoadingCp ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} tall />)}
+                  </div>
+                ) : completedOrders.length === 0 ? (
+                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
+                    <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-sm text-muted-foreground">No completed orders yet.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {completedOrders.map((order) => <OrderCard key={order._id} order={order} />)}
+                    </div>
+                    {cpData?.pagination && cpData.pagination.totalItems > 0 && (
+                      <GlobalPagination
+                        currentPage={cpPage}
+                        totalPages={cpData.pagination.totalPages}
+                        totalItems={cpData.pagination.totalItems}
+                        itemsPerPage={cpLimit}
+                        onPageChange={setCpPage}
+                        onLimitChange={(l) => { setCpPage(1); setCpLimit(l); }}
+                        limitOptions={[5, 10, 20, 50]}
+                      />
+                    )}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>

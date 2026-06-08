@@ -11,6 +11,7 @@ interface IPlaceOrderPayload {
 
 interface IGetMyOrdersParams {
   storeId: string;
+  statusGroup?: "ongoing" | "completed";
   page?: number;
   limit?: number;
 }
@@ -24,10 +25,11 @@ export const storeOrderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // GET /api/store/orders?storeId=&page=&limit=
     getMyOrders: builder.query<IGetMyOrdersResponse, IGetMyOrdersParams>({
-      query: ({ storeId, page, limit }) => ({
+      query: ({ storeId, statusGroup, page, limit }) => ({
         url: "/store/orders",
         params: {
           storeId,
+          ...(statusGroup !== undefined && { statusGroup }),
           ...(page !== undefined && { page }),
           ...(limit !== undefined && { limit }),
         },
