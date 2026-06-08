@@ -88,13 +88,31 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
           {/* Color */}
           <div>
             <Label htmlFor="color">Color</Label>
-            <Input
-              id="color"
-              placeholder="e.g., Red/Pink"
-              value={form.color}
-              onChange={(e) => form.setColor(e.target.value)}
-              className="rounded-xs border-border dark:border-white/20 bg-card"
-            />
+            <div className="relative mt-1">
+              {initialValues?.gummyColorHex && (
+                <span
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-xs border border-border shrink-0"
+                  style={{ backgroundColor: initialValues.gummyColorHex }}
+                />
+              )}
+              <Input
+                id="color"
+                placeholder="e.g., Red/Pink"
+                value={form.color}
+                onChange={(e) => form.setColor(e.target.value)}
+                className={`rounded-xs border-border dark:border-white/20 bg-card ${initialValues?.gummyColorHex ? "pl-10" : ""}`}
+              />
+            </div>
+            {initialValues?.gummyColorHex && (
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="font-mono bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                  {initialValues.gummyColorHex.toUpperCase()}
+                </span>
+                {initialValues.gummyColorName && (
+                  <span>{initialValues.gummyColorName}</span>
+                )}
+              </p>
+            )}
           </div>
 
           {/* Upload Logo */}

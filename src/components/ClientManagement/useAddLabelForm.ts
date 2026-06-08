@@ -28,8 +28,17 @@ export function useAddLabelForm(
   const [productType, setProductType] = useState("");
   const [specialInstructions, setSpecialInstructions] = useState(initialValues?.specialInstructions ?? "");
   const [cannabinoidMix, setCannabinoidMix] = useState(initialValues?.cannabinoidMix ?? "");
-  const [color, setColor] = useState("");
-  const [flavorComponents, setFlavorComponents] = useState<ComponentEntry[]>([]);
+  const [color, setColor] = useState(initialValues?.gummyColorName ?? initialValues?.gummyColorHex ?? "");
+  const [flavorComponents, setFlavorComponents] = useState<ComponentEntry[]>(() => {
+    const flavors = initialValues?.selectedFlavors ?? [];
+    if (!flavors.length) return [];
+    const base = Math.floor(100 / flavors.length);
+    const remainder = 100 - base * flavors.length;
+    return flavors.map((name, i) => ({
+      name,
+      percentage: String(base + (i === 0 ? remainder : 0)),
+    }));
+  });
   const [colorComponents, setColorComponents] = useState<ComponentEntry[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -51,12 +60,22 @@ export function useAddLabelForm(
   }, [products]);
 
   function resetForm() {
-    setFlavorName("");
+    setFlavorName(initialValues?.flavorName ?? "");
     setProductType("");
-    setSpecialInstructions("");
-    setCannabinoidMix("");
-    setColor("");
-    setFlavorComponents([]);
+    setSpecialInstructions(initialValues?.specialInstructions ?? "");
+    setCannabinoidMix(initialValues?.cannabinoidMix ?? "");
+    setColor(initialValues?.gummyColorName ?? initialValues?.gummyColorHex ?? "");
+    const flavors = initialValues?.selectedFlavors ?? [];
+    if (flavors.length) {
+      const base = Math.floor(100 / flavors.length);
+      const remainder = 100 - base * flavors.length;
+      setFlavorComponents(flavors.map((name, i) => ({
+        name,
+        percentage: String(base + (i === 0 ? remainder : 0)),
+      })));
+    } else {
+      setFlavorComponents([]);
+    }
     setColorComponents([]);
     setFiles([]);
   }
