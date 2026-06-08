@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FlaskConical, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { FlaskConical, Sparkles, User } from "lucide-react";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
@@ -114,7 +115,15 @@ export default function PrivateLabelPage() {
             {storeName ? `Build your custom gummy line for ${storeName}` : "Build your custom gummy line"}
           </p>
         </div>
-        <FlaskConical className="w-10 h-10 text-white/30 dark:text-primary/30 shrink-0 hidden sm:block" />
+        <div className="relative shrink-0 flex flex-col items-end gap-2.5">
+          <Link href="/store/private-label/account">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xs bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/15 text-white text-xs font-semibold border border-white/25 dark:border-white/15 transition-colors whitespace-nowrap">
+              <User className="w-3.5 h-3.5" />
+              My Account
+            </button>
+          </Link>
+          <FlaskConical className="w-9 h-9 text-white/25 dark:text-primary/25 hidden sm:block" />
+        </div>
       </div>
 
       {/* My Line — visible only on Builder tab */}
