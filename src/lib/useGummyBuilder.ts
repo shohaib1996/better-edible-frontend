@@ -20,7 +20,7 @@ export const MAX_MIX_FLAVORS = 3;
 const SOURCE_HUE = 55;
 const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
 
-function hexToHueRotation(hex: string): number {
+export function hexToHueRotation(hex: string): number {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
@@ -130,7 +130,13 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     if (!flavorName.trim()) { toast.error("Flavor name is required"); return; }
     setQueue((prev) => [
       ...prev,
-      { id: Date.now().toString(), flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue },
+      {
+        id: Date.now().toString(),
+        flavorName: flavorName.trim(),
+        selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue,
+        gummyColorHex: colorInfo?.hex,
+        gummyColorName: colorInfo?.name,
+      },
     ]);
     toast.success(`"${flavorName.trim()}" added — configure your next gummy`);
     resetForm();
@@ -143,7 +149,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: flavorName.trim(), size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue }]
+        ? [{ id: "current", flavorName: flavorName.trim(), selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue }]
         : []),
     ];
 
@@ -158,6 +164,8 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
           flavorMode: item.flavorMode,
           cannabinoids: item.cannabinoids,
           unitsOrdered: item.unitsOrdered,
+          selectedFlavors: item.selectedFlavors,
+          ...(item.gummyColorHex && { gummyColorHex: item.gummyColorHex, gummyColorName: item.gummyColorName }),
         }).unwrap();
       }
       toast.success(

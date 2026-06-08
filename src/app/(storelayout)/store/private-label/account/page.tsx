@@ -15,7 +15,13 @@ import {
   Truck,
   Package,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
@@ -41,10 +47,7 @@ const STAGE_TEXT_COLOR: Record<LabelStage, string> = {
   ready_for_production:    "text-emerald-700 dark:text-emerald-400",
 };
 
-const ORDER_META: Record<
-  string,
-  { label: string; icon: React.ReactNode; badge: string }
-> = {
+const ORDER_META: Record<string, { label: string; icon: React.ReactNode; badge: string }> = {
   pending: {
     label: "Pending",
     icon: <Clock className="w-3.5 h-3.5" />,
@@ -87,11 +90,7 @@ function StageStepper({ currentStage }: { currentStage?: LabelStage }) {
           <div
             key={idx}
             className={`h-1.5 flex-1 rounded-full transition-colors ${
-              idx < currentIdx
-                ? "bg-green-500"
-                : idx === currentIdx
-                ? meta.color
-                : "bg-muted-foreground/15"
+              idx < currentIdx ? "bg-green-500" : idx === currentIdx ? meta.color : "bg-muted-foreground/15"
             }`}
           />
         ))}
@@ -108,11 +107,10 @@ function StageStepper({ currentStage }: { currentStage?: LabelStage }) {
 function LabelCard({ label }: { label: IStoreDraftLabel }) {
   const isApproved = APPROVED_STAGES.includes(label.currentStage as LabelStage);
   return (
-    <div
-      className={`rounded-xs border bg-card p-4 space-y-3 ${
-        isApproved ? "border-emerald-200 dark:border-emerald-900/60" : "border-border"
-      }`}
-    >
+    <Card className={cn(
+      "rounded-xs shadow-none gap-3 p-4 py-4",
+      isApproved && "border-emerald-200 dark:border-emerald-900/60"
+    )}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <FlaskConical className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -120,9 +118,7 @@ function LabelCard({ label }: { label: IStoreDraftLabel }) {
         </div>
         {label.submittedAt && (
           <span className="text-[11px] text-muted-foreground shrink-0">
-            {new Date(label.submittedAt).toLocaleDateString("en-US", {
-              month: "short", day: "numeric", year: "numeric",
-            })}
+            {new Date(label.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         )}
       </div>
@@ -143,15 +139,12 @@ function LabelCard({ label }: { label: IStoreDraftLabel }) {
         ))}
       </div>
       <StageStepper currentStage={label.currentStage} />
-      <div className="flex items-center justify-between pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">
-          {label.unitsOrdered.toLocaleString()} units
-        </span>
-        <span className="text-sm font-bold text-primary tabular-nums">
-          ${(label.totalCost ?? 0).toFixed(2)}
-        </span>
+      <Separator />
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{label.unitsOrdered.toLocaleString()} units</span>
+        <span className="text-sm font-bold text-primary tabular-nums">${(label.totalCost ?? 0).toFixed(2)}</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -160,11 +153,10 @@ function OrderCard({ order }: { order: IStoreOrder }) {
   const meta = ORDER_META[order.status] ?? ORDER_META.pending;
   const isCompleted = COMPLETED_ORDER_STATUSES.includes(order.status);
   return (
-    <div
-      className={`rounded-xs border bg-card p-4 space-y-3 ${
-        isCompleted ? "border-green-200 dark:border-green-900/60" : "border-border"
-      }`}
-    >
+    <Card className={cn(
+      "rounded-xs shadow-none gap-3 p-4 py-4",
+      isCompleted && "border-green-200 dark:border-green-900/60"
+    )}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -206,37 +198,47 @@ function OrderCard({ order }: { order: IStoreOrder }) {
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between pt-2 border-t border-border">
+      <Separator />
+      <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
           {order.items.reduce((s, i) => s + i.quantity, 0).toLocaleString()} total units
         </span>
-        <span className="text-base font-bold text-primary tabular-nums">
-          ${(order.totalCost ?? 0).toFixed(2)}
-        </span>
+        <span className="text-base font-bold text-primary tabular-nums">${(order.totalCost ?? 0).toFixed(2)}</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
-function SkeletonCard({ tall }: { tall?: boolean }) {
+// ─── Empty state ────────────────────────────────────────────────────────────
+function EmptyState({ icon, message }: { icon: React.ReactNode; message: string }) {
   return (
-    <div className={`rounded-xs border border-border animate-pulse bg-muted/50 ${tall ? "h-56" : "h-44"}`} />
+    <Card className="rounded-xs shadow-none border-dashed py-14 gap-3 items-center justify-center">
+      <div className="text-muted-foreground/30">{icon}</div>
+      <p className="text-sm text-muted-foreground text-center">{message}</p>
+    </Card>
   );
 }
 
-// ─── Inner (needs useSearchParams) ─────────────────────────────────────────
+// ─── Tab count badge ────────────────────────────────────────────────────────
+function TabCount({ count }: { count: number }) {
+  return (
+    <span className="ml-1 text-[10px] font-bold rounded-full bg-current/15 px-1.5 py-0.5 tabular-nums min-w-5 text-center">
+      {count}
+    </span>
+  );
+}
+
+// ─── Inner page (needs useSearchParams) ────────────────────────────────────
 type Section = "label" | "orders";
-type LabelTab = "in_progress" | "approved";
-type OrderTab = "ongoing" | "completed";
 
 function AccountPageInner() {
   const searchParams = useSearchParams();
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
-  const [labelTab, setLabelTab] = useState<LabelTab>("in_progress");
-  const [orderTab, setOrderTab] = useState<OrderTab>("ongoing");
+  const [labelTab, setLabelTab] = useState("in_progress");
+  const [orderTab, setOrderTab] = useState("ongoing");
 
-  // Pagination states — one pair per sub-tab
+  // Pagination state — one pair per sub-tab
   const [ipPage, setIpPage] = useState(1);
   const [ipLimit, setIpLimit] = useState(12);
   const [apPage, setApPage] = useState(1);
@@ -246,15 +248,13 @@ function AccountPageInner() {
   const [cpPage, setCpPage] = useState(1);
   const [cpLimit, setCpLimit] = useState(10);
 
-  const section: Section =
-    searchParams.get("myacc") === "orders" ? "orders" : "label";
+  const section: Section = searchParams.get("myacc") === "orders" ? "orders" : "label";
 
   useEffect(() => {
     const user = getStoreUser();
     if (user) { setStoreId(user.storeId); setStoreName(user.storeName); }
   }, []);
 
-  // Labels — two separate queries (server-side filtered + paginated)
   const { data: ipData, isLoading: isLoadingIp } = useGetMyLabelsQuery(
     { storeId: storeId ?? "", status: "submitted", stageGroup: "in_progress", page: ipPage, limit: ipLimit },
     { skip: !storeId }
@@ -263,8 +263,6 @@ function AccountPageInner() {
     { storeId: storeId ?? "", status: "submitted", stageGroup: "approved", page: apPage, limit: apLimit },
     { skip: !storeId }
   );
-
-  // Orders — two separate queries
   const { data: ogData, isLoading: isLoadingOg } = useGetMyOrdersQuery(
     { storeId: storeId ?? "", statusGroup: "ongoing", page: ogPage, limit: ogLimit },
     { skip: !storeId }
@@ -275,15 +273,14 @@ function AccountPageInner() {
   );
 
   const inProgressLabels = ipData?.labels ?? [];
-  const approvedLabels = apData?.labels ?? [];
-  const ongoingOrders = ogData?.orders ?? [];
-  const completedOrders = cpData?.orders ?? [];
+  const approvedLabels   = apData?.labels ?? [];
+  const ongoingOrders    = ogData?.orders ?? [];
+  const completedOrders  = cpData?.orders ?? [];
 
-  // Total counts from pagination metadata
   const inProgressTotal = ipData?.pagination?.totalItems ?? inProgressLabels.length;
-  const approvedTotal = apData?.pagination?.totalItems ?? approvedLabels.length;
-  const ongoingTotal = ogData?.pagination?.totalItems ?? ongoingOrders.length;
-  const completedTotal = cpData?.pagination?.totalItems ?? completedOrders.length;
+  const approvedTotal   = apData?.pagination?.totalItems ?? approvedLabels.length;
+  const ongoingTotal    = ogData?.pagination?.totalItems ?? ongoingOrders.length;
+  const completedTotal  = cpData?.pagination?.totalItems ?? completedOrders.length;
 
   if (!storeId) {
     return (
@@ -310,242 +307,188 @@ function AccountPageInner() {
               Private Label
             </span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white dark:text-foreground">
-            My Account
-          </h1>
-          <p className="text-sm text-white/70 dark:text-muted-foreground mt-0.5">
-            {storeName ?? "Your store"}
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white dark:text-foreground">My Account</h1>
+          <p className="text-sm text-white/70 dark:text-muted-foreground mt-0.5">{storeName ?? "Your store"}</p>
         </div>
         <div className="relative shrink-0 hidden sm:flex items-center justify-center w-12 h-12 rounded-xs bg-white/15 dark:bg-white/5 border border-white/20 dark:border-white/10">
           <User className="w-6 h-6 text-white/60 dark:text-primary/50" />
         </div>
       </div>
 
-      {/* ── Main section switcher (?myacc=label | ?myacc=orders) ── */}
-      <div className="rounded-xs border border-border bg-card p-1 flex gap-1">
-        <Link
-          href="?myacc=label"
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xs text-sm font-semibold transition-all ${
-            section === "label"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          }`}
+      {/* ── Section switcher (?myacc=label | ?myacc=orders) ── */}
+      <Card className="rounded-xs shadow-none p-1 flex-row gap-1 py-1">
+        <Button
+          asChild
+          variant={section === "label" ? "default" : "ghost"}
+          className="flex-1 rounded-xs"
         >
-          <FlaskConical className="w-4 h-4" />
-          My Labels
-        </Link>
-        <Link
-          href="?myacc=orders"
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xs text-sm font-semibold transition-all ${
-            section === "orders"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          }`}
+          <Link href="?myacc=label">
+            <FlaskConical className="w-4 h-4" />
+            My Labels
+          </Link>
+        </Button>
+        <Button
+          asChild
+          variant={section === "orders" ? "default" : "ghost"}
+          className="flex-1 rounded-xs"
         >
-          <ShoppingCart className="w-4 h-4" />
-          My Orders
-        </Link>
-      </div>
+          <Link href="?myacc=orders">
+            <ShoppingCart className="w-4 h-4" />
+            My Orders
+          </Link>
+        </Button>
+      </Card>
 
-      {/* ── Labels view ── */}
+      {/* ── Labels section ── */}
       {section === "label" && (
-        <div className="rounded-xs border border-border bg-card overflow-hidden">
-          <div className="flex border-b border-border px-2 pt-1">
-            {(
-              [
-                { id: "in_progress" as LabelTab, icon: <Layers className="w-3.5 h-3.5" />, label: "In Progress", count: inProgressTotal, loading: isLoadingIp },
-                { id: "approved" as LabelTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Approved", count: approvedTotal, loading: isLoadingAp },
-              ]
-            ).map(({ id, icon, label, count, loading }) => (
-              <button
-                key={id}
-                onClick={() => setLabelTab(id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  labelTab === id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <span className={labelTab === id ? "text-primary" : "text-muted-foreground"}>
-                  {icon}
-                </span>
-                {label}
-                {!loading && (
-                  <span className={`text-[11px] font-bold rounded-full px-1.5 min-w-5 text-center tabular-nums ${
-                    labelTab === id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="p-4">
-            {labelTab === "in_progress" && (
-              <>
-                {isLoadingIp ? (
+        <Card className="rounded-xs shadow-none p-0 gap-0">
+          <Tabs value={labelTab} onValueChange={setLabelTab} className="gap-0">
+            <div className="px-4 pt-3 pb-0">
+              <TabsList className="w-full h-10">
+                <TabsTrigger value="in_progress" className="flex-1 gap-1.5 text-xs">
+                  <Layers className="w-3.5 h-3.5" />
+                  In Progress
+                  {!isLoadingIp && <TabCount count={inProgressTotal} />}
+                </TabsTrigger>
+                <TabsTrigger value="approved" className="flex-1 gap-1.5 text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Approved
+                  {!isLoadingAp && <TabCount count={approvedTotal} />}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="in_progress" className="p-4 pt-3 mt-0">
+              {isLoadingIp ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="rounded-xs h-44 bg-muted" />)}
+                </div>
+              ) : inProgressLabels.length === 0 ? (
+                <EmptyState icon={<FlaskConical className="w-8 h-8" />} message="No labels currently in progress." />
+              ) : (
+                <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+                    {inProgressLabels.map((label) => <LabelCard key={label._id} label={label} />)}
                   </div>
-                ) : inProgressLabels.length === 0 ? (
-                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                    <FlaskConical className="w-8 h-8 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">No labels currently in progress.</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {inProgressLabels.map((label) => <LabelCard key={label._id} label={label} />)}
-                    </div>
-                    {ipData?.pagination && ipData.pagination.totalItems > 0 && (
-                      <GlobalPagination
-                        currentPage={ipPage}
-                        totalPages={ipData.pagination.totalPages}
-                        totalItems={ipData.pagination.totalItems}
-                        itemsPerPage={ipLimit}
-                        onPageChange={setIpPage}
-                        onLimitChange={(l) => { setIpPage(1); setIpLimit(l); }}
-                        limitOptions={[6, 12, 24, 48]}
-                      />
-                    )}
-                  </>
-                )}
-              </>
-            )}
-            {labelTab === "approved" && (
-              <>
-                {isLoadingAp ? (
+                  {ipData?.pagination && ipData.pagination.totalItems > 0 && (
+                    <GlobalPagination
+                      currentPage={ipPage}
+                      totalPages={ipData.pagination.totalPages}
+                      totalItems={ipData.pagination.totalItems}
+                      itemsPerPage={ipLimit}
+                      onPageChange={setIpPage}
+                      onLimitChange={(l) => { setIpPage(1); setIpLimit(l); }}
+                      limitOptions={[6, 12, 24, 48]}
+                    />
+                  )}
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="approved" className="p-4 pt-3 mt-0">
+              {isLoadingAp ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="rounded-xs h-44 bg-muted" />)}
+                </div>
+              ) : approvedLabels.length === 0 ? (
+                <EmptyState icon={<FlaskConical className="w-8 h-8" />} message="Labels appear here once OLCC approved." />
+              ) : (
+                <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
+                    {approvedLabels.map((label) => <LabelCard key={label._id} label={label} />)}
                   </div>
-                ) : approvedLabels.length === 0 ? (
-                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                    <FlaskConical className="w-8 h-8 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">Labels appear here once OLCC approved.</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {approvedLabels.map((label) => <LabelCard key={label._id} label={label} />)}
-                    </div>
-                    {apData?.pagination && apData.pagination.totalItems > 0 && (
-                      <GlobalPagination
-                        currentPage={apPage}
-                        totalPages={apData.pagination.totalPages}
-                        totalItems={apData.pagination.totalItems}
-                        itemsPerPage={apLimit}
-                        onPageChange={setApPage}
-                        onLimitChange={(l) => { setApPage(1); setApLimit(l); }}
-                        limitOptions={[6, 12, 24, 48]}
-                      />
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+                  {apData?.pagination && apData.pagination.totalItems > 0 && (
+                    <GlobalPagination
+                      currentPage={apPage}
+                      totalPages={apData.pagination.totalPages}
+                      totalItems={apData.pagination.totalItems}
+                      itemsPerPage={apLimit}
+                      onPageChange={setApPage}
+                      onLimitChange={(l) => { setApPage(1); setApLimit(l); }}
+                      limitOptions={[6, 12, 24, 48]}
+                    />
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        </Card>
       )}
 
-      {/* ── Orders view ── */}
+      {/* ── Orders section ── */}
       {section === "orders" && (
-        <div className="rounded-xs border border-border bg-card overflow-hidden">
-          <div className="flex border-b border-border px-2 pt-1">
-            {(
-              [
-                { id: "ongoing" as OrderTab, icon: <Clock className="w-3.5 h-3.5" />, label: "Ongoing", count: ongoingTotal, loading: isLoadingOg },
-                { id: "completed" as OrderTab, icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: "Completed", count: completedTotal, loading: isLoadingCp },
-              ]
-            ).map(({ id, icon, label, count, loading }) => (
-              <button
-                key={id}
-                onClick={() => setOrderTab(id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  orderTab === id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <span className={orderTab === id ? "text-primary" : "text-muted-foreground"}>
-                  {icon}
-                </span>
-                {label}
-                {!loading && (
-                  <span className={`text-[11px] font-bold rounded-full px-1.5 min-w-5 text-center tabular-nums ${
-                    orderTab === id ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          <div className="p-4">
-            {orderTab === "ongoing" && (
-              <>
-                {isLoadingOg ? (
+        <Card className="rounded-xs shadow-none p-0 gap-0">
+          <Tabs value={orderTab} onValueChange={setOrderTab} className="gap-0">
+            <div className="px-4 pt-3 pb-0">
+              <TabsList className="w-full h-10">
+                <TabsTrigger value="ongoing" className="flex-1 gap-1.5 text-xs">
+                  <Clock className="w-3.5 h-3.5" />
+                  Ongoing
+                  {!isLoadingOg && <TabCount count={ongoingTotal} />}
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="flex-1 gap-1.5 text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Completed
+                  {!isLoadingCp && <TabCount count={completedTotal} />}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="ongoing" className="p-4 pt-3 mt-0">
+              {isLoadingOg ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="rounded-xs h-56 bg-muted" />)}
+                </div>
+              ) : ongoingOrders.length === 0 ? (
+                <EmptyState icon={<ShoppingCart className="w-8 h-8" />} message="No active orders at the moment." />
+              ) : (
+                <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} tall />)}
+                    {ongoingOrders.map((order) => <OrderCard key={order._id} order={order} />)}
                   </div>
-                ) : ongoingOrders.length === 0 ? (
-                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                    <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">No active orders at the moment.</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {ongoingOrders.map((order) => <OrderCard key={order._id} order={order} />)}
-                    </div>
-                    {ogData?.pagination && ogData.pagination.totalItems > 0 && (
-                      <GlobalPagination
-                        currentPage={ogPage}
-                        totalPages={ogData.pagination.totalPages}
-                        totalItems={ogData.pagination.totalItems}
-                        itemsPerPage={ogLimit}
-                        onPageChange={setOgPage}
-                        onLimitChange={(l) => { setOgPage(1); setOgLimit(l); }}
-                        limitOptions={[5, 10, 20, 50]}
-                      />
-                    )}
-                  </>
-                )}
-              </>
-            )}
-            {orderTab === "completed" && (
-              <>
-                {isLoadingCp ? (
+                  {ogData?.pagination && ogData.pagination.totalItems > 0 && (
+                    <GlobalPagination
+                      currentPage={ogPage}
+                      totalPages={ogData.pagination.totalPages}
+                      totalItems={ogData.pagination.totalItems}
+                      itemsPerPage={ogLimit}
+                      onPageChange={setOgPage}
+                      onLimitChange={(l) => { setOgPage(1); setOgLimit(l); }}
+                      limitOptions={[5, 10, 20, 50]}
+                    />
+                  )}
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="completed" className="p-4 pt-3 mt-0">
+              {isLoadingCp ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="rounded-xs h-56 bg-muted" />)}
+                </div>
+              ) : completedOrders.length === 0 ? (
+                <EmptyState icon={<ShoppingCart className="w-8 h-8" />} message="No completed orders yet." />
+              ) : (
+                <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} tall />)}
+                    {completedOrders.map((order) => <OrderCard key={order._id} order={order} />)}
                   </div>
-                ) : completedOrders.length === 0 ? (
-                  <div className="rounded-xs border border-dashed border-border py-14 flex flex-col items-center gap-3">
-                    <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
-                    <p className="text-sm text-muted-foreground">No completed orders yet.</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {completedOrders.map((order) => <OrderCard key={order._id} order={order} />)}
-                    </div>
-                    {cpData?.pagination && cpData.pagination.totalItems > 0 && (
-                      <GlobalPagination
-                        currentPage={cpPage}
-                        totalPages={cpData.pagination.totalPages}
-                        totalItems={cpData.pagination.totalItems}
-                        itemsPerPage={cpLimit}
-                        onPageChange={setCpPage}
-                        onLimitChange={(l) => { setCpPage(1); setCpLimit(l); }}
-                        limitOptions={[5, 10, 20, 50]}
-                      />
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+                  {cpData?.pagination && cpData.pagination.totalItems > 0 && (
+                    <GlobalPagination
+                      currentPage={cpPage}
+                      totalPages={cpData.pagination.totalPages}
+                      totalItems={cpData.pagination.totalItems}
+                      itemsPerPage={cpLimit}
+                      onPageChange={setCpPage}
+                      onLimitChange={(l) => { setCpPage(1); setCpLimit(l); }}
+                      limitOptions={[5, 10, 20, 50]}
+                    />
+                  )}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
+        </Card>
       )}
     </div>
   );
@@ -554,9 +497,7 @@ function AccountPageInner() {
 export default function AccountPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">
-        Loading…
-      </div>
+      <div className="flex items-center justify-center h-40 text-muted-foreground text-sm">Loading…</div>
     }>
       <AccountPageInner />
     </Suspense>

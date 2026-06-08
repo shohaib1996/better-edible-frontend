@@ -67,6 +67,9 @@ export interface IStoreDraftLabel {
   currentStage: LabelStage;
   submittedAt?: string;
   hasAdminLabel?: boolean;
+  selectedFlavors?: string[];
+  gummyColorHex?: string;
+  gummyColorName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,6 +87,9 @@ export interface ICreateDraftLabelPayload {
   flavorMode: GummyFlavorMode;
   cannabinoids: { name: CannabinoidName; mg: number }[];
   unitsOrdered: number;
+  selectedFlavors?: string[];
+  gummyColorHex?: string;
+  gummyColorName?: string;
 }
 
 export interface IUpdateDraftLabelPayload {
@@ -96,6 +102,9 @@ export interface IUpdateDraftLabelPayload {
   flavorMode?: GummyFlavorMode;
   cannabinoids?: { name: CannabinoidName; mg: number }[];
   unitsOrdered?: number;
+  selectedFlavors?: string[];
+  gummyColorHex?: string;
+  gummyColorName?: string;
 }
 
 export interface ISubmitLinePayload {

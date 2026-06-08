@@ -1,28 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { FlaskConical, Sparkles, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FlaskConical, Sparkles, User, ArrowLeft } from "lucide-react";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
-import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
 import { GummyBuilder } from "@/components/PrivateLabel/GummyBuilder";
 import { SavedGummiesList } from "@/components/PrivateLabel/SavedGummiesList";
 import { SubmitSummary } from "@/components/PrivateLabel/SubmitSummary";
-import { ActiveDashboard } from "@/components/PrivateLabel/ActiveDashboard";
-
-type Tab = "build" | "submit" | "labels" | "orders";
 
 export default function PrivateLabelPage() {
+  const router = useRouter();
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
-  const [active, setActive] = useState<Tab>("build");
-  const tabSectionRef = useRef<HTMLDivElement>(null);
-
-  const [labelsPage, setLabelsPage] = useState(1);
-  const [labelsLimit, setLabelsLimit] = useState(10);
-  const [ordersPage, setOrdersPage] = useState(1);
-  const [ordersLimit, setOrdersLimit] = useState(10);
+  const [showSubmit, setShowSubmit] = useState(false);
 
   useEffect(() => {
     const user = getStoreUser();
@@ -41,35 +33,7 @@ export default function PrivateLabelPage() {
     { skip: !storeId }
   );
 
-  const {
-    data: submittedData,
-    isLoading: isLoadingSubmitted,
-    refetch: refetchSubmitted,
-  } = useGetMyLabelsQuery(
-    { storeId: storeId ?? "", status: "submitted", page: labelsPage, limit: labelsLimit },
-    { skip: !storeId }
-  );
-
-  const { data: ordersData, isLoading: isLoadingOrders } = useGetMyOrdersQuery(
-    { storeId: storeId ?? "", page: ordersPage, limit: ordersLimit },
-    { skip: !storeId }
-  );
-
   const draftLabels = draftData?.labels ?? [];
-  const submittedLabels = submittedData?.labels ?? [];
-  const labelsPagination = submittedData?.pagination;
-  const orders = ordersData?.orders ?? [];
-  const ordersPagination = ordersData?.pagination;
-
-  const totalSubmitted = labelsPagination?.totalItems ?? submittedLabels.length;
-  const totalOrders = ordersPagination?.totalItems ?? orders.length;
-
-  const tabs: { id: Tab; label: string; count?: number; hidden?: boolean }[] = [
-    { id: "build", label: "Builder" },
-    { id: "submit", label: "Submit My Line", hidden: draftLabels.length === 0 },
-    { id: "labels", label: "My Labels", count: totalSubmitted || undefined, hidden: !isLoadingSubmitted && totalSubmitted === 0 },
-    { id: "orders", label: "My Orders", count: totalOrders || undefined, hidden: !isLoadingOrders && totalOrders === 0 },
-  ];
 
   function handleSaved() {
     refetchDrafts();
@@ -77,8 +41,7 @@ export default function PrivateLabelPage() {
 
   function handleSubmitted() {
     refetchDrafts();
-    refetchSubmitted();
-    setActive("labels");
+    router.push("/store/private-label/account?myacc=label");
   }
 
   if (!storeId) {
@@ -126,74 +89,16 @@ export default function PrivateLabelPage() {
         </div>
       </div>
 
-      {/* My Line — visible only on Builder tab */}
-      {active === "build" && <div className="rounded-xs border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">My Line</span>
-            {draftLabels.length > 0 && (
-              <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
-                {draftLabels.length}
-              </span>
-            )}
-          </div>
-          {draftLabels.length > 0 && (
-            <button
-              onClick={() => {
-                setActive("submit");
-                setTimeout(() => {
-                  tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }, 50);
-              }}
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              Review & Submit →
-            </button>
-          )}
-        </div>
-        <div className="p-5">
-          <SavedGummiesList
-            storeId={storeId}
-            labels={draftLabels}
-            isLoading={isLoadingDrafts}
-          />
-        </div>
-      </div>}
-
-      {/* Tab nav */}
-      <div ref={tabSectionRef} className="flex justify-center items-center gap-1 border-b border-border pb-0">
-        {tabs
-          .filter((t) => !t.hidden)
-          .map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActive(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                active === tab.id
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-      </div>
-
-      {/* Content */}
-      <div className="w-full">
-        {active === "build" && (
-          <div className="rounded-xs border border-border bg-card p-5">
-            <GummyBuilder storeId={storeId} onSaved={handleSaved} />
-          </div>
-        )}
-
-        {active === "submit" && (
+      {showSubmit ? (
+        /* ── Submit view ── */
+        <div className="space-y-4">
+          <button
+            onClick={() => setShowSubmit(false)}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Builder
+          </button>
           <div className="rounded-xs border border-border bg-card p-5">
             <SubmitSummary
               storeId={storeId}
@@ -201,40 +106,46 @@ export default function PrivateLabelPage() {
               onSubmitted={handleSubmitted}
             />
           </div>
-        )}
+        </div>
+      ) : (
+        /* ── Builder view ── */
+        <div className="space-y-5">
+          {/* My Line */}
+          <div className="rounded-xs border border-border bg-card overflow-hidden">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <FlaskConical className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">My Line</span>
+                {draftLabels.length > 0 && (
+                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
+                    {draftLabels.length}
+                  </span>
+                )}
+              </div>
+              {draftLabels.length > 0 && (
+                <button
+                  onClick={() => setShowSubmit(true)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Review & Submit →
+                </button>
+              )}
+            </div>
+            <div className="p-5">
+              <SavedGummiesList
+                storeId={storeId}
+                labels={draftLabels}
+                isLoading={isLoadingDrafts}
+              />
+            </div>
+          </div>
 
-        {active === "labels" && (
-          <ActiveDashboard
-            view="labels"
-            labels={submittedLabels}
-            orders={orders}
-            isLoadingLabels={isLoadingSubmitted}
-            isLoadingOrders={isLoadingOrders}
-            labelsPagination={labelsPagination}
-            onLabelsPageChange={(p) => setLabelsPage(p)}
-            onLabelsLimitChange={(l) => { setLabelsPage(1); setLabelsLimit(l); }}
-            ordersPagination={ordersPagination}
-            onOrdersPageChange={(p) => setOrdersPage(p)}
-            onOrdersLimitChange={(l) => { setOrdersPage(1); setOrdersLimit(l); }}
-          />
-        )}
-
-        {active === "orders" && (
-          <ActiveDashboard
-            view="orders"
-            labels={submittedLabels}
-            orders={orders}
-            isLoadingLabels={isLoadingSubmitted}
-            isLoadingOrders={isLoadingOrders}
-            labelsPagination={labelsPagination}
-            onLabelsPageChange={(p) => setLabelsPage(p)}
-            onLabelsLimitChange={(l) => { setLabelsPage(1); setLabelsLimit(l); }}
-            ordersPagination={ordersPagination}
-            onOrdersPageChange={(p) => setOrdersPage(p)}
-            onOrdersLimitChange={(l) => { setOrdersPage(1); setOrdersLimit(l); }}
-          />
-        )}
-      </div>
+          {/* Builder */}
+          <div className="rounded-xs border border-border bg-card p-5">
+            <GummyBuilder storeId={storeId} onSaved={handleSaved} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

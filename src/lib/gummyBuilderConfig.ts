@@ -11,6 +11,7 @@ export type OptionBtn<T> = { value: T; label: string; sub?: string };
 export type QueuedGummy = {
   id: string;
   flavorName: string;
+  selectedFlavors: string[];
   size: GummySize;
   oilType: GummyOilType;
   effect: GummyEffect;
@@ -19,6 +20,8 @@ export type QueuedGummy = {
   unitsOrdered: number;
   grandTotal: number;
   gummyHue: number;
+  gummyColorHex?: string;
+  gummyColorName?: string;
 };
 
 export type GummyColor = { label: string; hue: number; swatch: string };

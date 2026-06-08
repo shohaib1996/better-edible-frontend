@@ -1,7 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+
+const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
 import { Trash2, Pencil, Check, X, FlaskConical, Plus, CheckCircle2 } from "lucide-react";
+import { GummyVisual } from "./GummyVisual";
+import { FlavorPicker } from "./FlavorPicker";
+import { hexToHueRotation } from "@/lib/useGummyBuilder";
+import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +47,10 @@ const UNIT_PRESETS = [630, 1000, 2000, 3000];
 export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId: string }) {
   const [editing, setEditing] = useState(false);
   const [flavorName, setFlavorName] = useState(label.flavorName);
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>(label.selectedFlavors ?? []);
+  const [colorHex, setColorHex] = useState<string | undefined>(label.gummyColorHex);
+  const [colorName, setColorName] = useState<string | undefined>(label.gummyColorName);
+  const [isColorLoading, setIsColorLoading] = useState(false);
   const [size, setSize] = useState<GummySize>(label.size);
   const [oilType, setOilType] = useState<GummyOilType>(label.oilType);
   const [effect, setEffect] = useState<GummyEffect>(label.effect);
@@ -48,6 +58,13 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
   const [units, setUnits] = useState(label.unitsOrdered);
   const [cannabinoids, setCannabinoids] = useState(label.cannabinoids.map((c) => ({ name: c.name, mg: c.mg })));
   const [selectedKey, setSelectedKey] = useState("CBD-100");
+
+  const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
+  const allFlavors = useMemo(
+    () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
+    [flavorsData],
+  );
+  const maxFlavors = flavorMode === "mix" ? 3 : 1;
 
   const [updateDraft, { isLoading: isSaving }] = useUpdateDraftLabelMutation();
   const [deleteDraft, { isLoading: isDeleting }] = useDeleteDraftLabelMutation();
@@ -76,8 +93,45 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     setCannabinoids((prev) => prev.filter((c) => c.name !== name));
   }
 
+  const fetchColor = useCallback(async (flavors: string[]) => {
+    if (flavors.length === 0) return;
+    setIsColorLoading(true);
+    try {
+      const res = await fetch(COLOR_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flavor: flavors.join(", ") }),
+      });
+      const data = await res.json();
+      const hex: string | undefined = data?.hex;
+      if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        setColorHex(hex);
+        setColorName(data.name ?? undefined);
+      }
+    } catch {
+      // silently fail — keep current color
+    } finally {
+      setIsColorLoading(false);
+    }
+  }, []);
+
+  function handleAddFlavor(name: string) {
+    const updated = [...selectedFlavors, name];
+    setSelectedFlavors(updated);
+    fetchColor(updated);
+  }
+
+  function handleRemoveFlavor(name: string) {
+    const updated = selectedFlavors.filter((f) => f !== name);
+    setSelectedFlavors(updated);
+    if (updated.length > 0) fetchColor(updated);
+  }
+
   function handleCancel() {
     setFlavorName(label.flavorName);
+    setSelectedFlavors(label.selectedFlavors ?? []);
+    setColorHex(label.gummyColorHex);
+    setColorName(label.gummyColorName);
     setSize(label.size);
     setOilType(label.oilType);
     setEffect(label.effect);
@@ -99,6 +153,8 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         flavorMode,
         cannabinoids,
         unitsOrdered: units,
+        selectedFlavors,
+        ...(colorHex && { gummyColorHex: colorHex, gummyColorName: colorName }),
       }).unwrap();
       toast.success("Updated");
       setEditing(false);
@@ -122,43 +178,75 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     const sizeLabel = label.size === "xl" ? "XL" : "Standard";
     const effectLabel = label.effect.charAt(0).toUpperCase() + label.effect.slice(1);
     const flavorModeLabel = label.flavorMode === "mix" ? "Mix" : "Single";
+    const gummyHue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
 
     return (
       <div className="rounded-xs border border-border bg-card p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <FlaskConical className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-semibold text-sm truncate">{label.flavorName}</span>
+        <div className="flex items-start gap-3">
+          {/* Gummy visual */}
+          <div className="shrink-0 flex flex-col items-center gap-1.5">
+            <GummyVisual size={label.size} hue={gummyHue} compact />
+            {label.gummyColorHex && (
+              <span
+                className="w-4 h-4 rounded-full border border-border"
+                style={{ backgroundColor: label.gummyColorHex }}
+                title={label.gummyColorName ?? label.gummyColorHex}
+              />
+            )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button size="icon" variant="ghost" className="h-7 w-7 rounded-xs" onClick={() => setEditing(true)}>
-              <Pencil className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              size="icon" variant="ghost"
-              className="h-7 w-7 rounded-xs text-destructive hover:text-destructive"
-              onClick={handleDelete} disabled={isDeleting}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <Badge variant="outline" className="rounded-xs text-xs">{oilLabel}</Badge>
-          <Badge variant="outline" className="rounded-xs text-xs">{sizeLabel}</Badge>
-          <Badge variant="outline" className="rounded-xs text-xs">{effectLabel}</Badge>
-          <Badge variant="outline" className="rounded-xs text-xs">{flavorModeLabel} flavor</Badge>
-          {label.cannabinoids.map((c) => (
-            <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">{c.name} {c.mg}mg</Badge>
-          ))}
-        </div>
+          {/* Card body */}
+          <div className="flex-1 min-w-0 space-y-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <FlaskConical className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-semibold text-sm truncate">{label.flavorName}</span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="icon" variant="ghost" className="h-7 w-7 rounded-xs" onClick={() => setEditing(true)}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  size="icon" variant="ghost"
+                  className="h-7 w-7 rounded-xs text-destructive hover:text-destructive"
+                  onClick={handleDelete} disabled={isDeleting}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
 
-        <div className="flex items-center justify-between text-sm gap-4">
-          <span className="text-muted-foreground text-xs">{label.unitsOrdered.toLocaleString()} units</span>
-          <div className="text-right">
-            <span className="font-semibold">${(label.totalCost ?? 0).toFixed(2)}</span>
-            <span className="text-muted-foreground text-xs ml-1">(${(label.unitCost ?? 0).toFixed(4)}/ea)</span>
+            {label.gummyColorHex && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                  {label.gummyColorHex.toUpperCase()}
+                </span>
+                {label.gummyColorName && (
+                  <span className="text-xs text-muted-foreground">{label.gummyColorName}</span>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="outline" className="rounded-xs text-xs">{oilLabel}</Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">{sizeLabel}</Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">{effectLabel}</Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">{flavorModeLabel} flavor</Badge>
+              {label.cannabinoids.map((c) => (
+                <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">{c.name} {c.mg}mg</Badge>
+              ))}
+              {(label.selectedFlavors ?? []).map((f) => (
+                <Badge key={f} className="rounded-xs text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10">{f}</Badge>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between text-sm gap-4">
+              <span className="text-muted-foreground text-xs">{label.unitsOrdered.toLocaleString()} units</span>
+              <div className="text-right">
+                <span className="font-semibold">${(label.totalCost ?? 0).toFixed(2)}</span>
+                <span className="text-muted-foreground text-xs ml-1">(${(label.unitCost ?? 0).toFixed(4)}/ea)</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -178,6 +266,7 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
 
   // ── Edit mode ──────────────────────────────────────────
   const grandTotal = editPricing.totalCost + (editPricing.testingFeeWaived ? 0 : editPricing.testingFee);
+  const editColorHue = colorHex ? hexToHueRotation(colorHex) : 0;
 
   return (
     <div className="rounded-xs border border-primary/40 bg-card p-4 space-y-4">
@@ -214,7 +303,7 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         </div>
       </div>
 
-      {/* Effect + Flavor Mode */}
+      {/* Effect + Flavor Mode + Gummy Color */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Effect</p>
@@ -222,39 +311,84 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Flavor Mode</p>
-          <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={setFlavorMode} />
+          <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={(v) => {
+            setFlavorMode(v);
+            if (v === "single" && selectedFlavors.length > 1) {
+              const trimmed = selectedFlavors.slice(0, 1);
+              setSelectedFlavors(trimmed);
+              fetchColor(trimmed);
+            }
+          }} />
         </div>
       </div>
 
-      {/* Units */}
+      {/* Flavors */}
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Units</p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {UNIT_PRESETS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setUnits(p)}
-              className={`px-2.5 py-1 rounded-xs text-xs font-semibold border transition-all ${
-                units === p
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {p.toLocaleString()}
-            </button>
-          ))}
-          <Input
-            type="number" min={1} value={units}
-            onChange={(e) => setUnits(Number(e.target.value))}
-            className="rounded-xs h-7 text-xs w-24"
-          />
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Flavors</p>
+        <FlavorPicker
+          selectedFlavors={selectedFlavors}
+          allFlavors={allFlavors}
+          isLoadingFlavors={isLoadingFlavors}
+          maxFlavors={maxFlavors}
+          onAdd={handleAddFlavor}
+          onRemove={handleRemoveFlavor}
+        />
+      </div>
+
+      {/* Units + Gummy Color */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Units</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {UNIT_PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setUnits(p)}
+                className={`px-2.5 py-1 rounded-xs text-xs font-semibold border transition-all ${
+                  units === p
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {p.toLocaleString()}
+              </button>
+            ))}
+            <Input
+              type="number" min={1} value={units}
+              onChange={(e) => setUnits(Number(e.target.value))}
+              className="rounded-xs h-7 text-xs w-24"
+            />
+          </div>
+          {editPricing.isRatio && editPricing.testingFeeWaived && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Testing fee waived
+            </p>
+          )}
         </div>
-        {editPricing.isRatio && editPricing.testingFeeWaived && (
-          <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Testing fee waived
-          </p>
-        )}
+        {isColorLoading ? (
+          <div className="rounded-xs bg-muted/40 border border-border px-3 py-2.5 flex items-center justify-center">
+            <p className="text-xs text-muted-foreground animate-pulse">Generating color…</p>
+          </div>
+        ) : colorHex ? (
+          <div className="rounded-xs bg-muted/40 border border-border px-3 py-2.5 flex items-center gap-3">
+            <GummyVisual size={size} hue={editColorHue} compact />
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-border shrink-0"
+                  style={{ backgroundColor: colorHex }}
+                />
+                <span className="font-mono text-[10px] bg-background border border-border rounded-xs px-1.5 py-0.5">
+                  {colorHex.toUpperCase()}
+                </span>
+              </div>
+              {colorName && (
+                <p className="text-[11px] text-muted-foreground truncate">{colorName}</p>
+              )}
+            </div>
+          </div>
+        ) : <div />}
       </div>
 
       {/* Cannabinoids */}
