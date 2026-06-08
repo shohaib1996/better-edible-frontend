@@ -14,6 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { GummyVisual } from "@/components/PrivateLabel/GummyVisual";
+import { hexToHueRotation } from "@/lib/useGummyBuilder";
 import { AddLabelModal } from "@/components/ClientManagement/AddLabelModal";
 import type { IStoreSubmission } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
@@ -204,6 +206,7 @@ function buildSpecialInstructions(label: IStoreDraftLabel): string {
 
 export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientId: string }) {
   const [showCreate, setShowCreate] = useState(false);
+  const hue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
 
   function handleCreateClick() {
     if (label.hasAdminLabel) {
@@ -216,30 +219,61 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
   return (
     <div className="px-5 py-4">
       <div className="flex items-start justify-between gap-6">
-        {/* Left — flavor + badges */}
-        <div className="space-y-2 min-w-0 flex-1">
-          <div className="font-medium text-sm">{label.flavorName}</div>
-          <div className="flex flex-wrap gap-1.5">
-            <Badge variant="outline" className="rounded-xs text-xs">{label.oilType === "rosin" ? "Rosin" : "BioMax"}</Badge>
-            <Badge variant="outline" className="rounded-xs text-xs">{label.size === "xl" ? "XL" : "Standard"}</Badge>
-            <Badge variant="outline" className="rounded-xs text-xs">
-              {label.effect ? label.effect.charAt(0).toUpperCase() + label.effect.slice(1) : "Hybrid"}
-            </Badge>
-            <Badge variant="outline" className="rounded-xs text-xs">{label.flavorMode === "mix" ? "Mix Flavor" : "Single Flavor"}</Badge>
-            {label.cannabinoids?.map((c) => (
-              <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">{c.name} {c.mg}mg</Badge>
-            ))}
+        {/* Left — gummy visual + flavor + badges */}
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          {/* Gummy visual */}
+          <div className="shrink-0 flex flex-col items-center gap-1 pt-0.5">
+            <GummyVisual size={label.size ?? "standard"} hue={hue} compact />
+            {label.gummyColorHex && (
+              <span
+                className="w-3 h-3 rounded-full border border-border"
+                style={{ backgroundColor: label.gummyColorHex }}
+                title={label.gummyColorName ?? label.gummyColorHex}
+              />
+            )}
           </div>
-          {label.isRatio && (
-            <div className="text-xs">
-              {label.testingFeeWaived
-                ? <span className="text-green-600 dark:text-green-400">Testing fee waived (3,000+ units)</span>
-                : <span className="text-amber-600 dark:text-amber-400">+$250 testing fee applies</span>}
+
+          <div className="space-y-2 min-w-0 flex-1">
+            <div className="font-medium text-sm">{label.flavorName}</div>
+
+            {/* Color info */}
+            {label.gummyColorHex && (
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                  {label.gummyColorHex.toUpperCase()}
+                </span>
+                {label.gummyColorName && (
+                  <span className="text-[11px] text-muted-foreground">{label.gummyColorName}</span>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-1.5">
+              <Badge variant="outline" className="rounded-xs text-xs">{label.oilType === "rosin" ? "Rosin" : "BioMax"}</Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">{label.size === "xl" ? "XL" : "Standard"}</Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">
+                {label.effect ? label.effect.charAt(0).toUpperCase() + label.effect.slice(1) : "Hybrid"}
+              </Badge>
+              <Badge variant="outline" className="rounded-xs text-xs">{label.flavorMode === "mix" ? "Mix Flavor" : "Single Flavor"}</Badge>
+              {label.cannabinoids?.map((c) => (
+                <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">{c.name} {c.mg}mg</Badge>
+              ))}
+              {(label.selectedFlavors ?? []).map((f) => (
+                <Badge key={f} className="rounded-xs text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10">{f}</Badge>
+              ))}
             </div>
-          )}
-          {label.submittedAt && (
-            <p className="text-[11px] text-muted-foreground">Submitted {new Date(label.submittedAt).toLocaleString()}</p>
-          )}
+
+            {label.isRatio && (
+              <div className="text-xs">
+                {label.testingFeeWaived
+                  ? <span className="text-green-600 dark:text-green-400">Testing fee waived (3,000+ units)</span>
+                  : <span className="text-amber-600 dark:text-amber-400">+$250 testing fee applies</span>}
+              </div>
+            )}
+            {label.submittedAt && (
+              <p className="text-[11px] text-muted-foreground">Submitted {new Date(label.submittedAt).toLocaleString()}</p>
+            )}
+          </div>
         </div>
 
         {/* Right — pricing */}
@@ -274,6 +308,9 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
           specialInstructions: buildSpecialInstructions(label),
           productTypeKeyword: label.oilType,
           submissionLabelId: label._id,
+          gummyColorHex: label.gummyColorHex,
+          gummyColorName: label.gummyColorName,
+          selectedFlavors: label.selectedFlavors,
         }}
       />
     </div>

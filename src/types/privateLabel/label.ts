@@ -82,7 +82,19 @@ export interface ILabel {
   currentStage: LabelStage;
   stageHistory: IStageHistoryEntry[];
   labelImages: ILabelImage[];
-  unitPrice?: number; // Added when fetching approved labels
+  unitPrice?: number;
+  // Gummy builder fields
+  size?: "standard" | "xl";
+  oilType?: "biomax" | "rosin";
+  effect?: "hybrid" | "indica" | "sativa";
+  flavorMode?: "single" | "mix";
+  cannabinoids?: { name: string; mg: number; priceAdd: number }[];
+  unitsOrdered?: number;
+  unitCost?: number;
+  totalCost?: number;
+  selectedFlavors?: string[];
+  gummyColorHex?: string;
+  gummyColorName?: string;
   createdAt: string;
   updatedAt: string;
 }

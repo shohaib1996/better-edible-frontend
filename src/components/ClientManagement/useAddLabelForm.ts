@@ -13,6 +13,9 @@ export interface AddLabelInitialValues {
   specialInstructions?: string;
   productTypeKeyword?: string;
   submissionLabelId?: string;
+  gummyColorHex?: string;
+  gummyColorName?: string;
+  selectedFlavors?: string[];
 }
 
 export function useAddLabelForm(
@@ -119,6 +122,15 @@ export function useAddLabelForm(
       }
       if (initialValues?.submissionLabelId) {
         formData.append("submissionLabelId", initialValues.submissionLabelId);
+      }
+      if (initialValues?.gummyColorHex) {
+        formData.append("gummyColorHex", initialValues.gummyColorHex);
+      }
+      if (initialValues?.gummyColorName) {
+        formData.append("gummyColorName", initialValues.gummyColorName);
+      }
+      if (initialValues?.selectedFlavors && initialValues.selectedFlavors.length > 0) {
+        formData.append("selectedFlavors", JSON.stringify(initialValues.selectedFlavors));
       }
       files.forEach((file) => formData.append("labelImages", file));
 

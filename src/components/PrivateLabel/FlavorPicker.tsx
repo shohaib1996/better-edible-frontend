@@ -47,28 +47,14 @@ export function FlavorPicker({
 
   function handleSelect(name: string) {
     onAdd(name);
-    setOpen(false);
+    // Close only when the last available slot is filled; otherwise stay open for multi-pick
+    if (selectedFlavors.length + 1 >= maxFlavors) {
+      setOpen(false);
+    }
   }
 
   return (
     <div>
-      {selectedFlavors.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {selectedFlavors.map((f) => (
-            <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1">
-              <span className="text-xs font-medium">{f}</span>
-              <button
-                type="button"
-                onClick={() => onRemove(f)}
-                className="hover:text-destructive transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
-      )}
-
       {canAddFlavor ? (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
@@ -78,7 +64,33 @@ export function FlavorPicker({
               aria-expanded={open}
               className="w-full justify-between rounded-xs h-10 text-sm font-normal text-muted-foreground"
             >
-              {selectedFlavors.length === 0 ? "Search flavors…" : "Add another flavor…"}
+              <span className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0">
+                {selectedFlavors.length === 0 ? (
+                  "Search flavors…"
+                ) : (
+                  selectedFlavors.map((f) => (
+                    <span
+                      key={f}
+                      className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 rounded-xs text-xs px-1.5 py-0.5 font-medium"
+                    >
+                      {f}
+                      <button
+                        type="button"
+                        onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); onRemove(f); }}
+                        className="hover:text-destructive transition-colors"
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))
+                )}
+                {selectedFlavors.length > 0 && (
+                  <span className="text-muted-foreground text-xs">
+                    {maxFlavors > 1 ? `${selectedFlavors.length}/${maxFlavors}` : ""}
+                  </span>
+                )}
+              </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -110,9 +122,20 @@ export function FlavorPicker({
           </PopoverContent>
         </Popover>
       ) : (
-        <p className="text-xs text-muted-foreground mt-1">
-          Maximum {maxFlavors} flavor{maxFlavors > 1 ? "s" : ""} selected.
-        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {selectedFlavors.map((f) => (
+            <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1">
+              <span className="text-xs font-medium">{f}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(f)}
+                className="hover:text-destructive transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
       )}
     </div>
   );

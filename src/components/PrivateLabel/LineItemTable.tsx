@@ -1,6 +1,8 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { GummyVisual } from "./GummyVisual";
+import { hexToHueRotation } from "@/lib/useGummyBuilder";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
 
 interface Props {
@@ -13,7 +15,7 @@ export function LineItemTable({ labels }: Props) {
 
   return (
     <div className="rounded-xs border border-border overflow-x-auto">
-      <table className="min-w-[480px] w-full text-sm">
+      <table className="min-w-[520px] w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
             <th className="text-left px-4 py-2.5 font-semibold text-xs uppercase tracking-widest text-muted-foreground">
@@ -31,41 +33,84 @@ export function LineItemTable({ labels }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
-          {labels.map((label) => (
-            <tr key={label._id} className="bg-card">
-              <td className="px-4 py-3">
-                <div className="font-medium">{label.flavorName}</div>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
-                    {label.oilType === "rosin" ? "Rosin" : "BioMax"}
-                  </Badge>
-                  <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
-                    {label.size === "xl" ? "XL" : "Standard"}
-                  </Badge>
-                  <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
-                    {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
-                  </Badge>
-                  {label.cannabinoids.map((c) => (
-                    <Badge key={c.name} variant="secondary" className="rounded-xs text-[10px] px-1.5 py-0">
-                      {c.name} {c.mg}mg
-                    </Badge>
-                  ))}
-                </div>
-                {label.isRatio && !label.testingFeeWaived && (
-                  <div className="text-[11px] text-amber-600 mt-1">+$250 testing fee</div>
-                )}
-              </td>
-              <td className="px-4 py-3 text-right text-muted-foreground">
-                {label.unitsOrdered.toLocaleString()}
-              </td>
-              <td className="px-4 py-3 text-right text-muted-foreground">
-                ${(label.unitCost ?? 0).toFixed(4)}
-              </td>
-              <td className="px-4 py-3 text-right font-semibold">
-                ${(label.totalCost ?? 0).toFixed(2)}
-              </td>
-            </tr>
-          ))}
+          {labels.map((label) => {
+            const hue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
+            return (
+              <tr key={label._id} className="bg-card">
+                <td className="px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    {/* Gummy visual */}
+                    <div className="shrink-0 flex flex-col items-center gap-1">
+                      <GummyVisual size={label.size} hue={hue} compact />
+                      {label.gummyColorHex && (
+                        <span
+                          className="w-3 h-3 rounded-full border border-border"
+                          style={{ backgroundColor: label.gummyColorHex }}
+                          title={label.gummyColorName ?? label.gummyColorHex}
+                        />
+                      )}
+                    </div>
+
+                    {/* Details */}
+                    <div className="min-w-0 space-y-1">
+                      <div className="font-medium">{label.flavorName}</div>
+
+                      {/* Color info */}
+                      {label.gummyColorHex && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                            {label.gummyColorHex.toUpperCase()}
+                          </span>
+                          {label.gummyColorName && (
+                            <span className="text-[11px] text-muted-foreground">{label.gummyColorName}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Spec badges */}
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
+                          {label.oilType === "rosin" ? "Rosin" : "BioMax"}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
+                          {label.size === "xl" ? "XL" : "Standard"}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-xs text-[10px] px-1.5 py-0">
+                          {label.effect.charAt(0).toUpperCase() + label.effect.slice(1)}
+                        </Badge>
+                        {label.cannabinoids.map((c) => (
+                          <Badge key={c.name} variant="secondary" className="rounded-xs text-[10px] px-1.5 py-0">
+                            {c.name} {c.mg}mg
+                          </Badge>
+                        ))}
+                        {(label.selectedFlavors ?? []).map((f) => (
+                          <Badge
+                            key={f}
+                            className="rounded-xs text-[10px] px-1.5 py-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10"
+                          >
+                            {f}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {label.isRatio && !label.testingFeeWaived && (
+                        <div className="text-[11px] text-amber-600 mt-0.5">+$250 testing fee</div>
+                      )}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground align-top pt-4">
+                  {label.unitsOrdered.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground align-top pt-4">
+                  ${(label.unitCost ?? 0).toFixed(4)}
+                </td>
+                <td className="px-4 py-3 text-right font-semibold align-top pt-4">
+                  ${(label.totalCost ?? 0).toFixed(2)}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
         <tfoot className="border-t border-border bg-muted/50">
           {testingFeeTotal > 0 && (

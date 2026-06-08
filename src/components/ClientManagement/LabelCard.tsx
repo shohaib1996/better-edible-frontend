@@ -1,6 +1,8 @@
 "use client";
 
 import { ILabel } from "@/types";
+import { GummyVisual } from "@/components/PrivateLabel/GummyVisual";
+import { hexToHueRotation } from "@/lib/useGummyBuilder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +44,8 @@ interface LabelCardProps {
 }
 
 export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
+  const gummyHue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
+
   const {
     selectedStage,
     previewImage, setPreviewImage,
@@ -123,7 +127,49 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
             <Badge className={`${stageColor} mt-1.5 rounded-xs text-[11px] px-2 py-0.5`}>
               {stageLabel}
             </Badge>
+
+            {/* Gummy color info */}
+            {label.gummyColorHex && (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span
+                  className="w-3 h-3 rounded-full border border-border shrink-0"
+                  style={{ backgroundColor: label.gummyColorHex }}
+                />
+                <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                  {label.gummyColorHex.toUpperCase()}
+                </span>
+                {label.gummyColorName && (
+                  <span className="text-[11px] text-muted-foreground">{label.gummyColorName}</span>
+                )}
+              </div>
+            )}
+
+            {/* Selected flavor badges */}
+            {(label.selectedFlavors ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {(label.selectedFlavors ?? []).map((f) => (
+                  <Badge
+                    key={f}
+                    className="rounded-xs text-[10px] px-1.5 py-0 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10"
+                  >
+                    {f}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Gummy visual (desktop) */}
+          {label.gummyColorHex && (
+            <div className="hidden sm:flex flex-col items-center gap-1 shrink-0">
+              <GummyVisual size={label.size ?? "standard"} hue={gummyHue} compact />
+              <span
+                className="w-3 h-3 rounded-full border border-border"
+                style={{ backgroundColor: label.gummyColorHex }}
+                title={label.gummyColorName ?? label.gummyColorHex}
+              />
+            </div>
+          )}
 
           {/* Desktop: Stage + Actions */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">

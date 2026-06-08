@@ -23,6 +23,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getStoreUser } from "@/lib/storeUser";
+import { hexToHueRotation } from "@/lib/useGummyBuilder";
+import { GummyVisual } from "@/components/PrivateLabel/GummyVisual";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
@@ -106,22 +108,51 @@ function StageStepper({ currentStage }: { currentStage?: LabelStage }) {
 // ─── Label card ────────────────────────────────────────────────────────────
 function LabelCard({ label }: { label: IStoreDraftLabel }) {
   const isApproved = APPROVED_STAGES.includes(label.currentStage as LabelStage);
+  const gummyHue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
   return (
     <Card className={cn(
       "rounded-xs shadow-none gap-3 p-4 py-4",
       isApproved && "border-emerald-200 dark:border-emerald-900/60"
     )}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <FlaskConical className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="font-semibold text-sm truncate">{label.flavorName}</span>
+      {/* Header: gummy visual + flavor name + date */}
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 flex flex-col items-center gap-1">
+          <GummyVisual size={label.size} hue={gummyHue} compact />
+          {label.gummyColorHex && (
+            <span
+              className="w-3 h-3 rounded-full border border-border"
+              style={{ backgroundColor: label.gummyColorHex }}
+              title={label.gummyColorName ?? label.gummyColorHex}
+            />
+          )}
         </div>
-        {label.submittedAt && (
-          <span className="text-[11px] text-muted-foreground shrink-0">
-            {new Date(label.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-          </span>
-        )}
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <FlaskConical className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="font-semibold text-sm truncate">{label.flavorName}</span>
+            </div>
+            {label.submittedAt && (
+              <span className="text-[11px] text-muted-foreground shrink-0">
+                {new Date(label.submittedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            )}
+          </div>
+          {/* Color info */}
+          {label.gummyColorHex && (
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
+                {label.gummyColorHex.toUpperCase()}
+              </span>
+              {label.gummyColorName && (
+                <span className="text-[11px] text-muted-foreground">{label.gummyColorName}</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Badges */}
       <div className="flex flex-wrap gap-1">
         <Badge variant="outline" className="rounded-xs text-xs">
           {label.oilType === "rosin" ? "Rosin" : "BioMax"}
@@ -137,7 +168,13 @@ function LabelCard({ label }: { label: IStoreDraftLabel }) {
             {c.name} {c.mg}mg
           </Badge>
         ))}
+        {(label.selectedFlavors ?? []).map((f) => (
+          <Badge key={f} className="rounded-xs text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10">
+            {f}
+          </Badge>
+        ))}
       </div>
+
       <StageStepper currentStage={label.currentStage} />
       <Separator />
       <div className="flex items-center justify-between">

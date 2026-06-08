@@ -149,7 +149,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: flavorName.trim(), selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue }]
+        ? [{ id: "current", flavorName: flavorName.trim(), selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue, gummyColorHex: colorInfo?.hex, gummyColorName: colorInfo?.name }]
         : []),
     ];
 
