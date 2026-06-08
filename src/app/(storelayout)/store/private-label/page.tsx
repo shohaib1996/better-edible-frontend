@@ -80,7 +80,7 @@ export default function PrivateLabelPage() {
         </div>
         <div className="relative shrink-0 flex flex-col items-end gap-2.5">
           <Link href="/store/private-label/account">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xs bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/15 text-white text-xs font-semibold border border-white/25 dark:border-white/15 transition-colors whitespace-nowrap">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xs bg-accent hover:bg-accent/30 dark:bg-white/10 dark:hover:bg-white/15 text-white text-xs font-semibold border border-white/25 dark:border-white/15 transition-colors whitespace-nowrap">
               <User className="w-3.5 h-3.5" />
               My Account
             </button>
