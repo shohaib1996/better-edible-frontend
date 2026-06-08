@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, CheckCircle2, Layers } from "lucide-react";
+import { FlaskConical, CheckCircle2, Layers, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,6 @@ import { GummyPricingCard } from "./GummyPricingCard";
 import { GummyQueue } from "./GummyQueue";
 import { FlavorPicker } from "./FlavorPicker";
 import { GummyVisual } from "./GummyVisual";
-import { GummyColorPicker } from "./GummyColorPicker";
 import { useGummyBuilder, MAX_MIX_FLAVORS } from "@/lib/useGummyBuilder";
 
 interface Props {
@@ -35,7 +34,9 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     flavorMode,
     unitsOrdered, setUnitsOrdered,
     cannabinoids, setCannabinoids,
-    gummyHue, setGummyHue,
+    gummyHue,
+    isColorLoading,
+    colorInfo,
     queue, setQueue,
     allFlavors,
     isLoadingFlavors,
@@ -134,11 +135,43 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             onRemove={(name) => setCannabinoids((prev) => prev.filter((c) => c.name !== name))}
           />
         </div>
-        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4 flex flex-row items-center justify-between gap-4">
-          <div className="flex-1 flex justify-center">
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4 flex flex-col items-center gap-3">
+          <div className="relative flex items-center justify-center">
             <GummyVisual size={size} hue={gummyHue} />
+            {isColorLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xs">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
           </div>
-          <GummyColorPicker hue={gummyHue} onHueChange={setGummyHue} />
+
+          {colorInfo && !isColorLoading && (
+            <div className="w-full rounded-xs border border-border bg-muted/20 px-3 py-2.5 space-y-2">
+              {/* Hex swatch + name */}
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-5 h-5 rounded-full shrink-0 border border-border"
+                  style={{ backgroundColor: colorInfo.hex }}
+                />
+                <span className="text-sm font-semibold text-foreground leading-tight">{colorInfo.name}</span>
+              </div>
+              {/* Hex + RGB */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-mono text-xs bg-background border border-border rounded-xs px-1.5 py-0.5 text-foreground">
+                  {colorInfo.hex.toUpperCase()}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  rgb({colorInfo.rgb.r}, {colorInfo.rgb.g}, {colorInfo.rgb.b})
+                </span>
+              </div>
+              {/* Rationale */}
+              <p className="text-xs text-muted-foreground leading-relaxed">{colorInfo.rationale}</p>
+            </div>
+          )}
+
+          {!colorInfo && !isColorLoading && (
+            <p className="text-xs text-muted-foreground text-center">Select a flavor to generate color</p>
+          )}
         </div>
       </div>
 

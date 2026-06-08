@@ -20,7 +20,7 @@ interface ClientOrdersPageProps {
   currentRepId?: string;
 }
 
-export const ClientOrdersPage = ({
+export const  ClientOrdersPage = ({
   isRepView = false,
   currentRepId,
 }: ClientOrdersPageProps) => {

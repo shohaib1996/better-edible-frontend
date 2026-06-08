@@ -17,6 +17,27 @@ import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
 
 export const MAX_MIX_FLAVORS = 3;
 
+const SOURCE_HUE = 55;
+const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
+
+function hexToHueRotation(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  let h = 0;
+  if (delta !== 0) {
+    if (max === r)      h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else                h = (r - g) / delta + 4;
+    h = Math.round(h * 60);
+    if (h < 0) h += 360;
+  }
+  return ((h - SOURCE_HUE) % 360 + 360) % 360;
+}
+
 export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved: () => void }) {
   const [flavorName, setFlavorName] = useState("");
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
@@ -27,6 +48,8 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
   const [unitsOrdered, setUnitsOrdered] = useState(UNIT_OPTIONS[0]);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
   const [gummyHue, setGummyHue] = useState(0);
+  const [isColorLoading, setIsColorLoading] = useState(false);
+  const [colorInfo, setColorInfo] = useState<{ hex: string; name: string; rationale: string; rgb: { r: number; g: number; b: number } } | null>(null);
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
   const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
@@ -46,20 +69,48 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
   const totalQueued = queue.length + (flavorName.trim() ? 1 : 0);
 
+  async function fetchColorForFlavors(flavors: string[]) {
+    if (flavors.length === 0) return;
+    setIsColorLoading(true);
+    try {
+      const res = await fetch(COLOR_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flavor: flavors.join(", ") }),
+      });
+      const data = await res.json();
+      const hex: string | undefined = data?.hex;
+      if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        setGummyHue(hexToHueRotation(hex));
+        setColorInfo({ hex, name: data.name, rationale: data.rationale, rgb: data.rgb });
+      }
+    } catch {
+      // silently fail — keep current hue
+    } finally {
+      setIsColorLoading(false);
+    }
+  }
+
   function handleFlavorModeChange(mode: GummyFlavorMode) {
     setFlavorMode(mode);
     if (mode === "single" && selectedFlavors.length > 1) {
-      setSelectedFlavors(selectedFlavors.slice(0, 1));
+      const trimmed = selectedFlavors.slice(0, 1);
+      setSelectedFlavors(trimmed);
+      fetchColorForFlavors(trimmed);
     }
   }
 
   function handleAddFlavor(name: string) {
     if (selectedFlavors.length >= maxFlavors) return;
-    setSelectedFlavors((prev) => [...prev, name]);
+    const updated = [...selectedFlavors, name];
+    setSelectedFlavors(updated);
+    fetchColorForFlavors(updated);
   }
 
   function handleRemoveFlavor(name: string) {
-    setSelectedFlavors((prev) => prev.filter((f) => f !== name));
+    const updated = selectedFlavors.filter((f) => f !== name);
+    setSelectedFlavors(updated);
+    if (updated.length > 0) fetchColorForFlavors(updated);
   }
 
   function resetForm() {
@@ -72,6 +123,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     setUnitsOrdered(UNIT_OPTIONS[0]);
     setCannabinoids([]);
     setGummyHue(0);
+    setColorInfo(null);
   }
 
   function handleQueueCurrent() {
@@ -141,6 +193,8 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     // queue
     totalQueued,
     isSaving,
+    isColorLoading,
+    colorInfo,
     // handlers
     handleFlavorModeChange,
     handleAddFlavor,
