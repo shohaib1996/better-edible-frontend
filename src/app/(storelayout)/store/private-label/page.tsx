@@ -2,19 +2,29 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FlaskConical, Sparkles, User, ArrowLeft } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FlaskConical, Sparkles, User, ArrowLeft, Beaker, List } from "lucide-react";
 import { getStoreUser } from "@/lib/storeUser";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { GummyBuilder } from "@/components/PrivateLabel/GummyBuilder";
 import { SavedGummiesList } from "@/components/PrivateLabel/SavedGummiesList";
 import { SubmitSummary } from "@/components/PrivateLabel/SubmitSummary";
 
+type Tab = "builder" | "line";
+
 export default function PrivateLabelPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
   const [showSubmit, setShowSubmit] = useState(false);
+
+  const rawTab = searchParams.get("tab");
+  const activeTab: Tab = rawTab === "line" ? "line" : "builder";
+
+  function setTab(tab: Tab) {
+    router.replace(`/store/private-label?tab=${tab}`);
+  }
 
   useEffect(() => {
     const user = getStoreUser();
@@ -37,6 +47,7 @@ export default function PrivateLabelPage() {
 
   function handleSaved() {
     refetchDrafts();
+    setTab("line");
   }
 
   function handleSubmitted() {
@@ -97,7 +108,7 @@ export default function PrivateLabelPage() {
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Builder
+            Back to My Line
           </button>
           <div className="rounded-xs border border-border bg-card p-5">
             <SubmitSummary
@@ -108,41 +119,63 @@ export default function PrivateLabelPage() {
           </div>
         </div>
       ) : (
-        /* ── Builder view ── */
-        <div className="space-y-5">
-          {/* My Line */}
-          <div className="rounded-xs border border-border bg-card overflow-hidden">
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <FlaskConical className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">My Line</span>
-                {draftLabels.length > 0 && (
-                  <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
-                    {draftLabels.length}
-                  </span>
-                )}
-              </div>
+        <div className="space-y-0 rounded-xs border border-border bg-card overflow-hidden">
+          {/* Tab bar */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setTab("builder")}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === "builder"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Beaker className="w-4 h-4" />
+              Builder
+            </button>
+            <button
+              onClick={() => setTab("line")}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === "line"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <List className="w-4 h-4" />
+              My Line
               {draftLabels.length > 0 && (
-                <button
-                  onClick={() => setShowSubmit(true)}
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Review & Submit →
-                </button>
+                <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-[10px] flex items-center justify-center font-bold">
+                  {draftLabels.length}
+                </span>
               )}
-            </div>
-            <div className="p-5">
-              <SavedGummiesList
-                storeId={storeId}
-                labels={draftLabels}
-                isLoading={isLoadingDrafts}
-              />
-            </div>
+            </button>
           </div>
 
-          {/* Builder */}
-          <div className="rounded-xs border border-border bg-card p-5">
-            <GummyBuilder storeId={storeId} onSaved={handleSaved} />
+          {/* Tab content */}
+          <div className="p-5">
+            {activeTab === "builder" && (
+              <GummyBuilder storeId={storeId} onSaved={handleSaved} />
+            )}
+
+            {activeTab === "line" && (
+              <div className="space-y-4">
+                {draftLabels.length > 0 && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setShowSubmit(true)}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      Review & Submit →
+                    </button>
+                  </div>
+                )}
+                <SavedGummiesList
+                  storeId={storeId}
+                  labels={draftLabels}
+                  isLoading={isLoadingDrafts}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -155,17 +155,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
                 />
                 <span className="text-sm font-semibold text-foreground leading-tight">{colorInfo.name}</span>
               </div>
-              {/* Hex + RGB */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="font-mono text-xs bg-background border border-border rounded-xs px-1.5 py-0.5 text-foreground">
-                  {colorInfo.hex.toUpperCase()}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  rgb({colorInfo.rgb.r}, {colorInfo.rgb.g}, {colorInfo.rgb.b})
-                </span>
-              </div>
               {/* Rationale */}
-              <p className="text-xs text-muted-foreground leading-relaxed">{colorInfo.rationale}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{colorInfo.rationale}</p>
             </div>
           )}
 

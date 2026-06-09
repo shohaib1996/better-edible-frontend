@@ -216,15 +216,8 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
               </div>
             </div>
 
-            {label.gummyColorHex && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
-                  {label.gummyColorHex.toUpperCase()}
-                </span>
-                {label.gummyColorName && (
-                  <span className="text-xs text-muted-foreground">{label.gummyColorName}</span>
-                )}
-              </div>
+            {label.gummyColorName && (
+              <p className="text-sm font-medium" style={{ color: label.gummyColorHex }}>{label.gummyColorName}</p>
             )}
 
             <div className="flex flex-wrap gap-1.5">
@@ -373,18 +366,9 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         ) : colorHex ? (
           <div className="rounded-xs bg-muted/40 border border-border px-3 py-2.5 flex items-center gap-3">
             <GummyVisual size={size} hue={editColorHue} compact />
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="w-3.5 h-3.5 rounded-full border border-border shrink-0"
-                  style={{ backgroundColor: colorHex }}
-                />
-                <span className="font-mono text-[10px] bg-background border border-border rounded-xs px-1.5 py-0.5">
-                  {colorHex.toUpperCase()}
-                </span>
-              </div>
+            <div className="min-w-0">
               {colorName && (
-                <p className="text-[11px] text-muted-foreground truncate">{colorName}</p>
+                <p className="text-sm font-semibold truncate" style={{ color: colorHex }}>{colorName}</p>
               )}
             </div>
           </div>

@@ -55,16 +55,9 @@ export function LineItemTable({ labels }: Props) {
                     <div className="min-w-0 space-y-1">
                       <div className="font-medium">{label.flavorName}</div>
 
-                      {/* Color info */}
-                      {label.gummyColorHex && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[10px] bg-muted border border-border rounded-xs px-1.5 py-0.5">
-                            {label.gummyColorHex.toUpperCase()}
-                          </span>
-                          {label.gummyColorName && (
-                            <span className="text-[11px] text-muted-foreground">{label.gummyColorName}</span>
-                          )}
-                        </div>
+                      {/* Color name */}
+                      {label.gummyColorName && (
+                        <p className="text-sm font-medium" style={{ color: label.gummyColorHex }}>{label.gummyColorName}</p>
                       )}
 
                       {/* Spec badges */}
