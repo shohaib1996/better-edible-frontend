@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,6 +16,7 @@ import {
   Truck,
   Package,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -189,60 +191,92 @@ function LabelCard({ label }: { label: IStoreDraftLabel }) {
 
 // ─── Order card ────────────────────────────────────────────────────────────
 function OrderCard({ order }: { order: IStoreOrder }) {
+  const [open, setOpen] = useState(false);
   const meta = ORDER_META[order.status] ?? ORDER_META.pending;
   const isCompleted = COMPLETED_ORDER_STATUSES.includes(order.status);
+  const totalUnits = order.items.reduce((s, i) => s + i.quantity, 0);
+
   return (
     <Card className={cn(
-      "rounded-xs shadow-none gap-3 p-4 py-4",
+      "rounded-xs shadow-none gap-0 p-0 overflow-hidden",
       isCompleted && "border-green-200 dark:border-green-900/60"
     )}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      {/* ── Fixed header ── */}
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="flex items-center gap-2 min-w-0">
           <Package className="w-4 h-4 text-muted-foreground shrink-0" />
           <span className="font-bold text-sm">Order #{order._id.slice(-6).toUpperCase()}</span>
         </div>
-        <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-xs ${meta.badge}`}>
+        <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-xs shrink-0 ${meta.badge}`}>
           {meta.icon}
           {meta.label}
         </span>
       </div>
-      <div className="rounded-xs border border-border divide-y divide-border overflow-hidden">
-        {order.items.map((item, i) => (
-          <div key={i} className="flex items-center justify-between px-3 py-2 text-xs">
-            <span className="text-muted-foreground truncate">{item.label?.flavorName ?? "—"}</span>
-            <div className="flex items-center gap-3 shrink-0 ml-4">
-              <span className="tabular-nums">{item.quantity.toLocaleString()} units</span>
-              <span className="font-semibold tabular-nums">${(item.lineTotal ?? 0).toFixed(2)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xs bg-muted/40 px-3 py-2 space-y-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ordered</p>
-          <p className="text-xs font-medium">
-            {new Date(order.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-          </p>
-        </div>
-        <div className="rounded-xs bg-muted/40 px-3 py-2 space-y-0.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {order.productionStartDate ? "Production" : "ETA"}
-          </p>
-          <p className="text-xs font-medium">
-            {order.expectedDeliveryDate
-              ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-              : order.productionStartDate
-              ? new Date(order.productionStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-              : "TBD"}
-          </p>
-        </div>
-      </div>
-      <Separator />
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {order.items.reduce((s, i) => s + i.quantity, 0).toLocaleString()} total units
+
+      {/* ── Collapsible items toggle ── */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/40 hover:bg-muted/60 transition-colors border-t border-b border-border text-xs"
+      >
+        <span className="text-muted-foreground font-medium">
+          {order.items.length} {order.items.length === 1 ? "item" : "items"} · {totalUnits.toLocaleString()} units
         </span>
-        <span className="text-base font-bold text-primary tabular-nums">${(order.totalCost ?? 0).toFixed(2)}</span>
+        <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+
+      {/* ── Items list (collapsible) ── */}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="items"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="divide-y divide-border border-b border-border">
+              {order.items.map((item, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-xs bg-card">
+                  <span className="text-muted-foreground truncate">{item.label?.flavorName ?? "—"}</span>
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <span className="tabular-nums">{item.quantity.toLocaleString()} units</span>
+                    <span className="font-semibold tabular-nums">${(item.lineTotal ?? 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Fixed footer ── */}
+      <div className="px-4 py-3 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xs bg-muted/40 px-3 py-2 space-y-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Ordered</p>
+            <p className="text-xs font-medium">
+              {new Date(order.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </p>
+          </div>
+          <div className="rounded-xs bg-muted/40 px-3 py-2 space-y-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {order.productionStartDate ? "Production" : "ETA"}
+            </p>
+            <p className="text-xs font-medium">
+              {order.expectedDeliveryDate
+                ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                : order.productionStartDate
+                ? new Date(order.productionStartDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                : "TBD"}
+            </p>
+          </div>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{totalUnits.toLocaleString()} total units</span>
+          <span className="text-base font-bold text-primary tabular-nums">${(order.totalCost ?? 0).toFixed(2)}</span>
+        </div>
       </div>
     </Card>
   );

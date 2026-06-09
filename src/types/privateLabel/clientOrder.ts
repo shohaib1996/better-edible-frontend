@@ -71,7 +71,7 @@ export interface IClientOrder {
   };
   createdBy?: {
     user: { _id: string; name: string };
-    userType: "admin" | "rep";
+    userType: "admin" | "rep" | "store";
   } | null;
   createdAt: string;
   updatedAt: string;

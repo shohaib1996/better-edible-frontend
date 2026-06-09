@@ -150,7 +150,7 @@ export function StoreCreateOrderModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xs">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xs scrollbar-hidden bg-card border-border dark:border-white/20">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
@@ -172,7 +172,7 @@ export function StoreCreateOrderModal({
                 No approved labels available for ordering yet.
               </div>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5">
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5 scrollbar-hidden">
                 {approvedLabels.map((label) => {
                   const isSelected = (quantities[label._id] ?? 0) > 0;
                   return (
@@ -182,7 +182,7 @@ export function StoreCreateOrderModal({
                         "rounded-xs border p-3 transition-colors",
                         isSelected
                           ? "border-primary bg-primary/5 dark:bg-primary/10"
-                          : "border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer"
+                          : "border-border bg-background/40 hover:border-primary/40 hover:bg-muted/50 cursor-pointer"
                       )}
                     >
                       <div
@@ -326,7 +326,7 @@ export function StoreCreateOrderModal({
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between px-3 py-2.5 bg-muted/40">
+                  <div className="flex items-center justify-between px-3 py-2.5 bg-muted/60 dark:bg-muted/40">
                     <span className="text-sm font-bold">Total</span>
                     <span className="text-sm font-bold text-primary tabular-nums">
                       ${subtotal.toFixed(2)}

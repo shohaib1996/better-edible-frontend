@@ -110,7 +110,9 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
               </span>
               <span>
                 <span className="font-semibold text-primary">Created by:</span>{" "}
-                <span className="font-medium text-foreground">{order.createdBy?.user?.name || "N/A"}</span>
+                <span className="font-medium text-foreground">
+                  {order.createdBy?.userType === "store" ? "Store Portal" : (order.createdBy?.user?.name || "N/A")}
+                </span>
               </span>
             </div>
           </div>
@@ -265,7 +267,9 @@ export const OrderCard = ({ order, onUpdate, currentRepId }: OrderCardProps) => 
                 </span>
                 <span>
                   <span className="font-semibold text-primary">Created by:</span>{" "}
-                  <span className="font-medium text-foreground">{order.createdBy?.user?.name || "N/A"}</span>
+                  <span className="font-medium text-foreground">
+                  {order.createdBy?.userType === "store" ? "Store Portal" : (order.createdBy?.user?.name || "N/A")}
+                </span>
                 </span>
               </div>
             </div>
