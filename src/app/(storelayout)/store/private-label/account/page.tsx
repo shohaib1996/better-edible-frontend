@@ -297,7 +297,7 @@ function AccountPageInner() {
     { skip: !storeId }
   );
   const { data: apData, isLoading: isLoadingAp } = useGetMyLabelsQuery(
-    { storeId: storeId ?? "", status: "submitted", stageGroup: "approved", page: apPage, limit: apLimit },
+    { storeId: storeId ?? "", stageGroup: "approved", page: apPage, limit: apLimit },
     { skip: !storeId }
   );
   const { data: ogData, isLoading: isLoadingOg } = useGetMyOrdersQuery(
