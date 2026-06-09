@@ -6,7 +6,7 @@ import type { IPagination } from "./storeLabelApi";
 interface IPlaceOrderPayload {
   storeId: string;
   items: { labelId: string; quantity: number }[];
-  expectedDeliveryDate?: string;
+  deliveryDate?: string;
 }
 
 interface IGetMyOrdersParams {

@@ -51,6 +51,7 @@ export interface IGummyPricingResult {
 export interface IStoreDraftLabel {
   _id: string;
   flavorName: string;
+  productType?: string;
   size: GummySize;
   oilType: GummyOilType;
   effect: GummyEffect;

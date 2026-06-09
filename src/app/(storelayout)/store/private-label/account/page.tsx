@@ -14,6 +14,7 @@ import {
   Clock,
   Truck,
   Package,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getStoreUser } from "@/lib/storeUser";
 import { hexToHueRotation } from "@/lib/useGummyBuilder";
 import { GummyVisual } from "@/components/PrivateLabel/GummyVisual";
+import { StoreCreateOrderModal } from "@/components/PrivateLabel/StoreCreateOrderModal";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetMyOrdersQuery } from "@/redux/api/PrivateLabel/storeOrderApi";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
@@ -274,6 +276,7 @@ function AccountPageInner() {
   const [storeName, setStoreName] = useState<string | null>(null);
   const [labelTab, setLabelTab] = useState("in_progress");
   const [orderTab, setOrderTab] = useState("ongoing");
+  const [showCreateOrder, setShowCreateOrder] = useState(false);
 
   // Pagination state — one pair per sub-tab
   const [ipPage, setIpPage] = useState(1);
@@ -453,10 +456,29 @@ function AccountPageInner() {
       )}
 
       {/* ── Orders section ── */}
+      {section === "orders" && storeId && (
+        <StoreCreateOrderModal
+          open={showCreateOrder}
+          onClose={() => setShowCreateOrder(false)}
+          onSuccess={() => setShowCreateOrder(false)}
+          storeId={storeId}
+        />
+      )}
       {section === "orders" && (
         <Card className="rounded-xs shadow-none p-0 gap-0">
           <Tabs value={orderTab} onValueChange={setOrderTab} className="gap-0">
             <div className="px-4 pt-3 pb-0">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold">My Orders</span>
+                <Button
+                  size="sm"
+                  className="rounded-xs h-8 gap-1.5 text-xs"
+                  onClick={() => setShowCreateOrder(true)}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Place Order
+                </Button>
+              </div>
               <TabsList className="w-full h-10">
                 <TabsTrigger value="ongoing" className="flex-1 gap-1.5 text-xs">
                   <Clock className="w-3.5 h-3.5" />
