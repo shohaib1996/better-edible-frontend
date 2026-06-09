@@ -159,21 +159,19 @@ export default function PrivateLabelPage() {
 
             {activeTab === "line" && (
               <div className="space-y-4">
-                {draftLabels.length > 0 && (
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setShowSubmit(true)}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      Review & Submit →
-                    </button>
-                  </div>
-                )}
                 <SavedGummiesList
                   storeId={storeId}
                   labels={draftLabels}
                   isLoading={isLoadingDrafts}
                 />
+                {draftLabels.length > 0 && (
+                  <button
+                    onClick={() => setShowSubmit(true)}
+                    className="w-full py-3 rounded-xs bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 transition-colors"
+                  >
+                    Review & Submit →
+                  </button>
+                )}
               </div>
             )}
           </div>
