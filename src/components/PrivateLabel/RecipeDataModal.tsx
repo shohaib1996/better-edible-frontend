@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Sparkles, X, ChevronsUpDown, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { useUpdateLabelRecipeDataMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
 
@@ -24,6 +25,7 @@ interface RecipeDataModalProps {
   initialFlavors?: string[];
   initialColorHex?: string;
   initialColorName?: string;
+  initialFlavorMode?: "single" | "mix";
   onSuccess: () => void;
 }
 
@@ -35,8 +37,10 @@ export function RecipeDataModal({
   initialFlavors = [],
   initialColorHex = "",
   initialColorName = "",
+  initialFlavorMode = "single",
   onSuccess,
 }: RecipeDataModalProps) {
+  const [flavorMode, setFlavorMode] = useState<"single" | "mix">(initialFlavorMode);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>(initialFlavors);
   const [colorHex, setColorHex] = useState(initialColorHex);
   const [colorName, setColorName] = useState(initialColorName);
@@ -103,11 +107,11 @@ export function RecipeDataModal({
   }
 
   function handleAddFlavor(name: string) {
-    if (selectedFlavors.length >= 3) return;
+    if (selectedFlavors.length >= maxFlavors) return;
     const updated = [...selectedFlavors, name];
     setSelectedFlavors(updated);
     setSearch("");
-    if (updated.length >= 3) setDropdownOpen(false);
+    if (updated.length >= maxFlavors) setDropdownOpen(false);
     fetchColor(updated);
   }
 
@@ -127,6 +131,7 @@ export function RecipeDataModal({
       await updateRecipeData({
         id: labelId,
         selectedFlavors,
+        flavorMode,
         ...(colorHex && { gummyColorHex: colorHex, gummyColorName: colorName }),
       }).unwrap();
       toast.success("Recipe data saved");
@@ -137,7 +142,17 @@ export function RecipeDataModal({
     }
   }
 
-  const canAddMore = selectedFlavors.length < 3;
+  const maxFlavors = flavorMode === "mix" ? 3 : 1;
+  const canAddMore = selectedFlavors.length < maxFlavors;
+
+  function handleFlavorModeChange(mode: "single" | "mix") {
+    setFlavorMode(mode);
+    if (mode === "single" && selectedFlavors.length > 1) {
+      const trimmed = [selectedFlavors[0]];
+      setSelectedFlavors(trimmed);
+      fetchColor(trimmed);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -156,11 +171,42 @@ export function RecipeDataModal({
 
         <div className="space-y-4 pt-1">
 
+          {/* ── Flavor type toggle ── */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-foreground">Flavor Type</p>
+            <div className="flex rounded-xs border border-border overflow-hidden w-fit">
+              <button
+                type="button"
+                onClick={() => handleFlavorModeChange("single")}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-medium transition-colors",
+                  flavorMode === "single"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+              >
+                Single Flavor
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFlavorModeChange("mix")}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-medium transition-colors border-l border-border",
+                  flavorMode === "mix"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:bg-muted"
+                )}
+              >
+                Mixed Flavor
+              </button>
+            </div>
+          </div>
+
           {/* ── Flavor picker ── */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-foreground">Gummy Flavors</p>
-              <span className="text-[10px] text-muted-foreground">{selectedFlavors.length} / 3</span>
+              <span className="text-[10px] text-muted-foreground">{selectedFlavors.length} / {maxFlavors}</span>
             </div>
 
             {/* Custom inline dropdown — no portal, scroll works inside Dialog */}
@@ -172,7 +218,7 @@ export function RecipeDataModal({
                 onClick={() => { setDropdownOpen((v) => !v); setSearch(""); }}
                 className="w-full flex items-center justify-between gap-2 rounded-xs border border-input bg-background px-3 h-10 text-sm text-muted-foreground hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <span>{canAddMore ? "Select flavor…" : "3 flavors selected"}</span>
+                <span>{canAddMore ? "Select flavor…" : `${maxFlavors} flavor${maxFlavors > 1 ? "s" : ""} selected`}</span>
                 <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
               </button>
 

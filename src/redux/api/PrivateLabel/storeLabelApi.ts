@@ -103,7 +103,7 @@ export const storeLabelApi = baseApi.injectEndpoints({
     // PATCH /api/store/labels/:id/recipe-data
     updateLabelRecipeData: builder.mutation<
       { success: boolean; label: IStoreDraftLabel },
-      { id: string; selectedFlavors: string[]; gummyColorHex?: string; gummyColorName?: string }
+      { id: string; selectedFlavors: string[]; gummyColorHex?: string; gummyColorName?: string; flavorMode?: "single" | "mix" }
     >({
       query: ({ id, ...body }) => ({
         url: `/store/labels/${id}/recipe-data`,

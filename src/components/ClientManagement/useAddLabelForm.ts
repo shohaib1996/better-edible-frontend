@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCreateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
+import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { getUserFromStorage } from "@/lib/getUserFromStorage";
 import type { ComponentEntry } from "./LabelComponentList";
+
+const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
 
 export interface AddLabelInitialValues {
   flavorName?: string;
@@ -16,6 +19,7 @@ export interface AddLabelInitialValues {
   gummyColorHex?: string;
   gummyColorName?: string;
   selectedFlavors?: string[];
+  flavorMode?: "single" | "mix";
 }
 
 export function useAddLabelForm(
@@ -43,12 +47,21 @@ export function useAddLabelForm(
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  // AI recipe data
+  const [flavorMode, setFlavorMode] = useState<"single" | "mix">(initialValues?.flavorMode ?? "single");
+  const [selectedFlavors, setSelectedFlavors] = useState<string[]>(initialValues?.selectedFlavors ?? []);
+  const [gummyColorHex, setGummyColorHex] = useState(initialValues?.gummyColorHex ?? "");
+  const [gummyColorName, setGummyColorName] = useState(initialValues?.gummyColorName ?? "");
+  const [isColorLoading, setIsColorLoading] = useState(false);
+
   const { data: productsData } = useGetPrivateLabelProductsQuery({ activeOnly: true });
+  const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
   const [createLabel, { isLoading }] = useCreateLabelMutation();
 
   const products = productsData?.products ?? [];
+  const allFlavors = [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 
-  // Auto-select product type by keyword (works for any current or future oil type)
+  // Auto-select product type by keyword
   useEffect(() => {
     if (products.length > 0 && !productType && initialValues?.productTypeKeyword) {
       const keyword = initialValues.productTypeKeyword.toLowerCase();
@@ -58,6 +71,52 @@ export function useAddLabelForm(
       if (match) setProductType(match.name);
     }
   }, [products]);
+
+  async function fetchColorForFlavors(flavors: string[]) {
+    if (flavors.length === 0) return;
+    setIsColorLoading(true);
+    try {
+      const res = await fetch(COLOR_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flavor: flavors.join(", ") }),
+      });
+      const data = await res.json();
+      if (data?.hex && /^#[0-9A-Fa-f]{6}$/.test(data.hex)) {
+        setGummyColorHex(data.hex);
+        setGummyColorName(data.name || "");
+        if (data.name) setColor(data.name);
+      }
+    } catch {
+      toast.error("Failed to generate color");
+    } finally {
+      setIsColorLoading(false);
+    }
+  }
+
+  function handleFlavorModeChange(mode: "single" | "mix") {
+    setFlavorMode(mode);
+    if (mode === "single" && selectedFlavors.length > 1) {
+      const trimmed = [selectedFlavors[0]];
+      setSelectedFlavors(trimmed);
+      fetchColorForFlavors(trimmed);
+    }
+  }
+
+  function handleAddFlavor(name: string) {
+    const max = flavorMode === "mix" ? 3 : 1;
+    if (selectedFlavors.length >= max) return;
+    const updated = [...selectedFlavors, name];
+    setSelectedFlavors(updated);
+    fetchColorForFlavors(updated);
+  }
+
+  function handleRemoveFlavor(name: string) {
+    const updated = selectedFlavors.filter((f) => f !== name);
+    setSelectedFlavors(updated);
+    if (updated.length > 0) fetchColorForFlavors(updated);
+    else { setGummyColorHex(""); setGummyColorName(""); }
+  }
 
   function resetForm() {
     setFlavorName(initialValues?.flavorName ?? "");
@@ -78,6 +137,10 @@ export function useAddLabelForm(
     }
     setColorComponents([]);
     setFiles([]);
+    setFlavorMode(initialValues?.flavorMode ?? "single");
+    setSelectedFlavors(initialValues?.selectedFlavors ?? []);
+    setGummyColorHex(initialValues?.gummyColorHex ?? "");
+    setGummyColorName(initialValues?.gummyColorName ?? "");
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -142,15 +205,12 @@ export function useAddLabelForm(
       if (initialValues?.submissionLabelId) {
         formData.append("submissionLabelId", initialValues.submissionLabelId);
       }
-      if (initialValues?.gummyColorHex) {
-        formData.append("gummyColorHex", initialValues.gummyColorHex);
+      formData.append("flavorMode", flavorMode);
+      if (selectedFlavors.length > 0) {
+        formData.append("selectedFlavors", JSON.stringify(selectedFlavors));
       }
-      if (initialValues?.gummyColorName) {
-        formData.append("gummyColorName", initialValues.gummyColorName);
-      }
-      if (initialValues?.selectedFlavors && initialValues.selectedFlavors.length > 0) {
-        formData.append("selectedFlavors", JSON.stringify(initialValues.selectedFlavors));
-      }
+      if (gummyColorHex) formData.append("gummyColorHex", gummyColorHex);
+      if (gummyColorName) formData.append("gummyColorName", gummyColorName);
       files.forEach((file) => formData.append("labelImages", file));
 
       await createLabel(formData).unwrap();
@@ -173,6 +233,11 @@ export function useAddLabelForm(
     color, setColor,
     flavorComponents, setFlavorComponents,
     colorComponents, setColorComponents,
+    // AI recipe data
+    flavorMode, handleFlavorModeChange,
+    selectedFlavors, handleAddFlavor, handleRemoveFlavor,
+    gummyColorHex, gummyColorName, isColorLoading, fetchColorForFlavors,
+    allFlavors, isLoadingFlavors,
     // file state
     files, isDragging,
     handleFileChange, handleDragOver, handleDragLeave, handleDrop, removeFile,
