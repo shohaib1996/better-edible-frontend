@@ -298,7 +298,7 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
             </div>
           </div>
 
-          {/* Upload Logo */}
+          {/* Upload Logos */}
           <div>
             <Label>Upload Logo</Label>
             <div className="mt-2">
