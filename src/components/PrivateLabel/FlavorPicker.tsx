@@ -100,7 +100,7 @@ export function FlavorPicker({
           >
             <Command className="rounded-xs">
               <CommandInput placeholder="Search flavors…" className="h-10" />
-              <CommandList className="max-h-64">
+              <CommandList className="max-h-64 overflow-y-auto">
                 <CommandEmpty>
                   {isLoadingFlavors ? "Loading flavors…" : "No flavors found."}
                 </CommandEmpty>

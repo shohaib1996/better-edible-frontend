@@ -35,6 +35,7 @@ import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPaginati
 import { LABEL_STAGES, type LabelStage } from "@/types/privateLabel/label";
 import { STAGE_META } from "@/lib/labelStageMeta";
 import type { IStoreDraftLabel, IStoreOrder } from "@/types/privateLabel/gummyBuilder";
+import { RecipeDataModal } from "@/components/PrivateLabel/RecipeDataModal";
 
 const APPROVED_STAGES: LabelStage[] = [
   "olcc_approved",
@@ -110,9 +111,11 @@ function StageStepper({ currentStage }: { currentStage?: LabelStage }) {
 }
 
 // ─── Label card ────────────────────────────────────────────────────────────
-function LabelCard({ label }: { label: IStoreDraftLabel }) {
+function LabelCard({ label, onUpdate }: { label: IStoreDraftLabel; onUpdate: () => void }) {
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
   const isApproved = APPROVED_STAGES.includes(label.currentStage as LabelStage);
   const gummyHue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
+  const missingRecipeData = !label.gummyColorHex || !(label.selectedFlavors ?? []).length;
   return (
     <Card className={cn(
       "rounded-xs shadow-none gap-3 p-4 py-4",
@@ -185,6 +188,35 @@ function LabelCard({ label }: { label: IStoreDraftLabel }) {
         <span className="text-xs text-muted-foreground">{label.unitsOrdered.toLocaleString()} units</span>
         <span className="text-sm font-bold text-primary tabular-nums">${(label.totalCost ?? 0).toFixed(2)}</span>
       </div>
+
+      {/* Missing AI recipe data warning */}
+      {missingRecipeData && (
+        <div className="flex items-center justify-between gap-2 rounded-xs bg-amber-400/10 border border-amber-400/30 px-3 py-2">
+          <span className="text-xs text-amber-800 dark:text-amber-400">
+            AI recipe data missing — flavor / color not set
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowRecipeModal(true)}
+            className="shrink-0 text-xs font-semibold text-amber-800 dark:text-amber-400 underline underline-offset-2 hover:opacity-70"
+          >
+            Add Now
+          </button>
+        </div>
+      )}
+
+      {showRecipeModal && (
+        <RecipeDataModal
+          open={showRecipeModal}
+          onClose={() => setShowRecipeModal(false)}
+          labelId={label._id}
+          flavorName={label.flavorName}
+          initialFlavors={label.selectedFlavors}
+          initialColorHex={label.gummyColorHex}
+          initialColorName={label.gummyColorName}
+          onSuccess={onUpdate}
+        />
+      )}
     </Card>
   );
 }
@@ -329,11 +361,11 @@ function AccountPageInner() {
     if (user) { setStoreId(user.storeId); setStoreName(user.storeName); }
   }, []);
 
-  const { data: ipData, isLoading: isLoadingIp } = useGetMyLabelsQuery(
+  const { data: ipData, isLoading: isLoadingIp, refetch: refetchIp } = useGetMyLabelsQuery(
     { storeId: storeId ?? "", status: "submitted", stageGroup: "in_progress", page: ipPage, limit: ipLimit },
     { skip: !storeId }
   );
-  const { data: apData, isLoading: isLoadingAp } = useGetMyLabelsQuery(
+  const { data: apData, isLoading: isLoadingAp, refetch: refetchAp } = useGetMyLabelsQuery(
     { storeId: storeId ?? "", stageGroup: "approved", page: apPage, limit: apLimit },
     { skip: !storeId }
   );
@@ -442,7 +474,7 @@ function AccountPageInner() {
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {inProgressLabels.map((label) => <LabelCard key={label._id} label={label} />)}
+                    {inProgressLabels.map((label) => <LabelCard key={label._id} label={label} onUpdate={refetchIp} />)}
                   </div>
                   {ipData?.pagination && ipData.pagination.totalItems > 0 && (
                     <GlobalPagination
@@ -469,7 +501,7 @@ function AccountPageInner() {
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {approvedLabels.map((label) => <LabelCard key={label._id} label={label} />)}
+                    {approvedLabels.map((label) => <LabelCard key={label._id} label={label} onUpdate={refetchAp} />)}
                   </div>
                   {apData?.pagination && apData.pagination.totalItems > 0 && (
                     <GlobalPagination

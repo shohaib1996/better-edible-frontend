@@ -99,6 +99,19 @@ export const storeLabelApi = baseApi.injectEndpoints({
         body: formData,
       }),
     }),
+
+    // PATCH /api/store/labels/:id/recipe-data
+    updateLabelRecipeData: builder.mutation<
+      { success: boolean; label: IStoreDraftLabel },
+      { id: string; selectedFlavors: string[]; gummyColorHex?: string; gummyColorName?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/store/labels/${id}/recipe-data`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.storeLabels],
+    }),
   }),
 });
 
@@ -110,4 +123,5 @@ export const {
   useDeleteDraftLabelMutation,
   useSubmitLineMutation,
   useUploadLogoMutation,
+  useUpdateLabelRecipeDataMutation,
 } = storeLabelApi;

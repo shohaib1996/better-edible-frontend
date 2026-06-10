@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, CheckCircle2, FlaskConical, ShoppingCart, Minus, Plus } from "lucide-react";
+import { Loader2, CalendarIcon, CheckCircle2, FlaskConical, ShoppingCart, Minus, Plus, AlertTriangle } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
@@ -67,6 +67,10 @@ export function StoreCreateOrderModal({
 
   const approvedLabels = data?.labels ?? [];
   const products = productsData?.products ?? [];
+
+  function isMissingRecipeData(label: IStoreDraftLabel) {
+    return !label.gummyColorHex || !(label.selectedFlavors ?? []).length;
+  }
 
   function getUnitPrice(label: IStoreDraftLabel): number {
     if (label.unitCost) return label.unitCost;
@@ -139,6 +143,12 @@ export function StoreCreateOrderModal({
       toast.error("Please select a delivery date");
       return;
     }
+    const labelsWithMissingData = selectedLabels.filter(isMissingRecipeData);
+    if (labelsWithMissingData.length > 0) {
+      const names = labelsWithMissingData.map((l) => l.flavorName).join(", ");
+      toast.error(`Fix AI recipe data before ordering: ${names}`);
+      return;
+    }
     const minDate = addDays(startOfDay(new Date()), 14);
     if (deliveryDate < minDate) {
       setShowEarlyWarning(true);
@@ -175,34 +185,40 @@ export function StoreCreateOrderModal({
               <div className="space-y-2 max-h-72 overflow-y-auto pr-0.5 scrollbar-hidden">
                 {approvedLabels.map((label) => {
                   const isSelected = (quantities[label._id] ?? 0) > 0;
+                  const missingData = isMissingRecipeData(label);
                   return (
                     <div
                       key={label._id}
                       className={cn(
                         "rounded-xs border p-3 transition-colors",
-                        isSelected
+                        missingData
+                          ? "border-amber-300 dark:border-amber-700 bg-amber-400/5 opacity-70 cursor-not-allowed"
+                          : isSelected
                           ? "border-primary bg-primary/5 dark:bg-primary/10"
                           : "border-border bg-background/40 hover:border-primary/40 hover:bg-muted/50 cursor-pointer"
                       )}
                     >
                       <div
                         className="flex items-center gap-3"
-                        onClick={() => !isSelected && toggleLabel(label)}
+                        onClick={() => !isSelected && !missingData && toggleLabel(label)}
                       >
                         {/* Checkbox */}
                         <button
+                          disabled={missingData}
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleLabel(label);
+                            if (!missingData) toggleLabel(label);
                           }}
                           className={cn(
                             "w-5 h-5 rounded-xs border-2 shrink-0 flex items-center justify-center transition-colors",
-                            isSelected
+                            missingData
+                              ? "border-muted-foreground/20 bg-muted/40 cursor-not-allowed"
+                              : isSelected
                               ? "border-primary bg-primary"
                               : "border-muted-foreground/40 hover:border-primary/60"
                           )}
                         >
-                          {isSelected && (
+                          {isSelected && !missingData && (
                             <CheckCircle2 className="w-3 h-3 text-primary-foreground" />
                           )}
                         </button>
@@ -228,6 +244,16 @@ export function StoreCreateOrderModal({
                           ${getUnitPrice(label).toFixed(3)}<span className="text-[10px]">/unit</span>
                         </div>
                       </div>
+
+                      {/* Missing recipe data warning */}
+                      {isMissingRecipeData(label) && (
+                        <div className="mt-2 flex items-center gap-1.5 rounded-xs bg-amber-400/10 border border-amber-400/30 px-2.5 py-1.5">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span className="text-xs text-amber-800 dark:text-amber-400">
+                            AI recipe data missing — go to My Labels to fix before ordering
+                          </span>
+                        </div>
+                      )}
 
                       {/* Quantity row — only when selected */}
                       {isSelected && (

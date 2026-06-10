@@ -180,6 +180,22 @@ export const LabelCard = ({ label, onUpdate }: LabelCardProps) => {
           </div>
         </div>
 
+        {/* Missing AI recipe data warning */}
+        {(!label.gummyColorHex || !(label.selectedFlavors ?? []).length) && (
+          <div className="mx-4 mb-3 flex items-center justify-between gap-2 rounded-xs bg-amber-400/10 border border-amber-400/30 px-3 py-2">
+            <span className="text-xs text-amber-800 dark:text-amber-400">
+              AI recipe data missing — flavor and/or color not set
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowEdit(true)}
+              className="shrink-0 text-xs font-semibold text-amber-800 dark:text-amber-400 underline underline-offset-2 hover:opacity-70"
+            >
+              Fix Now
+            </button>
+          </div>
+        )}
+
         {/* Details */}
         {hasDetails && <LabelCardDetails label={label} />}
 
