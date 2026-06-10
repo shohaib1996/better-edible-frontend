@@ -13,6 +13,7 @@ import type {
 } from "@/types/privateLabel/packagePrep";
 import type {
   ICookItem,
+  IAiRecipe,
   ICase,
   IHistoryEntry,
   IStage3CookItem,
@@ -271,6 +272,18 @@ export const ppsApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.ppsCookItems],
     }),
 
+    generateRecipe: builder.mutation<
+      { success: boolean; aiRecipe: IAiRecipe },
+      { cookItemId: string }
+    >({
+      query: (body) => ({
+        url: "/pps/stage-1/generate-recipe",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.ppsCookItems],
+    }),
+
     // ─── History ──────────────────────────
     getCookItemHistory: builder.query<
       { cookItemId: string; history: IHistoryEntry[] },
@@ -488,6 +501,7 @@ export const ppsApi = baseApi.injectEndpoints({
 export const {
   useGetCookItemHistoryQuery,
   useGetCaseByIdQuery,
+  useGenerateRecipeMutation,
   useGetStage1CookItemsQuery,
   useAssignMoldMutation,
   useUnassignMoldMutation,

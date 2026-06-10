@@ -7,6 +7,7 @@ import { getPPSUser } from "@/lib/ppsUser";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import FlavorColorModal from "./FlavorColorModal";
 import FlavorColorBlock from "./FlavorColorBlock";
+import RecipeGuideSection from "./RecipeGuideSection";
 import Stage1ActionArea from "./Stage1ActionArea";
 import type { OilSelection } from "./OilContainerSelect";
 import {
@@ -185,6 +186,9 @@ export default function Stage1CookItemCard({
           </div>
         ))}
       </div>
+
+      {/* AI Recipe Guide */}
+      <RecipeGuideSection item={item} compact={c} />
 
       {/* Flavor & Color */}
       <FlavorColorBlock

@@ -60,6 +60,43 @@ export interface IColorAmount {
 }
 
 // ──────────────────────────────
+// AI Recipe
+// ──────────────────────────────
+export interface IAiRecipeFlavorLine {
+  name: string;
+  product: string;
+  source?: string;
+  gramsPerMold: number;
+  totalGrams: number;
+  ratioPct?: number;
+  note?: string;
+}
+
+export interface IAiRecipeColorLine {
+  color: string;
+  hex: string;
+  dropsApprox: number;
+  pct: number;
+}
+
+export interface IAiRecipe {
+  flavorLorann: IAiRecipeFlavorLine[];
+  flavorExtract: IAiRecipeFlavorLine[];
+  colorRecipe: IAiRecipeColorLine[];
+  batchColoringDrops: number;
+  lorannMixingNote?: string;
+  extractMixingNote?: string;
+  colorMixingNote?: string;
+  flavorNote?: string;
+  colorMissing?: boolean;
+  colorHexUsed?: string;
+  colorName?: string;
+  lockedFlavorOilType: "lorann" | "extract";
+  totalMolds: number;
+  generatedAt: string;
+}
+
+// ──────────────────────────────
 // Cook Item
 // ──────────────────────────────
 export interface ICookItem {
@@ -119,6 +156,7 @@ export interface ICookItem {
   caseIds: string[];
   packagingCompletionTimestamp?: string;
   history: IHistoryEntry[];
+  aiRecipe?: IAiRecipe;
   createdAt: string;
   updatedAt: string;
 }

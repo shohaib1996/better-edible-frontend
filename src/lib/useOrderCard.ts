@@ -34,7 +34,7 @@ export function useOrderCard({ order, onUpdate, currentRepId }: Props) {
   const [showNoDeliveryWarning, setShowNoDeliveryWarning] = useState(false);
 
   const canEdit = canEditOrder(order.status);
-  const canPushToPPS = order.status === "waiting";
+  const canPushToPPS = order.status === "waiting" || order.status === "cooking_molding";
   const inProduction = isOrderInProduction(order.status);
   const isOwnOrder = currentRepId ? order.assignedRep?._id === currentRepId : true;
 
