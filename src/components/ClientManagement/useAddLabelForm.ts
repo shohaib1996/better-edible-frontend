@@ -7,6 +7,10 @@ import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privat
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { getUserFromStorage } from "@/lib/getUserFromStorage";
 import type { ComponentEntry } from "./LabelComponentList";
+import { calculateGummyPrice, CANNABINOID_PRICES, ALL_CANNABINOIDS, CANNABINOID_OPTIONS } from "@/lib/gummyPricing";
+import type { CannabinoidName } from "@/types/privateLabel/gummyBuilder";
+
+export { ALL_CANNABINOIDS, CANNABINOID_OPTIONS, CANNABINOID_PRICES };
 
 const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
 
@@ -19,7 +23,6 @@ export interface AddLabelInitialValues {
   gummyColorHex?: string;
   gummyColorName?: string;
   selectedFlavors?: string[];
-  // gummy spec fields passed through from store submission
   size?: "standard" | "xl";
   oilType?: "biomax" | "rosin";
   effect?: "hybrid" | "indica" | "sativa";
@@ -60,6 +63,30 @@ export function useAddLabelForm(
   const [gummyColorName, setGummyColorName] = useState(initialValues?.gummyColorName ?? "");
   const [isColorLoading, setIsColorLoading] = useState(false);
 
+  // Gummy spec
+  const [gummySize, setGummySize] = useState<"standard" | "xl" | "">(initialValues?.size ?? "");
+  const [gummyOilType, setGummyOilType] = useState<"biomax" | "rosin" | "">(initialValues?.oilType ?? "");
+  const [gummyEffect, setGummyEffect] = useState<"hybrid" | "indica" | "sativa" | "">(initialValues?.effect ?? "");
+  const [gummyCannabinoids, setGummyCannabinoids] = useState<{ name: string; mg: number; priceAdd: number }[]>(initialValues?.cannabinoids ?? []);
+  const [unitsOrdered, setUnitsOrdered] = useState(initialValues?.unitsOrdered != null ? String(initialValues.unitsOrdered) : "");
+  const [unitCost, setUnitCost] = useState(initialValues?.unitCost != null ? String(initialValues.unitCost) : "");
+  const [totalCost, setTotalCost] = useState(initialValues?.totalCost != null ? String(initialValues.totalCost) : "");
+
+  // Auto-calculate unitCost + totalCost from gummy spec
+  useEffect(() => {
+    if (!gummyOilType) return;
+    const u = parseFloat(unitsOrdered);
+    const result = calculateGummyPrice({
+      size: gummySize || "standard",
+      oilType: gummyOilType,
+      effect: gummyEffect || "hybrid",
+      cannabinoids: gummyCannabinoids.map((c) => ({ name: c.name as CannabinoidName, mg: c.mg })),
+      unitsOrdered: isNaN(u) || u <= 0 ? 0 : u,
+    });
+    setUnitCost(String(result.unitCost));
+    if (!isNaN(u) && u > 0) setTotalCost(String(result.totalCost));
+  }, [gummySize, gummyOilType, gummyEffect, gummyCannabinoids, unitsOrdered]);
+
   const { data: productsData } = useGetPrivateLabelProductsQuery({ activeOnly: true });
   const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
   const [createLabel, { isLoading }] = useCreateLabelMutation();
@@ -67,7 +94,6 @@ export function useAddLabelForm(
   const products = productsData?.products ?? [];
   const allFlavors = [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 
-  // Auto-select product type by keyword
   useEffect(() => {
     if (products.length > 0 && !productType && initialValues?.productTypeKeyword) {
       const keyword = initialValues.productTypeKeyword.toLowerCase();
@@ -114,6 +140,19 @@ export function useAddLabelForm(
     else { setGummyColorHex(""); setGummyColorName(""); }
   }
 
+  function addCannabinoid(name: string, mg: number) {
+    if (!name || mg <= 0) return;
+    const priceAdd = CANNABINOID_PRICES[name as CannabinoidName]?.[mg] ?? 0;
+    setGummyCannabinoids((prev) => [
+      ...prev.filter((c) => c.name !== name),
+      { name, mg, priceAdd },
+    ]);
+  }
+
+  function removeCannabinoid(name: string) {
+    setGummyCannabinoids((prev) => prev.filter((c) => c.name !== name));
+  }
+
   function resetForm() {
     setFlavorName(initialValues?.flavorName ?? "");
     setProductType("");
@@ -136,6 +175,13 @@ export function useAddLabelForm(
     setSelectedFlavors(initialValues?.selectedFlavors ?? []);
     setGummyColorHex(initialValues?.gummyColorHex ?? "");
     setGummyColorName(initialValues?.gummyColorName ?? "");
+    setGummySize(initialValues?.size ?? "");
+    setGummyOilType(initialValues?.oilType ?? "");
+    setGummyEffect(initialValues?.effect ?? "");
+    setGummyCannabinoids(initialValues?.cannabinoids ?? []);
+    setUnitsOrdered(initialValues?.unitsOrdered != null ? String(initialValues.unitsOrdered) : "");
+    setUnitCost(initialValues?.unitCost != null ? String(initialValues.unitCost) : "");
+    setTotalCost(initialValues?.totalCost != null ? String(initialValues.totalCost) : "");
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -205,13 +251,13 @@ export function useAddLabelForm(
       }
       if (gummyColorHex) formData.append("gummyColorHex", gummyColorHex);
       if (gummyColorName) formData.append("gummyColorName", gummyColorName);
-      if (initialValues?.size) formData.append("size", initialValues.size);
-      if (initialValues?.oilType) formData.append("oilType", initialValues.oilType);
-      if (initialValues?.effect) formData.append("effect", initialValues.effect);
-      if (initialValues?.unitsOrdered) formData.append("unitsOrdered", String(initialValues.unitsOrdered));
-      if (initialValues?.cannabinoids?.length) formData.append("cannabinoids", JSON.stringify(initialValues.cannabinoids));
-      if (initialValues?.unitCost != null) formData.append("unitCost", String(initialValues.unitCost));
-      if (initialValues?.totalCost != null) formData.append("totalCost", String(initialValues.totalCost));
+      if (gummySize) formData.append("size", gummySize);
+      if (gummyOilType) formData.append("oilType", gummyOilType);
+      if (gummyEffect) formData.append("effect", gummyEffect);
+      if (gummyCannabinoids.length) formData.append("cannabinoids", JSON.stringify(gummyCannabinoids));
+      if (unitsOrdered) formData.append("unitsOrdered", unitsOrdered);
+      if (unitCost) formData.append("unitCost", unitCost);
+      if (totalCost) formData.append("totalCost", totalCost);
       files.forEach((file) => formData.append("labelImages", file));
 
       await createLabel(formData).unwrap();
@@ -226,7 +272,6 @@ export function useAddLabelForm(
   }
 
   return {
-    // field state
     flavorName, setFlavorName,
     productType, setProductType,
     specialInstructions, setSpecialInstructions,
@@ -234,17 +279,21 @@ export function useAddLabelForm(
     color, setColor,
     flavorComponents, setFlavorComponents,
     colorComponents, setColorComponents,
-    // AI recipe data
     selectedFlavors, handleAddFlavor, handleRemoveFlavor,
     gummyColorHex, gummyColorName, isColorLoading, fetchColorForFlavors,
     allFlavors, isLoadingFlavors,
-    // file state
     files, isDragging,
     handleFileChange, handleDragOver, handleDragLeave, handleDrop, removeFile,
-    // data
     products, isLoading,
-    // actions
     handleSubmit,
     handleOpenChange: (isOpen: boolean) => { if (!isOpen) onClose(); },
+    // gummy spec
+    gummySize, setGummySize,
+    gummyOilType, setGummyOilType,
+    gummyEffect, setGummyEffect,
+    gummyCannabinoids, addCannabinoid, removeCannabinoid,
+    unitsOrdered, setUnitsOrdered,
+    unitCost, setUnitCost,
+    totalCost, setTotalCost,
   };
 }

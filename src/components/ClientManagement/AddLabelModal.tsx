@@ -18,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ChevronsUpDown, Search, X, RefreshCw } from "lucide-react";
-import { useAddLabelForm, type AddLabelInitialValues } from "./useAddLabelForm";
+import { Loader2, ChevronsUpDown, Search, X, RefreshCw, Plus } from "lucide-react";
+import { useAddLabelForm, type AddLabelInitialValues, ALL_CANNABINOIDS, CANNABINOID_OPTIONS, CANNABINOID_PRICES } from "./useAddLabelForm";
 import { LabelComponentList } from "./LabelComponentList";
 import { LabelImageUpload } from "./LabelImageUpload";
 
@@ -38,6 +38,10 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
   // Flavor dropdown local state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
+
+  // Cannabinoid add-form local state
+  const [cbName, setCbName] = useState("");
+  const [cbMg, setCbMg] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -263,6 +267,137 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Gummy Spec */}
+          <div className="rounded-xs border border-border p-3 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gummy Spec</p>
+
+            {/* Size / Oil Type / Effect */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Size</Label>
+                <Select value={form.gummySize} onValueChange={(v) => form.setGummySize(v as "standard" | "xl")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="xl">XL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Oil Type</Label>
+                <Select value={form.gummyOilType} onValueChange={(v) => form.setGummyOilType(v as "biomax" | "rosin")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="biomax">BioMax</SelectItem>
+                    <SelectItem value="rosin">Rosin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Effect</Label>
+                <Select value={form.gummyEffect} onValueChange={(v) => form.setGummyEffect(v as "hybrid" | "indica" | "sativa")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="indica">Indica</SelectItem>
+                    <SelectItem value="sativa">Sativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Cannabinoid add-ons */}
+            <div className="space-y-2">
+              <Label className="text-xs">Cannabinoid Add-ons</Label>
+              {form.gummyCannabinoids.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {form.gummyCannabinoids.map((c) => (
+                    <span key={c.name} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-xs bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-300">
+                      {c.name} {c.mg}mg
+                      {c.priceAdd > 0 && <span className="opacity-60">+${c.priceAdd.toFixed(2)}</span>}
+                      <button type="button" onClick={() => form.removeCannabinoid(c.name)} className="hover:text-destructive ml-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Select value={cbName} onValueChange={(v) => { setCbName(v); setCbMg(""); }}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm flex-1">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    {ALL_CANNABINOIDS.map((n) => (
+                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={cbMg} onValueChange={setCbMg} disabled={!cbName}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm w-36">
+                    <SelectValue placeholder="mg" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    {(CANNABINOID_OPTIONS[cbName as keyof typeof CANNABINOID_OPTIONS] ?? []).map((mg) => (
+                      <SelectItem key={mg} value={String(mg)}>
+                        {mg}mg +${(CANNABINOID_PRICES[cbName as keyof typeof CANNABINOID_PRICES]?.[mg] ?? 0).toFixed(2)}/unit
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xs border-border dark:border-white/20 bg-card h-9 shrink-0"
+                  disabled={!cbName || !cbMg}
+                  onClick={() => {
+                    if (cbName && cbMg) {
+                      form.addCannabinoid(cbName, parseInt(cbMg, 10));
+                      setCbName("");
+                      setCbMg("");
+                    }
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Pricing — auto-calculated from spec */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Units Ordered</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 630"
+                  value={form.unitsOrdered}
+                  onChange={(e) => form.setUnitsOrdered(e.target.value)}
+                  className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Unit Cost ($)</Label>
+                <div className="rounded-xs border border-border bg-muted/40 h-9 px-3 flex items-center text-sm font-medium tabular-nums">
+                  {form.unitCost ? `$${parseFloat(form.unitCost).toFixed(4)}` : <span className="text-muted-foreground text-xs">Set oil type</span>}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Total Cost ($)</Label>
+                <div className="rounded-xs border border-border bg-muted/40 h-9 px-3 flex items-center text-sm font-semibold tabular-nums text-primary">
+                  {form.totalCost ? `$${parseFloat(form.totalCost).toFixed(2)}` : <span className="text-muted-foreground font-normal text-xs">Enter units</span>}
+                </div>
+              </div>
             </div>
           </div>
 

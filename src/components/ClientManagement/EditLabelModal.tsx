@@ -19,8 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, RefreshCw, ChevronsUpDown, Search, X } from "lucide-react";
+import { Loader2, RefreshCw, ChevronsUpDown, Search, X, Plus } from "lucide-react";
 import { useUpdateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
+import { calculateGummyPrice, CANNABINOID_PRICES, ALL_CANNABINOIDS, CANNABINOID_OPTIONS } from "@/lib/gummyPricing";
+import type { CannabinoidName } from "@/types/privateLabel/gummyBuilder";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { ILabel } from "@/types";
@@ -62,6 +64,34 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
   const [flavorSearch, setFlavorSearch] = useState("");
   const flavorDropdownRef = useRef<HTMLDivElement>(null);
   const flavorSearchRef = useRef<HTMLInputElement>(null);
+
+  // Gummy spec
+  const [gummySize, setGummySize] = useState<"standard" | "xl" | "">(label.size ?? "");
+  const [gummyOilType, setGummyOilType] = useState<"biomax" | "rosin" | "">(label.oilType ?? "");
+  const [gummyEffect, setGummyEffect] = useState<"hybrid" | "indica" | "sativa" | "">(label.effect ?? "");
+  const [gummyCannabinoids, setGummyCannabinoids] = useState<{ name: string; mg: number; priceAdd: number }[]>(label.cannabinoids ?? []);
+  const [unitsOrdered, setUnitsOrdered] = useState(label.unitsOrdered != null ? String(label.unitsOrdered) : "");
+  const [unitCost, setUnitCost] = useState(label.unitCost != null ? String(label.unitCost) : "");
+  const [totalCost, setTotalCost] = useState(label.totalCost != null ? String(label.totalCost) : "");
+
+  // Cannabinoid add-form local state
+  const [cbName, setCbName] = useState("");
+  const [cbMg, setCbMg] = useState("");
+
+  // Auto-calculate unitCost + totalCost from gummy spec
+  useEffect(() => {
+    if (!gummyOilType) return;
+    const u = parseFloat(unitsOrdered);
+    const result = calculateGummyPrice({
+      size: gummySize || "standard",
+      oilType: gummyOilType,
+      effect: gummyEffect || "hybrid",
+      cannabinoids: gummyCannabinoids.map((c) => ({ name: c.name as CannabinoidName, mg: c.mg })),
+      unitsOrdered: isNaN(u) || u <= 0 ? 0 : u,
+    });
+    setUnitCost(String(result.unitCost));
+    if (!isNaN(u) && u > 0) setTotalCost(String(result.totalCost));
+  }, [gummySize, gummyOilType, gummyEffect, gummyCannabinoids, unitsOrdered]);
 
   const { data: productsData } = useGetPrivateLabelProductsQuery({ activeOnly: true });
   const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
@@ -143,6 +173,18 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
     }
   }
 
+  function addCannabinoid() {
+    const mg = parseInt(cbMg, 10);
+    if (!cbName || mg <= 0) return;
+    const priceAdd = CANNABINOID_PRICES[cbName as CannabinoidName]?.[mg] ?? 0;
+    setGummyCannabinoids((prev) => [
+      ...prev.filter((c) => c.name !== cbName),
+      { name: cbName, mg, priceAdd },
+    ]);
+    setCbName("");
+    setCbMg("");
+  }
+
   const handleSubmit = async () => {
     if (!flavorName.trim()) return toast.error("Please enter a flavor name");
     if (!productType) return toast.error("Please select a product type");
@@ -169,6 +211,14 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
       formData.append("selectedFlavors", JSON.stringify(selectedFlavors));
       if (gummyColorHex) formData.append("gummyColorHex", gummyColorHex);
       if (gummyColorName) formData.append("gummyColorName", gummyColorName);
+      // Gummy spec
+      formData.append("size", gummySize);
+      formData.append("oilType", gummyOilType);
+      formData.append("effect", gummyEffect);
+      formData.append("cannabinoids", JSON.stringify(gummyCannabinoids));
+      if (unitsOrdered) formData.append("unitsOrdered", unitsOrdered);
+      if (unitCost) formData.append("unitCost", unitCost);
+      if (totalCost) formData.append("totalCost", totalCost);
 
       await updateLabel({ id: label._id, formData }).unwrap();
       toast.success("Label updated successfully!");
@@ -261,7 +311,6 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
               </div>
               <p className="text-xs text-muted-foreground">Actual production flavor(s) — used for AI recipe generation</p>
 
-              {/* Custom inline dropdown */}
               <div ref={flavorDropdownRef} className="relative">
                 <button
                   type="button"
@@ -370,6 +419,135 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Gummy Spec */}
+          <div className="rounded-xs border border-border p-3 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gummy Spec</p>
+
+            {/* Size / Oil Type / Effect */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Size</Label>
+                <Select value={gummySize} onValueChange={(v) => setGummySize(v as "standard" | "xl")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="xl">XL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Oil Type</Label>
+                <Select value={gummyOilType} onValueChange={(v) => setGummyOilType(v as "biomax" | "rosin")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="biomax">BioMax</SelectItem>
+                    <SelectItem value="rosin">Rosin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Effect</Label>
+                <Select value={gummyEffect} onValueChange={(v) => setGummyEffect(v as "hybrid" | "indica" | "sativa")}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="indica">Indica</SelectItem>
+                    <SelectItem value="sativa">Sativa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Cannabinoid add-ons */}
+            <div className="space-y-2">
+              <Label className="text-xs">Cannabinoid Add-ons</Label>
+              {gummyCannabinoids.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {gummyCannabinoids.map((c) => (
+                    <span key={c.name} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-xs bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-300">
+                      {c.name} {c.mg}mg
+                      {c.priceAdd > 0 && <span className="opacity-60">+${c.priceAdd.toFixed(2)}</span>}
+                      <button
+                        type="button"
+                        onClick={() => setGummyCannabinoids((prev) => prev.filter((cb) => cb.name !== c.name))}
+                        className="hover:text-destructive ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Select value={cbName} onValueChange={(v) => { setCbName(v); setCbMg(""); }}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm flex-1">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    {ALL_CANNABINOIDS.map((n) => (
+                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={cbMg} onValueChange={setCbMg} disabled={!cbName}>
+                  <SelectTrigger className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm w-36">
+                    <SelectValue placeholder="mg" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs border-border dark:border-white/20 bg-card">
+                    {(CANNABINOID_OPTIONS[cbName as keyof typeof CANNABINOID_OPTIONS] ?? []).map((mg) => (
+                      <SelectItem key={mg} value={String(mg)}>
+                        {mg}mg +${(CANNABINOID_PRICES[cbName as CannabinoidName]?.[mg] ?? 0).toFixed(2)}/unit
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xs border-border dark:border-white/20 bg-card h-9 shrink-0"
+                  disabled={!cbName || !cbMg}
+                  onClick={addCannabinoid}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Pricing — auto-calculated from spec */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Units Ordered</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 630"
+                  value={unitsOrdered}
+                  onChange={(e) => setUnitsOrdered(e.target.value)}
+                  className="rounded-xs border-border dark:border-white/20 bg-card h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Unit Cost ($)</Label>
+                <div className="rounded-xs border border-border bg-muted/40 h-9 px-3 flex items-center text-sm font-medium tabular-nums">
+                  {unitCost ? `$${parseFloat(unitCost).toFixed(4)}` : <span className="text-muted-foreground text-xs">Set oil type</span>}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Total Cost ($)</Label>
+                <div className="rounded-xs border border-border bg-muted/40 h-9 px-3 flex items-center text-sm font-semibold tabular-nums text-primary">
+                  {totalCost ? `$${parseFloat(totalCost).toFixed(2)}` : <span className="text-muted-foreground font-normal text-xs">Enter units</span>}
+                </div>
+              </div>
             </div>
           </div>
 
