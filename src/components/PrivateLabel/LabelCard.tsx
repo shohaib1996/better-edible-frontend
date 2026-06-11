@@ -31,15 +31,9 @@ import type {
   GummySize,
   GummyOilType,
   GummyEffect,
-  GummyFlavorMode,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
-import {
-  SIZES,
-  OIL_TYPES,
-  EFFECTS,
-  FLAVOR_MODES,
-} from "@/lib/gummyBuilderConfig";
+import { SIZES, OIL_TYPES, EFFECTS } from "@/lib/gummyBuilderConfig";
 import { SegmentGroup } from "./SegmentGroup";
 
 const UNIT_PRESETS = [630, 1000, 2000, 3000];
@@ -54,7 +48,6 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
   const [size, setSize] = useState<GummySize>(label.size);
   const [oilType, setOilType] = useState<GummyOilType>(label.oilType);
   const [effect, setEffect] = useState<GummyEffect>(label.effect);
-  const [flavorMode, setFlavorMode] = useState<GummyFlavorMode>(label.flavorMode);
   const [units, setUnits] = useState(label.unitsOrdered);
   const [cannabinoids, setCannabinoids] = useState(label.cannabinoids.map((c) => ({ name: c.name, mg: c.mg })));
   const [selectedKey, setSelectedKey] = useState("CBD-100");
@@ -64,14 +57,14 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
     [flavorsData],
   );
-  const maxFlavors = flavorMode === "mix" ? 3 : 1;
+  const maxFlavors = 3;
 
   const [updateDraft, { isLoading: isSaving }] = useUpdateDraftLabelMutation();
   const [deleteDraft, { isLoading: isDeleting }] = useDeleteDraftLabelMutation();
 
   const editPricing = useMemo(
-    () => calculateGummyPrice({ size, oilType, effect, flavorMode, cannabinoids, unitsOrdered: units }),
-    [size, oilType, effect, flavorMode, cannabinoids, units],
+    () => calculateGummyPrice({ size, oilType, effect, cannabinoids, unitsOrdered: units }),
+    [size, oilType, effect, cannabinoids, units],
   );
 
   const usedNames = new Set(cannabinoids.map((c) => c.name));
@@ -135,7 +128,6 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     setSize(label.size);
     setOilType(label.oilType);
     setEffect(label.effect);
-    setFlavorMode(label.flavorMode);
     setUnits(label.unitsOrdered);
     setCannabinoids(label.cannabinoids.map((c) => ({ name: c.name, mg: c.mg })));
     setEditing(false);
@@ -150,7 +142,6 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         size,
         oilType,
         effect,
-        flavorMode,
         cannabinoids,
         unitsOrdered: units,
         selectedFlavors,
@@ -177,7 +168,6 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     const oilLabel = label.oilType === "rosin" ? "Rosin" : "BioMax";
     const sizeLabel = label.size === "xl" ? "XL" : "Standard";
     const effectLabel = label.effect.charAt(0).toUpperCase() + label.effect.slice(1);
-    const flavorModeLabel = label.flavorMode === "mix" ? "Mix" : "Single";
     const gummyHue = label.gummyColorHex ? hexToHueRotation(label.gummyColorHex) : 0;
 
     return (
@@ -224,7 +214,6 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
               <Badge variant="outline" className="rounded-xs text-xs">{oilLabel}</Badge>
               <Badge variant="outline" className="rounded-xs text-xs">{sizeLabel}</Badge>
               <Badge variant="outline" className="rounded-xs text-xs">{effectLabel}</Badge>
-              <Badge variant="outline" className="rounded-xs text-xs">{flavorModeLabel} flavor</Badge>
               {label.cannabinoids.map((c) => (
                 <Badge key={c.name} variant="secondary" className="rounded-xs text-xs">{c.name} {c.mg}mg</Badge>
               ))}
@@ -296,23 +285,10 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
         </div>
       </div>
 
-      {/* Effect + Flavor Mode + Gummy Color */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Effect</p>
-          <SegmentGroup options={EFFECTS} value={effect} onChange={setEffect} />
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Flavor Mode</p>
-          <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={(v) => {
-            setFlavorMode(v);
-            if (v === "single" && selectedFlavors.length > 1) {
-              const trimmed = selectedFlavors.slice(0, 1);
-              setSelectedFlavors(trimmed);
-              fetchColor(trimmed);
-            }
-          }} />
-        </div>
+      {/* Effect */}
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Effect</p>
+        <SegmentGroup options={EFFECTS} value={effect} onChange={setEffect} />
       </div>
 
       {/* Flavors */}

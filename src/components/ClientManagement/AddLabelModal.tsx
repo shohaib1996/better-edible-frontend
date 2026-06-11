@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, ChevronsUpDown, Search, X, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useAddLabelForm, type AddLabelInitialValues } from "./useAddLabelForm";
 import { LabelComponentList } from "./LabelComponentList";
 import { LabelImageUpload } from "./LabelImageUpload";
@@ -42,7 +41,7 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const maxFlavors = form.flavorMode === "mix" ? 3 : 1;
+  const maxFlavors = 3;
 
   const filteredFlavors = useMemo(
     () =>
@@ -151,37 +150,6 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
               <p className="text-xs font-semibold text-primary uppercase tracking-wide">AI Recipe Data</p>
-            </div>
-
-            {/* Flavor Mode toggle */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Flavor Type</Label>
-              <div className="flex rounded-xs border border-border overflow-hidden w-fit">
-                <button
-                  type="button"
-                  onClick={() => form.handleFlavorModeChange("single")}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-medium transition-colors",
-                    form.flavorMode === "single"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  Single Flavor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => form.handleFlavorModeChange("mix")}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-medium transition-colors border-l border-border",
-                    form.flavorMode === "mix"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  Mixed Flavor
-                </button>
-              </div>
             </div>
 
             {/* Flavor Picker */}

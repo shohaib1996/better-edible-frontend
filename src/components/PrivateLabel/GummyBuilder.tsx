@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, CheckCircle2, Layers, Loader2 } from "lucide-react";
+import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,14 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SIZES, OIL_TYPES, EFFECTS, FLAVOR_MODES, UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
+import { SIZES, OIL_TYPES, EFFECTS, UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
 import { SegmentGroup, SectionLabel } from "./SegmentGroup";
 import { CannabinoidSelector } from "./CannabinoidSelector";
 import { GummyPricingCard } from "./GummyPricingCard";
 import { GummyQueue } from "./GummyQueue";
 import { FlavorPicker } from "./FlavorPicker";
-import { GummyVisual } from "./GummyVisual";
 import { useGummyBuilder, MAX_MIX_FLAVORS } from "@/lib/useGummyBuilder";
+
+function getTextColor(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "#1a1a1a" : "#ffffff";
+}
 
 interface Props {
   storeId: string;
@@ -31,10 +37,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     size, setSize,
     oilType, setOilType,
     effect, setEffect,
-    flavorMode,
     unitsOrdered, setUnitsOrdered,
     cannabinoids, setCannabinoids,
-    gummyHue,
     isColorLoading,
     colorInfo,
     queue, setQueue,
@@ -45,7 +49,6 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     grandTotal,
     totalQueued,
     isSaving,
-    handleFlavorModeChange,
     handleAddFlavor,
     handleRemoveFlavor,
     handleQueueCurrent,
@@ -55,8 +58,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
   return (
     <div className="space-y-4">
 
-      {/* Flavor Name + Units Ordered */}
-      <div className="grid grid-cols-1 sm:grid-cols-[3fr_1fr] gap-3 items-start">
+      {/* Flavor Name + Flavors + Units Ordered */}
+      <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3 items-start">
         <div>
           <SectionLabel>Flavor Name</SectionLabel>
           <Input
@@ -64,6 +67,17 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             placeholder="e.g. Tropical Wave, Mango Madness…"
             value={flavorName}
             onChange={(e) => setFlavorName(e.target.value)}
+          />
+        </div>
+        <div>
+          <SectionLabel>Flavors (up to 3)</SectionLabel>
+          <FlavorPicker
+            selectedFlavors={selectedFlavors}
+            allFlavors={allFlavors}
+            isLoadingFlavors={isLoadingFlavors}
+            maxFlavors={maxFlavors}
+            onAdd={handleAddFlavor}
+            onRemove={handleRemoveFlavor}
           />
         </div>
         <div>
@@ -88,8 +102,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </div>
       </div>
 
-      {/* Size + Oil Type */}
-      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Size + Oil Type + Effect */}
+      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <SectionLabel>Gummy Size</SectionLabel>
           <SegmentGroup options={SIZES} value={size} onChange={setSize} />
@@ -98,31 +112,9 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
           <SectionLabel>Oil Type</SectionLabel>
           <SegmentGroup options={OIL_TYPES} value={oilType} onChange={setOilType} />
         </div>
-      </div>
-
-      {/* Effect + Flavor Mode + Flavors */}
-      <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
           <SectionLabel>Effect</SectionLabel>
           <SegmentGroup options={EFFECTS} value={effect} onChange={setEffect} />
-        </div>
-        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
-          <SectionLabel>Flavor Mode</SectionLabel>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="shrink-0">
-              <SegmentGroup options={FLAVOR_MODES} value={flavorMode} onChange={handleFlavorModeChange} />
-            </div>
-            <div className="sm:flex-1 sm:min-w-0">
-              <FlavorPicker
-                selectedFlavors={selectedFlavors}
-                allFlavors={allFlavors}
-                isLoadingFlavors={isLoadingFlavors}
-                maxFlavors={maxFlavors}
-                onAdd={handleAddFlavor}
-                onRemove={handleRemoveFlavor}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -135,33 +127,52 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             onRemove={(name) => setCannabinoids((prev) => prev.filter((c) => c.name !== name))}
           />
         </div>
-        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4 flex flex-col items-center gap-3">
-          <div className="relative flex items-center justify-center">
-            <GummyVisual size={size} hue={gummyHue} />
-            {isColorLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xs">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
-            )}
-          </div>
-
-          {colorInfo && !isColorLoading && (
-            <div className="w-full rounded-xs border border-border bg-muted/20 px-3 py-2.5 space-y-2">
-              {/* Hex swatch + name */}
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-5 h-5 rounded-full shrink-0 border border-border"
-                  style={{ backgroundColor: colorInfo.hex }}
-                />
-                <span className="text-sm font-semibold text-foreground leading-tight">{colorInfo.name}</span>
-              </div>
-              {/* Rationale */}
-              <p className="text-sm text-muted-foreground leading-relaxed">{colorInfo.rationale}</p>
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
+          {isColorLoading ? (
+            <div className="rounded-xs border border-border flex items-center justify-center h-44">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
-          )}
-
-          {!colorInfo && !isColorLoading && (
-            <p className="text-xs text-muted-foreground text-center">Select a flavor to generate color</p>
+          ) : colorInfo ? (
+            <div className="rounded-xs overflow-hidden border border-border">
+              {/* Colored top */}
+              <div
+                className="flex flex-col items-center justify-center gap-2 px-4 py-6"
+                style={{ backgroundColor: colorInfo.hex }}
+              >
+                <Droplets className="w-7 h-7 opacity-70" style={{ color: getTextColor(colorInfo.hex) }} />
+                <p className="text-[11px] font-semibold uppercase tracking-widest opacity-70" style={{ color: getTextColor(colorInfo.hex) }}>
+                  {selectedFlavors.join(", ")}
+                </p>
+                <p className="text-xl font-bold text-center leading-tight" style={{ color: getTextColor(colorInfo.hex) }}>
+                  {flavorName || colorInfo.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(colorInfo.hex.toUpperCase())}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono mt-1 transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: "rgba(0,0,0,0.18)", color: getTextColor(colorInfo.hex) }}
+                >
+                  <Copy className="w-3 h-3" />
+                  {colorInfo.hex.toUpperCase()}
+                </button>
+              </div>
+              {/* Dark bottom */}
+              <div className="bg-neutral-900 px-4 py-3 space-y-2.5">
+                <div className="grid grid-cols-3 text-center divide-x divide-white/10">
+                  {(["R", "G", "B"] as const).map((ch, i) => (
+                    <div key={ch} className="px-2">
+                      <p className="text-[10px] text-white/40 uppercase">{ch}</p>
+                      <p className="text-base font-bold text-white">{[colorInfo.rgb.r, colorInfo.rgb.g, colorInfo.rgb.b][i]}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-white/50 italic text-center leading-relaxed">"{colorInfo.rationale}"</p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xs border border-dashed border-border flex items-center justify-center h-44">
+              <p className="text-xs text-muted-foreground text-center px-4">Select a flavor to generate your color card</p>
+            </div>
           )}
         </div>
       </div>

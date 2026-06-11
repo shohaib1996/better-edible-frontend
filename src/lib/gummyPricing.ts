@@ -7,7 +7,6 @@ interface IGummyConfig {
   size: "standard" | "xl";
   oilType: "biomax" | "rosin";
   effect: "hybrid" | "indica" | "sativa";
-  flavorMode: "single" | "mix";
   cannabinoids: { name: CannabinoidName; mg: number }[];
   unitsOrdered: number;
 }
@@ -27,7 +26,6 @@ export function calculateGummyPrice(config: IGummyConfig): IGummyPricingResult {
   const base = config.oilType === "rosin" ? 2.5 : 1.75;
   const size = config.size === "xl" ? 0.05 : 0;
   const effect = config.effect === "hybrid" ? 0 : 0.05;
-  const flavorMode = 0; // mix flavor no longer carries a surcharge
 
   const cannabinoidBreakdown = config.cannabinoids.map((c) => ({
     name: c.name,
@@ -36,7 +34,7 @@ export function calculateGummyPrice(config: IGummyConfig): IGummyPricingResult {
   }));
 
   const cannabinoidTotal = cannabinoidBreakdown.reduce((sum, c) => sum + c.priceAdd, 0);
-  const unitCost = parseFloat((base + size + effect + flavorMode + cannabinoidTotal).toFixed(4));
+  const unitCost = parseFloat((base + size + effect + cannabinoidTotal).toFixed(4));
   const totalCost = parseFloat((unitCost * config.unitsOrdered).toFixed(2));
 
   const isRatio = config.cannabinoids.length > 0;
@@ -49,7 +47,7 @@ export function calculateGummyPrice(config: IGummyConfig): IGummyPricingResult {
     isRatio,
     testingFee,
     testingFeeWaived,
-    breakdown: { base, size, effect, flavorMode, cannabinoids: cannabinoidBreakdown },
+    breakdown: { base, size, effect, cannabinoids: cannabinoidBreakdown },
   };
 }
 

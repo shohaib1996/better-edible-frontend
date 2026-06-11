@@ -19,7 +19,6 @@ export interface AddLabelInitialValues {
   gummyColorHex?: string;
   gummyColorName?: string;
   selectedFlavors?: string[];
-  flavorMode?: "single" | "mix";
 }
 
 export function useAddLabelForm(
@@ -48,7 +47,6 @@ export function useAddLabelForm(
   const [isDragging, setIsDragging] = useState(false);
 
   // AI recipe data
-  const [flavorMode, setFlavorMode] = useState<"single" | "mix">(initialValues?.flavorMode ?? "single");
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>(initialValues?.selectedFlavors ?? []);
   const [gummyColorHex, setGummyColorHex] = useState(initialValues?.gummyColorHex ?? "");
   const [gummyColorName, setGummyColorName] = useState(initialValues?.gummyColorName ?? "");
@@ -94,18 +92,8 @@ export function useAddLabelForm(
     }
   }
 
-  function handleFlavorModeChange(mode: "single" | "mix") {
-    setFlavorMode(mode);
-    if (mode === "single" && selectedFlavors.length > 1) {
-      const trimmed = [selectedFlavors[0]];
-      setSelectedFlavors(trimmed);
-      fetchColorForFlavors(trimmed);
-    }
-  }
-
   function handleAddFlavor(name: string) {
-    const max = flavorMode === "mix" ? 3 : 1;
-    if (selectedFlavors.length >= max) return;
+    if (selectedFlavors.length >= 3) return;
     const updated = [...selectedFlavors, name];
     setSelectedFlavors(updated);
     fetchColorForFlavors(updated);
@@ -137,7 +125,6 @@ export function useAddLabelForm(
     }
     setColorComponents([]);
     setFiles([]);
-    setFlavorMode(initialValues?.flavorMode ?? "single");
     setSelectedFlavors(initialValues?.selectedFlavors ?? []);
     setGummyColorHex(initialValues?.gummyColorHex ?? "");
     setGummyColorName(initialValues?.gummyColorName ?? "");
@@ -205,7 +192,6 @@ export function useAddLabelForm(
       if (initialValues?.submissionLabelId) {
         formData.append("submissionLabelId", initialValues.submissionLabelId);
       }
-      formData.append("flavorMode", flavorMode);
       if (selectedFlavors.length > 0) {
         formData.append("selectedFlavors", JSON.stringify(selectedFlavors));
       }
@@ -234,7 +220,6 @@ export function useAddLabelForm(
     flavorComponents, setFlavorComponents,
     colorComponents, setColorComponents,
     // AI recipe data
-    flavorMode, handleFlavorModeChange,
     selectedFlavors, handleAddFlavor, handleRemoveFlavor,
     gummyColorHex, gummyColorName, isColorLoading, fetchColorForFlavors,
     allFlavors, isLoadingFlavors,

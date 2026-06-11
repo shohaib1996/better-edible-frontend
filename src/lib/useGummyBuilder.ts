@@ -9,7 +9,6 @@ import type {
   GummySize,
   GummyOilType,
   GummyEffect,
-  GummyFlavorMode,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
 import { UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
@@ -44,7 +43,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
   const [size, setSize] = useState<GummySize>("standard");
   const [oilType, setOilType] = useState<GummyOilType>("biomax");
   const [effect, setEffect] = useState<GummyEffect>("hybrid");
-  const [flavorMode, setFlavorMode] = useState<GummyFlavorMode>("single");
   const [unitsOrdered, setUnitsOrdered] = useState(UNIT_OPTIONS[0]);
   const [cannabinoids, setCannabinoids] = useState<{ name: CannabinoidName; mg: number }[]>([]);
   const [gummyHue, setGummyHue] = useState(0);
@@ -58,13 +56,13 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     [flavorsData],
   );
 
-  const maxFlavors = flavorMode === "mix" ? MAX_MIX_FLAVORS : 1;
+  const maxFlavors = MAX_MIX_FLAVORS;
 
   const [createDraft, { isLoading: isSaving }] = useCreateDraftLabelMutation();
 
   const pricing = useMemo(
-    () => calculateGummyPrice({ size, oilType, effect, flavorMode, cannabinoids, unitsOrdered }),
-    [size, oilType, effect, flavorMode, cannabinoids, unitsOrdered],
+    () => calculateGummyPrice({ size, oilType, effect, cannabinoids, unitsOrdered }),
+    [size, oilType, effect, cannabinoids, unitsOrdered],
   );
   const grandTotal = pricing.totalCost + (pricing.testingFeeWaived ? 0 : pricing.testingFee);
   const totalQueued = queue.length + (flavorName.trim() ? 1 : 0);
@@ -91,15 +89,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     }
   }
 
-  function handleFlavorModeChange(mode: GummyFlavorMode) {
-    setFlavorMode(mode);
-    if (mode === "single" && selectedFlavors.length > 1) {
-      const trimmed = selectedFlavors.slice(0, 1);
-      setSelectedFlavors(trimmed);
-      fetchColorForFlavors(trimmed);
-    }
-  }
-
   function handleAddFlavor(name: string) {
     if (selectedFlavors.length >= maxFlavors) return;
     const updated = [...selectedFlavors, name];
@@ -119,7 +108,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     setSize("standard");
     setOilType("biomax");
     setEffect("hybrid");
-    setFlavorMode("single");
     setUnitsOrdered(UNIT_OPTIONS[0]);
     setCannabinoids([]);
     setGummyHue(0);
@@ -133,7 +121,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
       {
         id: Date.now().toString(),
         flavorName: flavorName.trim(),
-        selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue,
+        selectedFlavors, size, oilType, effect, cannabinoids, unitsOrdered, grandTotal, gummyHue,
         gummyColorHex: colorInfo?.hex,
         gummyColorName: colorInfo?.name,
       },
@@ -149,7 +137,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     const toSave: QueuedGummy[] = [
       ...queue,
       ...(hasCurrentForm
-        ? [{ id: "current", flavorName: flavorName.trim(), selectedFlavors, size, oilType, effect, flavorMode, cannabinoids, unitsOrdered, grandTotal, gummyHue, gummyColorHex: colorInfo?.hex, gummyColorName: colorInfo?.name }]
+        ? [{ id: "current", flavorName: flavorName.trim(), selectedFlavors, size, oilType, effect, cannabinoids, unitsOrdered, grandTotal, gummyHue, gummyColorHex: colorInfo?.hex, gummyColorName: colorInfo?.name }]
         : []),
     ];
 
@@ -161,7 +149,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
           size: item.size,
           oilType: item.oilType,
           effect: item.effect,
-          flavorMode: item.flavorMode,
           cannabinoids: item.cannabinoids,
           unitsOrdered: item.unitsOrdered,
           selectedFlavors: item.selectedFlavors,
@@ -186,7 +173,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     size, setSize,
     oilType, setOilType,
     effect, setEffect,
-    flavorMode,
     unitsOrdered, setUnitsOrdered,
     cannabinoids, setCannabinoids,
     gummyHue, setGummyHue,
@@ -204,7 +190,6 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     isColorLoading,
     colorInfo,
     // handlers
-    handleFlavorModeChange,
     handleAddFlavor,
     handleRemoveFlavor,
     handleQueueCurrent,

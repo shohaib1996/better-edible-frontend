@@ -2,7 +2,6 @@ import type {
   GummySize,
   GummyOilType,
   GummyEffect,
-  GummyFlavorMode,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
 
@@ -15,7 +14,6 @@ export type QueuedGummy = {
   size: GummySize;
   oilType: GummyOilType;
   effect: GummyEffect;
-  flavorMode: GummyFlavorMode;
   cannabinoids: { name: CannabinoidName; mg: number }[];
   unitsOrdered: number;
   grandTotal: number;
@@ -53,11 +51,6 @@ export const EFFECTS: OptionBtn<GummyEffect>[] = [
   { value: "hybrid", label: "Hybrid" },
   { value: "indica", label: "Indica", sub: "+$0.05" },
   { value: "sativa", label: "Sativa", sub: "+$0.05" },
-];
-
-export const FLAVOR_MODES: OptionBtn<GummyFlavorMode>[] = [
-  { value: "single", label: "Single Flavor" },
-  { value: "mix", label: "Mix Flavors" },
 ];
 
 // 70-unit increments starting at 140 up to 4200

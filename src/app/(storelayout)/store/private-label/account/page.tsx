@@ -214,7 +214,6 @@ function LabelCard({ label, onUpdate }: { label: IStoreDraftLabel; onUpdate: () 
           initialFlavors={label.selectedFlavors}
           initialColorHex={label.gummyColorHex}
           initialColorName={label.gummyColorName}
-          initialFlavorMode={label.flavorMode}
           onSuccess={onUpdate}
         />
       )}

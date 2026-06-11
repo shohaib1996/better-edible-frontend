@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Sparkles, X, ChevronsUpDown, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
 import { useUpdateLabelRecipeDataMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
 
@@ -25,7 +24,6 @@ interface RecipeDataModalProps {
   initialFlavors?: string[];
   initialColorHex?: string;
   initialColorName?: string;
-  initialFlavorMode?: "single" | "mix";
   onSuccess: () => void;
 }
 
@@ -37,10 +35,8 @@ export function RecipeDataModal({
   initialFlavors = [],
   initialColorHex = "",
   initialColorName = "",
-  initialFlavorMode = "single",
   onSuccess,
 }: RecipeDataModalProps) {
-  const [flavorMode, setFlavorMode] = useState<"single" | "mix">(initialFlavorMode);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>(initialFlavors);
   const [colorHex, setColorHex] = useState(initialColorHex);
   const [colorName, setColorName] = useState(initialColorName);
@@ -131,7 +127,6 @@ export function RecipeDataModal({
       await updateRecipeData({
         id: labelId,
         selectedFlavors,
-        flavorMode,
         ...(colorHex && { gummyColorHex: colorHex, gummyColorName: colorName }),
       }).unwrap();
       toast.success("Recipe data saved");
@@ -142,17 +137,8 @@ export function RecipeDataModal({
     }
   }
 
-  const maxFlavors = flavorMode === "mix" ? 3 : 1;
+  const maxFlavors = 3;
   const canAddMore = selectedFlavors.length < maxFlavors;
-
-  function handleFlavorModeChange(mode: "single" | "mix") {
-    setFlavorMode(mode);
-    if (mode === "single" && selectedFlavors.length > 1) {
-      const trimmed = [selectedFlavors[0]];
-      setSelectedFlavors(trimmed);
-      fetchColor(trimmed);
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -170,37 +156,6 @@ export function RecipeDataModal({
         </DialogHeader>
 
         <div className="space-y-4 pt-1">
-
-          {/* ── Flavor type toggle ── */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-semibold text-foreground">Flavor Type</p>
-            <div className="flex rounded-xs border border-border overflow-hidden w-fit">
-              <button
-                type="button"
-                onClick={() => handleFlavorModeChange("single")}
-                className={cn(
-                  "px-4 py-1.5 text-xs font-medium transition-colors",
-                  flavorMode === "single"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted"
-                )}
-              >
-                Single Flavor
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFlavorModeChange("mix")}
-                className={cn(
-                  "px-4 py-1.5 text-xs font-medium transition-colors border-l border-border",
-                  flavorMode === "mix"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted"
-                )}
-              >
-                Mixed Flavor
-              </button>
-            </div>
-          </div>
 
           {/* ── Flavor picker ── */}
           <div className="space-y-1.5">

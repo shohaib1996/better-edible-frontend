@@ -31,7 +31,6 @@ export interface IGummyPricingBreakdown {
   base: number;
   size: number;
   effect: number;
-  flavorMode: number;
   cannabinoids: ICannabinoidEntry[];
 }
 
@@ -85,7 +84,6 @@ export interface ICreateDraftLabelPayload {
   size: GummySize;
   oilType: GummyOilType;
   effect: GummyEffect;
-  flavorMode: GummyFlavorMode;
   cannabinoids: { name: CannabinoidName; mg: number }[];
   unitsOrdered: number;
   selectedFlavors?: string[];

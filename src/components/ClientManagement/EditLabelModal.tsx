@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, RefreshCw, ChevronsUpDown, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useUpdateLabelMutation } from "@/redux/api/PrivateLabel/labelApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
@@ -55,7 +54,6 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
   const [newFiles, setNewFiles] = useState<File[]>([]);
 
   // AI recipe data
-  const [flavorMode, setFlavorMode] = useState<"single" | "mix">(label.flavorMode ?? "single");
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>(label.selectedFlavors || []);
   const [gummyColorHex, setGummyColorHex] = useState(label.gummyColorHex || "");
   const [gummyColorName, setGummyColorName] = useState(label.gummyColorName || "");
@@ -123,16 +121,7 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
     }
   }
 
-  const maxFlavors = flavorMode === "mix" ? 3 : 1;
-
-  function handleFlavorModeChange(mode: "single" | "mix") {
-    setFlavorMode(mode);
-    if (mode === "single" && selectedFlavors.length > 1) {
-      const trimmed = [selectedFlavors[0]];
-      setSelectedFlavors(trimmed);
-      fetchColorForFlavors(trimmed);
-    }
-  }
+  const maxFlavors = 3;
 
   function handleAddFlavor(name: string) {
     if (selectedFlavors.length >= maxFlavors) return;
@@ -177,7 +166,6 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
       );
       formData.append("keepExistingImages", JSON.stringify(existingImages));
       newFiles.forEach((file) => formData.append("labelImages", file));
-      formData.append("flavorMode", flavorMode);
       formData.append("selectedFlavors", JSON.stringify(selectedFlavors));
       if (gummyColorHex) formData.append("gummyColorHex", gummyColorHex);
       if (gummyColorName) formData.append("gummyColorName", gummyColorName);
@@ -263,37 +251,6 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-primary" />
               <p className="text-xs font-semibold text-primary uppercase tracking-wide">AI Recipe Data</p>
-            </div>
-
-            {/* Flavor Mode toggle */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Flavor Type</Label>
-              <div className="flex rounded-xs border border-border overflow-hidden w-fit">
-                <button
-                  type="button"
-                  onClick={() => handleFlavorModeChange("single")}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-medium transition-colors",
-                    flavorMode === "single"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  Single Flavor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFlavorModeChange("mix")}
-                  className={cn(
-                    "px-4 py-1.5 text-xs font-medium transition-colors border-l border-border",
-                    flavorMode === "mix"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  Mixed Flavor
-                </button>
-              </div>
             </div>
 
             {/* Gummy Flavors */}
