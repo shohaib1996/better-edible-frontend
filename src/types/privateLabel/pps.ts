@@ -94,6 +94,7 @@ export interface IAiRecipe {
   lockedFlavorOilType: "lorann" | "extract";
   totalMolds: number;
   generatedAt: string;
+  sopSteps?: string[];
 }
 
 // ──────────────────────────────

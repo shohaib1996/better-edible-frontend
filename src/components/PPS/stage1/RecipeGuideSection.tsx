@@ -3,12 +3,11 @@
 import { useState } from "react";
 import {
   Loader2,
-  ChevronUp,
-  ChevronDown,
   FlaskConical,
   Palette,
   Sparkles,
   Lock,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +69,6 @@ function FlavorLines({
 }
 
 export default function RecipeGuideSection({ item, compact: c }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
   const [localRecipe, setLocalRecipe] = useState<IAiRecipe | undefined>(
     item.aiRecipe
   );
@@ -149,36 +147,14 @@ export default function RecipeGuideSection({ item, compact: c }: Props) {
   return (
     <div className="mx-5 mb-3 rounded-xs border bg-muted/20 overflow-hidden">
       {/* Header */}
-      <div
-        className={`flex items-center justify-between gap-2 ${
-          c ? "px-4 py-2.5" : "px-4 py-3"
-        }`}
-      >
-        {/* Left — collapse toggle */}
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity text-left"
-        >
-          <Sparkles
-            className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-primary shrink-0`}
-          />
-          <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>
-            AI Recipe Guide
-          </p>
-          <span
-            className={`${c ? "text-xs" : "text-sm"} text-muted-foreground`}
-          >
+      <div className={`flex items-center justify-between gap-2 ${c ? "px-4 py-2.5" : "px-4 py-3"}`}>
+        <div className="flex items-center gap-2">
+          <Sparkles className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-primary shrink-0`} />
+          <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>AI Recipe Guide</p>
+          <span className={`${c ? "text-xs" : "text-sm"} text-muted-foreground`}>
             · {recipe.totalMolds} molds
           </span>
-          {collapsed ? (
-            <ChevronDown className="w-4 h-4 text-muted-foreground ml-1" />
-          ) : (
-            <ChevronUp className="w-4 h-4 text-muted-foreground ml-1" />
-          )}
-        </button>
-
-        {/* Right — Regenerate button */}
+        </div>
         <Button
           size="sm"
           variant="outline"
@@ -195,170 +171,151 @@ export default function RecipeGuideSection({ item, compact: c }: Props) {
         </Button>
       </div>
 
-      {!collapsed && (
-        <div className="border-t">
-          {/* ── Flavor section ── */}
-          <div className={`${c ? "px-4 py-3" : "px-4 py-4"} space-y-3`}>
-            {recipe.flavorNote && (
-              <p className="text-xs text-muted-foreground italic">
-                {recipe.flavorNote}
-              </p>
-            )}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <FlaskConical
-                  className={`${
-                    c ? "w-3.5 h-3.5" : "w-4 h-4"
-                  } text-amber-500 shrink-0`}
-                />
-                <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>
-                  Flavor
-                </p>
-              </div>
-              {/* Tab toggle — locked type gets Lock icon */}
-              <div className="flex rounded-xs border overflow-hidden">
-                {(["lorann", "extract"] as FlavorTab[]).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setFlavorTab(tab)}
-                    className={`${
-                      c ? "text-xs px-2 py-1" : "text-xs px-3 py-1.5"
-                    } font-medium transition-colors flex items-center gap-1 ${
-                      flavorTab === tab
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {tab === recipe.lockedFlavorOilType && (
-                      <Lock className="w-2.5 h-2.5" />
-                    )}
-                    {tab === "lorann" ? "LorAnn" : "Extract"}
-                  </button>
-                ))}
-              </div>
+      <div className="border-t">
+        {/* ── Flavor section ── */}
+        <div className={`${c ? "px-4 py-3" : "px-4 py-4"} space-y-3`}>
+          {recipe.flavorNote && (
+            <p className="text-xs text-muted-foreground italic">{recipe.flavorNote}</p>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FlaskConical className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-amber-500 shrink-0`} />
+              <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>Flavor</p>
             </div>
-
-            <FlavorLines
-              lines={
-                flavorTab === "lorann"
-                  ? recipe.flavorLorann
-                  : recipe.flavorExtract
-              }
-              compact={c}
-            />
-
-            {(flavorTab === "lorann"
-              ? recipe.lorannMixingNote
-              : recipe.extractMixingNote) && (
-              <p
-                className={`${
-                  c ? "text-xs" : "text-sm"
-                } text-muted-foreground italic border-t pt-2`}
-              >
-                {flavorTab === "lorann"
-                  ? recipe.lorannMixingNote
-                  : recipe.extractMixingNote}
-              </p>
-            )}
+            <div className="flex rounded-xs border overflow-hidden">
+              {(["lorann", "extract"] as FlavorTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setFlavorTab(tab)}
+                  className={`${
+                    c ? "text-xs px-2 py-1" : "text-xs px-3 py-1.5"
+                  } font-medium transition-colors flex items-center gap-1 ${
+                    flavorTab === tab
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {tab === recipe.lockedFlavorOilType && <Lock className="w-2.5 h-2.5" />}
+                  {tab === "lorann" ? "LorAnn" : "Extract"}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* ── Color section ── */}
-          <div className="border-t">
-            <div className={`${c ? "px-4 py-3" : "px-4 py-4"} space-y-3`}>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Palette
-                    className={`${
-                      c ? "w-3.5 h-3.5" : "w-4 h-4"
-                    } text-purple-500 shrink-0`}
+          <FlavorLines
+            lines={flavorTab === "lorann" ? recipe.flavorLorann : recipe.flavorExtract}
+            compact={c}
+          />
+
+          {(flavorTab === "lorann" ? recipe.lorannMixingNote : recipe.extractMixingNote) && (
+            <p className={`${c ? "text-xs" : "text-sm"} text-muted-foreground italic border-t pt-2`}>
+              {flavorTab === "lorann" ? recipe.lorannMixingNote : recipe.extractMixingNote}
+            </p>
+          )}
+        </div>
+
+        {/* ── Color section ── */}
+        <div className="border-t">
+          <div className={`${c ? "px-4 py-3" : "px-4 py-4"} space-y-3`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Palette className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-purple-500 shrink-0`} />
+                <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>Color Dye</p>
+              </div>
+              {recipe.colorHexUsed && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className="w-5 h-5 rounded-xs border border-border shrink-0"
+                    style={{ backgroundColor: recipe.colorHexUsed }}
                   />
-                  <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>
-                    Color Dye
-                  </p>
+                  <span className="text-xs text-muted-foreground">
+                    {recipe.colorName ?? recipe.colorHexUsed}
+                  </span>
                 </div>
-                {recipe.colorHexUsed && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className="w-5 h-5 rounded-xs border border-border shrink-0"
-                      style={{ backgroundColor: recipe.colorHexUsed }}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {recipe.colorName ?? recipe.colorHexUsed}
-                    </span>
+              )}
+            </div>
+
+            {recipe.colorRecipe.length === 0 ? (
+              <p className={`${c ? "text-xs" : "text-sm"} text-muted-foreground`}>
+                Generating color…
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-xs border border-border bg-background/60 overflow-hidden">
+                  <div className="px-3 py-1.5 bg-muted/50 border-b border-border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Step 1 — Mix Concentrate
+                    </p>
+                  </div>
+                  <div className={`px-3 ${c ? "py-2" : "py-2.5"} space-y-2`}>
+                    {recipe.colorRecipe.map((line, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between gap-3 ${c ? "text-xs" : "text-sm"}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span
+                            className="w-4 h-4 rounded-xs shrink-0 border border-border"
+                            style={{ backgroundColor: line.hex }}
+                          />
+                          <span className="font-semibold truncate">{line.color}</span>
+                          <span className="text-muted-foreground">{line.pct}%</span>
+                        </div>
+                        <p className="font-bold tabular-nums shrink-0">~{line.dropsApprox} drops</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {recipe.batchColoringDrops > 0 && (
+                  <div className="rounded-xs border border-purple-200 bg-purple-50 dark:border-purple-800/40 dark:bg-purple-950/20 px-3 py-2.5 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Step 2 — Add to Batch
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Total concentrate drops · {recipe.totalMolds}-mold batch
+                      </p>
+                    </div>
+                    <Badge className="rounded-xs bg-purple-600 hover:bg-purple-600 text-white text-xs font-bold shrink-0">
+                      {recipe.batchColoringDrops} drops total
+                    </Badge>
                   </div>
                 )}
               </div>
+            )}
 
-              {recipe.colorRecipe.length === 0 ? (
-                <p className={`${c ? "text-xs" : "text-sm"} text-muted-foreground`}>
-                  Generating color…
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {/* Step 1 — mix the concentrate */}
-                  <div className="rounded-xs border border-border bg-background/60 overflow-hidden">
-                    <div className="px-3 py-1.5 bg-muted/50 border-b border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Step 1 — Mix Concentrate
-                      </p>
-                    </div>
-                    <div className={`px-3 ${c ? "py-2" : "py-2.5"} space-y-2`}>
-                      {recipe.colorRecipe.map((line, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center justify-between gap-3 ${
-                            c ? "text-xs" : "text-sm"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span
-                              className="w-4 h-4 rounded-xs shrink-0 border border-border"
-                              style={{ backgroundColor: line.hex }}
-                            />
-                            <span className="font-semibold truncate">{line.color}</span>
-                            <span className="text-muted-foreground">{line.pct}%</span>
-                          </div>
-                          <p className="font-bold tabular-nums shrink-0">
-                            ~{line.dropsApprox} drops
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Step 2 — add to batch */}
-                  {recipe.batchColoringDrops > 0 && (
-                    <div className="rounded-xs border border-purple-200 bg-purple-50 dark:border-purple-800/40 dark:bg-purple-950/20 px-3 py-2.5 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Step 2 — Add to Batch
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Total concentrate drops · {recipe.totalMolds}-mold batch
-                        </p>
-                      </div>
-                      <Badge className="rounded-xs bg-purple-600 hover:bg-purple-600 text-white text-xs font-bold shrink-0">
-                        {recipe.batchColoringDrops} drops total
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {recipe.colorMixingNote && (
-                <p
-                  className={`${
-                    c ? "text-xs" : "text-sm"
-                  } text-muted-foreground italic border-t pt-2`}
-                >
-                  {recipe.colorMixingNote}
-                </p>
-              )}
-            </div>
+            {recipe.colorMixingNote && (
+              <p className={`${c ? "text-xs" : "text-sm"} text-muted-foreground italic border-t pt-2`}>
+                {recipe.colorMixingNote}
+              </p>
+            )}
           </div>
         </div>
-      )}
+
+        {/* ── SOP section ── */}
+        {recipe.sopSteps && recipe.sopSteps.length > 0 && (
+          <div className="border-t">
+            <div className={`${c ? "px-4 py-3" : "px-4 py-4"} space-y-3`}>
+              <div className="flex items-center gap-2">
+                <ClipboardList className={`${c ? "w-3.5 h-3.5" : "w-4 h-4"} text-blue-500 shrink-0`} />
+                <p className={`${c ? "text-xs" : "text-sm"} font-semibold`}>Standard Operating Procedure</p>
+              </div>
+              <ol className="space-y-2">
+                {recipe.sopSteps.map((step, i) => (
+                  <li key={i} className={`flex gap-2.5 ${c ? "text-xs" : "text-sm"}`}>
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center mt-0.5">
+                      {i + 1}
+                    </span>
+                    <span className="text-foreground leading-relaxed">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
