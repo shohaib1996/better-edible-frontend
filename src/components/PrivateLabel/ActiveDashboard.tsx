@@ -158,7 +158,7 @@ export function ActiveDashboard({
                           ? `Production starts ${new Date(order.productionStartDate).toLocaleDateString()}`
                           : "Production date TBD"}
                       </span>
-                      <span className="font-bold">${(order.totalCost ?? 0).toFixed(2)}</span>
+                      <span className="font-bold">${(order.total ?? 0).toFixed(2)}</span>
                     </div>
                   </div>
                 );
