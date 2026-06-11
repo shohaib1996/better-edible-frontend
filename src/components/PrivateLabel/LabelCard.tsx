@@ -66,7 +66,7 @@ export function LabelCard({ label, storeId }: { label: IStoreDraftLabel; storeId
     () => calculateGummyPrice({ size, oilType, effect, cannabinoids, unitsOrdered: units }),
     [size, oilType, effect, cannabinoids, units],
   );
-
+// Ensure selected cannabinoid option is valid
   const usedNames = new Set(cannabinoids.map((c) => c.name));
   const availableOptions = ALL_CANNABINOIDS.filter((n) => !usedNames.has(n)).flatMap((n) =>
     CANNABINOID_OPTIONS[n].map((mg) => ({ key: `${n}-${mg}`, name: n as CannabinoidName, mg })),
