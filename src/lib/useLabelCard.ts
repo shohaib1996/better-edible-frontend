@@ -29,7 +29,14 @@ export function useLabelCard({ label, onUpdate }: { label: ILabel; onUpdate: () 
     label.color ||
     (label.flavorComponents && label.flavorComponents.length > 0) ||
     (label.colorComponents && label.colorComponents.length > 0) ||
-    label.specialInstructions;
+    label.specialInstructions ||
+    label.size ||
+    label.oilType ||
+    label.effect ||
+    (label.cannabinoids && label.cannabinoids.length > 0) ||
+    label.unitsOrdered ||
+    label.unitCost ||
+    label.totalCost;
 
   async function handleStageChange(newStage: string) {
     if (newStage === label.currentStage) return;

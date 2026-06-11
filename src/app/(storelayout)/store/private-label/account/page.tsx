@@ -307,7 +307,7 @@ function OrderCard({ order }: { order: IStoreOrder }) {
         <Separator />
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">{totalUnits.toLocaleString()} total units</span>
-          <span className="text-base font-bold text-primary tabular-nums">${(order.totalCost ?? 0).toFixed(2)}</span>
+          <span className="text-base font-bold text-primary tabular-nums">${(order.total ?? 0).toFixed(2)}</span>
         </div>
       </div>
     </Card>

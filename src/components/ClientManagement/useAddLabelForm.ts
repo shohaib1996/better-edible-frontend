@@ -19,6 +19,14 @@ export interface AddLabelInitialValues {
   gummyColorHex?: string;
   gummyColorName?: string;
   selectedFlavors?: string[];
+  // gummy spec fields passed through from store submission
+  size?: "standard" | "xl";
+  oilType?: "biomax" | "rosin";
+  effect?: "hybrid" | "indica" | "sativa";
+  cannabinoids?: { name: string; mg: number; priceAdd: number }[];
+  unitsOrdered?: number;
+  unitCost?: number;
+  totalCost?: number;
 }
 
 export function useAddLabelForm(
@@ -197,6 +205,13 @@ export function useAddLabelForm(
       }
       if (gummyColorHex) formData.append("gummyColorHex", gummyColorHex);
       if (gummyColorName) formData.append("gummyColorName", gummyColorName);
+      if (initialValues?.size) formData.append("size", initialValues.size);
+      if (initialValues?.oilType) formData.append("oilType", initialValues.oilType);
+      if (initialValues?.effect) formData.append("effect", initialValues.effect);
+      if (initialValues?.unitsOrdered) formData.append("unitsOrdered", String(initialValues.unitsOrdered));
+      if (initialValues?.cannabinoids?.length) formData.append("cannabinoids", JSON.stringify(initialValues.cannabinoids));
+      if (initialValues?.unitCost != null) formData.append("unitCost", String(initialValues.unitCost));
+      if (initialValues?.totalCost != null) formData.append("totalCost", String(initialValues.totalCost));
       files.forEach((file) => formData.append("labelImages", file));
 
       await createLabel(formData).unwrap();

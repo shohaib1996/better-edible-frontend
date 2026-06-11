@@ -187,6 +187,35 @@ export default function Stage1CookItemCard({
         ))}
       </div>
 
+      {/* Gummy Spec */}
+      {(item.gummySize || item.gummyOilType || item.gummyEffect || (item.gummyCannabinoids?.length ?? 0) > 0) && (
+        <div className={`mx-5 mb-3 rounded-xs border bg-muted/30 ${c ? "px-4 py-3" : "px-4 py-4"} space-y-2`}>
+          <p className={`${c ? "text-xs" : "text-sm"} font-semibold text-foreground`}>Gummy Spec</p>
+          <div className="flex flex-wrap gap-2">
+            {item.gummySize && (
+              <span className={`${c ? "text-xs" : "text-sm"} px-2 py-0.5 rounded-xs bg-background border border-border font-medium`}>
+                {item.gummySize === "xl" ? "XL" : "Standard"}
+              </span>
+            )}
+            {item.gummyOilType && (
+              <span className={`${c ? "text-xs" : "text-sm"} px-2 py-0.5 rounded-xs bg-background border border-border font-medium`}>
+                {item.gummyOilType === "biomax" ? "BioMax" : "Rosin"}
+              </span>
+            )}
+            {item.gummyEffect && (
+              <span className={`${c ? "text-xs" : "text-sm"} px-2 py-0.5 rounded-xs bg-background border border-border font-medium capitalize`}>
+                {item.gummyEffect}
+              </span>
+            )}
+            {(item.gummyCannabinoids ?? []).map((cb) => (
+              <span key={cb.name} className={`${c ? "text-xs" : "text-sm"} px-2 py-0.5 rounded-xs bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-300 font-medium`}>
+                {cb.name} {cb.mg}mg
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI Recipe Guide */}
       <RecipeGuideSection item={item} compact={c} />
 

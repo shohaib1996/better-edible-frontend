@@ -115,6 +115,11 @@ export interface ICookItem {
   colorComponents: IFormulationComponent[];
   productType: string;
   specialFormulation: boolean;
+  // Gummy spec (copied from Label at PPS push time)
+  gummySize?: "standard" | "xl";
+  gummyOilType?: "biomax" | "rosin";
+  gummyEffect?: "hybrid" | "indica" | "sativa";
+  gummyCannabinoids?: { name: string; mg: number; priceAdd: number }[];
   status: CookItemStatus;
   assignedMoldIds: string[];
   cookingMoldingStartTimestamp?: string;

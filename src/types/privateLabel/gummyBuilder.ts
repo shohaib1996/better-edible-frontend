@@ -145,7 +145,7 @@ export interface IGummyPool {
 export interface IStoreOrderItem {
   label: IStoreDraftLabel;
   quantity: number;
-  unitCost: number;
+  unitPrice: number;
   lineTotal: number;
 }
 
@@ -154,7 +154,7 @@ export interface IStoreOrder {
   store: string;
   client: string;
   items: IStoreOrderItem[];
-  totalCost: number;
+  total: number;
   status: "pending" | "in_production" | "shipped" | "delivered";
   productionStartDate?: string;
   expectedDeliveryDate?: string;

@@ -311,6 +311,13 @@ export function LabelRow({ label, clientId }: { label: IStoreDraftLabel; clientI
           gummyColorHex: label.gummyColorHex,
           gummyColorName: label.gummyColorName,
           selectedFlavors: label.selectedFlavors,
+          size: label.size,
+          oilType: label.oilType,
+          effect: label.effect,
+          cannabinoids: label.cannabinoids,
+          unitsOrdered: label.unitsOrdered,
+          unitCost: label.unitCost,
+          totalCost: label.totalCost,
         }}
       />
     </div>
