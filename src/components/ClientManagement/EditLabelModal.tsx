@@ -155,22 +155,13 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
 
   function handleAddFlavor(name: string) {
     if (selectedFlavors.length >= maxFlavors) return;
-    const updated = [...selectedFlavors, name];
-    setSelectedFlavors(updated);
+    setSelectedFlavors((prev) => [...prev, name]);
     setFlavorSearch("");
-    if (updated.length >= maxFlavors) setFlavorDropdownOpen(false);
-    fetchColorForFlavors(updated);
+    if (selectedFlavors.length + 1 >= maxFlavors) setFlavorDropdownOpen(false);
   }
 
   function handleRemoveFlavor(name: string) {
-    const updated = selectedFlavors.filter((f) => f !== name);
-    setSelectedFlavors(updated);
-    if (updated.length > 0) {
-      fetchColorForFlavors(updated);
-    } else {
-      setGummyColorHex("");
-      setGummyColorName("");
-    }
+    setSelectedFlavors((prev) => prev.filter((f) => f !== name));
   }
 
   function addCannabinoid() {
@@ -311,6 +302,19 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
               </div>
               <p className="text-xs text-muted-foreground">Actual production flavor(s) — used for AI recipe generation</p>
 
+              {selectedFlavors.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedFlavors.map((f) => (
+                    <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1 text-xs">
+                      {f}
+                      <button type="button" onClick={() => handleRemoveFlavor(f)} className="hover:text-destructive transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
               <div ref={flavorDropdownRef} className="relative">
                 <button
                   type="button"
@@ -362,39 +366,23 @@ export const EditLabelModal = ({ open, onClose, label, onSuccess }: EditLabelMod
                 )}
               </div>
 
-              {selectedFlavors.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {selectedFlavors.map((f) => (
-                    <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1 text-xs">
-                      {f}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFlavor(f)}
-                        className="hover:text-destructive transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Gummy Color */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label>Gummy Color</Label>
-                {selectedFlavors.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => fetchColorForFlavors(selectedFlavors)}
-                    disabled={isColorLoading}
-                    className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50 transition-opacity"
-                  >
-                    {isColorLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                    Regenerate
-                  </button>
-                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedFlavors.length === 0 || isColorLoading}
+                  onClick={() => fetchColorForFlavors(selectedFlavors)}
+                  className="rounded-xs h-7 text-xs gap-1.5 border-border dark:border-white/20 bg-card"
+                >
+                  {isColorLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  {gummyColorHex ? "Regenerate" : "Generate Color"}
+                </Button>
               </div>
               {isColorLoading ? (
                 <div className="flex items-center gap-2 rounded-xs border border-border bg-background px-3 h-12 text-xs text-muted-foreground">

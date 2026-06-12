@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Copy } from "lucide-react";
+import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Copy, Wand2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +51,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     isSaving,
     handleAddFlavor,
     handleRemoveFlavor,
+    handleAutoPickFlavors,
+    fetchColorForFlavors,
     handleQueueCurrent,
     handleSave,
   } = useGummyBuilder({ storeId, onSaved });
@@ -69,7 +71,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             onChange={(e) => setFlavorName(e.target.value)}
           />
         </div>
-        <div>
+        <div className="space-y-1.5">
           <SectionLabel>Flavors (up to 3)</SectionLabel>
           <FlavorPicker
             selectedFlavors={selectedFlavors}
@@ -79,6 +81,17 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             onAdd={handleAddFlavor}
             onRemove={handleRemoveFlavor}
           />
+          <button
+            type="button"
+            onClick={handleAutoPickFlavors}
+            disabled={isColorLoading || isLoadingFlavors}
+            className="flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-40 disabled:no-underline transition-opacity pt-0.5"
+          >
+            {isColorLoading
+              ? <Loader2 className="w-3 h-3 animate-spin" />
+              : <Wand2 className="w-3 h-3" />}
+            {selectedFlavors.length > 0 ? "Re-generate for me" : "Generate flavors & color for me"}
+          </button>
         </div>
         <div>
           <SectionLabel>Units Ordered</SectionLabel>
@@ -144,7 +157,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
                   {selectedFlavors.join(", ")}
                 </p>
                 <p className="text-xl font-bold text-center leading-tight" style={{ color: getTextColor(colorInfo.hex) }}>
-                  {flavorName || colorInfo.name}
+                  {colorInfo.name}
                 </p>
                 <button
                   type="button"
@@ -170,8 +183,23 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
               </div>
             </div>
           ) : (
-            <div className="rounded-xs border border-dashed border-border flex items-center justify-center h-44">
-              <p className="text-xs text-muted-foreground text-center px-4">Select a flavor to generate your color card</p>
+            <div className="rounded-xs border border-dashed border-border flex flex-col items-center justify-center gap-3 h-44 px-4">
+              <p className="text-xs text-muted-foreground text-center">
+                {selectedFlavors.length > 0
+                  ? "Color ready to generate"
+                  : "Select a flavor or use Generate for me"}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-xs gap-1.5 text-xs"
+                disabled={selectedFlavors.length === 0 || isColorLoading}
+                onClick={() => fetchColorForFlavors(selectedFlavors)}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Generate Color
+              </Button>
             </div>
           )}
         </div>

@@ -128,16 +128,11 @@ export function useAddLabelForm(
 
   function handleAddFlavor(name: string) {
     if (selectedFlavors.length >= 3) return;
-    const updated = [...selectedFlavors, name];
-    setSelectedFlavors(updated);
-    fetchColorForFlavors(updated);
+    setSelectedFlavors((prev) => [...prev, name]);
   }
 
   function handleRemoveFlavor(name: string) {
-    const updated = selectedFlavors.filter((f) => f !== name);
-    setSelectedFlavors(updated);
-    if (updated.length > 0) fetchColorForFlavors(updated);
-    else { setGummyColorHex(""); setGummyColorName(""); }
+    setSelectedFlavors((prev) => prev.filter((f) => f !== name));
   }
 
   function addCannabinoid(name: string, mg: number) {

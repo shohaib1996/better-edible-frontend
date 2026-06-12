@@ -102,6 +102,33 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     if (updated.length > 0) fetchColorForFlavors(updated);
   }
 
+  function handleAutoPickFlavors() {
+    if (allFlavors.length === 0) return;
+    const words = (flavorName.trim() || "")
+      .toLowerCase()
+      .split(/[\s,&+\-\/]+/)
+      .filter((w) => w.length > 2);
+
+    const matched: string[] = [];
+    for (const word of words) {
+      if (matched.length >= maxFlavors) break;
+      const hit = allFlavors.find(
+        (f) =>
+          !matched.includes(f.name) &&
+          (f.name.toLowerCase().includes(word) || word.includes(f.name.toLowerCase()))
+      );
+      if (hit) matched.push(hit.name);
+    }
+
+    // Fall back to a random flavor if no keyword matched
+    if (matched.length === 0) {
+      matched.push(allFlavors[Math.floor(Math.random() * allFlavors.length)].name);
+    }
+
+    setSelectedFlavors(matched);
+    fetchColorForFlavors(matched);
+  }
+
   function resetForm() {
     setFlavorName("");
     setSelectedFlavors([]);
@@ -192,6 +219,8 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     // handlers
     handleAddFlavor,
     handleRemoveFlavor,
+    handleAutoPickFlavors,
+    fetchColorForFlavors,
     handleQueueCurrent,
     handleSave,
   };

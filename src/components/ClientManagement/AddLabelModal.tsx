@@ -166,6 +166,19 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
               </div>
               <p className="text-xs text-muted-foreground">Actual production flavor(s) — used for AI recipe generation</p>
 
+              {form.selectedFlavors.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {form.selectedFlavors.map((f) => (
+                    <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1 text-xs">
+                      {f}
+                      <button type="button" onClick={() => form.handleRemoveFlavor(f)} className="hover:text-destructive transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
               <div ref={dropdownRef} className="relative">
                 <button
                   type="button"
@@ -217,35 +230,23 @@ export const AddLabelModal = ({ open, onClose, clientId, onSuccess, initialValue
                 )}
               </div>
 
-              {form.selectedFlavors.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {form.selectedFlavors.map((f) => (
-                    <Badge key={f} variant="secondary" className="rounded-xs gap-1.5 pl-2.5 pr-1.5 py-1 text-xs">
-                      {f}
-                      <button type="button" onClick={() => form.handleRemoveFlavor(f)} className="hover:text-destructive transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Gummy Color */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label>Gummy Color</Label>
-                {form.selectedFlavors.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => form.fetchColorForFlavors(form.selectedFlavors)}
-                    disabled={form.isColorLoading}
-                    className="flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50 transition-opacity"
-                  >
-                    {form.isColorLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                    Regenerate
-                  </button>
-                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={form.selectedFlavors.length === 0 || form.isColorLoading}
+                  onClick={() => form.fetchColorForFlavors(form.selectedFlavors)}
+                  className="rounded-xs h-7 text-xs gap-1.5 border-border dark:border-white/20 bg-card"
+                >
+                  {form.isColorLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  {form.gummyColorHex ? "Regenerate" : "Generate Color"}
+                </Button>
               </div>
               {form.isColorLoading ? (
                 <div className="flex items-center gap-2 rounded-xs border border-border bg-card px-3 h-12 text-xs text-muted-foreground">
