@@ -18,6 +18,7 @@ export const MAX_MIX_FLAVORS = 3;
 
 const SOURCE_HUE = 55;
 const COLOR_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-color`;
+const DETAILS_API_URL = `${process.env.NEXT_PUBLIC_API_URL}/store/labels/gummy-details`;
 
 export function hexToHueRotation(hex: string): number {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -48,6 +49,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
   const [gummyHue, setGummyHue] = useState(0);
   const [isColorLoading, setIsColorLoading] = useState(false);
   const [colorInfo, setColorInfo] = useState<{ hex: string; name: string; rationale: string; rgb: { r: number; g: number; b: number } } | null>(null);
+  const [colorRecipe, setColorRecipe] = useState<{ recipe: Array<{ color: string; drops: number; hex: string }>; mixing_note: string } | null>(null);
   const [queue, setQueue] = useState<QueuedGummy[]>([]);
 
   const { data: flavorsData, isLoading: isLoadingFlavors } = useGetFlavorsQuery();
@@ -81,6 +83,19 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
       if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
         setGummyHue(hexToHueRotation(hex));
         setColorInfo({ hex, name: data.name, rationale: data.rationale, rgb: data.rgb });
+        // Fetch dye recipe + flavor recipe via backend proxy (avoids CORS)
+        fetch(DETAILS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hex, flavor: flavors.join(", ") }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.recipe?.recipe) {
+              setColorRecipe({ recipe: d.recipe.recipe, mixing_note: d.recipe.mixing_note ?? "" });
+            }
+          })
+          .catch(() => undefined);
       }
     } catch {
       // silently fail — keep current hue
@@ -102,31 +117,83 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     if (updated.length > 0) fetchColorForFlavors(updated);
   }
 
-  function handleAutoPickFlavors() {
+  async function handleAutoPickFlavors() {
     if (allFlavors.length === 0) return;
-    const words = (flavorName.trim() || "")
-      .toLowerCase()
-      .split(/[\s,&+\-\/]+/)
-      .filter((w) => w.length > 2);
+    setIsColorLoading(true);
 
-    const matched: string[] = [];
-    for (const word of words) {
-      if (matched.length >= maxFlavors) break;
-      const hit = allFlavors.find(
-        (f) =>
-          !matched.includes(f.name) &&
-          (f.name.toLowerCase().includes(word) || word.includes(f.name.toLowerCase()))
-      );
-      if (hit) matched.push(hit.name);
+    const label = flavorName.trim() || selectedFlavors.join(", ");
+
+    try {
+      // Step 1: Get the AI color
+      const colorRes = await fetch(COLOR_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flavor: label }),
+      });
+      const colorData = await colorRes.json();
+      const hex: string | undefined = colorData?.hex;
+
+      if (hex && /^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        setGummyHue(hexToHueRotation(hex));
+        setColorInfo({ hex, name: colorData.name, rationale: colorData.rationale, rgb: colorData.rgb });
+
+        // Step 2: Get dye recipe + flavor components via backend proxy
+        const detailsRes = await fetch(DETAILS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hex, flavor: label }),
+        });
+        const details = await detailsRes.json();
+
+        if (details?.recipe?.recipe) {
+          setColorRecipe({ recipe: details.recipe.recipe, mixing_note: details.recipe.mixing_note ?? "" });
+        }
+
+        // Step 3: Pick library flavors from API-returned components
+        const lorann: Array<{ name: string }> = details?.flavorRecipe?.lorann?.components ?? [];
+        const extract: Array<{ name: string }> = details?.flavorRecipe?.extract?.components ?? [];
+        const seen = new Set<string>();
+        const componentNames: string[] = [];
+        for (const c of [...lorann, ...extract]) {
+          if (!seen.has(c.name)) { seen.add(c.name); componentNames.push(c.name); }
+        }
+
+        const matched: string[] = [];
+        for (const compName of componentNames) {
+          if (matched.length >= maxFlavors) break;
+          const compLower = compName.toLowerCase();
+          const hit = allFlavors.find(
+            (f) =>
+              !matched.includes(f.name) &&
+              (f.name.toLowerCase().includes(compLower) || compLower.includes(f.name.toLowerCase()))
+          );
+          if (hit) matched.push(hit.name);
+        }
+
+        // Fall back to keyword matching from the flavor name
+        if (matched.length === 0) {
+          const words = label.toLowerCase().split(/[\s,&+\-\/]+/).filter((w) => w.length > 2);
+          for (const word of words) {
+            if (matched.length >= maxFlavors) break;
+            const hit = allFlavors.find(
+              (f) =>
+                !matched.includes(f.name) &&
+                (f.name.toLowerCase().includes(word) || word.includes(f.name.toLowerCase()))
+            );
+            if (hit) matched.push(hit.name);
+          }
+          if (matched.length === 0) {
+            matched.push(allFlavors[Math.floor(Math.random() * allFlavors.length)].name);
+          }
+        }
+
+        setSelectedFlavors(matched);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setIsColorLoading(false);
     }
-
-    // Fall back to a random flavor if no keyword matched
-    if (matched.length === 0) {
-      matched.push(allFlavors[Math.floor(Math.random() * allFlavors.length)].name);
-    }
-
-    setSelectedFlavors(matched);
-    fetchColorForFlavors(matched);
   }
 
   function resetForm() {
@@ -139,6 +206,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     setCannabinoids([]);
     setGummyHue(0);
     setColorInfo(null);
+    setColorRecipe(null);
   }
 
   function handleQueueCurrent() {
@@ -216,6 +284,7 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     isSaving,
     isColorLoading,
     colorInfo,
+    colorRecipe,
     // handlers
     handleAddFlavor,
     handleRemoveFlavor,

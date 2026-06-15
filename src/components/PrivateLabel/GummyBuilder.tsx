@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Copy, Wand2, RefreshCw } from "lucide-react";
+import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Wand2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,6 +41,7 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     cannabinoids, setCannabinoids,
     isColorLoading,
     colorInfo,
+    colorRecipe,
     queue, setQueue,
     allFlavors,
     isLoadingFlavors,
@@ -147,39 +148,22 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
             </div>
           ) : colorInfo ? (
             <div className="rounded-xs overflow-hidden border border-border">
-              {/* Colored top */}
               <div
                 className="flex flex-col items-center justify-center gap-2 px-4 py-6"
                 style={{ backgroundColor: colorInfo.hex }}
               >
                 <Droplets className="w-7 h-7 opacity-70" style={{ color: getTextColor(colorInfo.hex) }} />
                 <p className="text-[11px] font-semibold uppercase tracking-widest opacity-70" style={{ color: getTextColor(colorInfo.hex) }}>
-                  {selectedFlavors.join(", ")}
+                  {flavorName || selectedFlavors.join(", ")}
                 </p>
                 <p className="text-xl font-bold text-center leading-tight" style={{ color: getTextColor(colorInfo.hex) }}>
                   {colorInfo.name}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(colorInfo.hex.toUpperCase())}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono mt-1 transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: "rgba(0,0,0,0.18)", color: getTextColor(colorInfo.hex) }}
-                >
-                  <Copy className="w-3 h-3" />
-                  {colorInfo.hex.toUpperCase()}
-                </button>
               </div>
-              {/* Dark bottom */}
-              <div className="bg-neutral-900 px-4 py-3 space-y-2.5">
-                <div className="grid grid-cols-3 text-center divide-x divide-white/10">
-                  {(["R", "G", "B"] as const).map((ch, i) => (
-                    <div key={ch} className="px-2">
-                      <p className="text-[10px] text-white/40 uppercase">{ch}</p>
-                      <p className="text-base font-bold text-white">{[colorInfo.rgb.r, colorInfo.rgb.g, colorInfo.rgb.b][i]}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-white/50 italic text-center leading-relaxed">"{colorInfo.rationale}"</p>
+              <div className="bg-neutral-900 px-4 py-4">
+                <p className="text-sm text-white/80 italic text-center leading-relaxed">
+                  "{colorInfo.rationale}"
+                </p>
               </div>
             </div>
           ) : (
