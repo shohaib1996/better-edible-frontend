@@ -1,0 +1,56 @@
+name: Build and Deploy AI
+
+on:
+  push:
+    branches:
+      - ai-branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/shohaib1996/better-edible-frontend:ai
+            ghcr.io/shohaib1996/better-edible-frontend:ai-${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_ENV=ai
+            NEXT_PUBLIC_API_URL=https://ai-api.better-edibles.com/api
+            NEXT_PUBLIC_PRINT_BRIDGE_URL=http://192.168.50.156:5050
+            NEXT_PUBLIC_PRINT_BRIDGE_KEY=change_this_to_a_strong_secret_key
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AI server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 143.244.182.86
+          username: deploy
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/apps/better-edibles
+            docker pull ghcr.io/shohaib1996/better-edible-frontend:ai
+            docker compose -f docker-compose.production.yml up -d --force-recreate ai-frontend
