@@ -10,6 +10,7 @@ import { DataTable } from "@/components/ReUsableComponents/DataTable";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { DeliveryFilters } from "@/components/Delivery/DeliveryFilters";
 import { buildDeliveryColumns } from "@/components/Delivery/DeliveryColumns";
+import { DeliveryMobileCard } from "@/components/Delivery/DeliveryMobileCard";
 
 const todayLocal = () => {
   const now = new Date();
@@ -162,7 +163,21 @@ export default function DeliveriesContent() {
         </Card>
       ) : (
         <div className="space-y-4">
-          <DataTable columns={columns} data={deliveries} />
+          {/* Mobile: card layout */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {deliveries.map((delivery, index) => (
+              <DeliveryMobileCard
+                key={delivery._id}
+                delivery={delivery}
+                index={index}
+                stopNumber={(currentPage - 1) * itemsPerPage + index + 1}
+              />
+            ))}
+          </div>
+          {/* Desktop: table layout */}
+          <div className="hidden md:block">
+            <DataTable columns={columns} data={deliveries} />
+          </div>
           <GlobalPagination
             currentPage={currentPage}
             totalPages={totalPages}
