@@ -189,6 +189,12 @@ const FollowUpCard = ({ followup: f, onReschedule, onResolve, onDelivery, onNewO
                   Due today
                 </Badge>
               )}
+              {f.setByDriver && (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-xs text-xs border-0 flex items-center gap-1">
+                  <Truck className="h-3 w-3" />
+                  Set by {f.setByName || "driver"}
+                </Badge>
+              )}
             </div>
             {(f.store.city || f.store.address) && (
               <p className="text-xs text-muted-foreground mt-0.5">

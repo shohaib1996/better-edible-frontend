@@ -27,6 +27,8 @@ export interface IFollowUp {
   status: FollowupStatus;
   resolvedAt?: string;
   history: IFollowupHistoryEntry[];
+  setByDriver?: boolean;   // true when a driver created this on behalf of the rep
+  setByName?: string;      // name of the driver who set it
   createdAt: string;
   updatedAt: string;
   __v: number;
