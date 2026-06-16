@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { SingleClientPage } from "@/components/ClientManagement/SingleClientPage";
 
 export default async function ManageClientDetailPage({

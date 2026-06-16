@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
 import { LoginForm } from "@/components/pages/Login/LoginForm";
 import Lottie from "lottie-react";

@@ -10,6 +10,7 @@ import { DataTable } from "@/components/ReUsableComponents/DataTable";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { DeliveryFilters } from "@/components/Delivery/DeliveryFilters";
 import { buildDeliveryColumns } from "@/components/Delivery/DeliveryColumns";
+import { DeliveryMobileCard } from "@/components/Delivery/DeliveryMobileCard";
 
 const todayLocal = () => {
   const now = new Date();
@@ -42,6 +43,7 @@ export default function DeliveriesContent() {
     ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
     : "";
 
+  // Fetch route order when a specific rep is selected
   const { data: deliveryOrderData } = useGetDeliveryOrderQuery(
     { repId: selectedRep, date: dateStr },
     { skip: !selectedRep || selectedRep === "all" || !dateStr }
@@ -49,13 +51,18 @@ export default function DeliveriesContent() {
 
   const rawDeliveries: Delivery[] = data?.deliveries || [];
 
+  // Build a stop-order map: deliveryId → 1-based stop number
+  const stopOrder: string[] = deliveryOrderData?.order || [];
+  const stopOrderMap = new Map<string, number>(
+    stopOrder.map((id, i) => [id, i + 1])
+  );
+
+  // Sort by route order when a rep is selected
   const sortedDeliveries: Delivery[] = (() => {
-    const stopOrder: string[] = deliveryOrderData?.order || [];
     if (!stopOrder.length) return rawDeliveries;
-    const indexed = new Map(stopOrder.map((id, i) => [id, i]));
     return [...rawDeliveries].sort((a, b) => {
-      const ai = indexed.has(a._id) ? indexed.get(a._id)! : 9999;
-      const bi = indexed.has(b._id) ? indexed.get(b._id)! : 9999;
+      const ai = stopOrderMap.has(a._id) ? stopOrderMap.get(a._id)! : 9999;
+      const bi = stopOrderMap.has(b._id) ? stopOrderMap.get(b._id)! : 9999;
       return ai - bi;
     });
   })();
@@ -106,7 +113,7 @@ export default function DeliveriesContent() {
     setCurrentPage(1);
   }
 
-  const columns = buildDeliveryColumns(currentPage, itemsPerPage);
+  const columns = buildDeliveryColumns(currentPage, itemsPerPage, stopOrderMap.size > 0 ? stopOrderMap : undefined);
 
   if (isLoading) {
     return (
@@ -162,7 +169,21 @@ export default function DeliveriesContent() {
         </Card>
       ) : (
         <div className="space-y-4">
-          <DataTable columns={columns} data={deliveries} />
+          {/* Mobile: card list */}
+          <div className="md:hidden space-y-3">
+            {deliveries.map((delivery, i) => (
+              <DeliveryMobileCard
+                key={delivery._id}
+                delivery={delivery}
+                index={(currentPage - 1) * itemsPerPage + i + 1}
+                stopNumber={stopOrderMap.get(delivery._id)}
+              />
+            ))}
+          </div>
+          {/* Desktop: data table */}
+          <div className="hidden md:block">
+            <DataTable columns={columns} data={deliveries} />
+          </div>
           <GlobalPagination
             currentPage={currentPage}
             totalPages={totalPages}

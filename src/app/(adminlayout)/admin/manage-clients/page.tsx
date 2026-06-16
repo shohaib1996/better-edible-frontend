@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
 import { ManageClientsPage } from "@/components/ClientManagement/ManageClientsPage";
 

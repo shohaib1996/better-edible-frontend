@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins, Manrope } from "next/font/google";
 import "./globals.css";

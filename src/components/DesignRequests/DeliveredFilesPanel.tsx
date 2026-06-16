@@ -1,18 +1,22 @@
 "use client";
+
 import { useRef, useState } from "react";
-import {
-  Upload, Download, Loader2, FileText, Trash2, Image as ImageIcon,
-  MessageSquare, CheckCircle2, ZoomIn, Sparkles, ChevronDown, ChevronUp,
-} from "lucide-react";
+import { Upload, Download, Send, Loader2, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
   useUploadCompletedFilesMutation,
+  useSendFilesToStoreMutation,
   useDeleteCompletedFileMutation,
 } from "@/redux/api/DesignRequests/designRequestsApi";
 import { ICompletedFile } from "@/types/designRequests/designRequests";
@@ -26,285 +30,225 @@ function groupByVersion(files: ICompletedFile[]): Record<number, ICompletedFile[
   }, {});
 }
 
-function isImage(fileName: string) {
-  return /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(fileName);
-}
-
 interface DeliveredFilesPanelProps {
   requestId: string;
   files: ICompletedFile[];
-  selectedVersion?: number | null;
 }
 
-export function DeliveredFilesPanel({ requestId, files, selectedVersion }: DeliveredFilesPanelProps) {
+export function DeliveredFilesPanel({ requestId, files }: DeliveredFilesPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [versionNote, setVersionNote] = useState("");
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [selectedFileIds, setSelectedFileIds] = useState<string[]>([]);
+
+  const [uploadCompleted, { isLoading: isUploading }] = useUploadCompletedFilesMutation();
+  const [sendFiles, { isLoading: isSending }] = useSendFilesToStoreMutation();
+  const [deleteFile] = useDeleteCompletedFileMutation();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const versionGroups = groupByVersion(files);
   const versions = Object.keys(versionGroups).map(Number).sort((a, b) => b - a);
-  const latestVersion = versions[0] ?? 0;
-
-  const [expandedVersions, setExpandedVersions] = useState<Set<number>>(
-    new Set(latestVersion > 0 ? [latestVersion] : [])
-  );
-
-  const [uploadCompleted, { isLoading: isUploading }] = useUploadCompletedFilesMutation();
-  const [deleteFile] = useDeleteCompletedFileMutation();
-
-  function toggleVersion(v: number) {
-    setExpandedVersions((prev) => {
-      const next = new Set(prev);
-      if (next.has(v)) next.delete(v); else next.add(v);
-      return next;
-    });
-  }
+  const unsentCount = files.filter((f) => !f.sent).length;
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files;
     if (!picked || picked.length === 0) return;
     const fd = new FormData();
     Array.from(picked).forEach((f) => fd.append("files", f));
-    if (versionNote.trim()) fd.append("versionNote", versionNote.trim());
     try {
       await uploadCompleted({ id: requestId, files: fd }).unwrap();
-      toast.success("Version uploaded — the store can see it now");
+      toast.success("Files uploaded successfully");
       e.target.value = "";
-      setVersionNote("");
     } catch {
       toast.error("Upload failed");
+    }
+  }
+
+  async function handleSend() {
+    if (selectedFileIds.length === 0) return;
+    try {
+      await sendFiles({ id: requestId, fileIds: selectedFileIds }).unwrap();
+      toast.success("Files sent to store");
+      setSelectedFileIds([]);
+    } catch {
+      toast.error("Failed to send files");
     }
   }
 
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeletingId(deleteTarget.id);
+    setDeleteTarget(null);
     try {
       await deleteFile({ id: requestId, fileId: deleteTarget.id }).unwrap();
       toast.success("File deleted");
+      setSelectedFileIds((prev) => prev.filter((x) => x !== deleteTarget.id));
     } catch {
-      toast.error("Could not delete file");
+      toast.error("Failed to delete file");
     }
     setDeletingId(null);
-    setDeleteTarget(null);
+  }
+
+  function toggleFile(fileId: string) {
+    setSelectedFileIds((prev) =>
+      prev.includes(fileId) ? prev.filter((x) => x !== fileId) : [...prev, fileId],
+    );
   }
 
   return (
     <>
-      {/* Deliverables panel */}
-      <div className="bg-card border border-border rounded-xs overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Deliverables</p>
-            {versions.length > 0 && (
-              <Badge variant="outline" className="rounded-xs text-xs h-5">
-                {versions.length} version{versions.length > 1 ? "s" : ""}
-              </Badge>
-            )}
-          </div>
-          {selectedVersion != null && (
-            <Badge className="rounded-xs text-xs bg-green-600 text-white border-0 gap-1">
-              <CheckCircle2 className="w-2.5 h-2.5" />
-              Store selected v{selectedVersion}
+    <div className="bg-card border border-border rounded-xs overflow-hidden">
+      <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Delivered Files
+          </p>
+          {unsentCount > 0 && (
+            <Badge
+              variant="outline"
+              className="rounded-xs text-[10px] h-5 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30"
+            >
+              {unsentCount} unsent
             </Badge>
           )}
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-xs h-7 text-xs gap-1.5 px-2.5"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+        >
+          {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+          {isUploading ? "Uploading…" : "Upload"}
+        </Button>
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
+      </div>
 
+      <div className="p-3 space-y-4">
         {versions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-            <ImageIcon className="w-8 h-8 text-muted-foreground/30 mb-2" />
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="w-12 h-12 rounded-xs bg-muted flex items-center justify-center mb-3">
+              <Upload className="w-5 h-5 text-muted-foreground/50" />
+            </div>
             <p className="text-sm text-muted-foreground">No files uploaded yet</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Upload your first version below — the store sees it immediately.</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5">Upload completed files to deliver.</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
-            {versions.map((v) => {
-              const vFiles = versionGroups[v];
-              const note = vFiles[0]?.versionNote;
-              const isSelected = selectedVersion === v;
-              const isExpanded = expandedVersions.has(v);
-              const imageFiles = vFiles.filter((f) => isImage(f.fileName));
-              const nonImageFiles = vFiles.filter((f) => !isImage(f.fileName));
-
-              return (
-                <div key={v} className={cn("transition-colors", isSelected && "bg-green-50/50 dark:bg-green-950/10")}>
-                  <button
-                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/30 transition-colors text-left"
-                    onClick={() => toggleVersion(v)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">Version {v}</span>
-                      {isSelected && (
-                        <Badge className="rounded-xs text-[10px] h-4 bg-green-600 text-white border-0 gap-0.5 px-1.5">
-                          <CheckCircle2 className="w-2 h-2" />
-                          Selected
-                        </Badge>
-                      )}
-                      <span className="text-[11px] text-muted-foreground">
-                        {new Date(vFiles[0].uploadedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        {" · "}{vFiles.length} file{vFiles.length > 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    {isExpanded
-                      ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-                      : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
-                  </button>
-
-                  {isExpanded && (
-                    <div className="border-t border-border">
-                      {note && (
-                        <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-900 px-4 py-2.5">
-                          <MessageSquare className="w-3 h-3 text-blue-500 mt-0.5 shrink-0" />
-                          <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">{note}</p>
-                        </div>
-                      )}
-                      {imageFiles.length > 0 && (
-                        <div className={cn(
-                          "grid gap-0.5",
-                          imageFiles.length === 1 ? "grid-cols-1" : imageFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"
-                        )}>
-                          {imageFiles.map((f) => (
-                            <div
-                              key={f._id}
-                              className="group relative aspect-video bg-muted cursor-pointer overflow-hidden"
-                              onClick={() => setLightboxUrl(f.url)}
-                            >
-                              <img src={f.url} alt={f.fileName} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/60 to-transparent">
-                                <span className="text-[10px] text-white truncate">{f.fileName}</span>
-                                <div className="flex items-center gap-1">
-                                  <a href={f.url} download className="text-white hover:text-primary-foreground" onClick={(e) => e.stopPropagation()} title="Download">
-                                    <Download className="w-3.5 h-3.5" />
-                                  </a>
-                                  {!isSelected && (
-                                    <button
-                                      className="text-white/70 hover:text-red-400 transition-colors"
-                                      onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: f._id, name: f.fileName }); }}
-                                      title="Delete"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {nonImageFiles.length > 0 && (
-                        <ul className="divide-y divide-border">
-                          {nonImageFiles.map((f) => (
-                            <li key={f._id} className="group flex items-center gap-3 px-4 py-3">
-                              <div className="w-8 h-8 rounded-xs bg-muted flex items-center justify-center shrink-0">
-                                <FileText className="w-4 h-4 text-muted-foreground" />
-                              </div>
-                              <span className="flex-1 text-xs truncate">{f.fileName}</span>
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                <a href={f.url} download className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" title="Download">
-                                  <Download className="w-3 h-3" />
-                                </a>
-                                {!isSelected && (
-                                  <button
-                                    className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                                    onClick={() => setDeleteTarget({ id: f._id, name: f.fileName })}
-                                    disabled={deletingId === f._id}
-                                    title="Delete"
-                                  >
-                                    {deletingId === f._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                                  </button>
-                                )}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
+          <>
+            {versions.map((v) => (
+              <div key={v}>
+                <div className="flex items-center gap-2 mb-1.5 px-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    v{v}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
-              );
-            })}
-          </div>
+                <ul className="space-y-1.5">
+                  {versionGroups[v].map((f) => (
+                    <li
+                      key={f._id}
+                      className={cn(
+                        "group flex items-center gap-2.5 rounded-xs px-3 py-2.5 border transition-all",
+                        f.sent
+                          ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
+                          : selectedFileIds.includes(f._id)
+                            ? "bg-primary/5 border-primary cursor-pointer"
+                            : "bg-muted/30 border-border hover:border-primary/50 cursor-pointer",
+                      )}
+                      onClick={() => !f.sent && toggleFile(f._id)}
+                    >
+                      {!f.sent && (
+                        <input
+                          type="checkbox"
+                          checked={selectedFileIds.includes(f._id)}
+                          onChange={() => toggleFile(f._id)}
+                          className="rounded-xs shrink-0 accent-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-xs flex items-center justify-center shrink-0",
+                          f.sent ? "bg-green-100 dark:bg-green-900/40" : "bg-background border border-border",
+                        )}
+                      >
+                        <FileText
+                          className={cn(
+                            "w-3 h-3",
+                            f.sent ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
+                          )}
+                        />
+                      </div>
+                      <span className="flex-1 text-xs truncate">{f.fileName}</span>
+                      {f.sent ? (
+                        <Badge
+                          variant="outline"
+                          className="rounded-xs text-[10px] h-5 text-green-700 dark:text-green-400 border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30 shrink-0"
+                        >
+                          Sent
+                        </Badge>
+                      ) : (
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
+                          <a
+                            href={f.url}
+                            download
+                            className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download"
+                          >
+                            <Download className="w-3 h-3" />
+                          </a>
+                          <button
+                            className="w-6 h-6 rounded-xs flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: f._id, name: f.fileName }); }}
+                            disabled={deletingId === f._id}
+                            title="Delete"
+                          >
+                            {deletingId === f._id
+                              ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : <Trash2 className="w-3 h-3" />
+                            }
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            {selectedFileIds.length > 0 && (
+              <Button className="w-full rounded-xs gap-2 h-9" onClick={handleSend} disabled={isSending}>
+                {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {isSending
+                  ? "Sending…"
+                  : `Send ${selectedFileIds.length} file${selectedFileIds.length > 1 ? "s" : ""} to Store`}
+              </Button>
+            )}
+          </>
         )}
+      </div>
+    </div>
 
-        {/* Upload new version */}
-        <div className="px-4 py-4 border-t border-border space-y-3 bg-muted/20">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Upload {versions.length === 0 ? "First Version" : `Version ${latestVersion + 1}`}
-          </p>
-          <Textarea
-            placeholder="Add a note for the store about this version… (optional)"
-            value={versionNote}
-            onChange={(e) => setVersionNote(e.target.value)}
-            className="rounded-xs resize-none min-h-[60px] text-sm bg-background border-border"
-          />
-          <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
-          <Button
-            className="w-full rounded-xs gap-2 h-9"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
+    <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+      <AlertDialogContent className="rounded-xs bg-card text-card-foreground">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="font-medium text-foreground">&ldquo;{deleteTarget?.name}&rdquo;</span> will be permanently removed. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="rounded-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={confirmDelete}
           >
-            {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            {isUploading ? "Uploading…" : "Upload Files"}
-          </Button>
-          <p className="text-[10px] text-muted-foreground text-center">
-            Files are visible to the store immediately after upload.
-          </p>
-        </div>
-      </div>
-
-      {/* AI Design Assistant stub */}
-      <div className="bg-card border border-border rounded-xs overflow-hidden">
-        <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-purple-500" />
-          <p className="text-sm font-semibold">AI Design Assistant</p>
-          <Badge variant="outline" className="rounded-xs text-[10px] h-4 px-1.5 text-muted-foreground ml-auto">Coming Soon</Badge>
-        </div>
-        <div className="px-4 py-5 flex flex-col items-center justify-center text-center gap-2">
-          <Sparkles className="w-8 h-8 text-purple-400/40" />
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Ask about layout options, Oregon cannabis compliance rules, or generate a concept draft.
-          </p>
-          <Button variant="outline" className="rounded-xs gap-2 mt-1 opacity-50 cursor-not-allowed" disabled>
-            <Sparkles className="w-3.5 h-3.5" />
-            Start a conversation
-          </Button>
-        </div>
-      </div>
-
-      {/* Lightbox */}
-      {lightboxUrl && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <img src={lightboxUrl} alt="Preview" className="max-w-full max-h-full object-contain rounded-sm shadow-2xl" />
-        </div>
-      )}
-
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
-        <AlertDialogContent className="rounded-xs bg-card text-card-foreground">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this file?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <span className="font-medium text-foreground">&ldquo;{deleteTarget?.name}&rdquo;</span> will be permanently removed. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xs">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmDelete}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }

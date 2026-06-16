@@ -4,6 +4,7 @@
 // - Store portal: /store/design-requests/new (source="store", allowTypeToggle=true)
 // - Admin modal: /admin/design-requests (source="admin", forcedType="inhouse")
 // - Rep page: /rep/design-requests (source="rep", forcedType="inhouse")
+// - Design requests modal: /admin/design-requests (source="admin", forcedType="inhouse")
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,46 +13,66 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { FileUploadZone } from "./FileUploadZone";
-import { DesignRequestType, DesignRequestSource, IDesignTemplate } from "@/types/designRequests/designRequests";
 import {
-  useSubmitDesignRequestMutation,
-  useUploadRequestFilesMutation,
-  useGetDesignTemplatesQuery,
-} from "@/redux/api/DesignRequests/designRequestsApi";
+  DesignRequestType,
+  DesignRequestSource,
+} from "@/types/designRequests/designRequests";
+import { useSubmitDesignRequestMutation } from "@/redux/api/DesignRequests/designRequestsApi";
+import { useUploadRequestFilesMutation } from "@/redux/api/DesignRequests/designRequestsApi";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { LayoutTemplate, ChevronDown, ChevronUp } from "lucide-react";
 
 const PRODUCT_LINES = ["CannaCrispy", "FiftyOneFifty", "Bliss", "YummyGummy"];
 const FORMAT_OPTIONS = [
-  "Social Media Post", "Banner", "Flyer", "Label", "Menu", "Poster",
-  "Business Card", "Logo", "Email Template", "Shelf Talker", "Other",
+  "Social Media Post",
+  "Banner",
+  "Flyer",
+  "Label",
+  "Menu",
+  "Poster",
+  "Business Card",
+  "Logo",
+  "Email Template",
+  "Other",
 ];
 
+// productLine is only required when requestType = "free" (free requests are company products only)
 const schema = z.object({
   requestType: z.enum(["free", "paid", "inhouse"] as const),
   productLine: z.string().optional(),
   format: z.string().min(1, "Please select a format"),
-  description: z.string().min(10, "Please describe what you need (at least 10 characters)"),
+  description: z
+    .string()
+    .min(10, "Please describe what you need (at least 10 characters)"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 interface DesignRequestFormProps {
+  // Who is submitting and from where — determines queueType on the backend
   source: DesignRequestSource;
-  submittedBy: string;
-  submittedByName: string;
-  storeId?: string;
-  storeName?: string;
-  contactId?: string;
+  submittedBy: string; // userId
+  submittedByName: string; // display name
+  storeId?: string; // required when source="store"
+  storeName?: string; // denormalized for quick display in request list
+  contactId?: string; // required when source="store" (links request to contact)
+  // When true, shows Free/Paid toggle (store users). When false or forcedType is set, toggle is hidden.
   allowTypeToggle?: boolean;
-  forcedType?: DesignRequestType;
+  forcedType?: DesignRequestType; // admin/rep always submit "inhouse" — no toggle shown
   onSuccess?: () => void;
 }
 
@@ -67,15 +88,12 @@ export function DesignRequestForm({
   onSuccess,
 }: DesignRequestFormProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<IDesignTemplate | null>(null);
-
-  const [submitRequest, { isLoading: isSubmitting }] = useSubmitDesignRequestMutation();
-  const [uploadFiles, { isLoading: isUploading }] = useUploadRequestFilesMutation();
+  const [submitRequest, { isLoading: isSubmitting }] =
+    useSubmitDesignRequestMutation();
+  const [uploadFiles, { isLoading: isUploading }] =
+    useUploadRequestFilesMutation();
+  // Single loading flag covers both the request creation and the file upload steps
   const isLoading = isSubmitting || isUploading;
-
-  const { data: templatesData } = useGetDesignTemplatesQuery({ active: true });
-  const templates = templatesData?.templates ?? [];
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -88,19 +106,12 @@ export function DesignRequestForm({
   });
 
   const requestType = form.watch("requestType");
+  // Product line dropdown only appears for free requests (company products only)
   const showProductLine = requestType === "free";
-
-  function applyTemplate(t: IDesignTemplate) {
-    setSelectedTemplate(t);
-    form.setValue("format", t.format);
-    if (t.productLine) form.setValue("productLine", t.productLine);
-    if (t.defaultDescription) form.setValue("description", t.defaultDescription);
-    setShowTemplates(false);
-    toast.success(`Template "${t.name}" applied`);
-  }
 
   async function onSubmit(values: FormValues) {
     try {
+      // Step 1: create the request record
       const result = await submitRequest({
         requestType: values.requestType,
         source,
@@ -112,10 +123,9 @@ export function DesignRequestForm({
         productLine: values.productLine,
         format: values.format,
         description: values.description,
-        templateId: selectedTemplate?._id,
-        templateName: selectedTemplate?.name,
       }).unwrap();
 
+      // Step 2: upload reference files if any were attached (uses the new request's _id)
       if (files.length > 0) {
         const fd = new FormData();
         files.forEach((f) => fd.append("files", f));
@@ -125,7 +135,6 @@ export function DesignRequestForm({
       toast.success("Request submitted");
       form.reset();
       setFiles([]);
-      setSelectedTemplate(null);
       onSuccess?.();
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to submit request");
@@ -135,52 +144,7 @@ export function DesignRequestForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-
-        {/* Template picker */}
-        {templates.length > 0 && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowTemplates((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              {selectedTemplate ? `Template: ${selectedTemplate.name}` : "Start from a template (optional)"}
-              {showTemplates ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-            {showTemplates && (
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {templates.map((t) => (
-                  <button
-                    key={t._id}
-                    type="button"
-                    onClick={() => applyTemplate(t)}
-                    className={cn(
-                      "group relative rounded-xs border-2 overflow-hidden text-left transition-all hover:border-primary",
-                      selectedTemplate?._id === t._id ? "border-primary" : "border-border"
-                    )}
-                  >
-                    <div className="aspect-video bg-muted overflow-hidden">
-                      {t.previewUrl ? (
-                        <img src={t.previewUrl} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <LayoutTemplate className="w-6 h-6 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="px-2 py-1.5">
-                      <p className="text-xs font-semibold line-clamp-1">{t.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{t.format} · {t.dimensions}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Free/Paid toggle */}
+        {/* Free/Paid toggle — only shown to store users, hidden when forcedType is set */}
         {allowTypeToggle && !forcedType && (
           <FormField
             control={form.control}
@@ -200,21 +164,16 @@ export function DesignRequestForm({
                           : "border-border text-muted-foreground hover:border-foreground"
                       }`}
                     >
-                      {t === "free" ? "Free — Our Products" : "Paid — Custom Design"}
+                      {t}
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {field.value === "free"
-                    ? "Assets for Better Edibles products are provided at no charge."
-                    : "Custom designs for your store brand are billed separately."}
-                </p>
               </FormItem>
             )}
           />
         )}
 
-        {/* Product line */}
+        {/* Product line — required for free requests (company products only) */}
         {showProductLine && (
           <FormField
             control={form.control}
@@ -222,15 +181,20 @@ export function DesignRequestForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Product Line</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className="rounded-xs border border-border bg-background">
-                      <SelectValue placeholder="Which product line is this for?" />
+                      <SelectValue placeholder="Select product line" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {PRODUCT_LINES.map((pl) => (
-                      <SelectItem key={pl} value={pl}>{pl}</SelectItem>
+                      <SelectItem key={pl} value={pl}>
+                        {pl}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -240,7 +204,6 @@ export function DesignRequestForm({
           />
         )}
 
-        {/* Format */}
         <FormField
           control={form.control}
           name="format"
@@ -250,12 +213,14 @@ export function DesignRequestForm({
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="rounded-xs border border-border bg-background">
-                    <SelectValue placeholder="What type of asset do you need?" />
+                    <SelectValue placeholder="Select format (e.g. Social Media Post, Banner…)" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {FORMAT_OPTIONS.map((f) => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -264,7 +229,6 @@ export function DesignRequestForm({
           )}
         />
 
-        {/* Description */}
         <FormField
           control={form.control}
           name="description"
@@ -273,7 +237,7 @@ export function DesignRequestForm({
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Describe what you need — include dimensions, colors, text, any references, and the intended use."
+                  placeholder="Describe what you need — include dimensions, colors, text, references, etc."
                   className="rounded-xs min-h-[120px] border border-border bg-background"
                   {...field}
                 />
@@ -283,15 +247,20 @@ export function DesignRequestForm({
           )}
         />
 
-        {/* Reference files */}
+        {/* Optional reference files — uploaded to Cloudinary after request is created */}
         <FileUploadZone
           files={files}
           onChange={setFiles}
           label="Reference Files (optional)"
         />
 
-        <Button type="submit" className="w-full rounded-xs" disabled={isLoading} size="lg">
-          {isLoading ? "Submitting…" : "Submit Request"}
+        <Button
+          type="submit"
+          className="w-full rounded-xs"
+          disabled={isLoading}
+          size="lg"
+        >
+          {isLoading ? "Submitting..." : "Submit Request"}
         </Button>
       </form>
     </Form>

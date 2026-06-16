@@ -5,13 +5,14 @@ import { toast } from "sonner";
 import { calculateGummyPrice } from "@/lib/gummyPricing";
 import { useCreateDraftLabelMutation } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { useGetFlavorsQuery } from "@/redux/api/flavor/flavorsApi";
+import { useGetOilContainersQuery } from "@/redux/api/oil/oilApi";
 import type {
   GummySize,
   GummyOilType,
   GummyEffect,
   CannabinoidName,
 } from "@/types/privateLabel/gummyBuilder";
-import { UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
+import { UNIT_OPTIONS, BIOMAX_EFFECTS, buildRosinEffects } from "@/lib/gummyBuilderConfig";
 import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
 
 export const MAX_MIX_FLAVORS = 3;
@@ -57,6 +58,33 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     () => [...(flavorsData?.flavors ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
     [flavorsData],
   );
+
+  // Fetch active Rosin containers to determine which strains are in stock
+  const { data: rosinContainersData } = useGetOilContainersQuery({
+    cannabisType: "Rosin",
+    status: "active",
+  });
+
+  // Derive unique available strains from active containers with remaining stock
+  const availableRosinStrains = useMemo(() => {
+    const containers = rosinContainersData?.containers ?? [];
+    const strains = new Set<string>();
+    for (const c of containers) {
+      if (c.remainingAmount > 0 && c.strain) {
+        strains.add(c.strain);
+      }
+    }
+    return Array.from(strains);
+  }, [rosinContainersData]);
+
+  // Build the effects list based on current oil type
+  const availableEffects = useMemo(() => {
+    if (oilType === "rosin") {
+      return buildRosinEffects(availableRosinStrains);
+    }
+    // BioMax — all three effects always available
+    return BIOMAX_EFFECTS;
+  }, [oilType, availableRosinStrains]);
 
   const maxFlavors = MAX_MIX_FLAVORS;
 
@@ -276,6 +304,9 @@ export function useGummyBuilder({ storeId, onSaved }: { storeId: string; onSaved
     allFlavors,
     isLoadingFlavors,
     maxFlavors,
+    // rosin inventory
+    availableRosinStrains,
+    availableEffects,
     // pricing
     pricing,
     grandTotal,

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
 import React, { useMemo } from "react";
 import { useGetAllProductsQuery } from "@/redux/api/Products/productsApi";

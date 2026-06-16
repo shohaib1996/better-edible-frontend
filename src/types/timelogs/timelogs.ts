@@ -1,3 +1,5 @@
+export type TimeLogSource = "door" | "web" | "mobile";
+
 export interface ITimelog {
   _id: string
   rep: {
@@ -7,6 +9,7 @@ export interface ITimelog {
   }
   checkinTime: string
   checkoutTime: string | null
+  source?: TimeLogSource   // where the clock event originated
   createdAt: string
   updatedAt: string
 }
@@ -27,6 +30,7 @@ export interface ITimelogSummary {
   repEmail?: string
   repPhone?: string
   repType?: string
+  payType?: "hourly" | "salary"
   totalHours: number
   totalMinutes: number
   totalMinutesWorked: number

@@ -13,32 +13,36 @@ export const followupsApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.followups],
     }),
 
-    // 🟨 Get all followups (supports filters + pagination)
+    // 🟨 Get all followups (admin — supports filters + pagination)
     getAllFollowups: builder.query({
       query: ({
         storeId,
         repId,
         date,
         storeName,
+        status,
         page = 1,
         limit = 20,
       }: {
         storeId?: string;
         repId?: string;
         date?: string;
-        page?: number;
         storeName?: string;
+        status?: string;
+        page?: number;
         limit?: number;
       }) => ({
         url: "/followups",
-        params: {
-          storeId,
-          repId,
-          page,
-          date,
-          storeName,
-          limit,
-        },
+        params: { storeId, repId, page, date, storeName, status, limit },
+      }),
+      providesTags: [tagTypes.followups],
+    }),
+
+    // 🟦 Get follow-ups for a specific rep, bucketed (overdue/today/upcoming)
+    getRepFollowups: builder.query({
+      query: ({ repId, status }: { repId: string; status?: string }) => ({
+        url: `/followups/rep/${repId}`,
+        params: status ? { status } : {},
       }),
       providesTags: [tagTypes.followups],
     }),
@@ -49,7 +53,27 @@ export const followupsApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.followups],
     }),
 
-    // 🟧 Update followup
+    // 🔁 Reschedule followup (extend thread to new date)
+    rescheduleFollowup: builder.mutation({
+      query: ({ id, data }: { id: string; data: { followupDate: string; comments?: string; interestLevel?: string } }) => ({
+        url: `/followups/${id}/reschedule`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: [tagTypes.followups],
+    }),
+
+    // ✅ Resolve followup (close it)
+    resolveFollowup: builder.mutation({
+      query: ({ id, data }: { id: string; data?: { comments?: string; interestLevel?: string } }) => ({
+        url: `/followups/${id}/resolve`,
+        method: "PATCH",
+        body: data || {},
+      }),
+      invalidatesTags: [tagTypes.followups],
+    }),
+
+    // 🟧 Update followup (general edit — backwards compat)
     updateFollowup: builder.mutation({
       query: ({ id, data }: { id: string; data: any }) => ({
         url: `/followups/${id}`,
@@ -73,7 +97,10 @@ export const followupsApi = baseApi.injectEndpoints({
 export const {
   useCreateFollowupMutation,
   useGetAllFollowupsQuery,
+  useGetRepFollowupsQuery,
   useGetFollowupByIdQuery,
+  useRescheduleFollowupMutation,
+  useResolveFollowupMutation,
   useUpdateFollowupMutation,
   useDeleteFollowupMutation,
 } = followupsApi;

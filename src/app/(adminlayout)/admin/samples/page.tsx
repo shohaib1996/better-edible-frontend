@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 import SamplesListContent from "./samples-content";
 import SamplesLoading from "./loading";

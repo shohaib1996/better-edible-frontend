@@ -20,7 +20,7 @@ import { toast } from "sonner";
 declare global {
   interface Window {
     google: any;
-    initOrderMap?: () => void;
+    initOrderMap: () => void;
   }
 }
 

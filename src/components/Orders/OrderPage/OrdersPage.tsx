@@ -34,9 +34,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { IOrder, IRep } from "@/types";
-import { Map } from "lucide-react";
-import dynamic from "next/dynamic";
-const OrderMapView = dynamic(() => import("./OrderMapView"), { ssr: false });
 
 const OrdersPage = ({
   isRepView = false,
@@ -48,7 +45,6 @@ const OrdersPage = ({
   currentRep?: Partial<IRep> | null;
 }) => {
   const [activeTab, setActiveTab] = useState(isRepView ? "all" : "new");
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -327,51 +323,19 @@ const OrdersPage = ({
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <OrdersHeader
-            onNewOrder={() => {
-              setEditingOrder({ repId: isRepView ? currentRepId : "" });
-              setModalOpen(true);
-            }}
-            reps={reps}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedRepName={selectedRepName}
-            setSelectedRepName={setSelectedRepName}
-            isRepView={isRepView}
-          />
-        </div>
-        {!isRepView && (
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden ml-4 shrink-0">
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
-                viewMode === "list" ? "bg-orange-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-              List
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors",
-                viewMode === "map" ? "bg-orange-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-              )}
-            >
-              <Map className="h-4 w-4" />
-              Map
-            </button>
-          </div>
-        )}
-      </div>
+      <OrdersHeader
+        onNewOrder={() => {
+          setEditingOrder({ repId: isRepView ? currentRepId : "" }); // Pre-fill repId if in rep view
+          setModalOpen(true);
+        }}
+        reps={reps}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedRepName={selectedRepName}
+        setSelectedRepName={setSelectedRepName}
+        isRepView={isRepView}
+      />
 
-      {viewMode === "map" && !isRepView ? (
-        <OrderMapView />
-      ) : (
-        <>
       <OrdersTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -391,9 +355,6 @@ const OrdersPage = ({
         onShippedPageChange={setShippedPage}
         onShippedLimitChange={setShippedLimit}
       />
-
-      </>
-      )}
 
       <EntityModal
         key={editingOrder?._id || "new"} // ✅ Forces fresh modal on change

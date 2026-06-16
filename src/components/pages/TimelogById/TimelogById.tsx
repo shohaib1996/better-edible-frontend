@@ -11,7 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Monitor, Smartphone, DoorOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Column, DataTable } from "../../ReUsableComponents/DataTable";
 import { ITimelog } from "@/types";
@@ -131,6 +131,23 @@ const TimelogById = ({ id }: { id: string }) => {
           {calculateWorkedHours(row.checkinTime, row.checkoutTime)}
         </span>
       ),
+    },
+    {
+      key: "source",
+      header: "Source",
+      render: (row) => {
+        const src = row.source || "web";
+        const config = {
+          door: { label: "Door", icon: <DoorOpen className="size-3" />, cls: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200" },
+          web:  { label: "Web",  icon: <Monitor className="size-3" />,    cls: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200" },
+          mobile: { label: "App", icon: <Smartphone className="size-3" />, cls: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200" },
+        }[src] ?? { label: src, icon: null, cls: "bg-muted text-muted-foreground border-border" };
+        return (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${config.cls}`}>
+            {config.icon}{config.label}
+          </span>
+        );
+      },
     },
     {
       key: "phone",

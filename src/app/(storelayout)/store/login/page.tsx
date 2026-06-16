@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useForm } from "react-hook-form";

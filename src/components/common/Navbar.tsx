@@ -67,13 +67,10 @@ export default function Navbar() {
           <Button
             size="lg"
             className="relative overflow-hidden bg-linear-to-r from-[#4EAF6A] to-[#76C893] text-white font-body hover:opacity-90 shadow-md"
-            asChild
           >
-            <a href="/store2/login">
-              <span className="relative z-10 flex items-center gap-2">
-                Retailer Access
-              </span>
-            </a>
+            <span className="relative z-10 flex items-center gap-2">
+              Retailer Access
+            </span>
           </Button>
         </nav>
 
@@ -115,11 +112,8 @@ export default function Navbar() {
               <Button
                 size="sm"
                 className="bg-linear-to-r from-[#4EAF6A] to-[#76C893] text-white font-body hover:opacity-90"
-                asChild
               >
-                <a href="/store2/login">
-                  Retailer Access
-                </a>
+                Retailer Access
               </Button>
               <AnimatedThemeToggler className="cursor-pointer text-accent" />
             </div>
