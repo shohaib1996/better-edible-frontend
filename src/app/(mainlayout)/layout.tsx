@@ -1,14 +1,7 @@
-import Footer from "@/components/common/Footer";
-import Navbar from "@/components/common/Navbar";
+export const dynamic = 'force-dynamic';
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div>
-      <Navbar />
-      <main className="">{children}</main>
-      <Footer />
-    </div>
-  );
+  return <>{children}</>;
 };
 
 export default MainLayout;

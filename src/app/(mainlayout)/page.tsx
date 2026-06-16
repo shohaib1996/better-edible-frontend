@@ -1,9 +1,8 @@
-import HomePage from "@/components/pages/Home/HomePage";
+"use client";
+export const dynamic = 'force-dynamic';
+
+import BioMaxHome from "@/components/pages/BioMax/BioMaxHome";
 
 export default function Home() {
-  return (
-    <>
-      <HomePage />
-    </>
-  );
+  return <BioMaxHome />;
 }
