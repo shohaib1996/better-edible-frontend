@@ -183,6 +183,22 @@ export const StoreListItem = ({
                 variant="secondary"
                 size="sm"
                 className="rounded-xs cursor-pointer h-7 w-7 p-0"
+                onClick={() => onOpenOrders(store._id)}
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Orders</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="rounded-xs cursor-pointer h-7 w-7 p-0"
                 onClick={() => onOpenCreateOrder(store)}
               >
                 <FilePlus className="h-3.5 w-3.5" />
@@ -206,22 +222,6 @@ export const StoreListItem = ({
             </TooltipTrigger>
             <TooltipContent>
               <p>Sample</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="rounded-xs cursor-pointer h-7 w-7 p-0"
-                onClick={() => onOpenOrders(store._id)}
-              >
-                <ShoppingCart className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Orders</p>
             </TooltipContent>
           </Tooltip>
 

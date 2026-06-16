@@ -121,6 +121,22 @@ export const StoreCard = ({
                   variant="secondary"
                   size="sm"
                   className="rounded-xs cursor-pointer"
+                  onClick={() => onOpenOrders(store._id)}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Orders</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-xs cursor-pointer"
                   onClick={() => onOpenCreateOrder(store)}
                 >
                   <FilePlus className="h-4 w-4" />
@@ -144,22 +160,6 @@ export const StoreCard = ({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Sample</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-xs cursor-pointer"
-                  onClick={() => onOpenOrders(store._id)}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Orders</p>
               </TooltipContent>
             </Tooltip>
 
