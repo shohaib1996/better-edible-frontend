@@ -24,7 +24,6 @@ export default function FollowUpsContent() {
   const [selectedFollowup, setSelectedFollowup] = useState<IFollowUp | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [statusFilter, setStatusFilter] = useState<"open" | "resolved" | "all">("open");
 
   const { data: repsData } = useGetAllRepsQuery({});
   const debouncedSearch = useDebounced({ searchQuery: search, delay: 500 });
@@ -33,7 +32,6 @@ export default function FollowUpsContent() {
     repId: selectedRepId,
     date: showAll ? undefined : format(selectedDate, "yyyy-MM-dd"),
     storeName: debouncedSearch,
-    status: statusFilter === "all" ? undefined : statusFilter,
     page: currentPage,
     limit: itemsPerPage,
   });
@@ -63,23 +61,6 @@ export default function FollowUpsContent() {
       <div className="flex items-center gap-2">
         <CalendarDays className="h-6 w-6 text-primary" />
         <h1 className="text-xl md:text-2xl font-semibold text-foreground">Follow Ups</h1>
-      </div>
-
-      {/* Status tabs */}
-      <div className="flex gap-1 p-1 bg-muted rounded-xs w-fit">
-        {(["open", "resolved", "all"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
-            className={`px-3 py-1 text-sm rounded-xs capitalize transition-colors ${
-              statusFilter === s
-                ? "bg-background text-foreground shadow-sm font-medium"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
       </div>
 
       <FollowUpFilters

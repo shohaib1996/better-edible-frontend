@@ -8,6 +8,8 @@ import type {
   ISubmitDesignRequestBody,
   IPostCommentBody,
   IRequestRevisionBody,
+  IDesignTemplate,
+  IDesignTemplatesResponse,
 } from "@/types/designRequests/designRequests";
 
 export const designRequestsApi = baseApi.injectEndpoints({
@@ -16,22 +18,18 @@ export const designRequestsApi = baseApi.injectEndpoints({
       query: (body) => ({ url: "/design-requests", method: "POST", body }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     getDesignRequests: builder.query<IDesignRequestsResponse, IGetDesignRequestsParams | void>({
       query: (params) => ({ url: "/design-requests", params: params ?? {} }),
       providesTags: [tagTypes.designRequests],
     }),
-
     getMyDesignRequests: builder.query<{ success: boolean; requests: IDesignRequest[] }, { contactId: string }>({
       query: (params) => ({ url: "/design-requests/mine", params }),
       providesTags: [tagTypes.designRequests],
     }),
-
     getDesignRequestById: builder.query<IDesignRequestResponse, string>({
       query: (id) => ({ url: `/design-requests/${id}` }),
       providesTags: [tagTypes.designRequests],
     }),
-
     updateRequestStatus: builder.mutation<IDesignRequestResponse, { id: string; status: string }>({
       query: ({ id, status }) => ({
         url: `/design-requests/${id}/status`,
@@ -40,7 +38,6 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     uploadRequestFiles: builder.mutation<{ success: boolean; uploadedFiles: IDesignRequest["uploadedFiles"] }, { id: string; files: FormData }>({
       query: ({ id, files }) => ({
         url: `/design-requests/${id}/upload-files`,
@@ -49,7 +46,6 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     uploadCompletedFiles: builder.mutation<{ success: boolean; completedFiles: IDesignRequest["completedFiles"] }, { id: string; files: FormData }>({
       query: ({ id, files }) => ({
         url: `/design-requests/${id}/completed-files`,
@@ -58,7 +54,6 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     sendFilesToStore: builder.mutation<IDesignRequestResponse, { id: string; fileIds: string[] }>({
       query: ({ id, fileIds }) => ({
         url: `/design-requests/${id}/send-files`,
@@ -67,7 +62,6 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     postComment: builder.mutation<{ success: boolean; comments: IDesignRequest["comments"] }, { id: string; body: IPostCommentBody }>({
       query: ({ id, body }) => ({
         url: `/design-requests/${id}/comments`,
@@ -76,7 +70,6 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     requestRevision: builder.mutation<IDesignRequestResponse, { id: string; body: IRequestRevisionBody }>({
       query: ({ id, body }) => ({
         url: `/design-requests/${id}/request-revision`,
@@ -85,12 +78,37 @@ export const designRequestsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.designRequests],
     }),
-
     deleteCompletedFile: builder.mutation<{ success: boolean; completedFiles: IDesignRequest["completedFiles"] }, { id: string; fileId: string }>({
       query: ({ id, fileId }) => ({
         url: `/design-requests/${id}/completed-files/${fileId}`,
         method: "DELETE",
       }),
+      invalidatesTags: [tagTypes.designRequests],
+    }),
+    // Store selects a preferred version
+    selectVersion: builder.mutation<IDesignRequestResponse, { id: string; version: number }>({
+      query: ({ id, version }) => ({
+        url: `/design-requests/${id}/select-version`,
+        method: "POST",
+        body: { version },
+      }),
+      invalidatesTags: [tagTypes.designRequests],
+    }),
+    // Design Templates
+    getDesignTemplates: builder.query<IDesignTemplatesResponse, { active?: boolean; category?: string; productLine?: string } | void>({
+      query: (params) => ({ url: "/design-templates", params: params ?? {} }),
+      providesTags: [tagTypes.designRequests],
+    }),
+    createDesignTemplate: builder.mutation<{ success: boolean; template: IDesignTemplate }, FormData>({
+      query: (body) => ({ url: "/design-templates", method: "POST", body }),
+      invalidatesTags: [tagTypes.designRequests],
+    }),
+    updateDesignTemplate: builder.mutation<{ success: boolean; template: IDesignTemplate }, { id: string; body: FormData | Record<string, unknown> }>({
+      query: ({ id, body }) => ({ url: `/design-templates/${id}`, method: "PUT", body }),
+      invalidatesTags: [tagTypes.designRequests],
+    }),
+    deleteDesignTemplate: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `/design-templates/${id}`, method: "DELETE" }),
       invalidatesTags: [tagTypes.designRequests],
     }),
   }),
@@ -108,4 +126,9 @@ export const {
   usePostCommentMutation,
   useRequestRevisionMutation,
   useDeleteCompletedFileMutation,
+  useSelectVersionMutation,
+  useGetDesignTemplatesQuery,
+  useCreateDesignTemplateMutation,
+  useUpdateDesignTemplateMutation,
+  useDeleteDesignTemplateMutation,
 } = designRequestsApi;

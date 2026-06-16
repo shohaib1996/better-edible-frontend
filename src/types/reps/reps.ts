@@ -1,6 +1,5 @@
 export type RepType = "rep" | "delivery" | "both" | "designer" | "pps" | "production" | "packaging";
 export type RepStatus = "active" | "inactive" | "suspended";
-export type PayType = "hourly" | "salary";
 
 export interface IRep extends Document {
   _id: string;
@@ -14,10 +13,6 @@ export interface IRep extends Document {
   assignedStores: string[];
   checkin: boolean;
   status: RepStatus;
-  fobId?: string | null;         // RFID fob UID
-  payType: PayType;              // "hourly" (weekly) or "salary" (semi-monthly)
-  hourlyRate?: number | null;    // $ per hour (hourly employees)
-  semiMonthlyAmount?: number | null; // $ per semi-monthly period (salary employees)
   createdAt: Date;
   updatedAt: Date;
   storeCount: number;

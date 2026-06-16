@@ -37,44 +37,25 @@ export const GUMMY_COLORS: GummyColor[] = [
   { label: "Lime",        hue: 25,  swatch: "#C8E000" }, // lime ≈ 80° → 80-55 = 25°
 ];
 
-// 9g = standard (no extra cost), 17g = XL (+$0.10/unit)
 export const SIZES: OptionBtn<GummySize>[] = [
-  { value: "standard", label: "9g", sub: "standard" },
-  { value: "xl", label: "17g", sub: "XL · +$0.10/unit" },
+  { value: "standard", label: "Standard" },
+  { value: "xl", label: "XL", sub: "+$0.05/unit" },
 ];
 
-// Oil type is the first selection — sets the base price
 export const OIL_TYPES: OptionBtn<GummyOilType>[] = [
-  { value: "biomax", label: "BioMax", sub: "$1.75 base" },
-  { value: "rosin", label: "Rosin", sub: "$2.50 base" },
+  { value: "biomax", label: "BioMax", sub: "$1.75/unit" },
+  { value: "rosin", label: "Rosin", sub: "$2.50/unit" },
 ];
 
-// BioMax effects — always available (botanical terpenes added during cook)
-export const BIOMAX_EFFECTS: OptionBtn<GummyEffect>[] = [
+export const EFFECTS: OptionBtn<GummyEffect>[] = [
   { value: "hybrid", label: "Hybrid" },
   { value: "indica", label: "Indica", sub: "+$0.05" },
   { value: "sativa", label: "Sativa", sub: "+$0.05" },
 ];
-
-// Keep EFFECTS as alias for BioMax effects (used in legacy code)
-export const EFFECTS = BIOMAX_EFFECTS;
-
-// Rosin effects are built dynamically from active oil containers with remaining stock.
-// Each active Rosin container has a strain field ("Indica" | "Sativa" | "Hybrid").
-// The configurator queries active containers and builds this list at runtime.
-export function buildRosinEffects(availableStrains: string[]): OptionBtn<GummyEffect>[] {
-  const strainMap: Record<string, OptionBtn<GummyEffect>> = {
-    Hybrid:  { value: "hybrid",  label: "Rosin Hybrid" },
-    Indica:  { value: "indica",  label: "Rosin Indica",  sub: "+$0.05" },
-    Sativa:  { value: "sativa",  label: "Rosin Sativa",  sub: "+$0.05" },
-  };
-  return availableStrains
-    .filter((s) => strainMap[s])
-    .map((s) => strainMap[s]);
-}
 
 // 70-unit increments starting at 140 up to 4200
 export const UNIT_OPTIONS: number[] = Array.from(
   { length: Math.floor((4200 - 140) / 70) + 1 },
   (_, i) => 140 + i * 70,
 );
+
