@@ -259,7 +259,82 @@ export default function RepsPage() {
         </div>
       </div>
 
-      <DataTable<IRep> columns={columns} data={reps} isLoading={isLoading} />
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : reps.map((rep) => (
+          <div key={rep._id} className="bg-card border border-border rounded-md p-4 space-y-3">
+            {/* Name + clock status */}
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-foreground">{rep.name}</p>
+                <p className="text-xs text-muted-foreground capitalize mt-0.5">{rep.repType}</p>
+              </div>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                rep.checkin
+                  ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200"
+                  : "bg-muted text-muted-foreground border border-border"
+              }`}>
+                <span className={`w-2 h-2 mr-1 rounded-full ${rep.checkin ? "bg-emerald-500" : "bg-gray-400"}`} />
+                {rep.checkin ? "Clocked In" : "Clocked Out"}
+              </span>
+            </div>
+            {/* Action buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <Link href={`/admin/reps/notes/${rep._id}`}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1.5 rounded-xs bg-transparent h-9 px-3">
+                  <FileText className="size-4" />
+                  Notes
+                </Button>
+              </Link>
+              <Link href={`/admin/reps/${rep._id}`}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1.5 rounded-xs bg-transparent h-9 px-3">
+                  <Clock className="size-4" />
+                  Clock
+                </Button>
+              </Link>
+              <Button
+                size="sm"
+                variant="default"
+                className="flex items-center gap-1.5 rounded-xs h-9 px-3"
+                onClick={() => handleLoginAsRep(rep)}
+              >
+                <LogIn className="size-4" />
+                Login As
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex items-center gap-1.5 rounded-xs bg-transparent h-9 px-3"
+                onClick={() => { setEditingRep(rep); setOpen(true); }}
+              >
+                <Pen className="size-4" />
+                Edit
+              </Button>
+              <ConfirmDialog
+                trigger={
+                  <Button size="sm" variant="outline" className="flex items-center gap-1.5 rounded-xs bg-transparent h-9 px-3 hover:bg-destructive/10 hover:border-destructive">
+                    <Trash2 className="size-4 text-destructive" />
+                    Delete
+                  </Button>
+                }
+                title="Delete Representative"
+                description={`Are you sure you want to delete ${rep.name}? This action cannot be undone.`}
+                confirmText="Yes, Delete"
+                onConfirm={() => deleteRep(rep._id)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: data table */}
+      <div className="hidden md:block">
+        <DataTable<IRep> columns={columns} data={reps} isLoading={isLoading} />
+      </div>
 
       <EntityModal<IRep>
         open={open}
