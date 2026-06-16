@@ -58,6 +58,24 @@ export const repApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.reps],
     }),
+    // Kiosk clock — single toggle via fob or PIN
+    kioskClock: builder.mutation({
+      query: (body: { pin?: string; fobId?: string }) => ({
+        url: "/reps/kiosk-clock",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [tagTypes.reps],
+    }),
+    // Assign or remove a fob from a rep
+    assignFob: builder.mutation({
+      query: ({ id, fobId }: { id: string; fobId: string | null }) => ({
+        url: `/reps/${id}/assign-fob`,
+        method: "POST",
+        body: { fobId },
+      }),
+      invalidatesTags: [tagTypes.reps],
+    }),
   }),
 });
 
@@ -70,4 +88,6 @@ export const {
   useCheckOutRepMutation,
   useResetPasswordMutation,
   useResetPinMutation,
+  useKioskClockMutation,
+  useAssignFobMutation,
 } = repApi;
