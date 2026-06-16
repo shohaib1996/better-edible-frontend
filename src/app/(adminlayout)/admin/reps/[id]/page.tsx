@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import TimelogById from "@/components/pages/TimelogById/TimelogById";
 
 const RepPage = async ({ params }: { params: Promise<{ id: string }> }) => {

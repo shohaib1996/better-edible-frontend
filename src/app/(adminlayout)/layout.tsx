@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
-
 export const dynamic = 'force-dynamic';
+import { cookies } from "next/headers";
 import {
   SidebarProvider,
   SidebarTrigger,

@@ -33,20 +33,11 @@ export const timelogsApi = baseApi.injectEndpoints({
       },
       providesTags: [tagTypes.timelogs],
     }),
-    kioskClock: builder.mutation({
-      query: (body: { pin?: string; fobId?: string }) => ({
-        url: `/reps/kiosk-clock`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.timelogs],
-    }),
   }),
 });
 
 export const {
   useGetAllTimeLogsQuery,
   useGetTimelogsByRepIdQuery,
-  useGetTimelogsSummaryQuery,
-  useKioskClockMutation,
+  useGetTimelogsSummaryQuery
 } = timelogsApi;

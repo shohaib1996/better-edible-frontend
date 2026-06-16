@@ -60,7 +60,7 @@ export const repApi = baseApi.injectEndpoints({
     }),
     kioskClock: builder.mutation({
       query: (body) => ({
-        url: "/reps/kiosk-clock",
+        url: `/reps/kiosk-clock`,
         method: "POST",
         body,
       }),

@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = 'force-dynamic';
 
 import { useState } from "react";
 import { Plus, Pencil, Archive, ArchiveRestore, ImageIcon, Eye, Download, Copy, ExternalLink, FileText, Tag, Calendar, Layers } from "lucide-react";

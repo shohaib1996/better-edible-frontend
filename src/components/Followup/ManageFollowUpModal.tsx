@@ -134,14 +134,12 @@ export const ManageFollowUpModal = ({
         if (!finalRepId) {
           return toast.error("Missing rep information.");
         }
-        const isDriver = user?.repType === "delivery" || user?.repType === "both";
         await createFollowup({
           followupDate: formattedDate,
           interestLevel,
           comments,
           store: storeId,
           rep: finalRepId,
-          ...(isDriver ? { setByDriver: true, setByName: user?.name } : {}),
         }).unwrap();
         toast.success("Follow-up created!");
       }

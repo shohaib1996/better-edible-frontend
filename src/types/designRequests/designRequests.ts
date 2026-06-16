@@ -22,6 +22,8 @@ export interface IUploadedFile {
   url: string;
   fileName: string;
   uploadedAt: string;
+  /** True if this file is an AI-generated concept image */
+  isConcept?: boolean;
 }
 
 export interface ICompletedFile {
@@ -32,6 +34,11 @@ export interface ICompletedFile {
   sent: boolean;
   sentAt?: string;
   version: number;
+  /** Designer note attached to this version */
+  versionNote?: string;
+  /** True if the store selected this version */
+  selectedByStore?: boolean;
+  selectedAt?: string;
 }
 
 export interface IDesignRequest {
@@ -46,11 +53,15 @@ export interface IDesignRequest {
   productLine?: string;
   format?: string;
   description: string;
+  templateId?: string;
+  templateName?: string;
   status: DesignRequestStatus;
   uploadedFiles: IUploadedFile[];
   completedFiles: ICompletedFile[];
   comments: IComment[];
   revisionCount: number;
+  /** Version number the store selected (null = not yet selected) */
+  selectedVersion?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -88,6 +99,8 @@ export interface ISubmitDesignRequestBody {
   productLine?: string;
   format: string;
   description: string;
+  templateId?: string;
+  templateName?: string;
 }
 
 export interface IPostCommentBody {
@@ -101,4 +114,24 @@ export interface IRequestRevisionBody {
   authorId: string;
   authorName: string;
   message: string;
+}
+
+// Design Templates
+export interface IDesignTemplate {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  format: string;
+  productLine?: string | null;
+  defaultDescription: string;
+  previewUrl: string;
+  dimensions: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface IDesignTemplatesResponse {
+  success: boolean;
+  templates: IDesignTemplate[];
 }

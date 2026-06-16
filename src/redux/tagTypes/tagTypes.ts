@@ -32,5 +32,4 @@ export const tagTypes = {
   storePools: "storePools",
   storeOrders: "storeOrders",
   storeSubmissions: "storeSubmissions",
-  guestLog: "guestLog",
 };

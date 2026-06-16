@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCreateOilContainerMutation } from "@/redux/api/oil/oilApi";
-import type { CannabisType, RosinStrain } from "@/types/privateLabel/pps";
+import type { CannabisType } from "@/types/privateLabel/pps";
 import { getPPSUser } from "@/lib/ppsUser";
 
 interface Props {
@@ -21,14 +21,11 @@ interface Props {
   onClose: () => void;
 }
 
-const ROSIN_STRAINS: RosinStrain[] = ["Indica", "Sativa", "Hybrid"];
-
 export function NewBatchDialog({ open, onClose }: Props) {
   const [form, setForm] = useState({
     containerId: "",
     name: "",
     cannabisType: "BioMax" as CannabisType,
-    strain: "" as RosinStrain | "",
     potency: "",
     totalAmount: "",
   });
@@ -37,25 +34,17 @@ export function NewBatchDialog({ open, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate strain is set when Rosin is selected
-    if (form.cannabisType === "Rosin" && !form.strain) {
-      toast.error("Please select a strain for Rosin");
-      return;
-    }
-
     try {
       await createContainer({
         containerId: form.containerId.trim(),
         name: form.name.trim(),
         cannabisType: form.cannabisType,
-        ...(form.cannabisType === "Rosin" && form.strain ? { strain: form.strain } : {}),
         potency: Number(form.potency),
         totalAmount: Number(form.totalAmount),
         performedBy: getPPSUser(),
       }).unwrap();
       toast.success("Container created");
-      setForm({ containerId: "", name: "", cannabisType: "BioMax", strain: "", potency: "", totalAmount: "" });
+      setForm({ containerId: "", name: "", cannabisType: "BioMax", potency: "", totalAmount: "" });
       onClose();
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to create container");
@@ -96,7 +85,7 @@ export function NewBatchDialog({ open, onClose }: Props) {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setForm((f) => ({ ...f, cannabisType: type, strain: "" }))}
+                  onClick={() => setForm((f) => ({ ...f, cannabisType: type }))}
                   className={`flex-1 py-2 rounded-xs border text-sm font-medium transition-colors ${
                     form.cannabisType === type
                       ? "bg-primary text-primary-foreground border-primary"
@@ -108,35 +97,6 @@ export function NewBatchDialog({ open, onClose }: Props) {
               ))}
             </div>
           </div>
-
-          {/* Strain picker — only shown for Rosin */}
-          {form.cannabisType === "Rosin" && (
-            <div className="flex flex-col gap-1.5">
-              <Label>
-                Strain <span className="text-destructive">*</span>
-              </Label>
-              <div className="flex gap-2">
-                {ROSIN_STRAINS.map((strain) => (
-                  <button
-                    key={strain}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, strain }))}
-                    className={`flex-1 py-2 rounded-xs border text-sm font-medium transition-colors ${
-                      form.strain === strain
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                    }`}
-                  >
-                    {strain}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Rosin is pressed in-house — select the strain of this batch.
-              </p>
-            </div>
-          )}
-
           <div className="flex gap-3">
             <div className="flex flex-col gap-1.5 flex-1">
               <Label>Potency (%)</Label>

@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 import RepsHoursLoading from "./loading";
 import RepsHoursContent from "./reps-hours-content";

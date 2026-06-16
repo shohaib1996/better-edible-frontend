@@ -118,13 +118,13 @@ export const RepStoreCard = ({
                   variant="secondary"
                   size="sm"
                   className="rounded-xs cursor-pointer"
-                  onClick={() => onOpenSample(store)}
+                  onClick={() => onOpenDelivery(store)}
                 >
-                  <Package className="h-4 w-4" />
+                  <Truck className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Sample</p>
+                <p>Delivery</p>
               </TooltipContent>
             </Tooltip>
 
@@ -134,13 +134,13 @@ export const RepStoreCard = ({
                   variant="secondary"
                   size="sm"
                   className="rounded-xs cursor-pointer"
-                  onClick={() => onOpenDelivery(store)}
+                  onClick={() => onOpenSample(store)}
                 >
-                  <Truck className="h-4 w-4" />
+                  <Package className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Delivery</p>
+                <p>Sample</p>
               </TooltipContent>
             </Tooltip>
 

@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { PrivateLabelProductsPage } from "@/components/PrivateLabel/PrivateLabelProductsPage";
 import React from "react";
 

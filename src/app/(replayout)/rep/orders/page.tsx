@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = 'force-dynamic';
 import OrdersPage from "@/components/Orders/OrderPage/OrdersPage";
 import React from "react";
 import { useUser } from "@/redux/hooks/useAuth";

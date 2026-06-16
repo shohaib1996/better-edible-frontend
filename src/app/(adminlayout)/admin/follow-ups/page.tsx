@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 import FollowUpsLoading from "./loading";
 import FollowUpsContent from "./follow-ups-content";

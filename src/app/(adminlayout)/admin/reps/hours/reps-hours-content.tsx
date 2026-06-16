@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  format,
-  subDays,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  setDate,
-  addMonths,
-} from "date-fns";
+import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -18,50 +9,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ArrowLeft, CalendarIcon, Clock, Loader2, Banknote, Timer } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Clock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useGetTimelogsSummaryQuery } from "@/redux/api/Timelog/timelogs";
 import { ITimelogSummary } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { DataTable, Column } from "@/components/ReUsableComponents/DataTable";
-
-// ─── Pay period helpers ────────────────────────────────────────────────────────
-function currentWeekRange() {
-  const now = new Date();
-  return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
-}
-
-function currentSemiMonthlyRange() {
-  const now = new Date();
-  const day = now.getDate();
-  if (day <= 15) {
-    return { start: setDate(now, 1), end: setDate(now, 15) };
-  } else {
-    return { start: setDate(now, 16), end: endOfMonth(now) };
-  }
-}
-
-function lastWeekRange() {
-  const now = new Date();
-  const end = endOfWeek(subDays(now, 7), { weekStartsOn: 1 });
-  const start = startOfWeek(subDays(now, 7), { weekStartsOn: 1 });
-  return { start, end };
-}
-
-function lastSemiMonthlyRange() {
-  const now = new Date();
-  const day = now.getDate();
-  if (day <= 15) {
-    // We are in the 1-15 period → last period was 16-end of prev month
-    const prevMonth = addMonths(now, -1);
-    return { start: setDate(prevMonth, 16), end: endOfMonth(prevMonth) };
-  } else {
-    // We are in the 16-end period → last period was 1-15 of this month
-    return { start: setDate(now, 1), end: setDate(now, 15) };
-  }
-}
-// ──────────────────────────────────────────────────────────────────────────────
 
 export default function RepsHoursContent() {
   const router = useRouter();
@@ -94,12 +48,6 @@ export default function RepsHoursContent() {
     setTimeout(() => refetch(), 100);
   };
 
-  const applyRange = (start: Date, end: Date) => {
-    setStartDate(start);
-    setEndDate(end);
-    setTimeout(() => refetch(), 100);
-  };
-
   const summaries: ITimelogSummary[] = data?.data || [];
   const tableData = summaries.map((s) => ({ ...s, _id: s.repId }));
 
@@ -119,24 +67,6 @@ export default function RepsHoursContent() {
           {summary.repType || "N/A"}
         </span>
       ),
-    },
-    {
-      key: "payType",
-      header: "Pay",
-      render: (summary) => {
-        const isSalary = summary.payType === "salary";
-        return (
-          <span className={cn(
-            "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border",
-            isSalary
-              ? "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-200"
-              : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200"
-          )}>
-            {isSalary ? <Banknote className="size-3" /> : <Timer className="size-3" />}
-            {isSalary ? "Salary" : "Hourly"}
-          </span>
-        );
-      },
     },
     {
       key: "repPhone",
@@ -192,43 +122,6 @@ export default function RepsHoursContent() {
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Pay Period Quick-Select */}
-      <div className="flex flex-wrap gap-2">
-        <span className="text-xs text-muted-foreground self-center mr-1">Quick select:</span>
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-xs text-xs h-8 px-3 bg-amber-50 dark:bg-amber-900/20 border-amber-200 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
-          onClick={() => { const r = currentWeekRange(); applyRange(r.start, r.end); }}
-        >
-          <Timer className="size-3 mr-1" /> This Week (Hourly)
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-xs text-xs h-8 px-3 bg-amber-50 dark:bg-amber-900/20 border-amber-200 text-amber-700 dark:text-amber-300 hover:bg-amber-100"
-          onClick={() => { const r = lastWeekRange(); applyRange(r.start, r.end); }}
-        >
-          <Timer className="size-3 mr-1" /> Last Week (Hourly)
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-xs text-xs h-8 px-3 bg-violet-50 dark:bg-violet-900/20 border-violet-200 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
-          onClick={() => { const r = currentSemiMonthlyRange(); applyRange(r.start, r.end); }}
-        >
-          <Banknote className="size-3 mr-1" /> This Period (Salary)
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="rounded-xs text-xs h-8 px-3 bg-violet-50 dark:bg-violet-900/20 border-violet-200 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
-          onClick={() => { const r = lastSemiMonthlyRange(); applyRange(r.start, r.end); }}
-        >
-          <Banknote className="size-3 mr-1" /> Last Period (Salary)
-        </Button>
       </div>
 
       {/* Date Filters */}
@@ -364,7 +257,7 @@ export default function RepsHoursContent() {
                 </div>
                 <div className="text-base sm:text-lg font-medium text-foreground">
                   {startDate && endDate
-                    ? `${format(startDate, "PP")} – ${format(endDate, "PP")}`
+                    ? `${format(startDate, "PP")} - ${format(endDate, "PP")}`
                     : "All Time"}
                 </div>
               </CardContent>

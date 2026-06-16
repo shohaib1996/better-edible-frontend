@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 import DeliveriesLoading from "./loading";
 import DeliveriesContent from "./deliveries-content";

@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = 'force-dynamic';
 
 import { use } from "react";
 import Stage1OrderDetail from "@/components/PPS/stage1/Stage1OrderDetail";
