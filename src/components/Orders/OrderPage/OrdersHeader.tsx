@@ -6,8 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Map } from "lucide-react";
 import { IRep } from "@/types";
+import Link from "next/link";
 
 interface OrdersHeaderProps {
   onNewOrder: () => void;
@@ -29,7 +30,16 @@ export const OrdersHeader = ({
   isRepView = false,
 }: OrdersHeaderProps) => (
   <div className="space-y-4 mb-4">
-    <h1 className="text-2xl font-semibold">Orders Management</h1>
+    <div className="flex items-center justify-between">
+      <h1 className="text-2xl font-semibold">Orders Management</h1>
+      <Link
+        href="/admin/orders/map"
+        className="flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline transition-colors"
+      >
+        <Map className="h-4 w-4" />
+        Map View
+      </Link>
+    </div>
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
       {/* New Order Button */}
