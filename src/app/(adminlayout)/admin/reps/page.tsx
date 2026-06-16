@@ -148,6 +148,8 @@ export default function RepsPage() {
           ],
         },
         { name: "territory", label: "Territory", type: "text" as const },
+        { name: "hourlyRate", label: "Hourly Rate ($/hr) — leave blank for salary", type: "text" as const },
+        { name: "semiMonthlyAmount", label: "Semi-Monthly Amount ($) — leave blank for hourly", type: "text" as const },
       ]
     : [
         { name: "name", label: "Full Name", type: "text" as const },
@@ -179,6 +181,8 @@ export default function RepsPage() {
           ],
         },
         { name: "territory", label: "Territory", type: "text" as const },
+        { name: "hourlyRate", label: "Hourly Rate ($/hr) — leave blank for salary", type: "text" as const },
+        { name: "semiMonthlyAmount", label: "Semi-Monthly Amount ($) — leave blank for hourly", type: "text" as const },
       ];
 
   const columns: Column<IRep>[] = [
@@ -217,6 +221,19 @@ export default function RepsPage() {
         ) : (
           <span className="text-xs text-muted-foreground">None</span>
         ),
+    },
+    {
+      key: "hourlyRate",
+      header: "Rate",
+      render: (rep) => {
+        if (rep.payType === "salary" && rep.semiMonthlyAmount) {
+          return <span className="text-xs font-medium text-foreground">${rep.semiMonthlyAmount.toLocaleString()}<span className="text-muted-foreground">/period</span></span>;
+        }
+        if (rep.hourlyRate) {
+          return <span className="text-xs font-medium text-foreground">${rep.hourlyRate.toFixed(2)}<span className="text-muted-foreground">/hr</span></span>;
+        }
+        return <span className="text-xs text-muted-foreground">—</span>;
+      },
     },
     {
       key: "actions",

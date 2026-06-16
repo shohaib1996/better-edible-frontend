@@ -31,6 +31,8 @@ export interface ITimelogSummary {
   repPhone?: string
   repType?: string
   payType?: "hourly" | "salary"
+  hourlyRate?: number | null
+  semiMonthlyAmount?: number | null
   totalHours: number
   totalMinutes: number
   totalMinutesWorked: number

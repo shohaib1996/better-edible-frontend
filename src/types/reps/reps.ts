@@ -14,8 +14,10 @@ export interface IRep extends Document {
   assignedStores: string[];
   checkin: boolean;
   status: RepStatus;
-  fobId?: string | null;    // RFID fob UID
-  payType: PayType;         // "hourly" (weekly) or "salary" (semi-monthly)
+  fobId?: string | null;         // RFID fob UID
+  payType: PayType;              // "hourly" (weekly) or "salary" (semi-monthly)
+  hourlyRate?: number | null;    // $ per hour (hourly employees)
+  semiMonthlyAmount?: number | null; // $ per semi-monthly period (salary employees)
   createdAt: Date;
   updatedAt: Date;
   storeCount: number;
