@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import type { Delivery } from "@/types/delivery/delivery";
-import { PaymentCollectedCell, DeliveryNoteCell } from "./DeliveryCells";
+import { useGetAllNotesQuery } from "@/redux/api/Notes/notes";
 
 function getStatusStyles(status: string) {
   switch (status) {
@@ -15,25 +15,60 @@ function getStatusStyles(status: string) {
   }
 }
 
+function formatNoteTime(iso?: string) {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return null;
+  }
+}
+
 interface DeliveryMobileCardProps {
   delivery: Delivery;
   index: number;
+  stopNumber?: number; // route stop position (1-based)
 }
 
-export function DeliveryMobileCard({ delivery, index }: DeliveryMobileCardProps) {
+export function DeliveryMobileCard({ delivery, index, stopNumber }: DeliveryMobileCardProps) {
   const disposition = (
     Array.isArray(delivery.disposition) ? delivery.disposition : [delivery.disposition]
   )
     .map((d: string) => d.replace(/_/g, " "))
     .join(", ");
 
+  const { data: notesData } = useGetAllNotesQuery(
+    { deliveryId: delivery._id, limit: 5 },
+    { skip: !delivery._id }
+  );
+  const notes = notesData?.notes || [];
+
+  const paymentParts: { label: string; time?: string }[] = [];
+  for (const note of notes) {
+    const parts: string[] = [];
+    if (note.payment?.cash) parts.push("Cash");
+    if (note.payment?.check) parts.push("Check");
+    if (note.payment?.noPay) parts.push("No Pay");
+    if (note.payment?.amount && note.payment.amount !== "")
+      parts.push(`$${note.payment.amount}`);
+    if (parts.length) paymentParts.push({ label: parts.join(" · "), time: note.createdAt });
+  }
+
+  const repNotes = notes.filter((n: any) => n.content);
+
   return (
     <div className="bg-card border border-border rounded-md p-4 space-y-3">
-      {/* Header row: number + store name + status badge */}
+      {/* Header row: stop # + store name + status badge */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 min-w-0">
           <span className="text-xs text-muted-foreground font-medium mt-0.5 shrink-0">
-            #{index}
+            {stopNumber != null ? `Stop ${stopNumber}` : `#${index}`}
           </span>
           <div className="min-w-0">
             <p className="font-semibold text-foreground leading-tight">
@@ -79,10 +114,25 @@ export function DeliveryMobileCard({ delivery, index }: DeliveryMobileCardProps)
         </div>
       </div>
 
-      {/* Payment collected */}
+      {/* Payment collected with timestamp */}
       <div>
         <p className="text-xs text-muted-foreground mb-0.5">Payment Collected</p>
-        <PaymentCollectedCell deliveryId={delivery._id} />
+        {paymentParts.length ? (
+          <div className="space-y-1">
+            {paymentParts.map((p, i) => (
+              <div key={i}>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+                  {p.label}
+                </span>
+                {p.time && (
+                  <p className="text-xs text-muted-foreground">{formatNoteTime(p.time)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
       </div>
 
       {/* Admin note */}
@@ -93,10 +143,27 @@ export function DeliveryMobileCard({ delivery, index }: DeliveryMobileCardProps)
         </div>
       )}
 
-      {/* Rep note */}
+      {/* Rep notes with timestamps */}
       <div>
         <p className="text-xs text-muted-foreground mb-0.5">Rep Note</p>
-        <DeliveryNoteCell deliveryId={delivery._id} />
+        {repNotes.length ? (
+          <div className="space-y-2">
+            {repNotes.map((note: any) => (
+              <div key={note._id}>
+                <p className="text-sm text-foreground whitespace-normal leading-snug">
+                  {note.content}
+                </p>
+                {note.createdAt && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatNoteTime(note.createdAt)}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
       </div>
     </div>
   );

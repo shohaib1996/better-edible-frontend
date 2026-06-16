@@ -24,18 +24,29 @@ function getStatusStyles(status: string) {
 
 export function buildDeliveryColumns(
   currentPage: number,
-  itemsPerPage: number
+  itemsPerPage: number,
+  stopOrderMap?: Map<string, number>
 ): Column<Delivery>[] {
   return [
     {
       key: "index",
       header: "#",
-      className: "w-[40px] text-center",
-      render: (_, index) => (
-        <span className="text-muted-foreground text-sm font-medium">
-          {(currentPage - 1) * itemsPerPage + index + 1}
-        </span>
-      ),
+      className: "w-[50px] text-center",
+      render: (delivery, index) => {
+        const stopNum = stopOrderMap?.get(delivery._id);
+        return (
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-muted-foreground text-sm font-medium">
+              {(currentPage - 1) * itemsPerPage + index + 1}
+            </span>
+            {stopNum != null && (
+              <span className="text-[10px] font-semibold text-primary bg-primary/10 rounded px-1 leading-tight">
+                Stop {stopNum}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "storeId",
