@@ -1,18 +1,41 @@
+export type FollowupStatus = "open" | "resolved";
+
+export interface IFollowupHistoryEntry {
+  date: string;
+  comments: string;
+  interestLevel?: string;
+  changedAt: string;
+  action: "created" | "rescheduled" | "resolved";
+}
+
 export interface IFollowUp {
   _id: string;
-  followupDate: string; // ISO date string
-  interestLevel: string;
+  followupDate: string; // YYYY-MM-DD
+  interestLevel?: string;
   comments: string;
   store: {
     _id: string;
     name: string;
-    address: string;
+    address?: string;
+    city?: string;
+    state?: string;
   };
   rep: {
     _id: string;
     name: string;
   };
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
+  status: FollowupStatus;
+  resolvedAt?: string;
+  history: IFollowupHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
   __v: number;
+}
+
+// Response shape from GET /followups/rep/:repId
+export interface IRepFollowupsResponse {
+  overdue: IFollowUp[];
+  dueToday: IFollowUp[];
+  upcoming: IFollowUp[];
+  total: number;
 }
