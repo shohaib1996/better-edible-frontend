@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Wand2, RefreshCw } from "lucide-react";
+import { FlaskConical, CheckCircle2, Layers, Loader2, Droplets, Wand2, RefreshCw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SIZES, OIL_TYPES, EFFECTS, UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
+import { SIZES, OIL_TYPES, BIOMAX_EFFECTS, UNIT_OPTIONS } from "@/lib/gummyBuilderConfig";
 import { SegmentGroup, SectionLabel } from "./SegmentGroup";
 import { CannabinoidSelector } from "./CannabinoidSelector";
 import { GummyPricingCard } from "./GummyPricingCard";
@@ -46,6 +46,8 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     allFlavors,
     isLoadingFlavors,
     maxFlavors,
+    availableRosinStrains,
+    availableEffects,
     pricing,
     grandTotal,
     totalQueued,
@@ -57,6 +59,9 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
     handleQueueCurrent,
     handleSave,
   } = useGummyBuilder({ storeId, onSaved });
+
+  const isRosin = oilType === "rosin";
+  const rosinOutOfStock = isRosin && availableRosinStrains.length === 0;
 
   return (
     <div className="space-y-4">
@@ -116,19 +121,55 @@ export function GummyBuilder({ storeId, onSaved }: Props) {
         </div>
       </div>
 
-      {/* Size + Oil Type + Effect */}
+      {/* Oil Type → Size → Effect (in that order) */}
       <div className="rounded-xs bg-muted/20 border border-border p-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        {/* 1. Oil Type — first selection */}
         <div>
+          <SectionLabel>Oil Type</SectionLabel>
+          <SegmentGroup options={OIL_TYPES} value={oilType} onChange={(v) => {
+            setOilType(v);
+            // Reset effect to hybrid when switching oil types
+            setEffect("hybrid");
+          }} />
+          {isRosin && (
+            <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+              Pressed in-house · availability varies by strain
+            </p>
+          )}
+          {!isRosin && (
+            <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+              Botanical terpenes · all effects always available
+            </p>
+          )}
+        </div>
+
+        {/* 2. Gummy Size — second selection */}
+        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
           <SectionLabel>Gummy Size</SectionLabel>
           <SegmentGroup options={SIZES} value={size} onChange={setSize} />
         </div>
+
+        {/* 3. Effect — conditional on oil type */}
         <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
-          <SectionLabel>Oil Type</SectionLabel>
-          <SegmentGroup options={OIL_TYPES} value={oilType} onChange={setOilType} />
-        </div>
-        <div className="border-t sm:border-t-0 sm:border-l border-border pt-4 sm:pt-0 sm:pl-4">
-          <SectionLabel>Effect</SectionLabel>
-          <SegmentGroup options={EFFECTS} value={effect} onChange={setEffect} />
+          <SectionLabel>
+            {isRosin ? "Rosin Strain" : "Effect"}
+          </SectionLabel>
+
+          {rosinOutOfStock ? (
+            <div className="flex items-start gap-2 rounded-xs border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2.5 mt-1">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300 leading-snug">
+                No Rosin currently in stock. Check back soon or choose BioMax.
+              </p>
+            </div>
+          ) : (
+            <SegmentGroup
+              options={availableEffects}
+              value={effect}
+              onChange={setEffect}
+            />
+          )}
         </div>
       </div>
 

@@ -366,6 +366,7 @@ export interface IBulkCreateResourceResponse {
 // Oil Container
 // ──────────────────────────────
 export type CannabisType = "BioMax" | "Rosin";
+export type RosinStrain = "Indica" | "Sativa" | "Hybrid";
 export type ContainerStatus = "active" | "empty" | "cleaning";
 export type WasteReason = "cleaning" | "spillage" | "other";
 
@@ -384,6 +385,7 @@ export interface IOilContainer {
   containerId: string;
   name: string;
   cannabisType: CannabisType;
+  strain?: RosinStrain; // Only set when cannabisType === "Rosin"
   potency: number;
   totalAmount: number;
   remainingAmount: number;
@@ -427,6 +429,7 @@ export interface ICreateContainerRequest {
   containerId: string;
   name: string;
   cannabisType: CannabisType;
+  strain?: RosinStrain; // Required when cannabisType === "Rosin"
   potency: number;
   totalAmount: number;
   performedBy?: { userId: string; userName: string };

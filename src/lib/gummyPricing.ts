@@ -24,7 +24,7 @@ const POOL_THRESHOLD = 3000;
 
 export function calculateGummyPrice(config: IGummyConfig): IGummyPricingResult {
   const base = config.oilType === "rosin" ? 2.5 : 1.75;
-  const size = config.size === "xl" ? 0.05 : 0;
+  const size = config.size === "xl" ? 0.10 : 0;
   const effect = config.effect === "hybrid" ? 0 : 0.05;
 
   const cannabinoidBreakdown = config.cannabinoids.map((c) => ({
