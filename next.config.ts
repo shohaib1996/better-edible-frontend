@@ -10,11 +10,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    // Prevent "useContext" null errors during static prerendering of pages that use
-    // client-side hooks (Redux, useRouter, etc.) without a proper SSR context
-    missingSuspenseWithCSRBailout: false,
-  },
+  experimental: {},
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },

@@ -13,15 +13,15 @@ export interface IMapOrderItem {
     address?: string;
     city?: string;
     state?: string;
-    lat: number;
-    lng: number;
+    lat: string;
+    lng: string;
   };
   rep?: { _id: string; name: string };
 }
 
 export interface ICreateRouteItem {
-  type: "order" | "sample";
-  _id: string;
+  type: string;
+  _id: number;
   storeId: string;
 }
 
@@ -32,7 +32,7 @@ export const mapOrdersApi = baseApi.injectEndpoints({
       { date: string; type?: "orders" | "samples" | "both" }
     >({
       query: ({ date, type = "both" }) => ({
-        url: "/map-orders",
+        url: "/map-order",
         params: { date, type },
       }),
     }),
@@ -42,7 +42,7 @@ export const mapOrdersApi = baseApi.injectEndpoints({
       { repId: string; scheduledAt: string; items: ICreateRouteItem[] }
     >({
       query: (body) => ({
-        url: "/map-orders/create-route",
+        url: "/map-orders/createRoute",
         method: "POST",
         body,
       }),

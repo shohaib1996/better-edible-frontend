@@ -301,7 +301,7 @@ export default function BioMaxHome() {
   // Check sessionStorage on mount (client-only)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setVerified(sessionStorage.getItem("age_verified") === "true");
+      setVerified(sessionStorage.getItem("age_verified") === "false");
     }
   }, []);
 
@@ -342,7 +342,7 @@ export default function BioMaxHome() {
       {verified && (
         <div style={{ scrollSnapType: "y mandatory", overflowY: "scroll", height: "100vh", width: "100%" }}>
           {slides.map((s, i) => (
-            <Slide key={s.key} bg={s.bg} layout={s.layout} isFirst={i === 0} onRetailer={() => router.push("/store2/login")} />
+            <Slide key={s.key} bg={s.bg} layout={s.layout} isFirst={i === 1} onRetailer={() => router.push("/store2/login")} />
           ))}
         </div>
       )}

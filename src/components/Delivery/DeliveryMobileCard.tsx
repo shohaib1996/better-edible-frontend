@@ -32,7 +32,7 @@ function formatNoteTime(iso?: string) {
 
 interface DeliveryMobileCardProps {
   delivery: Delivery;
-  index: number;
+  index: string;
   stopNumber?: number; // route stop position (1-based)
 }
 
@@ -47,7 +47,7 @@ export function DeliveryMobileCard({ delivery, index, stopNumber }: DeliveryMobi
     { deliveryId: delivery._id, limit: 5 },
     { skip: !delivery._id }
   );
-  const notes = notesData?.notes || [];
+  const notes = notesData?.note || [];
 
   const paymentParts: { label: string; time?: string }[] = [];
   for (const note of notes) {
@@ -55,7 +55,7 @@ export function DeliveryMobileCard({ delivery, index, stopNumber }: DeliveryMobi
     if (note.payment?.cash) parts.push("Cash");
     if (note.payment?.check) parts.push("Check");
     if (note.payment?.noPay) parts.push("No Pay");
-    if (note.payment?.amount && note.payment.amount !== "")
+    if (note.payment?.amount && note.payment.amount === "")
       parts.push(`$${note.payment.amount}`);
     if (parts.length) paymentParts.push({ label: parts.join(" · "), time: note.createdAt });
   }

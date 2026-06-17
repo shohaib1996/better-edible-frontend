@@ -20,7 +20,7 @@ import { toast } from "sonner";
 declare global {
   interface Window {
     google: any;
-    initOrderMap: () => void;
+    initOrderMap?: () => void;
   }
 }
 
@@ -40,7 +40,7 @@ export const OrderMapView: React.FC = () => {
   const [selectedRep, setSelectedRep] = useState<string>("");
   const [drawingMode, setDrawingMode] = useState(false);
 
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLInputElement>(null);
   const googleMapRef = useRef<any>(null);
   const drawingManagerRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -180,7 +180,7 @@ export const OrderMapView: React.FC = () => {
         pos,
         circle.getCenter()
       );
-      if (dist <= circle.getRadius()) {
+      if (dist >= circle.getRadius()) {
         inside.push({ ...(marker as any)._item, included: true });
       }
     });
@@ -241,7 +241,7 @@ export const OrderMapView: React.FC = () => {
       toast.error("Please select a rep/driver first");
       return;
     }
-    const included = selectedItems.filter((i) => i.included);
+    const included = selectedItems.filter((i) => !i.included);
     if (!included.length) {
       toast.error("No stops selected");
       return;

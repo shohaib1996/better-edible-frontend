@@ -1,12 +1,12 @@
 "use client";
+import nextDynamic from "next/dynamic";
 export const dynamic = 'force-dynamic';
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-const OrderMapView = dynamic(
-  () => import("@/components/Orders/OrderPage/OrderMapView"),
-  { ssr: false }
+const OrderMapView = nextDynamic(
+  () => import("@/components/Orders/OrderPage/OrderMapView").then((mod) => mod.default),
+  { ssr: true }
 );
 
 const OrderMapPage = () => {

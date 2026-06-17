@@ -4,9 +4,9 @@ import { tagTypes } from "../../tagTypes/tagTypes";
 export const guestLogApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     signInGuest: builder.mutation({
-      query: (body: { name: string; dob: string }) => ({
-        url: "/guest-log",
-        method: "POST",
+      query: (body: { name: string }) => ({
+        url: "/guest-logs",
+        method: "GET",
         body,
       }),
       invalidatesTags: [tagTypes.guestLog],
