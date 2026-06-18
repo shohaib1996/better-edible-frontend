@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -32,15 +32,14 @@ import { cn } from "@/lib/utils";
 import { useGetClientsWithApprovedLabelsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import { useGetApprovedLabelsByClientQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { useCreateClientOrderMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
-import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
-import { ILabel, DiscountType } from "@/types";
+import { DiscountType } from "@/types";
 import { ImagePreviewModal } from "@/components/Orders/OrderPage/ImagePreviewModal";
 import { ClientSearchCombobox } from "./ClientSearchCombobox";
 import { LabelPicker } from "./LabelPicker";
-import { OrderQuantityList } from "./OrderQuantityList";
 import { OrderSummary } from "./OrderSummary";
 import { EarlyDateWarningDialog } from "./EarlyDateWarningDialog";
 
+// Kept for external consumers that may import this type
 export interface OrderItem {
   labelId: string;
   flavorName: string;
@@ -62,7 +61,8 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
 
   const [selectedClientId, setSelectedClientId] = useState("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
-  const [selectedLabels, setSelectedLabels] = useState<OrderItem[]>([]);
+  // labelId → quantity (0 means not ordered)
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(defaultDeliveryDate);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
@@ -75,58 +75,46 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
     search: clientSearchQuery || undefined,
     limit: 10,
   });
-  const { data: labels, isLoading: labelsLoading } = useGetApprovedLabelsByClientQuery(
+  const { data: rawLabels, isLoading: labelsLoading } = useGetApprovedLabelsByClientQuery(
     selectedClientId,
     { skip: !selectedClientId }
   );
+  // Show ALL ready_for_production labels. $0 ones are shown as disabled (pricing not configured).
+  // Must be memoized: inline map/filter creates a new reference every render and would cause
+  // the quantities useEffect to loop infinitely.
+  const labels = useMemo(() => rawLabels, [rawLabels]);
   const [createOrder, { isLoading }] = useCreateClientOrderMutation();
 
+  // Reset quantities when client changes
   useEffect(() => {
-    setSelectedLabels([]);
+    setQuantities({});
   }, [selectedClientId]);
 
-  const handleLabelToggle = (label: ILabel) => {
-    const exists = selectedLabels.find((l) => l.labelId === label._id);
-    if (exists) {
-      setSelectedLabels(selectedLabels.filter((l) => l.labelId !== label._id));
-    } else {
-      const unitPrice = label.unitPrice || 0;
-      const labelImageUrl = label.labelImages?.[0]
-        ? label.labelImages[0].secureUrl || label.labelImages[0].url
-        : undefined;
-      setSelectedLabels([
-        ...selectedLabels,
-        {
-          labelId: label._id,
-          flavorName: label.flavorName,
-          productType: label.productType,
-          quantity: PRODUCTION_QUANTITIES.HALF_BATCH,
-          unitPrice,
-          lineTotal: PRODUCTION_QUANTITIES.HALF_BATCH * unitPrice,
-          labelImageUrl,
-        },
-      ]);
-    }
+  // Pre-fill 140 for labels that have a price; skip $0 ones (not orderable)
+  useEffect(() => {
+    if (!labels || labels.length === 0) return;
+    setQuantities((prev) => {
+      const next = { ...prev };
+      for (const label of labels) {
+        if (!(label._id in next) && (label.unitPrice || 0) > 0) {
+          next[label._id] = 140;
+        }
+      }
+      return next;
+    });
+  }, [labels]);
+
+  const handleQuantityChange = (labelId: string, qty: number) => {
+    setQuantities((prev) => ({ ...prev, [labelId]: qty }));
   };
 
-  const handleQuantityChange = (labelId: string, quantity: number) => {
-    setSelectedLabels(
-      selectedLabels.map((item) =>
-        item.labelId === labelId
-          ? { ...item, quantity, lineTotal: Number((quantity * item.unitPrice).toFixed(2)) }
-          : item
-      )
-    );
-  };
+  // Items that actually have a quantity > 0
+  const orderedLabels = (labels ?? []).filter((l) => (quantities[l._id] || 0) > 0);
 
-  const setQuickQuantity = (labelId: string, type: "half" | "full") => {
-    handleQuantityChange(
-      labelId,
-      type === "half" ? PRODUCTION_QUANTITIES.HALF_BATCH : PRODUCTION_QUANTITIES.FULL_BATCH
-    );
-  };
-
-  const subtotal = selectedLabels.reduce((sum, item) => sum + item.lineTotal, 0);
+  const subtotal = (labels ?? []).reduce((sum, l) => {
+    const qty = quantities[l._id] || 0;
+    return sum + qty * (l.unitPrice || 0);
+  }, 0);
   const discountAmount = discountType === "percentage" ? (subtotal * discount) / 100 : discount;
   const total = Math.max(0, subtotal - discountAmount);
 
@@ -137,7 +125,7 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
 
   const handleSubmit = async () => {
     if (!selectedClientId) return toast.error("Please select a client");
-    if (selectedLabels.length === 0) return toast.error("Please select at least one label");
+    if (orderedLabels.length === 0) return toast.error("Please enter a quantity for at least one label");
     if (!deliveryDate) return toast.error("Please select a delivery date");
     if (isEarlyDeliveryDate(deliveryDate)) {
       setShowEarlyDateWarning(true);
@@ -162,7 +150,7 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
       await createOrder({
         clientId: selectedClientId,
         deliveryDate: deliveryDate!.toISOString(),
-        items: selectedLabels.map(({ labelId, quantity }) => ({ labelId, quantity })),
+        items: orderedLabels.map((l) => ({ labelId: l._id, quantity: quantities[l._id] })),
         discount,
         discountType,
         note: note || undefined,
@@ -183,7 +171,7 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
 
   const resetForm = () => {
     setSelectedClientId("");
-    setSelectedLabels([]);
+    setQuantities({});
     setDeliveryDate(addDays(startOfDay(new Date()), 14));
     setDiscount(0);
     setDiscountType("flat");
@@ -211,21 +199,14 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
               onSelect={setSelectedClientId}
             />
 
-            {/* Labels */}
+            {/* Labels + quantities (single step) */}
             <LabelPicker
               selectedClientId={selectedClientId}
               labels={labels}
               isLoading={labelsLoading}
-              selectedLabels={selectedLabels}
-              onToggle={handleLabelToggle}
-              onPreviewImage={(url, filename) => setPreviewImage({ url, filename })}
-            />
-
-            {/* Quantities */}
-            <OrderQuantityList
-              items={selectedLabels}
+              quantities={quantities}
               onQuantityChange={handleQuantityChange}
-              onQuickQuantity={setQuickQuantity}
+              onPreviewImage={(url, filename) => setPreviewImage({ url, filename })}
             />
 
             {/* Delivery Date */}
@@ -248,7 +229,7 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
                   className="w-auto p-0 rounded-xs border-border dark:border-white/20 bg-card"
                   align="start"
                 >
-                  <Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} initialFocus />
+                  <Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} />
                 </PopoverContent>
               </Popover>
             </div>
@@ -318,8 +299,8 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
               />
             </div>
 
-            {/* Summary */}
-            {selectedLabels.length > 0 && (
+            {/* Summary — only when at least one label has a qty */}
+            {orderedLabels.length > 0 && (
               <OrderSummary
                 subtotal={subtotal}
                 discount={discount}
@@ -341,7 +322,7 @@ export const CreateOrderModal = ({ open, onClose, onSuccess }: CreateOrderModalP
               </Button>
               <Button
                 onClick={handleSubmit}
-                disabled={isLoading || !selectedClientId || selectedLabels.length === 0 || !deliveryDate}
+                disabled={isLoading || !selectedClientId || orderedLabels.length === 0 || !deliveryDate}
                 className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

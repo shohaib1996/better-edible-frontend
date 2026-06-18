@@ -89,7 +89,7 @@ export default function PPSStaffPage() {
         {/* Left — worker name */}
         <div className="flex items-center gap-2 text-muted-foreground min-w-0">
           <User className="w-6 h-6 shrink-0" />
-          <span className="truncate max-w-[160px] text-xl font-semibold">{workerName}</span>
+          <span className="truncate max-w-40 text-xl font-semibold">{workerName}</span>
         </div>
 
         {/* Center — logo */}

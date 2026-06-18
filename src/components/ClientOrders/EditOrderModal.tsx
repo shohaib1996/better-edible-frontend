@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -31,11 +31,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useGetApprovedLabelsByClientQuery } from "@/redux/api/PrivateLabel/labelApi";
 import { useUpdateClientOrderMutation } from "@/redux/api/PrivateLabel/clientOrderApi";
-import { PRODUCTION_QUANTITIES } from "@/constants/privateLabel";
-import { ILabel, DiscountType, IClientOrder } from "@/types";
-import type { OrderItem } from "./CreateOrderModal";
+import { DiscountType, IClientOrder } from "@/types";
 import { LabelPicker } from "./LabelPicker";
-import { OrderQuantityList } from "./OrderQuantityList";
 import { OrderSummary } from "./OrderSummary";
 
 interface EditOrderModalProps {
@@ -46,7 +43,7 @@ interface EditOrderModalProps {
 }
 
 export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderModalProps) => {
-  const [selectedLabels, setSelectedLabels] = useState<OrderItem[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<DiscountType>("flat");
@@ -55,30 +52,21 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
 
   const clientId = order.client?._id || "";
 
-  const { data: labels, isLoading: labelsLoading } = useGetApprovedLabelsByClientQuery(clientId, {
+  const { data: rawLabels, isLoading: labelsLoading } = useGetApprovedLabelsByClientQuery(clientId, {
     skip: !clientId || !open,
   });
+  const labels = useMemo(() => rawLabels, [rawLabels]);
   const [updateOrder, { isLoading }] = useUpdateClientOrderMutation();
 
+  // Populate form from existing order on open
   useEffect(() => {
     if (!open || !order) return;
-    const mappedItems: OrderItem[] = order.items.map((item) => {
-      const label = typeof item.label === "string" ? null : item.label;
-      const labelImageUrl =
-        label?.labelImages && label.labelImages.length > 0
-          ? label.labelImages[0].secureUrl || label.labelImages[0].url
-          : undefined;
-      return {
-        labelId: typeof item.label === "string" ? item.label : item.label._id,
-        flavorName: item.flavorName,
-        productType: item.productType,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        lineTotal: item.lineTotal,
-        labelImageUrl,
-      };
-    });
-    setSelectedLabels(mappedItems);
+    const initialQtys: Record<string, number> = {};
+    for (const item of order.items) {
+      const labelId = typeof item.label === "string" ? item.label : item.label._id;
+      initialQtys[labelId] = item.quantity;
+    }
+    setQuantities(initialQtys);
     setDeliveryDate(new Date(order.deliveryDate));
     setDiscount(order.discount || 0);
     setDiscountType(order.discountType || "flat");
@@ -86,60 +74,27 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
     setShipASAP(order.shipASAP || false);
   }, [open, order]);
 
-  const handleLabelToggle = (label: ILabel) => {
-    const exists = selectedLabels.find((l) => l.labelId === label._id);
-    if (exists) {
-      setSelectedLabels(selectedLabels.filter((l) => l.labelId !== label._id));
-    } else {
-      const unitPrice = label.unitPrice || 0;
-      const labelImageUrl =
-        label.labelImages && label.labelImages.length > 0
-          ? label.labelImages[0].secureUrl || label.labelImages[0].url
-          : undefined;
-      setSelectedLabels([
-        ...selectedLabels,
-        {
-          labelId: label._id,
-          flavorName: label.flavorName,
-          productType: label.productType,
-          quantity: PRODUCTION_QUANTITIES.HALF_BATCH,
-          unitPrice,
-          lineTotal: PRODUCTION_QUANTITIES.HALF_BATCH * unitPrice,
-          labelImageUrl,
-        },
-      ]);
-    }
+  const handleQuantityChange = (labelId: string, qty: number) => {
+    setQuantities((prev) => ({ ...prev, [labelId]: qty }));
   };
 
-  const handleQuantityChange = (labelId: string, quantity: number) => {
-    setSelectedLabels(
-      selectedLabels.map((item) =>
-        item.labelId === labelId
-          ? { ...item, quantity, lineTotal: Number((quantity * item.unitPrice).toFixed(2)) }
-          : item
-      )
-    );
-  };
+  const orderedLabels = (labels ?? []).filter((l) => (quantities[l._id] || 0) > 0);
 
-  const setQuickQuantity = (labelId: string, type: "half" | "full") => {
-    handleQuantityChange(
-      labelId,
-      type === "half" ? PRODUCTION_QUANTITIES.HALF_BATCH : PRODUCTION_QUANTITIES.FULL_BATCH
-    );
-  };
-
-  const subtotal = selectedLabels.reduce((sum, item) => sum + item.lineTotal, 0);
+  const subtotal = (labels ?? []).reduce((sum, l) => {
+    const qty = quantities[l._id] || 0;
+    return sum + qty * (l.unitPrice || 0);
+  }, 0);
   const discountAmount = discountType === "percentage" ? (subtotal * discount) / 100 : discount;
   const total = Math.max(0, subtotal - discountAmount);
 
   const handleSubmit = async () => {
-    if (selectedLabels.length === 0) return toast.error("Please select at least one label");
+    if (orderedLabels.length === 0) return toast.error("Please enter a quantity for at least one label");
     if (!deliveryDate) return toast.error("Please select a delivery date");
     try {
       await updateOrder({
         id: order._id,
         deliveryDate: deliveryDate.toISOString(),
-        items: selectedLabels.map(({ labelId, quantity }) => ({ labelId, quantity })),
+        items: orderedLabels.map((l) => ({ labelId: l._id, quantity: quantities[l._id] })),
         discount,
         discountType,
         note: note || undefined,
@@ -174,14 +129,8 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
             selectedClientId={clientId}
             labels={labels}
             isLoading={labelsLoading}
-            selectedLabels={selectedLabels}
-            onToggle={handleLabelToggle}
-          />
-
-          <OrderQuantityList
-            items={selectedLabels}
+            quantities={quantities}
             onQuantityChange={handleQuantityChange}
-            onQuickQuantity={setQuickQuantity}
           />
 
           {/* Delivery Date */}
@@ -204,7 +153,7 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
                 className="w-auto p-0 rounded-xs border-border dark:border-white/20 bg-card"
                 align="start"
               >
-                <Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} initialFocus />
+                <Calendar mode="single" selected={deliveryDate} onSelect={setDeliveryDate} />
               </PopoverContent>
             </Popover>
           </div>
@@ -266,7 +215,7 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
             />
           </div>
 
-          {selectedLabels.length > 0 && (
+          {orderedLabels.length > 0 && (
             <OrderSummary
               subtotal={subtotal}
               discount={discount}
@@ -288,7 +237,7 @@ export const EditOrderModal = ({ open, onClose, order, onSuccess }: EditOrderMod
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || selectedLabels.length === 0 || !deliveryDate}
+              disabled={isLoading || orderedLabels.length === 0 || !deliveryDate}
               className="rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

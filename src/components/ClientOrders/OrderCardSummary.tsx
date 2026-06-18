@@ -7,8 +7,25 @@ interface Props {
 }
 
 export function OrderCardSummary({ order }: Props) {
+  const productTypeTotals = order.items.reduce<Record<string, number>>((acc, item) => {
+    const pt = (item.productType || "UNKNOWN").toUpperCase();
+    acc[pt] = (acc[pt] || 0) + item.quantity;
+    return acc;
+  }, {});
+
   return (
     <div className="bg-primary/20 dark:bg-primary/10 px-3 py-2">
+      {/* Product type unit totals */}
+      <div className="flex flex-wrap gap-1.5 mb-1.5">
+        {Object.entries(productTypeTotals).map(([type, total]) => (
+          <span
+            key={type}
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-xs bg-primary/15 dark:bg-primary/20 text-xs font-semibold text-primary"
+          >
+            {type} &mdash; {total.toLocaleString()} units
+          </span>
+        ))}
+      </div>
       <div className="flex flex-col sm:flex-row sm:grid sm:grid-cols-2 lg:flex lg:flex-row justify-between gap-y-2 gap-x-4 text-xs sm:text-sm">
         <div className="flex-1 min-w-0">
           {order.items.map((item, idx) => (

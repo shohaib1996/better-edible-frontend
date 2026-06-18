@@ -108,22 +108,56 @@ export function ApplyLabelTab({ isAdmin, compact }: { isAdmin: boolean; compact?
 
               {isExpanded && (
                 <div className="border-t border-amber-400/30 bg-amber-400/10 px-4 py-4 flex flex-col gap-3">
-                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">How many bags to mark as printed?</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      value={form.qty}
-                      onChange={(e) => setForm(inv._id, { qty: e.target.value })}
-                      className={cn(fieldClass, "flex-1")}
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => setForm(inv._id, { qty: String(inv.labeled) })}
-                      className="shrink-0 px-3 py-2 rounded-xs border border-border bg-background text-sm font-medium hover:bg-muted transition-colors"
-                    >
-                      All
-                    </button>
+                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Enter batch details and quantity:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-amber-800/70 dark:text-amber-400/70 font-medium">Lot Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. LOT-001"
+                        value={form.lotNumber}
+                        onChange={(e) => setForm(inv._id, { lotNumber: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-amber-800/70 dark:text-amber-400/70 font-medium">THC %</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 25.4%"
+                        value={form.thcPercent}
+                        onChange={(e) => setForm(inv._id, { thcPercent: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-amber-800/70 dark:text-amber-400/70 font-medium">Test Date</label>
+                      <input
+                        type="date"
+                        value={form.testDate}
+                        onChange={(e) => setForm(inv._id, { testDate: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-amber-800/70 dark:text-amber-400/70 font-medium">Quantity to mark as printed</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={form.qty}
+                        onChange={(e) => setForm(inv._id, { qty: e.target.value })}
+                        className={cn(fieldClass, "flex-1")}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => setForm(inv._id, { qty: String(inv.labeled) })}
+                        className="shrink-0 px-3 py-2 rounded-xs border border-border bg-background text-sm font-medium hover:bg-muted transition-colors"
+                      >
+                        All
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-col-reverse sm:flex-row gap-2">
                     <button onClick={() => setExpandedId(null)} className="px-4 py-2 rounded-xs border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors">

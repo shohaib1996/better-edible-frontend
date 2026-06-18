@@ -7,7 +7,7 @@ import {
   ImageOff,
   Loader2,
   Search,
-  Calculator,
+  PackageCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -34,55 +34,23 @@ interface StoreEntry {
   storeName: string;
 }
 
-// ─── Per-store expanded panel ─────────────────────────────────────────────────
+// ─── Per-store expanded panel (display + inputs only, no submit) ──────────────
 
 function StoreLabelPanel({
   clientId,
-  storeId,
-  storeName,
   quantities,
   onChange,
-  onSubmitted,
 }: {
   clientId: string;
-  storeId: string;
-  storeName: string;
   quantities: Record<string, string>;
   onChange: (labelId: string, value: string) => void;
-  onSubmitted: (storeId: string) => void;
 }) {
   const { data, isFetching } = useGetAllLabelsQuery(
     { clientId, stage: "ready_for_production", limit: 100 },
     { skip: !clientId }
   );
-  const [bulkCreateLabelOrders, { isLoading: submitting }] =
-    useBulkCreateLabelOrdersMutation();
 
   const labels: ILabel[] = data?.labels ?? [];
-
-  const orderLines = labels
-    .map((l) => ({ labelId: l._id, quantity: parseInt(quantities[l._id] ?? "", 10) }))
-    .filter((l) => !isNaN(l.quantity) && l.quantity > 0);
-
-  const hasAny = orderLines.length > 0;
-  const totalQty = orderLines.reduce((s, l) => s + l.quantity, 0);
-
-  async function handleSubmit() {
-    if (!hasAny) { toast.error("Enter at least one quantity"); return; }
-    try {
-      const result = await bulkCreateLabelOrders({
-        orders: orderLines.map((l) => ({
-          storeId,
-          labelId: l.labelId,
-          quantityOrdered: l.quantity,
-        })),
-      }).unwrap();
-      toast.success(`${result.count} order${result.count !== 1 ? "s" : ""} placed for ${storeName}`);
-      onSubmitted(storeId);
-    } catch {
-      toast.error("Failed to place orders");
-    }
-  }
 
   if (isFetching) {
     return (
@@ -99,6 +67,12 @@ function StoreLabelPanel({
       </p>
     );
   }
+
+  const filledLines = labels.filter((l) => {
+    const qty = parseInt(quantities[l._id] ?? "", 10);
+    return !isNaN(qty) && qty > 0;
+  });
+  const totalQty = filledLines.reduce((s, l) => s + parseInt(quantities[l._id], 10), 0);
 
   return (
     <div className="flex flex-col">
@@ -132,27 +106,16 @@ function StoreLabelPanel({
         })}
       </div>
 
-      {/* Submit row */}
-      <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-border bg-muted/30">
-        {hasAny ? (
+      {/* Info row */}
+      {filledLines.length > 0 && (
+        <div className="px-5 py-2.5 border-t border-border bg-muted/20">
           <p className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{orderLines.length} SKU{orderLines.length !== 1 ? "s" : ""}</span>
+            <span className="font-semibold text-foreground">{filledLines.length} SKU{filledLines.length !== 1 ? "s" : ""}</span>
             {" · "}
-            <span className="font-semibold text-foreground">{totalQty.toLocaleString()}</span> total labels
+            <span className="font-semibold text-foreground">{totalQty.toLocaleString()}</span> labels entered
           </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">Enter quantities above</p>
-        )}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!hasAny || submitting}
-          className="flex items-center gap-2 px-4 py-2 rounded-xs bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
-          Place Order
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -162,10 +125,13 @@ function StoreLabelPanel({
 export default function PackagePrepAdminOrder() {
   const [expandedStores, setExpandedStores] = useState<Set<string>>(new Set());
   const [quantities, setQuantities] = useState<Record<string, Record<string, string>>>({});
-  const [calculated, setCalculated] = useState<{ totalLabels: number; totalSkus: number; totalStores: number } | null>(null);
   const [search, setSearch] = useState("");
+  // Stores that have been expanded at least once — persisted across search changes
+  const [pinnedStores, setPinnedStores] = useState<StoreEntry[]>([]);
 
   const debouncedSearch = useDebounce(search, 300);
+
+  const [bulkCreateLabelOrders, { isLoading: submittingAll }] = useBulkCreateLabelOrdersMutation();
 
   const { data: clientsData, isLoading: clientsLoading } =
     useGetAllPrivateLabelClientsQuery({
@@ -173,7 +139,7 @@ export default function PackagePrepAdminOrder() {
       search: debouncedSearch.trim() || undefined,
     });
 
-  const stores: StoreEntry[] = useMemo(() => {
+  const searchResultStores: StoreEntry[] = useMemo(() => {
     return (clientsData?.clients ?? [])
       .filter((c: any) => c.store)
       .map((c: any) => ({
@@ -184,23 +150,70 @@ export default function PackagePrepAdminOrder() {
       .sort((a: StoreEntry, b: StoreEntry) => a.storeName.localeCompare(b.storeName));
   }, [clientsData]);
 
-  function toggleStore(storeId: string) {
+  // Merge pinned stores with current search results — pinned always stay visible
+  const displayedStores = useMemo(() => {
+    const pinnedIds = new Set(pinnedStores.map((s) => s.storeId));
+    const freshSearchResults = debouncedSearch.trim()
+      ? searchResultStores.filter((s) => !pinnedIds.has(s.storeId))
+      : [];
+    return [...pinnedStores, ...freshSearchResults].sort((a, b) =>
+      a.storeName.localeCompare(b.storeName)
+    );
+  }, [pinnedStores, searchResultStores, debouncedSearch]);
+
+  function toggleStore(storeId: string, storeEntry?: StoreEntry) {
+    const isCurrentlyExpanded = expandedStores.has(storeId);
     setExpandedStores((prev) => {
       const next = new Set(prev);
-      next.has(storeId) ? next.delete(storeId) : next.add(storeId);
+      isCurrentlyExpanded ? next.delete(storeId) : next.add(storeId);
       return next;
     });
+    // Pin when expanding so it survives search changes
+    if (!isCurrentlyExpanded && storeEntry) {
+      setPinnedStores((prev) =>
+        prev.some((s) => s.storeId === storeId) ? prev : [...prev, storeEntry]
+      );
+    }
   }
 
   function handleQtyChange(storeId: string, labelId: string, value: string) {
-    setCalculated(null);
     setQuantities((prev) => ({
       ...prev,
       [storeId]: { ...(prev[storeId] ?? {}), [labelId]: value },
     }));
   }
 
-  function handleCalculate() {
+  async function handlePlaceAllOrders() {
+    // Build one combined orders array from all stores' quantities
+    const allOrders: { storeId: string; labelId: string; quantityOrdered: number }[] = [];
+    for (const [storeId, storeQtys] of Object.entries(quantities)) {
+      for (const [labelId, raw] of Object.entries(storeQtys)) {
+        const qty = parseInt(raw, 10);
+        if (!isNaN(qty) && qty > 0) {
+          allOrders.push({ storeId, labelId, quantityOrdered: qty });
+        }
+      }
+    }
+
+    if (allOrders.length === 0) {
+      toast.error("Enter at least one quantity before placing orders");
+      return;
+    }
+
+    try {
+      const result = await bulkCreateLabelOrders({ orders: allOrders }).unwrap();
+      toast.success(`${result.count} order${result.count !== 1 ? "s" : ""} placed successfully`);
+      // Clear everything
+      setQuantities({});
+      setExpandedStores(new Set());
+      setPinnedStores([]);
+    } catch {
+      toast.error("Failed to place orders");
+    }
+  }
+
+  // Computed totals for the "Place All Orders" button label
+  const orderSummary = useMemo(() => {
     let totalLabels = 0;
     let totalSkus = 0;
     const storesWithOrders = new Set<string>();
@@ -214,23 +227,10 @@ export default function PackagePrepAdminOrder() {
         }
       }
     }
-    setCalculated({ totalLabels, totalSkus, totalStores: storesWithOrders.size });
-  }
+    return { totalLabels, totalSkus, totalStores: storesWithOrders.size };
+  }, [quantities]);
 
-  // Clear quantities and collapse store after successful submit
-  function handleSubmitted(storeId: string) {
-    setCalculated(null);
-    setQuantities((prev) => ({ ...prev, [storeId]: {} }));
-    setExpandedStores((prev) => {
-      const next = new Set(prev);
-      next.delete(storeId);
-      return next;
-    });
-  }
-
-  const hasAny = Object.values(quantities).some((storeQtys) =>
-    Object.values(storeQtys).some((v) => parseInt(v, 10) > 0)
-  );
+  const hasAny = orderSummary.totalSkus > 0;
 
   if (clientsLoading) {
     return (
@@ -243,7 +243,7 @@ export default function PackagePrepAdminOrder() {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Search + Calculate row */}
+      {/* Search row */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -255,36 +255,21 @@ export default function PackagePrepAdminOrder() {
             className="w-full pl-9 pr-3 py-2 rounded-xs border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
           />
         </div>
-        <button
-          type="button"
-          onClick={handleCalculate}
-          disabled={!hasAny}
-          className="flex items-center gap-2 px-4 py-2 rounded-xs border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-        >
-          <Calculator className="w-4 h-4 shrink-0" />
-          Calculate
-        </button>
       </div>
 
-      {/* Calculate summary */}
-      {calculated && (
-        <div className="flex items-center gap-3 rounded-xs bg-primary/5 border border-primary/20 px-4 py-3 text-sm flex-wrap">
-          <span className="font-semibold text-foreground">{calculated.totalStores} store{calculated.totalStores !== 1 ? "s" : ""}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="font-semibold text-foreground">{calculated.totalSkus} SKU{calculated.totalSkus !== 1 ? "s" : ""}</span>
-          <span className="text-muted-foreground">·</span>
-          <span className="font-bold text-primary text-base">{calculated.totalLabels.toLocaleString()} total labels</span>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">Expand stores and enter quantities, then place all orders at once.</p>
 
-      <p className="text-xs text-muted-foreground">Expand a store, enter quantities, then place the order for that store.</p>
-
-      {/* Store list — only shown after search */}
+      {/* Store list */}
       <div className="flex flex-col gap-2">
-        {!debouncedSearch.trim() && (
+        {displayedStores.length === 0 && !debouncedSearch.trim() && (
           <p className="text-sm text-muted-foreground text-center py-8">Search for a store above to get started.</p>
         )}
-        {debouncedSearch.trim() && stores.map((store) => {
+        {displayedStores.length === 0 && debouncedSearch.trim() && (
+          <p className="text-sm text-muted-foreground text-center py-10">
+            No stores matching &quot;{debouncedSearch}&quot;
+          </p>
+        )}
+        {displayedStores.map((store) => {
           const isExpanded = expandedStores.has(store.storeId);
           const storeQtys = quantities[store.storeId] ?? {};
           const filledCount = Object.values(storeQtys).filter((v) => parseInt(v, 10) > 0).length;
@@ -300,7 +285,7 @@ export default function PackagePrepAdminOrder() {
               {/* Store header */}
               <button
                 type="button"
-                onClick={() => toggleStore(store.storeId)}
+                onClick={() => toggleStore(store.storeId, store)}
                 className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -318,29 +303,46 @@ export default function PackagePrepAdminOrder() {
                 )}
               </button>
 
-              {/* Expanded label rows + submit */}
+              {/* Expanded label rows */}
               {isExpanded && (
                 <div className="border-t border-border">
                   <StoreLabelPanel
                     clientId={store.clientId}
-                    storeId={store.storeId}
-                    storeName={store.storeName}
                     quantities={storeQtys}
                     onChange={(labelId, value) => handleQtyChange(store.storeId, labelId, value)}
-                    onSubmitted={handleSubmitted}
                   />
                 </div>
               )}
             </div>
           );
         })}
-
-        {debouncedSearch.trim() && stores.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-10">
-            No stores matching &quot;{debouncedSearch}&quot;
-          </p>
-        )}
       </div>
+
+      {/* Place All Orders — shown when any quantity is entered */}
+      {hasAny && (
+        <div className="flex items-center justify-between gap-4 rounded-xs border border-green-300 bg-green-50 dark:bg-green-900/20 dark:border-green-700 px-4 py-3 mt-1">
+          <p className="text-sm font-medium text-green-800 dark:text-green-300">
+            <span className="font-bold">{orderSummary.totalStores} store{orderSummary.totalStores !== 1 ? "s" : ""}</span>
+            {" · "}
+            <span className="font-bold">{orderSummary.totalSkus} SKU{orderSummary.totalSkus !== 1 ? "s" : ""}</span>
+            {" · "}
+            <span className="font-bold">{orderSummary.totalLabels.toLocaleString()} labels</span>
+          </p>
+          <button
+            type="button"
+            onClick={handlePlaceAllOrders}
+            disabled={submittingAll}
+            className="flex items-center gap-2 px-5 py-2 rounded-xs bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            {submittingAll ? (
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            ) : (
+              <PackageCheck className="w-4 h-4 shrink-0" />
+            )}
+            {submittingAll ? "Placing Orders…" : "Place All Orders"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
