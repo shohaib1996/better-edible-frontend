@@ -71,7 +71,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
               ● Ready to Bag
             </p>
           )}
-          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground`}>{storeName}</p>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground capitalize`}>{storeName}</p>
           <p className={`${compact ? "text-sm" : "text-base"} font-mono text-muted-foreground mt-0.5`}>Order {orderId}</p>
         </div>
         <ArrowRight className={`${compact ? "w-5 h-5" : "w-8 h-8"} text-primary shrink-0`} />
@@ -97,7 +97,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
       <div className="px-5 pt-3 pb-2 flex flex-col gap-1.5">
         {items.map((item) => (
           <div key={item._id} className="flex items-center justify-between gap-3">
-            <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate`}>{item.flavor}</span>
+            <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate capitalize`}>{item.flavor}</span>
             <Badge variant="outline" className={`shrink-0 text-xs px-2 py-0.5 ${COOK_ITEM_STATUS_COLORS[item.status] ?? ""}`}>
               {COOK_ITEM_STATUS_LABELS[item.status] ?? item.status}
             </Badge>

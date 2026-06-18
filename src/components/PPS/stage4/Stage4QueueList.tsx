@@ -8,6 +8,7 @@ import {
   COOK_ITEM_STATUS_LABELS,
 } from "@/constants/privateLabel";
 import type { ICookItem } from "@/types/privateLabel/pps";
+import { getOilTypeLabel } from "@/lib/ppsUtils";
 
 interface Stage4QueueListProps {
   queueItems: ICookItem[];
@@ -68,12 +69,12 @@ export default function Stage4QueueList({
                 <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate`}
+                      className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate capitalize`}
                     >
                       {item.flavor}
                     </p>
                     <p
-                      className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-0.5`}
+                      className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-0.5 capitalize`}
                     >
                       {item.storeName}
                     </p>
@@ -119,6 +120,9 @@ export default function Stage4QueueList({
                 </div>
                 <div className="px-5 py-3">
                   <p className="text-sm font-mono text-muted-foreground">
+                    {getOilTypeLabel(item) && (
+                      <strong className="font-bold text-foreground not-italic">{getOilTypeLabel(item)} </strong>
+                    )}
                     {item.cookItemId}
                   </p>
                 </div>
@@ -149,12 +153,12 @@ export default function Stage4QueueList({
                 <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate`}
+                      className={`${compact ? "text-xl" : "text-3xl"} font-bold truncate capitalize`}
                     >
                       {item.flavor}
                     </p>
                     <p
-                      className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-0.5`}
+                      className={`${compact ? "text-sm" : "text-base"} text-muted-foreground font-mono mt-0.5 capitalize`}
                     >
                       {item.storeName}
                     </p>
@@ -201,6 +205,9 @@ export default function Stage4QueueList({
                 </div>
                 <div className="px-5 py-3">
                   <p className="text-sm font-mono text-muted-foreground">
+                    {getOilTypeLabel(item) && (
+                      <strong className="font-bold text-foreground not-italic">{getOilTypeLabel(item)} </strong>
+                    )}
                     {item.cookItemId}
                   </p>
                 </div>

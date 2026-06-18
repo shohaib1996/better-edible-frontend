@@ -49,7 +49,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
       {/* Top section */}
       <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground`}>{storeName}</p>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate text-foreground capitalize`}>{storeName}</p>
           <p className={`${compact ? "text-sm" : "text-base"} font-mono text-muted-foreground mt-0.5`}>Order {orderId}</p>
         </div>
         <ArrowRight className={`${compact ? "w-5 h-5" : "w-8 h-8"} text-primary shrink-0`} />
@@ -80,7 +80,7 @@ function OrderCard({ orderId, items, basePath, compact }: { orderId: string; ite
           const total = item.assignedMoldIds.length;
           return (
             <div key={item._id} className="flex items-center justify-between gap-3">
-              <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate`}>{item.flavor}</span>
+              <span className={`${compact ? "text-sm" : "text-lg"} font-medium truncate capitalize`}>{item.flavor}</span>
               <span className={`shrink-0 ${compact ? "text-sm" : "text-base"} font-bold tabular-nums text-foreground`}>
                 {processed}/{total} molds
               </span>

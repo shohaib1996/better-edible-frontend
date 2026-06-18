@@ -19,6 +19,7 @@ import {
 import type { ICookItem, IConfirmCountResponse } from "@/types/privateLabel/pps";
 import PrintLabel from "../shared/PrintLabel";
 import { usePrintCaseLabels } from "./usePrintCaseLabels";
+import { getOilTypeLabel } from "@/lib/ppsUtils";
 
 interface CookItemCardProps {
   item: ICookItem;
@@ -47,6 +48,7 @@ export function CookItemCard({
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+  const oilLabel = getOilTypeLabel(item);
   const expectedCount = item.expectedCount ?? 0;
   const moldsCount = Math.ceil(expectedCount / 70);
   const fullCases = Math.floor(count / 100);
@@ -101,10 +103,13 @@ export function CookItemCard({
     <div className="flex flex-col gap-0 rounded-xs border bg-card">
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className="text-3xl font-bold leading-tight truncate">
+          <p className="text-3xl font-bold leading-tight truncate capitalize">
             {item.flavor}
           </p>
           <p className="text-base text-muted-foreground font-mono mt-1">
+            {oilLabel && (
+              <strong className="font-bold text-foreground not-italic">{oilLabel} </strong>
+            )}
             {item.cookItemId}
           </p>
         </div>

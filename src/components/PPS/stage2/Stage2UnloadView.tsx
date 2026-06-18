@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
+import { getOilTypeLabel } from "@/lib/ppsUtils";
 import PrintLabel from "@/components/PPS/shared/PrintLabel";
 import {
   useGetStage2UnloadItemsQuery,
@@ -182,13 +183,14 @@ function UnloadItemCard({ item, index, total, compact }: UnloadItemCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className={`font-bold leading-tight truncate ${compact ? "text-2xl" : "text-4xl"}`}>
+          <p className={`font-bold leading-tight truncate capitalize ${compact ? "text-2xl" : "text-4xl"}`}>
             {item.flavor}
           </p>
-          <p className={`text-muted-foreground mt-0.5 ${compact ? "text-sm" : "text-base"}`}>
+          <p className={`text-muted-foreground mt-0.5 capitalize ${compact ? "text-sm" : "text-base"}`}>
             {item.storeName}
           </p>
           <p className={`text-muted-foreground font-mono mt-0.5 ${compact ? "text-xs" : "text-sm"}`}>
+            {(() => { const ol = getOilTypeLabel(item); return ol ? <strong className="font-bold text-foreground not-italic">{ol} </strong> : null; })()}
             {item.cookItemId}
           </p>
         </div>

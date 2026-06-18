@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, ScanLine, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { getPPSUser } from "@/lib/ppsUser";
+import { getOilTypeLabel } from "@/lib/ppsUtils";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import {
   useCompleteBagSealMutation,
@@ -106,6 +107,7 @@ export function Stage3CookItemCard({ item, isAdmin, compact }: Stage3CookItemCar
 
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
+  const oilLabel = getOilTypeLabel(item);
 
   const isDone = item.status === "bag_seal_complete";
   const isSealing = item.status === "sealing";
@@ -122,8 +124,13 @@ export function Stage3CookItemCard({ item, isAdmin, compact }: Stage3CookItemCar
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate`}>{item.flavor}</p>
-          <p className="text-sm text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
+          <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight truncate capitalize`}>{item.flavor}</p>
+          <p className="text-sm text-muted-foreground font-mono mt-1">
+            {oilLabel && (
+              <strong className="font-bold text-foreground not-italic">{oilLabel} </strong>
+            )}
+            {item.cookItemId}
+          </p>
         </div>
         <Badge variant="outline" className={`shrink-0 text-sm px-3 py-1 ${statusColor}`}>
           {statusLabel}

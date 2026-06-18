@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getPPSUser } from "@/lib/ppsUser";
+import { getOilTypeLabel } from "@/lib/ppsUtils";
 import CookItemHistory from "@/components/PPS/shared/CookItemHistory";
 import Stage2TraySlot from "@/components/PPS/stage2/Stage2TraySlot";
 import {
@@ -125,6 +126,7 @@ export default function Stage2CookItemCard({
   const statusColor = COOK_ITEM_STATUS_COLORS[item.status] ?? "";
   const statusLabel = COOK_ITEM_STATUS_LABELS[item.status] ?? item.status;
   const activeSlotIndex = slots.findIndex((s) => !s.trayId);
+  const oilLabel = getOilTypeLabel(item);
   const c = compact;
 
   return (
@@ -132,8 +134,13 @@ export default function Stage2CookItemCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0 flex-1">
-          <p className={`${c ? "text-3xl" : "text-4xl"} font-bold leading-tight truncate`}>{item.flavor}</p>
-          <p className="text-base text-muted-foreground font-mono mt-1">{item.cookItemId}</p>
+          <p className={`${c ? "text-3xl" : "text-4xl"} font-bold leading-tight truncate capitalize`}>{item.flavor}</p>
+          <p className="text-base text-muted-foreground font-mono mt-1">
+            {oilLabel && (
+              <strong className="font-bold text-foreground not-italic">{oilLabel} </strong>
+            )}
+            {item.cookItemId}
+          </p>
         </div>
         <Badge variant="outline" className={`shrink-0 ${c ? "text-sm px-3 py-1" : "text-base px-3 py-1.5"} ${statusColor}`}>
           {statusLabel}
