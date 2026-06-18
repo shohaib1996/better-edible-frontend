@@ -32,13 +32,13 @@ export default function MoldsPanel() {
   const { data: s3Data } = useGetStage3CookItemsQuery();
   const { data: s4Data } = useGetStage4CookItemsQuery();
 
-  const cookItemMap = new Map<string, { storeName: string; flavor: string }>(
+  const cookItemMap = new Map<string, { storeName: string; flavor: string; orderId: string; createdAt: string }>(
     [
       ...(s1Data?.cookItems ?? []),
       ...(s2Data?.cookItems ?? []),
       ...(s3Data?.cookItems ?? []),
       ...(s4Data?.cookItems ?? []),
-    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor }]),
+    ].map((i) => [i.cookItemId, { storeName: i.storeName, flavor: i.flavor, orderId: i.orderId, createdAt: i.createdAt }]),
   );
 
   const molds = data?.molds ?? [];

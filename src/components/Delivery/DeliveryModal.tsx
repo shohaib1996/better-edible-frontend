@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,7 @@ export const DeliveryModal = ({
     disposition: sampleId ? ["sample_drop"] : ["delivery"],
     paymentAction: "",
     amount: orderAmount ? String(orderAmount) : "",
+    moneyPickupAmount: "",
     scheduledAt: new Date(),
     notes: "",
   });
@@ -118,7 +120,8 @@ export const DeliveryModal = ({
     });
   };
 
-  const showAmount = formData.disposition.includes("delivery") || formData.disposition.includes("money_pickup");
+  const showDeliveryAmount = formData.disposition.includes("delivery");
+  const showMoneyPickupAmount = formData.disposition.includes("money_pickup");
 
   const handleSubmit = async () => {
     if (!store?._id) return toast.error("Store not found");
@@ -138,6 +141,7 @@ export const DeliveryModal = ({
         disposition: formData.disposition,
         paymentAction: formData.paymentAction,
         amount: Number(formData.amount) || 0,
+        moneyPickupAmount: Number(formData.moneyPickupAmount) || 0,
         scheduledAt: utcMidnight.toISOString(),
         notes: formData.notes,
         ...(sampleId && { sampleId }),
@@ -151,6 +155,7 @@ export const DeliveryModal = ({
         disposition: ["delivery"],
         paymentAction: "",
         amount: "",
+        moneyPickupAmount: "",
         scheduledAt: new Date(),
         notes: "",
       });
@@ -263,22 +268,57 @@ export const DeliveryModal = ({
             </div>
           </div>
 
-          {/* Amount — only for Delivery or Money Pickup */}
-          {showAmount && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5 text-primary" />
-                Amount ($)
-              </Label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => handleChange("amount", e.target.value)}
-                className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary"
-              />
-            </div>
-          )}
+          {/* Delivery Invoiced Amount — only for Delivery */}
+          <AnimatePresence>
+            {showDeliveryAmount && (
+              <motion.div
+                key="delivery-amount"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden space-y-1.5"
+              >
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  Delivery Invoiced Amount
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={(e) => handleChange("amount", e.target.value)}
+                  className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Money Pickup Amount — only for Money Pickup */}
+          <AnimatePresence>
+            {showMoneyPickupAmount && (
+              <motion.div
+                key="money-pickup-amount"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: "easeInOut" }}
+                className="overflow-hidden space-y-1.5"
+              >
+                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                  Money Pickup Amount
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.moneyPickupAmount}
+                  onChange={(e) => handleChange("moneyPickupAmount", e.target.value)}
+                  className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Payment Action */}
           <div className="space-y-1.5">
@@ -333,7 +373,7 @@ export const DeliveryModal = ({
                     mode="single"
                     selected={formData.scheduledAt}
                     onSelect={(date) => handleChange("scheduledAt", date!)}
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -359,7 +399,7 @@ export const DeliveryModal = ({
               placeholder="Add any notes or special instructions..."
               value={formData.notes}
               onChange={(e) => handleChange("notes", e.target.value)}
-              className="border border-border rounded-xs bg-input text-foreground resize-none focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-primary min-h-20"
+              className="border border-border rounded-xs bg-input text-foreground resize-none focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary min-h-20"
               rows={3}
             />
           </div>

@@ -185,6 +185,16 @@ export default function Stage1ActionArea({
           <Plus className={c ? "w-4 h-4" : "w-5 h-5"} />
           Add Mold
         </Button>
+        {assignedCount >= totalMolds && totalMolds > 0 && (
+          <Button
+            size="lg"
+            onClick={() => onSetMode("confirming")}
+            className={`w-full ${c ? "text-xl h-14" : "text-2xl h-16 font-bold"} gap-3 rounded-xs bg-green-600 hover:bg-green-700 text-white`}
+          >
+            <CheckCircle2 className={c ? "w-5 h-5" : "w-6 h-6"} />
+            Molding Complete
+          </Button>
+        )}
       </div>
     );
   }
