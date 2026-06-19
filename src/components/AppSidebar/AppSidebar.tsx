@@ -18,6 +18,7 @@ import {
   ImageIcon,
   PenTool,
   FlaskConical,
+  Handshake,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -66,6 +67,7 @@ const adminItems = [
   { title: "Production (PPS)", url: "/admin/pps", icon: Factory },
   { title: "Digital Assets", url: "/admin/digital-assets", icon: ImageIcon },
   { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
+  { title: "Partnership", url: "/admin/partnership", icon: Handshake },
 ];
 
 const repItems = [
