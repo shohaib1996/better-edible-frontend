@@ -1,0 +1,77 @@
+"use client";
+
+import { useGetPartnershipInventoryQuery } from "@/redux/api/Partnership/partnershipApi";
+import { Loader2 } from "lucide-react";
+
+interface Props {
+  storeId: string;
+}
+
+function getStockColor(placed: number, remaining: number): string {
+  if (placed === 0) return "text-muted-foreground";
+  const pct = remaining / placed;
+  if (pct >= 0.5) return "text-green-700 dark:text-green-400";
+  if (pct >= 0.2) return "text-amber-700 dark:text-amber-400";
+  return "text-red-700 dark:text-red-400";
+}
+
+export default function InventoryTab({ storeId }: Props) {
+  const { data, isLoading } = useGetPartnershipInventoryQuery(storeId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const inventory = data?.inventory ?? [];
+
+  if (inventory.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground py-8 text-center">
+        No products in your store yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-xs border overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b bg-muted/40">
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+            <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
+            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Placed</th>
+            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Sold</th>
+            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Remaining</th>
+            <th className="text-right px-4 py-3 font-medium text-muted-foreground">Wholesale</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {inventory.map((item) => (
+            <tr key={item._id} className="hover:bg-muted/20 transition-colors">
+              <td className="px-4 py-3 font-medium">{item.productName}</td>
+              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                {item.sku}
+              </td>
+              <td className="px-4 py-3 text-right text-muted-foreground">
+                {item.unitsPlaced.toLocaleString()}
+              </td>
+              <td className="px-4 py-3 text-right text-muted-foreground">
+                {item.unitsSold.toLocaleString()}
+              </td>
+              <td className={`px-4 py-3 text-right font-semibold ${getStockColor(item.unitsPlaced, item.unitsRemaining)}`}>
+                {item.unitsRemaining.toLocaleString()}
+              </td>
+              <td className="px-4 py-3 text-right text-muted-foreground">
+                ${item.wholesalePrice.toFixed(2)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
