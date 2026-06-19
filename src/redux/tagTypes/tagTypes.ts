@@ -32,4 +32,10 @@ export const tagTypes = {
   storePools: "storePools",
   storeOrders: "storeOrders",
   storeSubmissions: "storeSubmissions",
+  partnershipStatus: "partnershipStatus",
+  partnershipInventory: "partnershipInventory",
+  partnershipSales: "partnershipSales",
+  partnershipReplenishments: "partnershipReplenishments",
+  partnershipBilling: "partnershipBilling",
+  partnershipStores: "partnershipStores",
 };
