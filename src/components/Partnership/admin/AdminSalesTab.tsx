@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   useGetAdminSalesQuery,
   useGetAdminInventoryQuery,
@@ -17,9 +21,49 @@ function getDefaultDates() {
   const start = new Date();
   start.setDate(start.getDate() - 30);
   return {
-    startDate: start.toISOString().slice(0, 10),
-    endDate: end.toISOString().slice(0, 10),
+    startDate: format(start, "yyyy-MM-dd"),
+    endDate: format(end, "yyyy-MM-dd"),
   };
+}
+
+function DatePicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value ? new Date(value + "T00:00:00") : undefined;
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="group rounded-xs gap-2 font-normal min-w-[130px] justify-start border-border bg-card text-sm"
+          >
+            <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-white shrink-0" />
+            {selected ? format(selected, "MMM d, yyyy") : "Pick date"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => {
+              if (date) { onChange(format(date, "yyyy-MM-dd")); setOpen(false); }
+            }}
+            autoFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 export default function AdminSalesTab({ storeId }: Props) {
@@ -30,7 +74,6 @@ export default function AdminSalesTab({ storeId }: Props) {
   const [limit, setLimit] = useState(20);
 
   const { data, isLoading } = useGetAdminSalesQuery({ storeId, startDate, endDate, page, limit });
-  // fetch all inventory for sku → name lookup
   const { data: inventoryData } = useGetAdminInventoryQuery({ storeId, page: 1, limit: 1000 });
 
   const sales = data?.sales ?? [];
@@ -50,24 +93,8 @@ export default function AdminSalesTab({ storeId }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-sm">
-          <label className="text-muted-foreground">From</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => handleDateChange("startDate", e.target.value)}
-            className="rounded-xs border border-border bg-background px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary"
-          />
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <label className="text-muted-foreground">To</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => handleDateChange("endDate", e.target.value)}
-            className="rounded-xs border border-border bg-background px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary"
-          />
-        </div>
+        <DatePicker label="From" value={startDate} onChange={(v) => handleDateChange("startDate", v)} />
+        <DatePicker label="To" value={endDate} onChange={(v) => handleDateChange("endDate", v)} />
         {totalCount > 0 && (
           <span className="text-sm text-muted-foreground ml-auto">
             {totalCount.toLocaleString()} records
@@ -101,25 +128,15 @@ export default function AdminSalesTab({ storeId }: Props) {
                   <tr key={sale._id} className="bg-card hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-muted-foreground">
                       {new Date(sale.date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
+                        month: "short", day: "numeric", year: "numeric",
                       })}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                      {sale.sku}
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {skuToName[sale.sku] ?? ""}
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold">
-                      {sale.unitsSold.toLocaleString()}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{sale.sku}</td>
+                    <td className="px-4 py-3 font-medium">{skuToName[sale.sku] ?? ""}</td>
+                    <td className="px-4 py-3 text-right font-semibold">{sale.unitsSold.toLocaleString()}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(sale.receivedAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
+                        month: "short", day: "numeric", year: "numeric",
                       })}
                     </td>
                   </tr>
