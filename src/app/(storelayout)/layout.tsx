@@ -7,6 +7,7 @@ import Link from "next/link";
 import {
   LayoutGrid,
   FlaskConical,
+  Handshake,
   LogOut,
   KeyRound,
   ChevronDown,
@@ -44,6 +45,7 @@ import { toast } from "sonner";
 const NAV_ITEMS = [
   { href: "/store/assets", label: "Digital Assets", icon: LayoutGrid },
   { href: "/store/private-label", label: "Private Label", icon: FlaskConical },
+  { href: "/store/partnership", label: "Partnership", icon: Handshake },
 ];
 
 export default function StoreLayout({
