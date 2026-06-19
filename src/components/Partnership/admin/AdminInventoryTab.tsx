@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -64,20 +64,26 @@ export default function AdminInventoryTab({ storeId }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 rounded-xs bg-blue-50 border border-blue-200 px-3 py-2.5 text-xs text-blue-800">
+        <Info className="w-3.5 h-3.5 shrink-0" />
+        Inventory is automatically synced when a client order is marked as shipped. Use manual placement for corrections only.
+      </div>
+
       <div className="flex justify-end">
         <Button
           size="sm"
+          variant="outline"
           className="rounded-xs gap-1.5"
           onClick={() => setShowForm((v) => !v)}
         >
           {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-          {showForm ? "Cancel" : "Place Product"}
+          {showForm ? "Cancel" : "Manual Adjustment"}
         </Button>
       </div>
 
       {showForm && (
         <div className="rounded-xs border bg-muted/30 p-4 flex flex-col gap-3">
-          <p className="text-sm font-semibold">Place Product in Store</p>
+          <p className="text-sm font-semibold">Manual Inventory Adjustment</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
