@@ -1,3 +1,9 @@
+export interface IPaginationMeta {
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 export interface IPartnershipEnrollment {
   _id: string;
   storeId: string;
@@ -23,7 +29,6 @@ export interface IPartnershipInventory {
   unitsPlaced: number;
   unitsSold: number;
   unitsRemaining: number;
-  lastReconciliationAt?: string;
   createdAt: string;
   updatedAt: string;
 }

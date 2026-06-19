@@ -12,6 +12,7 @@ import {
   useApplyCreditMutation,
   useUpdateBillStatusMutation,
 } from "@/redux/api/Partnership/partnershipApi";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import type { IPartnershipBill } from "@/types/partnership/partnership";
 
 interface Props {
@@ -94,32 +95,34 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
       {expanded && (
         <div className="border-t px-4 py-4 flex flex-col gap-4">
           {/* Line items */}
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="pb-2 font-medium text-muted-foreground">Product</th>
-                <th className="pb-2 font-medium text-muted-foreground">SKU</th>
-                <th className="pb-2 text-right font-medium text-muted-foreground">Units</th>
-                <th className="pb-2 text-right font-medium text-muted-foreground">Price</th>
-                <th className="pb-2 text-right font-medium text-muted-foreground">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {bill.lineItems.map((li, i) => (
-                <tr key={i}>
-                  <td className="py-2">{li.productName}</td>
-                  <td className="py-2 font-mono text-xs text-muted-foreground">{li.sku}</td>
-                  <td className="py-2 text-right text-muted-foreground">
-                    {li.unitsSold.toLocaleString()}
-                  </td>
-                  <td className="py-2 text-right text-muted-foreground">
-                    ${li.wholesalePrice.toFixed(2)}
-                  </td>
-                  <td className="py-2 text-right font-medium">${li.lineTotal.toFixed(2)}</td>
+          <div className="rounded-xs border border-border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-border bg-muted/50">
+                  <th className="px-3 py-2.5 font-medium text-muted-foreground">Product</th>
+                  <th className="px-3 py-2.5 font-medium text-muted-foreground">SKU</th>
+                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Units</th>
+                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Price</th>
+                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {bill.lineItems.map((li, i) => (
+                  <tr key={i} className="bg-card">
+                    <td className="px-3 py-2.5">{li.productName}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{li.sku}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">
+                      {li.unitsSold.toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">
+                      ${li.wholesalePrice.toFixed(2)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-medium">${li.lineTotal.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Credits list */}
           {bill.credits.length > 0 && (
@@ -248,7 +251,10 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
 }
 
 export default function AdminBillingTab({ storeId }: Props) {
-  const { data, isLoading } = useGetAdminBillingQuery(storeId);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const { data, isLoading } = useGetAdminBillingQuery({ storeId, page, limit });
   const [generateBill, { isLoading: isGenerating }] = useGenerateBillMutation();
 
   const [showForm, setShowForm] = useState(false);
@@ -257,6 +263,8 @@ export default function AdminBillingTab({ storeId }: Props) {
   const [month, setMonth] = useState(String(now.getMonth() + 1));
 
   const bills = data?.bills ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   async function handleGenerate() {
     try {
@@ -339,11 +347,22 @@ export default function AdminBillingTab({ storeId }: Props) {
           No bills generated yet.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {bills.map((bill) => (
-            <BillCard key={bill._id} bill={bill} />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-col gap-2">
+            {bills.map((bill) => (
+              <BillCard key={bill._id} bill={bill} />
+            ))}
+          </div>
+          <GlobalPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            limitOptions={[10, 25, 50]}
+          />
+        </>
       )}
     </div>
   );

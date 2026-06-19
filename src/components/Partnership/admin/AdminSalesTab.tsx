@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useGetAdminSalesQuery } from "@/redux/api/Partnership/partnershipApi";
+import {
+  useGetAdminSalesQuery,
+  useGetAdminInventoryQuery,
+} from "@/redux/api/Partnership/partnershipApi";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 interface Props {
   storeId: string;
@@ -22,12 +26,26 @@ export default function AdminSalesTab({ storeId }: Props) {
   const defaults = getDefaultDates();
   const [startDate, setStartDate] = useState(defaults.startDate);
   const [endDate, setEndDate] = useState(defaults.endDate);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
-  const { data, isLoading } = useGetAdminSalesQuery({ storeId, startDate, endDate });
+  const { data, isLoading } = useGetAdminSalesQuery({ storeId, startDate, endDate, page, limit });
+  // fetch all inventory for sku → name lookup
+  const { data: inventoryData } = useGetAdminInventoryQuery({ storeId, page: 1, limit: 1000 });
 
   const sales = data?.sales ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
-  const totalUnits = sales.reduce((sum, s) => sum + s.unitsSold, 0);
+  const skuToName = Object.fromEntries(
+    (inventoryData?.inventory ?? []).map((item) => [item.sku, item.productName])
+  );
+
+  function handleDateChange(field: "startDate" | "endDate", value: string) {
+    if (field === "startDate") setStartDate(value);
+    else setEndDate(value);
+    setPage(1);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +55,7 @@ export default function AdminSalesTab({ storeId }: Props) {
           <input
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => handleDateChange("startDate", e.target.value)}
             className="rounded-xs border border-border bg-background px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary"
           />
         </div>
@@ -46,13 +64,13 @@ export default function AdminSalesTab({ storeId }: Props) {
           <input
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => handleDateChange("endDate", e.target.value)}
             className="rounded-xs border border-border bg-background px-2.5 py-1.5 text-sm focus-visible:outline-none focus-visible:border-primary"
           />
         </div>
-        {sales.length > 0 && (
+        {totalCount > 0 && (
           <span className="text-sm text-muted-foreground ml-auto">
-            {totalUnits.toLocaleString()} units across {sales.length} records
+            {totalCount.toLocaleString()} records
           </span>
         )}
       </div>
@@ -66,48 +84,59 @@ export default function AdminSalesTab({ storeId }: Props) {
           No sales data for this period.
         </p>
       ) : (
-        <div className="rounded-xs border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product ID</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Units Sold</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Received At</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {sales.map((sale) => (
-                <tr key={sale._id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(sale.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                    {sale.sku}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground truncate max-w-[140px]">
-                    {sale.productId}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold">
-                    {sale.unitsSold.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {new Date(sale.receivedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </td>
+        <>
+          <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Units Sold</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Received At</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {sales.map((sale) => (
+                  <tr key={sale._id} className="bg-card hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(sale.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {sale.sku}
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {skuToName[sale.sku] ?? ""}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold">
+                      {sale.unitsSold.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {new Date(sale.receivedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <GlobalPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            limitOptions={[10, 20, 50, 100]}
+          />
+        </>
       )}
     </div>
   );

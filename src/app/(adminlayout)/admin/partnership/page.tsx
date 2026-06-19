@@ -11,6 +11,7 @@ import {
   useApprovePartnershipMutation,
   useRejectPartnershipMutation,
 } from "@/redux/api/Partnership/partnershipApi";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import type { IPartnershipEnrollment } from "@/types/partnership/partnership";
 
 const STATUS_BADGE: Record<IPartnershipEnrollment["status"], string> = {
@@ -33,12 +34,14 @@ export default function AdminPartnershipPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   const { data: pendingData, isLoading: pendingLoading } =
     useGetAllPartnershipStoresQuery({ status: "pending_approval" });
 
   const { data: allData, isLoading: allLoading } = useGetAllPartnershipStoresQuery(
-    filter === "all" ? undefined : { status: filter }
+    filter === "all" ? { page, limit } : { status: filter, page, limit }
   );
 
   const [approvePartnership, { isLoading: isApproving }] = useApprovePartnershipMutation();
@@ -46,6 +49,8 @@ export default function AdminPartnershipPage() {
 
   const pendingStores = pendingData?.stores ?? [];
   const allStores = allData?.stores ?? [];
+  const totalCount = allData?.totalCount ?? 0;
+  const totalPages = allData?.totalPages ?? 1;
 
   async function handleApprove(storeId: string) {
     try {
@@ -66,6 +71,11 @@ export default function AdminPartnershipPage() {
     } finally {
       setRejectingId(null);
     }
+  }
+
+  function handleFilterChange(f: FilterStatus) {
+    setFilter(f);
+    setPage(1);
   }
 
   const FILTERS: { key: FilterStatus; label: string }[] = [
@@ -91,7 +101,7 @@ export default function AdminPartnershipPage() {
           <h2 className="text-base font-semibold">Pending Approval</h2>
           {pendingStores.length > 0 && (
             <Badge className="rounded-xs bg-amber-100 text-amber-800 border-amber-300">
-              {pendingStores.length}
+              {pendingData?.totalCount ?? pendingStores.length}
             </Badge>
           )}
         </div>
@@ -166,15 +176,15 @@ export default function AdminPartnershipPage() {
       <div className="flex flex-col gap-3">
         <h2 className="text-base font-semibold">All Stores</h2>
 
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-0.5 flex-wrap p-1 bg-muted/60 border border-border rounded-xs w-fit">
           {FILTERS.map((f) => (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-xs text-sm font-medium border transition-colors ${
+              onClick={() => handleFilterChange(f.key)}
+              className={`px-3 py-1.5 rounded-xs text-sm font-medium transition-colors ${
                 filter === f.key
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
               }`}
             >
               {f.label}
@@ -190,57 +200,68 @@ export default function AdminPartnershipPage() {
         ) : allStores.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4">No stores found.</p>
         ) : (
-          <div className="rounded-xs border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Store</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">City</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">POS</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Requested</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {allStores.map((s) => {
-                  const store = (s.storeId as any);
-                  const storeName = store?.name ?? "Unknown Store";
-                  const city = store?.city ?? "—";
-                  const storeIdStr = store?._id ?? s.storeId;
+          <>
+            <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Store</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">City</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">POS</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Requested</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {allStores.map((s) => {
+                    const store = (s.storeId as any);
+                    const storeName = store?.name ?? "Unknown Store";
+                    const city = store?.city ?? "—";
+                    const storeIdStr = store?._id ?? s.storeId;
 
-                  return (
-                    <tr
-                      key={s._id}
-                      className="hover:bg-muted/20 transition-colors cursor-pointer"
-                      onClick={() => router.push(`/admin/partnership/${storeIdStr}`)}
-                    >
-                      <td className="px-4 py-3 font-medium">{storeName}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{city}</td>
-                      <td className="px-4 py-3">
-                        <Badge className={`rounded-xs text-xs ${STATUS_BADGE[s.status]}`}>
-                          {STATUS_LABEL[s.status]}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        {s.posApiConnected ? (
-                          <span className="text-green-700 text-xs font-medium">Connected</span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(s.requestedAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <tr
+                        key={s._id}
+                        className="bg-card hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => router.push(`/admin/partnership/${storeIdStr}`)}
+                      >
+                        <td className="px-4 py-3 font-medium">{storeName}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{city}</td>
+                        <td className="px-4 py-3">
+                          <Badge className={`rounded-xs text-xs ${STATUS_BADGE[s.status]}`}>
+                            {STATUS_LABEL[s.status]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          {s.posApiConnected ? (
+                            <span className="text-green-700 text-xs font-medium">Connected</span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(s.requestedAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <GlobalPagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              itemsPerPage={limit}
+              onPageChange={setPage}
+              onLimitChange={(l) => { setLimit(l); setPage(1); }}
+              limitOptions={[10, 20, 50, 100]}
+            />
+          </>
         )}
       </div>
     </div>

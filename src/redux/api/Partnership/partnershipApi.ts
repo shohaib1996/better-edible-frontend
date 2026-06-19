@@ -5,7 +5,10 @@ import type {
   IPartnershipInventory,
   IPartnershipSale,
   IPartnershipBill,
+  IPaginationMeta,
 } from "@/types/partnership/partnership";
+
+type WithPagination<T> = { success: boolean } & T & IPaginationMeta;
 
 export const partnershipApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -30,22 +33,25 @@ export const partnershipApi = baseApi.injectEndpoints({
     // ── Store: Inventory ──────────────────────────────────────────────────────
 
     getPartnershipInventory: builder.query<
-      { success: boolean; inventory: IPartnershipInventory[] },
-      string
+      WithPagination<{ inventory: IPartnershipInventory[] }>,
+      { storeId: string; page?: number; limit?: number }
     >({
-      query: (storeId) => ({ url: "/partnership/inventory", params: { storeId } }),
+      query: ({ storeId, page = 1, limit = 10 }) => ({
+        url: "/partnership/inventory",
+        params: { storeId, page, limit },
+      }),
       providesTags: [tagTypes.partnershipInventory],
     }),
 
     // ── Store: Sales ──────────────────────────────────────────────────────────
 
     getPartnershipSales: builder.query<
-      { success: boolean; sales: IPartnershipSale[] },
-      { storeId: string; startDate?: string; endDate?: string }
+      WithPagination<{ sales: IPartnershipSale[] }>,
+      { storeId: string; startDate?: string; endDate?: string; page?: number; limit?: number }
     >({
-      query: ({ storeId, startDate, endDate }) => ({
+      query: ({ storeId, startDate, endDate, page = 1, limit = 20 }) => ({
         url: "/partnership/sales",
-        params: { storeId, startDate, endDate },
+        params: { storeId, startDate, endDate, page, limit },
       }),
       providesTags: [tagTypes.partnershipSales],
     }),
@@ -53,18 +59,21 @@ export const partnershipApi = baseApi.injectEndpoints({
     // ── Store: Billing ────────────────────────────────────────────────────────
 
     getPartnershipBilling: builder.query<
-      { success: boolean; bills: IPartnershipBill[] },
-      string
+      WithPagination<{ bills: IPartnershipBill[] }>,
+      { storeId: string; page?: number; limit?: number }
     >({
-      query: (storeId) => ({ url: "/partnership/billing", params: { storeId } }),
+      query: ({ storeId, page = 1, limit = 10 }) => ({
+        url: "/partnership/billing",
+        params: { storeId, page, limit },
+      }),
       providesTags: [tagTypes.partnershipBilling],
     }),
 
     // ── Admin: Enrollment ─────────────────────────────────────────────────────
 
     getAllPartnershipStores: builder.query<
-      { success: boolean; stores: IPartnershipEnrollment[] },
-      { status?: string } | void
+      WithPagination<{ stores: IPartnershipEnrollment[] }>,
+      { status?: string; page?: number; limit?: number } | void
     >({
       query: (params) => ({ url: "/admin/partnership", params: params || {} }),
       providesTags: [tagTypes.partnershipStores],
@@ -97,10 +106,13 @@ export const partnershipApi = baseApi.injectEndpoints({
     // ── Admin: Inventory ──────────────────────────────────────────────────────
 
     getAdminInventory: builder.query<
-      { success: boolean; inventory: IPartnershipInventory[] },
-      string
+      WithPagination<{ inventory: IPartnershipInventory[] }>,
+      { storeId: string; page?: number; limit?: number }
     >({
-      query: (storeId) => ({ url: `/admin/partnership/${storeId}/inventory` }),
+      query: ({ storeId, page = 1, limit = 10 }) => ({
+        url: `/admin/partnership/${storeId}/inventory`,
+        params: { page, limit },
+      }),
       providesTags: [tagTypes.partnershipInventory],
     }),
 
@@ -119,12 +131,12 @@ export const partnershipApi = baseApi.injectEndpoints({
     // ── Admin: Sales ──────────────────────────────────────────────────────────
 
     getAdminSales: builder.query<
-      { success: boolean; sales: IPartnershipSale[] },
-      { storeId: string; startDate?: string; endDate?: string }
+      WithPagination<{ sales: IPartnershipSale[] }>,
+      { storeId: string; startDate?: string; endDate?: string; page?: number; limit?: number }
     >({
-      query: ({ storeId, startDate, endDate }) => ({
+      query: ({ storeId, startDate, endDate, page = 1, limit = 20 }) => ({
         url: `/admin/partnership/${storeId}/sales`,
-        params: { startDate, endDate },
+        params: { startDate, endDate, page, limit },
       }),
       providesTags: [tagTypes.partnershipSales],
     }),
@@ -132,10 +144,13 @@ export const partnershipApi = baseApi.injectEndpoints({
     // ── Admin: Billing ────────────────────────────────────────────────────────
 
     getAdminBilling: builder.query<
-      { success: boolean; bills: IPartnershipBill[] },
-      string
+      WithPagination<{ bills: IPartnershipBill[] }>,
+      { storeId: string; page?: number; limit?: number }
     >({
-      query: (storeId) => ({ url: `/admin/partnership/${storeId}/billing` }),
+      query: ({ storeId, page = 1, limit = 10 }) => ({
+        url: `/admin/partnership/${storeId}/billing`,
+        params: { page, limit },
+      }),
       providesTags: [tagTypes.partnershipBilling],
     }),
 

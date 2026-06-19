@@ -9,6 +9,7 @@ import {
   useGetAdminInventoryQuery,
   usePlaceInventoryMutation,
 } from "@/redux/api/Partnership/partnershipApi";
+import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 
 interface Props {
   storeId: string;
@@ -23,7 +24,10 @@ function getStockColor(placed: number, remaining: number): string {
 }
 
 export default function AdminInventoryTab({ storeId }: Props) {
-  const { data, isLoading } = useGetAdminInventoryQuery(storeId);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const { data, isLoading } = useGetAdminInventoryQuery({ storeId, page, limit });
   const [placeInventory, { isLoading: isPlacing }] = usePlaceInventoryMutation();
 
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +37,8 @@ export default function AdminInventoryTab({ storeId }: Props) {
   const [unitsToAdd, setUnitsToAdd] = useState("");
 
   const inventory = data?.inventory ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   function resetForm() {
     setProductId("");
@@ -103,7 +109,7 @@ export default function AdminInventoryTab({ storeId }: Props) {
               <Input
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                placeholder="e.g. BE-GUMMY-250"
+                placeholder="e.g. B052"
                 className="rounded-xs text-sm"
               />
             </div>
@@ -158,50 +164,51 @@ export default function AdminInventoryTab({ storeId }: Props) {
           No products placed yet.
         </p>
       ) : (
-        <div className="rounded-xs border overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Placed</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Sold</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Remaining</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Wholesale</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Last Reconciled</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {inventory.map((item) => (
-                <tr key={item._id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3 font-medium">{item.productName}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{item.sku}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {item.unitsPlaced.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {item.unitsSold.toLocaleString()}
-                  </td>
-                  <td className={`px-4 py-3 text-right font-semibold ${getStockColor(item.unitsPlaced, item.unitsRemaining)}`}>
-                    {item.unitsRemaining.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    ${item.wholesalePrice.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {item.lastReconciliationAt
-                      ? new Date(item.lastReconciliationAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "—"}
-                  </td>
+        <>
+          <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
+                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Placed</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Sold</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Remaining</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Wholesale</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {inventory.map((item) => (
+                  <tr key={item._id} className="bg-card hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-medium">{item.productName}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{item.sku}</td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {item.unitsPlaced.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      {item.unitsSold.toLocaleString()}
+                    </td>
+                    <td className={`px-4 py-3 text-right font-semibold ${getStockColor(item.unitsPlaced, item.unitsRemaining)}`}>
+                      {item.unitsRemaining.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">
+                      ${item.wholesalePrice.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <GlobalPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+            limitOptions={[10, 25, 50, 100]}
+          />
+        </>
       )}
     </div>
   );
