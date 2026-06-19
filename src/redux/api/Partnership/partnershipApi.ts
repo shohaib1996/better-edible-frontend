@@ -4,7 +4,6 @@ import type {
   IPartnershipEnrollment,
   IPartnershipInventory,
   IPartnershipSale,
-  IPartnershipReplenishment,
   IPartnershipBill,
 } from "@/types/partnership/partnership";
 
@@ -49,16 +48,6 @@ export const partnershipApi = baseApi.injectEndpoints({
         params: { storeId, startDate, endDate },
       }),
       providesTags: [tagTypes.partnershipSales],
-    }),
-
-    // ── Store: Replenishments ─────────────────────────────────────────────────
-
-    getPartnershipReplenishments: builder.query<
-      { success: boolean; replenishments: IPartnershipReplenishment[] },
-      string
-    >({
-      query: (storeId) => ({ url: "/partnership/replenishments", params: { storeId } }),
-      providesTags: [tagTypes.partnershipReplenishments],
     }),
 
     // ── Store: Billing ────────────────────────────────────────────────────────
@@ -140,52 +129,6 @@ export const partnershipApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.partnershipSales],
     }),
 
-    // ── Admin: Replenishments ─────────────────────────────────────────────────
-
-    getAdminReplenishments: builder.query<
-      { success: boolean; replenishments: IPartnershipReplenishment[] },
-      string
-    >({
-      query: (storeId) => ({ url: `/admin/partnership/${storeId}/replenishments` }),
-      providesTags: [tagTypes.partnershipReplenishments],
-    }),
-
-    createReplenishment: builder.mutation<
-      { success: boolean; replenishment: IPartnershipReplenishment },
-      { storeId: string; items: { productId: string; unitsRequested: number }[] }
-    >({
-      query: ({ storeId, ...body }) => ({
-        url: `/admin/partnership/${storeId}/replenishment`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.partnershipReplenishments],
-    }),
-
-    updateReplenishmentStatus: builder.mutation<
-      { success: boolean; replenishment: IPartnershipReplenishment },
-      { id: string; status: "pending" | "in_transit" | "delivered" }
-    >({
-      query: ({ id, ...body }) => ({
-        url: `/admin/partnership/replenishment/${id}/status`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: [tagTypes.partnershipReplenishments],
-    }),
-
-    deliverReplenishment: builder.mutation<
-      { success: boolean; replenishment: IPartnershipReplenishment },
-      { id: string; driverCounts: { productId: string; actualCount: number }[]; driverNotes?: string }
-    >({
-      query: ({ id, ...body }) => ({
-        url: `/admin/partnership/replenishment/${id}/deliver`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.partnershipReplenishments, tagTypes.partnershipInventory],
-    }),
-
     // ── Admin: Billing ────────────────────────────────────────────────────────
 
     getAdminBilling: builder.query<
@@ -239,7 +182,6 @@ export const {
   useJoinPartnershipMutation,
   useGetPartnershipInventoryQuery,
   useGetPartnershipSalesQuery,
-  useGetPartnershipReplenishmentsQuery,
   useGetPartnershipBillingQuery,
   useGetAllPartnershipStoresQuery,
   useApprovePartnershipMutation,
@@ -247,10 +189,6 @@ export const {
   useGetAdminInventoryQuery,
   usePlaceInventoryMutation,
   useGetAdminSalesQuery,
-  useGetAdminReplenishmentsQuery,
-  useCreateReplenishmentMutation,
-  useUpdateReplenishmentStatusMutation,
-  useDeliverReplenishmentMutation,
   useGetAdminBillingQuery,
   useGenerateBillMutation,
   useApplyCreditMutation,

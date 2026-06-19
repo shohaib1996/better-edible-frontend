@@ -35,7 +35,6 @@ export const tagTypes = {
   partnershipStatus: "partnershipStatus",
   partnershipInventory: "partnershipInventory",
   partnershipSales: "partnershipSales",
-  partnershipReplenishments: "partnershipReplenishments",
   partnershipBilling: "partnershipBilling",
   partnershipStores: "partnershipStores",
 };

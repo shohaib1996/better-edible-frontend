@@ -40,33 +40,6 @@ export interface IPartnershipSale {
   createdAt: string;
 }
 
-export interface IPartnershipReplenishmentItem {
-  productId: string;
-  productName: string;
-  sku: string;
-  unitsRequested: number;
-  unitsDelivered?: number;
-}
-
-export interface IPartnershipDriverCount {
-  productId: string;
-  sku: string;
-  actualCount: number;
-}
-
-export interface IPartnershipReplenishment {
-  _id: string;
-  storeId: string;
-  status: "pending" | "in_transit" | "delivered" | "reconciled";
-  items: IPartnershipReplenishmentItem[];
-  driverCounts: IPartnershipDriverCount[];
-  driverNotes?: string;
-  requestedAt: string;
-  deliveredAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface IPartnershipBillLineItem {
   productId: string;
   productName: string;

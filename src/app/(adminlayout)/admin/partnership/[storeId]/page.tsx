@@ -13,11 +13,10 @@ import {
 } from "@/redux/api/Partnership/partnershipApi";
 import AdminInventoryTab from "@/components/Partnership/admin/AdminInventoryTab";
 import AdminSalesTab from "@/components/Partnership/admin/AdminSalesTab";
-import AdminReplenishmentsTab from "@/components/Partnership/admin/AdminReplenishmentsTab";
 import AdminBillingTab from "@/components/Partnership/admin/AdminBillingTab";
 import type { IPartnershipEnrollment } from "@/types/partnership/partnership";
 
-type Tab = "overview" | "inventory" | "sales" | "replenishments" | "billing";
+type Tab = "overview" | "inventory" | "sales" | "billing";
 
 const STATUS_BADGE: Record<IPartnershipEnrollment["status"], string> = {
   pending_approval: "bg-amber-100 text-amber-800 border-amber-300",
@@ -37,7 +36,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "inventory", label: "Inventory" },
   { key: "sales", label: "Sales" },
-  { key: "replenishments", label: "Replenishments" },
   { key: "billing", label: "Billing" },
 ];
 
@@ -266,7 +264,6 @@ export default function AdminPartnershipStorePage() {
 
       {activeTab === "inventory" && <AdminInventoryTab storeId={storeId} />}
       {activeTab === "sales" && <AdminSalesTab storeId={storeId} />}
-      {activeTab === "replenishments" && <AdminReplenishmentsTab storeId={storeId} />}
       {activeTab === "billing" && <AdminBillingTab storeId={storeId} />}
     </div>
   );

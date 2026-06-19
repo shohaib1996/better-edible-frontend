@@ -12,10 +12,9 @@ import {
 } from "@/redux/api/Partnership/partnershipApi";
 import InventoryTab from "@/components/Partnership/store/InventoryTab";
 import SalesTab from "@/components/Partnership/store/SalesTab";
-import ReplenishmentsTab from "@/components/Partnership/store/ReplenishmentsTab";
 import BillingTab from "@/components/Partnership/store/BillingTab";
 
-type Tab = "inventory" | "sales" | "replenishments" | "billing";
+type Tab = "inventory" | "sales" | "billing";
 
 export default function PartnershipPage() {
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -209,7 +208,6 @@ export default function PartnershipPage() {
   const TABS: { key: Tab; label: string }[] = [
     { key: "inventory", label: "Inventory" },
     { key: "sales", label: "Sales" },
-    { key: "replenishments", label: "Replenishments" },
     { key: "billing", label: "Billing" },
   ];
 
@@ -247,7 +245,6 @@ export default function PartnershipPage() {
 
       {storeId && activeTab === "inventory" && <InventoryTab storeId={storeId} />}
       {storeId && activeTab === "sales" && <SalesTab storeId={storeId} />}
-      {storeId && activeTab === "replenishments" && <ReplenishmentsTab storeId={storeId} />}
       {storeId && activeTab === "billing" && <BillingTab storeId={storeId} />}
     </div>
   );
