@@ -1,0 +1,727 @@
+================================================================================
+PARTNERSHIP PROGRAM MODULE — FULL BUILD INSTRUCTIONS
+================================================================================
+Date: 2026-06-19
+Scope: Branded product consignment system for store portal + admin panel
+Does NOT include private label.
+
+ANSWERED DESIGN DECISIONS
+--------------------------
+- POS API identifies products by SKU (admin-assigned when placing inventory), not internal productId
+- Billing is MANUAL — admin clicks "Generate Bill" per store per month
+- Driver reconciliation happens through the admin panel (no separate driver app)
+- Credits are a fixed amount + reason entered by admin on a per-bill basis
+
+================================================================================
+BACKEND INSTRUCTIONS
+================================================================================
+Project: D:\Web Development\Upwork\better-edibles-backend
+Stack: Express + TypeScript + MongoDB/Mongoose + Zod validators
+
+--------------------------------------------------------------------------------
+STEP 1 — CREATE MODELS
+--------------------------------------------------------------------------------
+Location: src/models/
+
+--- FILE: src/models/PartnershipEnrollment.ts ---
+
+Interface IPartnershipEnrollment:
+  storeId          : Types.ObjectId  (ref: "Store", required, unique)
+  status           : "pending_approval" | "active" | "pending_setup" | "rejected" | "not_enrolled"
+  posApiKey        : string (optional — generated on approval)
+  posApiConnected  : boolean (default: false — set true on first successful POS call)
+  posApiSku        : Map or leave SKU on inventory level (see note below)
+  approvedAt       : Date (optional)
+  approvedBy       : string (optional — admin name)
+  requestedAt      : Date (default: Date.now)
+  notes            : string (optional — admin internal notes)
+  createdAt, updatedAt (timestamps: true)
+
+Index: { storeId: 1 } unique
+
+NOTE: posApiKey is generated with crypto.randomBytes(32).toString("hex") on approval.
+
+
+--- FILE: src/models/PartnershipInventory.ts ---
+
+Interface IPartnershipInventory:
+  storeId          : Types.ObjectId  (ref: "Store", required)
+  productId        : Types.ObjectId  (ref: "Product", required)
+  sku              : string  (required — the SKU the POS will send, e.g. "BE-GUMMY-250")
+  productName      : string  (denormalized — copy from Product at time of placement)
+  wholesalePrice   : number  (price per unit — used for billing)
+  unitsPlaced      : number  (default: 0 — cumulative total ever placed)
+  unitsSold        : number  (default: 0 — cumulative total sold, driven by POS)
+  unitsRemaining   : number  (default: 0 — updated by POS sales and driver reconciliation)
+  lastReconciliationAt : Date (optional — when driver last physically counted)
+  createdAt, updatedAt (timestamps: true)
+
+Index: { storeId: 1, productId: 1 } unique
+Index: { storeId: 1, sku: 1 } unique  ← used by POS API lookup
+
+
+--- FILE: src/models/PartnershipSale.ts ---
+
+Interface IPartnershipSale:
+  storeId          : Types.ObjectId  (ref: "Store", required)
+  productId        : Types.ObjectId  (ref: "Product", required)
+  sku              : string  (the SKU from POS payload — store for audit)
+  date             : Date  (required — the calendar date of the sale, midnight UTC)
+  unitsSold        : number  (required, min: 0)
+  source           : "pos_api" (always — no manual entry)
+  receivedAt       : Date  (default: Date.now — when our server received it)
+  createdAt, updatedAt (timestamps: true)
+
+Index: { storeId: 1, productId: 1, date: 1 } unique  ← idempotent upserts
+
+
+--- FILE: src/models/PartnershipReplenishment.ts ---
+
+Interface IReplenishmentItem:
+  productId        : Types.ObjectId
+  productName      : string
+  sku              : string
+  unitsRequested   : number
+  unitsDelivered   : number (optional — filled on delivery)
+
+Interface IDriverCount:
+  productId        : Types.ObjectId
+  sku              : string
+  actualCount      : number  (physical count by driver — overrides unitsRemaining)
+
+Interface IPartnershipReplenishment:
+  storeId          : Types.ObjectId  (ref: "Store", required)
+  status           : "pending" | "in_transit" | "delivered" | "reconciled"
+  items            : IReplenishmentItem[]
+  driverCounts     : IDriverCount[]  (default: [])
+  driverNotes      : string (optional)
+  requestedAt      : Date (default: Date.now)
+  deliveredAt      : Date (optional)
+  createdAt, updatedAt (timestamps: true)
+
+Index: { storeId: 1, status: 1 }
+
+
+--- FILE: src/models/PartnershipBill.ts ---
+
+Interface IBillLineItem:
+  productId        : Types.ObjectId
+  productName      : string
+  sku              : string
+  unitsSold        : number
+  wholesalePrice   : number
+  lineTotal        : number  (unitsSold × wholesalePrice)
+
+Interface IBillCredit:
+  amount           : number
+  reason           : string
+  appliedAt        : Date
+
+Interface IPartnershipBill:
+  storeId          : Types.ObjectId  (ref: "Store", required)
+  billingYear      : number  (e.g. 2026)
+  billingMonth     : number  (1–12)
+  lineItems        : IBillLineItem[]
+  subtotal         : number
+  credits          : IBillCredit[]  (default: [])
+  creditsTotal     : number  (sum of all credits)
+  total            : number  (subtotal - creditsTotal)
+  status           : "draft" | "sent" | "paid"
+  generatedAt      : Date (default: Date.now)
+  paidAt           : Date (optional)
+  createdAt, updatedAt (timestamps: true)
+
+Index: { storeId: 1, billingYear: 1, billingMonth: 1 } unique
+
+
+--------------------------------------------------------------------------------
+STEP 2 — CREATE VALIDATORS
+--------------------------------------------------------------------------------
+Location: src/validators/partnershipSchemas.ts
+
+Schemas needed (Zod):
+
+joinPartnershipSchema:
+  (no body fields — uses auth to identify store)
+
+approvePartnershipSchema:
+  notes: z.string().optional()
+
+rejectPartnershipSchema:
+  notes: z.string().optional()
+
+placeInventorySchema:
+  productId        : z.string().min(1)
+  sku              : z.string().min(1).max(50)  ← trim and uppercase recommended
+  wholesalePrice   : z.number().min(0)
+  unitsToAdd       : z.number().int().min(1)
+
+createReplenishmentSchema:
+  items: z.array(z.object({
+    productId      : z.string().min(1)
+    unitsRequested : z.number().int().min(1)
+  })).min(1)
+
+deliverReplenishmentSchema:
+  driverCounts: z.array(z.object({
+    productId    : z.string().min(1)
+    actualCount  : z.number().int().min(0)
+  })).min(1)
+  driverNotes  : z.string().optional()
+
+posInboundSalesSchema:
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)  ← "YYYY-MM-DD"
+  items: z.array(z.object({
+    sku          : z.string().min(1)
+    unitsSold    : z.number().int().min(0)
+  })).min(1)
+
+generateBillSchema:
+  year  : z.number().int().min(2024)
+  month : z.number().int().min(1).max(12)
+
+applyCreditSchema:
+  amount  : z.number().min(0.01)
+  reason  : z.string().min(1)
+
+updateBillStatusSchema:
+  status: z.enum(["draft", "sent", "paid"])
+
+
+--------------------------------------------------------------------------------
+STEP 3 — CREATE CONTROLLERS
+--------------------------------------------------------------------------------
+Location: src/controllers/partnership/
+
+Split into focused files:
+
+--- partnershipEnrollmentController.ts ---
+  joinPartnership(req, res)
+    - Check if enrollment already exists for storeId (from auth)
+    - If exists and status is not "rejected" → error "Already enrolled or pending"
+    - Create PartnershipEnrollment with status "pending_approval"
+    - Return 201
+
+  getPartnershipStatus(req, res)
+    - Find PartnershipEnrollment by storeId
+    - If not found → return { status: "not_enrolled" }
+    - Return enrollment doc
+
+  approvePartnership(req, res)  [admin]
+    - Find enrollment by storeId param
+    - Generate posApiKey: crypto.randomBytes(32).toString("hex")
+    - Set status = "pending_setup", posApiKey, approvedAt, approvedBy from admin session
+    - Save and return
+
+  rejectPartnership(req, res)  [admin]
+    - Find enrollment by storeId param
+    - Set status = "rejected", notes from body
+    - Save and return
+
+  getAllPartnershipStores(req, res)  [admin]
+    - Find all PartnershipEnrollment docs
+    - Populate storeId with name, city, state
+    - Support query param: status filter
+    - Return list
+
+
+--- partnershipInventoryController.ts ---
+  getInventory(req, res)
+    - Find all PartnershipInventory by storeId (from auth for store, from param for admin)
+    - Return list
+
+  placeInventory(req, res)  [admin]
+    - Validate storeId param + body (productId, sku, wholesalePrice, unitsToAdd)
+    - Upsert PartnershipInventory: $inc unitsPlaced + unitsRemaining by unitsToAdd
+    - On insert: set productName (lookup Product), sku, wholesalePrice
+    - Return updated doc
+
+  IMPORTANT: After driver delivers (deliverReplenishment), call a helper
+  that sets unitsRemaining = driverCount.actualCount for each product.
+  This is the reconciliation override — driver count is the source of truth.
+
+
+--- partnershipPosController.ts ---
+  receivePosData(req, res)
+    - Auth: read X-Partnership-Key header
+    - Find PartnershipEnrollment by posApiKey
+    - If not found or status !== "active" → 401
+    - Validate body with posInboundSalesSchema
+    - For each item in body.items:
+        * Find PartnershipInventory by { storeId, sku }
+        * If not found → skip with warning (log it)
+        * Parse date to UTC midnight
+        * Upsert PartnershipSale (storeId + productId + date) with unitsSold
+          Use findOneAndUpdate with $set so re-sends are idempotent
+        * After upsert: recalculate unitsSold in inventory
+          → aggregate SUM of all PartnershipSale.unitsSold for this storeId+productId
+          → set inventory.unitsSold = that sum
+          → set inventory.unitsRemaining = inventory.unitsPlaced - inventory.unitsSold
+    - Set enrollment.posApiConnected = true (if not already)
+    - Return { success: true, processed: N, skipped: M }
+
+
+--- partnershipReplenishmentController.ts ---
+  getReplenishments(req, res)
+    - Find PartnershipReplenishment by storeId, sort by requestedAt desc
+    - Return list
+
+  createReplenishment(req, res)  [admin]
+    - storeId from param, items from body
+    - For each item: lookup PartnershipInventory to get productName + sku
+    - Create PartnershipReplenishment with status "pending"
+    - Return 201
+
+  updateReplenishmentStatus(req, res)  [admin]
+    - PATCH status only (pending → in_transit → delivered)
+    - If setting delivered: set deliveredAt = now
+
+  deliverReplenishment(req, res)  [admin]
+    - body: { driverCounts: [{ productId, actualCount }], driverNotes }
+    - Find replenishment, must be in_transit or delivered
+    - Set driverCounts, driverNotes, status = "reconciled"
+    - For each driverCount:
+        * Set PartnershipInventory.unitsRemaining = actualCount  ← OVERRIDE
+        * Set PartnershipInventory.lastReconciliationAt = now
+    - Return updated replenishment
+
+
+--- partnershipBillingController.ts ---
+  getBilling(req, res)
+    - Find PartnershipBill by storeId, sort by year+month desc
+    - Return list
+
+  generateBill(req, res)  [admin]
+    - storeId from param, { year, month } from body
+    - Check no bill already exists for this storeId + year + month
+    - Query PartnershipSale: all records for storeId where date falls in that month
+    - Group by productId → sum unitsSold
+    - For each product: lookup PartnershipInventory for wholesalePrice + productName + sku
+    - Build lineItems array
+    - Calculate subtotal = sum of lineTotals
+    - Create PartnershipBill with status "draft", credits = [], creditsTotal = 0, total = subtotal
+    - Return bill
+
+  applyCredit(req, res)  [admin]
+    - Find bill by id param
+    - Push { amount, reason, appliedAt: now } to credits[]
+    - Recalculate creditsTotal = sum of credits
+    - Recalculate total = subtotal - creditsTotal
+    - Save and return
+
+  updateBillStatus(req, res)  [admin]
+    - PATCH status: "draft" → "sent" → "paid"
+    - If setting "paid": set paidAt = now
+    - Save and return
+
+
+--------------------------------------------------------------------------------
+STEP 4 — CREATE ROUTES
+--------------------------------------------------------------------------------
+Location: src/routes/partnershipRoutes.ts
+
+Split into two route groups:
+
+STORE ROUTES (use existing store auth middleware):
+  POST   /partnership/join                         → joinPartnership
+  GET    /partnership/status                       → getPartnershipStatus
+  GET    /partnership/inventory                    → getInventory (store)
+  GET    /partnership/sales                        → getSales (store)
+  GET    /partnership/replenishments               → getReplenishments (store)
+  GET    /partnership/billing                      → getBilling (store)
+
+POS INBOUND (API key auth via X-Partnership-Key header — no user session):
+  POST   /partnership/pos/sales                   → receivePosData
+
+ADMIN ROUTES (use existing admin auth middleware):
+  GET    /admin/partnership                        → getAllPartnershipStores
+  POST   /admin/partnership/:storeId/approve       → approvePartnership
+  POST   /admin/partnership/:storeId/reject        → rejectPartnership
+  GET    /admin/partnership/:storeId               → getStorePartnershipDetail
+  GET    /admin/partnership/:storeId/inventory     → getInventory (admin)
+  POST   /admin/partnership/:storeId/inventory     → placeInventory
+  GET    /admin/partnership/:storeId/sales         → getSales (admin)
+  GET    /admin/partnership/:storeId/replenishments → getReplenishments (admin)
+  POST   /admin/partnership/:storeId/replenishment → createReplenishment
+  PATCH  /admin/partnership/replenishment/:id/status → updateReplenishmentStatus
+  POST   /admin/partnership/replenishment/:id/deliver → deliverReplenishment
+  GET    /admin/partnership/:storeId/billing       → getBilling (admin)
+  POST   /admin/partnership/:storeId/billing/generate → generateBill
+  POST   /admin/partnership/billing/:billId/credit → applyCredit
+  PATCH  /admin/partnership/billing/:billId/status → updateBillStatus
+
+Register routes in src/app.ts:
+  import partnershipRouter from "./routes/partnershipRoutes";
+  app.use("/api", partnershipRouter);
+
+
+================================================================================
+FRONTEND INSTRUCTIONS
+================================================================================
+Project: d:\Web Development\Upwork\better-edibles-frontend
+Stack: Next.js 15, RTK Query, Tailwind, shadcn/ui, framer-motion
+Conventions: rounded-xs everywhere, no inline comments, no shadcn HoverCard (not installed)
+
+--------------------------------------------------------------------------------
+STEP 1 — ADD TYPES
+--------------------------------------------------------------------------------
+Location: src/types/partnership/partnership.ts
+
+Interfaces to define:
+
+IPartnershipEnrollment:
+  _id, storeId, storeName (populated), status, posApiKey?, posApiConnected
+  approvedAt?, approvedBy?, requestedAt, notes?, createdAt, updatedAt
+
+IPartnershipInventory:
+  _id, storeId, productId, sku, productName, wholesalePrice
+  unitsPlaced, unitsSold, unitsRemaining, lastReconciliationAt?, createdAt, updatedAt
+
+IPartnershipSale:
+  _id, storeId, productId, sku, date, unitsSold, source, receivedAt, createdAt
+
+IPartnershipReplenishmentItem:
+  productId, productName, sku, unitsRequested, unitsDelivered?
+
+IPartnershipReplenishment:
+  _id, storeId, status, items: IPartnershipReplenishmentItem[]
+  driverCounts: { productId, sku, actualCount }[]
+  driverNotes?, requestedAt, deliveredAt?, createdAt, updatedAt
+
+IPartnershipBillLineItem:
+  productId, productName, sku, unitsSold, wholesalePrice, lineTotal
+
+IPartnershipBillCredit:
+  amount, reason, appliedAt
+
+IPartnershipBill:
+  _id, storeId, billingYear, billingMonth, lineItems: IPartnershipBillLineItem[]
+  subtotal, credits: IPartnershipBillCredit[], creditsTotal, total
+  status, generatedAt, paidAt?, createdAt, updatedAt
+
+
+--------------------------------------------------------------------------------
+STEP 2 — CREATE RTK QUERY API
+--------------------------------------------------------------------------------
+Location: src/redux/api/Partnership/partnershipApi.ts
+
+Use createApi with reducerPath: "partnershipApi"
+Base URL: same as other APIs (process.env.NEXT_PUBLIC_API_URL)
+
+Tag types: ["partnershipStatus", "partnershipInventory", "partnershipSales",
+            "partnershipReplenishments", "partnershipBilling", "partnershipStores"]
+
+STORE-FACING endpoints:
+  useGetPartnershipStatusQuery()
+    GET /partnership/status → { enrollment: IPartnershipEnrollment | null }
+
+  useJoinPartnershipMutation()
+    POST /partnership/join → { success, enrollment }
+    invalidates: ["partnershipStatus"]
+
+  useGetPartnershipInventoryQuery()
+    GET /partnership/inventory → { inventory: IPartnershipInventory[] }
+    provides: ["partnershipInventory"]
+
+  useGetPartnershipSalesQuery(params: { startDate?: string; endDate?: string })
+    GET /partnership/sales?startDate=&endDate= → { sales: IPartnershipSale[] }
+    provides: ["partnershipSales"]
+
+  useGetPartnershipReplenishmentsQuery()
+    GET /partnership/replenishments → { replenishments: IPartnershipReplenishment[] }
+    provides: ["partnershipReplenishments"]
+
+  useGetPartnershipBillingQuery()
+    GET /partnership/billing → { bills: IPartnershipBill[] }
+    provides: ["partnershipBilling"]
+
+ADMIN endpoints:
+  useGetAllPartnershipStoresQuery(params: { status?: string })
+    GET /admin/partnership?status= → { stores: IPartnershipEnrollment[] }
+    provides: ["partnershipStores"]
+
+  useApprovePartnershipMutation()
+    POST /admin/partnership/:storeId/approve
+    invalidates: ["partnershipStores"]
+
+  useRejectPartnershipMutation()
+    POST /admin/partnership/:storeId/reject
+    invalidates: ["partnershipStores"]
+
+  useGetAdminInventoryQuery(storeId: string)
+    GET /admin/partnership/:storeId/inventory
+
+  usePlaceInventoryMutation()
+    POST /admin/partnership/:storeId/inventory
+    body: { productId, sku, wholesalePrice, unitsToAdd }
+    invalidates: ["partnershipInventory"]
+
+  useGetAdminSalesQuery(storeId: string, params)
+    GET /admin/partnership/:storeId/sales
+
+  useGetAdminReplenishmentsQuery(storeId: string)
+    GET /admin/partnership/:storeId/replenishments
+
+  useCreateReplenishmentMutation()
+    POST /admin/partnership/:storeId/replenishment
+    invalidates: ["partnershipReplenishments"]
+
+  useUpdateReplenishmentStatusMutation()
+    PATCH /admin/partnership/replenishment/:id/status
+    invalidates: ["partnershipReplenishments"]
+
+  useDeliverReplenishmentMutation()
+    POST /admin/partnership/replenishment/:id/deliver
+    invalidates: ["partnershipReplenishments", "partnershipInventory"]
+
+  useGetAdminBillingQuery(storeId: string)
+    GET /admin/partnership/:storeId/billing
+
+  useGenerateBillMutation()
+    POST /admin/partnership/:storeId/billing/generate
+    body: { year, month }
+    invalidates: ["partnershipBilling"]
+
+  useApplyCreditMutation()
+    POST /admin/partnership/billing/:billId/credit
+    body: { amount, reason }
+    invalidates: ["partnershipBilling"]
+
+  useUpdateBillStatusMutation()
+    PATCH /admin/partnership/billing/:billId/status
+    body: { status }
+    invalidates: ["partnershipBilling"]
+
+Add to store/index.ts reducer map and middleware.
+
+
+--------------------------------------------------------------------------------
+STEP 3 — ADD NAV ITEM TO STORE LAYOUT
+--------------------------------------------------------------------------------
+Location: src/app/(storelayout)/layout.tsx
+
+Import Handshake from "lucide-react"
+
+Add to NAV_ITEMS array (after Private Label):
+  { href: "/store/partnership", label: "Partnership", icon: Handshake }
+
+Active check: pathname.startsWith("/store/partnership")
+
+
+--------------------------------------------------------------------------------
+STEP 4 — CREATE STORE PORTAL PAGES
+--------------------------------------------------------------------------------
+
+--- FILE: src/app/(storelayout)/store/partnership/page.tsx ---
+
+"use client" page
+- On mount: getStoreUser() to get storeId
+- Call useGetPartnershipStatusQuery()
+- Render different content based on enrollment.status:
+
+  STATUS: null / "not_enrolled"
+    Show: Hero card with program overview
+    Button: "Join Partnership Program" → calls useJoinPartnershipMutation()
+    After join: refetch status → shows pending state
+
+  STATUS: "pending_approval"
+    Show: Amber info card — "Your application is under review"
+    Show: "Our team will reach out to confirm program fit"
+    No action button
+
+  STATUS: "rejected"
+    Show: Red info card — "Application not approved"
+    Show: "Contact your rep for more information"
+
+  STATUS: "pending_setup"
+    Show: Green card — "You're approved!"
+    Show: POS API Key in a copyable code block (monospace, copy button)
+    Show: Setup instructions — "Share this key with your POS provider"
+    Show: posApiConnected indicator (if false: amber "Not yet connected", if true: green "Connected")
+    Show: Note — "Full dashboard unlocks once POS is connected"
+
+  STATUS: "active"
+    Show: Dashboard header with store name + partnership badge
+    Show: posApiConnected warning banner if false
+    Show: 4 tabs — Inventory / Sales / Replenishments / Billing
+
+--- Inventory Tab Component ---
+Location: src/components/Partnership/store/InventoryTab.tsx
+
+  Call useGetPartnershipInventoryQuery()
+  Render table or card list:
+    Column: Product Name
+    Column: SKU (mono font)
+    Column: Units Placed (gray)
+    Column: Units Sold (gray)
+    Column: Units Remaining (color: green ≥50%, amber 20-49%, red <20%)
+    Column: Wholesale Price (show for reference)
+  Empty state: "No products in your store yet"
+
+--- Sales Tab Component ---
+Location: src/components/Partnership/store/SalesTab.tsx
+
+  Date range filter: last 30 days default (two date inputs)
+  Call useGetPartnershipSalesQuery({ startDate, endDate })
+  Render table:
+    Date / SKU / Product Name / Units Sold
+  Sort by date desc
+  Empty state: "No sales data yet — make sure your POS is connected"
+
+--- Replenishments Tab Component ---
+Location: src/components/Partnership/store/ReplenishmentsTab.tsx
+
+  Call useGetPartnershipReplenishmentsQuery()
+  Render list of replenishment cards:
+    Header: date requested + status badge (pending=amber, in_transit=blue, delivered=green, reconciled=purple)
+    Expandable: product list with units requested / delivered
+    If reconciled: show driver counts
+  Empty state: "No replenishments yet"
+
+--- Billing Tab Component ---
+Location: src/components/Partnership/store/BillingTab.tsx
+
+  Call useGetPartnershipBillingQuery()
+  Render list of bill cards sorted by year+month desc:
+    Header: "Month Year" (e.g. "June 2026") + status badge + total amount
+    Expandable: line items table (Product / Units Sold / Price / Line Total)
+    Below line items: credits list (reason + amount)
+    Footer: Subtotal / Credits / Total
+  Status badges: draft=gray, sent=amber, paid=green
+  Empty state: "No bills generated yet"
+
+
+--------------------------------------------------------------------------------
+STEP 5 — CREATE ADMIN PAGES
+--------------------------------------------------------------------------------
+
+--- FILE: src/app/(adminlayout)/admin/partnership/page.tsx ---
+
+Admin Partnership overview page
+Header: "Partnership Program" + description
+
+Two sections:
+
+SECTION 1 — Pending Approval
+  Call useGetAllPartnershipStoresQuery({ status: "pending_approval" })
+  Show count badge in section header
+  Each pending store: card with store name, city/state, requested date
+  Buttons: [Approve] [Reject]
+  Approve → useApprovePartnershipMutation() → toast success
+  Reject → confirm dialog → useRejectPartnershipMutation() → toast
+
+SECTION 2 — All Stores
+  Call useGetAllPartnershipStoresQuery() (all statuses)
+  Status filter buttons: All / Active / Pending Setup / Rejected
+  Table columns: Store Name / City / Status badge / POS Connected / Requested Date
+  Row click → navigate to /admin/partnership/[storeId]
+
+
+--- FILE: src/app/(adminlayout)/admin/partnership/[storeId]/page.tsx ---
+
+Per-store management page
+Header: store name + back button + status badge
+
+5 tabs using plain useState (consistent with admin/pps pattern):
+  Overview | Inventory | Sales | Replenishments | Billing
+
+--- Overview Tab ---
+  Enrollment status
+  POS API Key: copyable code block (only show when status is active/pending_setup)
+  POS Connected: green/red indicator
+  Approve/Reject buttons if still pending
+  Admin notes field (read-only display)
+
+--- Inventory Tab (Admin) ---
+  useGetAdminInventoryQuery(storeId)
+  Same table as store view PLUS admin can edit
+
+  [Place Product] button → inline form expands:
+    Product search/select (from Product model)
+    SKU input (text, uppercase)
+    Wholesale Price input (number)
+    Units to Add input (number)
+    [Confirm] → usePlaceInventoryMutation()
+
+  Each inventory row: show all columns + unitsRemaining color coding
+  Last reconciliation date shown if available
+
+--- Sales Tab (Admin) ---
+  Same as store sales tab (date range filter + table)
+  Admin can see all data from POS API
+
+--- Replenishments Tab (Admin) ---
+  useGetAdminReplenishmentsQuery(storeId)
+  [Create Replenishment] button → modal/inline:
+    List of store's inventory items, each with a qty input (unitsRequested)
+    [Create Order] → useCreateReplenishmentMutation()
+
+  Each replenishment card:
+    Status badge + date
+    Items list
+    [Mark In Transit] / [Mark Delivered] status buttons
+    When delivered: [Enter Driver Counts] button → inline form:
+      For each product in replenishment: input for actual count
+      Driver notes textarea
+      [Confirm Reconciliation] → useDeliverReplenishmentMutation()
+      This OVERRIDES unitsRemaining in inventory (source of truth)
+
+--- Billing Tab (Admin) ---
+  useGetAdminBillingQuery(storeId)
+
+  [Generate Bill] button → inline form:
+    Month + Year selects
+    [Generate] → useGenerateBillMutation()
+
+  Each bill card:
+    Period + status badge + total
+    Expandable: line items (Product / Units Sold / Price / Total)
+    [Add Credit] button → inline form:
+      Amount (number) + Reason (text) → useApplyCreditMutation()
+    Credits list (each with amount + reason)
+    Totals: Subtotal / Credits / Total
+    Status controls: [Mark as Sent] [Mark as Paid] → useUpdateBillStatusMutation()
+
+
+--------------------------------------------------------------------------------
+STEP 6 — ADD PARTNERSHIP TO ADMIN SIDEBAR/NAV
+--------------------------------------------------------------------------------
+
+Find the admin layout/nav file and add:
+  { href: "/admin/partnership", label: "Partnership", icon: Handshake }
+
+Check: src/app/(adminlayout)/layout.tsx or wherever admin nav items are defined.
+
+
+================================================================================
+BUILD ORDER (PHASES)
+================================================================================
+
+PHASE 1 — Enrollment Flow (store + admin)
+  Backend:  PartnershipEnrollment model + enrollment controller + routes
+  Frontend: /store/partnership page (all status states) + /admin/partnership page (approve/reject)
+  Test:     Store joins → admin approves → store sees API key
+
+PHASE 2 — Inventory Management
+  Backend:  PartnershipInventory model + inventory controller + routes
+  Frontend: Inventory tab (store view) + Inventory tab (admin view) + place product form
+  Test:     Admin places product → store sees inventory
+
+PHASE 3 — POS API + Sales Tracking
+  Backend:  PartnershipSale model + posController + inbound route (X-Partnership-Key auth)
+  Frontend: Sales tab (store + admin)
+  Test:     Send test POST to /api/partnership/pos/sales with API key → verify inventory updates
+
+PHASE 4 — Replenishment + Driver Reconciliation
+  Backend:  PartnershipReplenishment model + replenishment controller + routes
+  Frontend: Replenishments tab (store view + admin view) + driver count form
+  Test:     Admin creates order → marks delivered → enters counts → inventory overridden
+
+PHASE 5 — Billing
+  Backend:  PartnershipBill model + billing controller + generate/credit/status routes
+  Frontend: Billing tab (store view + admin view) + generate form + credit form
+  Test:     Generate bill for a month → verify line items match POS sales → add credit → mark paid
+
+================================================================================
+END OF INSTRUCTIONS
+================================================================================

@@ -347,6 +347,34 @@ export default function Stage4View({
                         <PrintLabel key={c.caseId} type="case" data={c.labelData} />
                       ))}
                     </div>
+
+                    {/* Label preview */}
+                    <div className="flex flex-col gap-1.5">
+                      <p className={`${compact ? "text-xs" : "text-sm"} font-medium text-muted-foreground`}>
+                        Labels to print ({result.cases.length}):
+                      </p>
+                      <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+                        {result.cases.map((c) => (
+                          <div
+                            key={c.caseId}
+                            className="flex items-center justify-between rounded-xs border border-border bg-muted/40 px-4 py-2.5"
+                          >
+                            <div className="min-w-0">
+                              <p className={`${compact ? "text-sm" : "text-base"} font-bold`}>
+                                Case {c.caseNumber} of {result.cases.length}
+                              </p>
+                              <p className={`${compact ? "text-xs" : "text-sm"} text-muted-foreground truncate`}>
+                                {c.labelData.storeName} · {c.labelData.flavor}
+                              </p>
+                            </div>
+                            <p className={`${compact ? "text-base" : "text-xl"} font-bold tabular-nums shrink-0 ml-3`}>
+                              {c.unitCount} units
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <Button
                       size="lg"
                       className={`w-full ${compact ? "text-base h-10" : "text-2xl h-16"} rounded-xs font-bold`}
