@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 interface Props {
   storeId: string;
 }
-
+// Returns a color class based on stock levels: green for healthy, amber for low, red for critical.
 function getStockColor(placed: number, remaining: number): string {
   if (placed === 0) return "text-muted-foreground";
   const pct = remaining / placed;
