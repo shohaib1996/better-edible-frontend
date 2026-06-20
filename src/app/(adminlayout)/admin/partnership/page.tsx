@@ -115,7 +115,7 @@ export default function AdminPartnershipPage() {
   ];
 
   return (
-    <div className="p-6 flex flex-col gap-8 max-w-5xl">
+    <div className="p-6 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-bold">Partnership Program</h1>
         <p className="text-sm text-muted-foreground mt-1">
