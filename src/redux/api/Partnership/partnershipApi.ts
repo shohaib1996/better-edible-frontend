@@ -103,6 +103,17 @@ export const partnershipApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.partnershipStores, tagTypes.partnershipStatus],
     }),
 
+    removePartnership: builder.mutation<
+      { success: boolean; message: string },
+      { storeId: string }
+    >({
+      query: ({ storeId }) => ({
+        url: `/admin/partnership/${storeId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.partnershipStores, tagTypes.partnershipStatus],
+    }),
+
     // ── Admin: Inventory ──────────────────────────────────────────────────────
 
     getAdminInventory: builder.query<
@@ -201,6 +212,7 @@ export const {
   useGetAllPartnershipStoresQuery,
   useApprovePartnershipMutation,
   useRejectPartnershipMutation,
+  useRemovePartnershipMutation,
   useGetAdminInventoryQuery,
   usePlaceInventoryMutation,
   useGetAdminSalesQuery,

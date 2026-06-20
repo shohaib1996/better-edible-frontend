@@ -11,6 +11,7 @@ import {
   useGetPartnershipInventoryQuery,
 } from "@/redux/api/Partnership/partnershipApi";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Props {
   storeId: string;
@@ -107,31 +108,29 @@ export default function SalesTab({ storeId }: Props) {
         </p>
       ) : (
         <>
-          <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Units Sold</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <div className="rounded-xs border border-border bg-card shadow-sm">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow className="hover:bg-muted/50">
+                  <TableHead className="px-4 py-3 font-medium text-muted-foreground">Date</TableHead>
+                  <TableHead className="px-4 py-3 font-medium text-muted-foreground">SKU</TableHead>
+                  <TableHead className="px-4 py-3 font-medium text-muted-foreground">Product</TableHead>
+                  <TableHead className="px-4 py-3 text-right font-medium text-muted-foreground">Units Sold</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {sales.map((sale) => (
-                  <tr key={sale._id} className="bg-card hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(sale.date).toLocaleDateString("en-US", {
-                        month: "short", day: "numeric", year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{sale.sku}</td>
-                    <td className="px-4 py-3 font-medium">{skuToName[sale.sku] ?? ""}</td>
-                    <td className="px-4 py-3 text-right font-semibold">{sale.unitsSold.toLocaleString()}</td>
-                  </tr>
+                  <TableRow key={sale._id}>
+                    <TableCell className="px-4 py-3 text-muted-foreground">
+                      {new Date(sale.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground">{sale.sku}</TableCell>
+                    <TableCell className="px-4 py-3 font-medium">{skuToName[sale.sku] ?? ""}</TableCell>
+                    <TableCell className="px-4 py-3 text-right font-semibold">{sale.unitsSold.toLocaleString()}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <GlobalPagination
             currentPage={page}

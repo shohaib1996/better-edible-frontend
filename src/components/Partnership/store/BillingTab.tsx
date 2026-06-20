@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useGetPartnershipBillingQuery } from "@/redux/api/Partnership/partnershipApi";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { useGetPartnershipBillingQuery } from "@/redux/api/Partnership/partnershipApi";
 import type { IPartnershipBill } from "@/types/partnership/partnership";
 
 interface Props {
@@ -57,46 +58,36 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
 
       {expanded && (
         <div className="border-t px-4 py-4 flex flex-col gap-4">
-          <div className="rounded-xs border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-border bg-muted/50">
-                  <th className="px-3 py-2.5 font-medium text-muted-foreground">Product</th>
-                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Units</th>
-                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Price</th>
-                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <div className="rounded-xs border border-border">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow className="hover:bg-muted/50">
+                  <TableHead className="px-3 py-2.5 font-medium text-muted-foreground">Product</TableHead>
+                  <TableHead className="px-3 py-2.5 text-right font-medium text-muted-foreground">Units</TableHead>
+                  <TableHead className="px-3 py-2.5 text-right font-medium text-muted-foreground">Price</TableHead>
+                  <TableHead className="px-3 py-2.5 text-right font-medium text-muted-foreground">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {bill.lineItems.map((li, i) => (
-                  <tr key={i} className="bg-card">
-                    <td className="px-3 py-2.5">{li.productName}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">
-                      {li.unitsSold.toLocaleString()}
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">
-                      ${li.wholesalePrice.toFixed(2)}
-                    </td>
-                    <td className="px-3 py-2.5 text-right font-medium">
-                      ${li.lineTotal.toFixed(2)}
-                    </td>
-                  </tr>
+                  <TableRow key={i}>
+                    <TableCell className="px-3 py-2.5">{li.productName}</TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-muted-foreground">{li.unitsSold.toLocaleString()}</TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-muted-foreground">${li.wholesalePrice.toFixed(2)}</TableCell>
+                    <TableCell className="px-3 py-2.5 text-right font-medium">${li.lineTotal.toFixed(2)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {bill.credits.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Credits
-              </p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Credits</p>
               {bill.credits.map((c, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{c.reason}</span>
-                  <span className="text-green-700 font-medium">
-                    −${c.amount.toFixed(2)}
-                  </span>
+                  <span className="text-green-700 font-medium">−${c.amount.toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -123,9 +114,7 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
             <p className="text-xs text-green-700">
               Paid on{" "}
               {new Date(bill.paidAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
+                month: "long", day: "numeric", year: "numeric",
               })}
             </p>
           )}

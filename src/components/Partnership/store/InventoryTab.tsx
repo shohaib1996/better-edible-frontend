@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useGetPartnershipInventoryQuery } from "@/redux/api/Partnership/partnershipApi";
 import { Loader2 } from "lucide-react";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Props {
   storeId: string;
@@ -45,41 +46,33 @@ export default function InventoryTab({ storeId }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Product</th>
-              <th className="text-left px-4 py-3 font-medium text-muted-foreground">SKU</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Placed</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Sold</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Remaining</th>
-              <th className="text-right px-4 py-3 font-medium text-muted-foreground">Wholesale</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+      <div className="rounded-xs border border-border bg-card shadow-sm">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow className="hover:bg-muted/50">
+              <TableHead className="px-4 py-3 font-medium text-muted-foreground">Product</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-muted-foreground">SKU</TableHead>
+              <TableHead className="px-4 py-3 text-right font-medium text-muted-foreground">Placed</TableHead>
+              <TableHead className="px-4 py-3 text-right font-medium text-muted-foreground">Sold</TableHead>
+              <TableHead className="px-4 py-3 text-right font-medium text-muted-foreground">Remaining</TableHead>
+              <TableHead className="px-4 py-3 text-right font-medium text-muted-foreground">Wholesale</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {inventory.map((item) => (
-              <tr key={item._id} className="bg-card hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3 font-medium">{item.productName}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                  {item.sku}
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground">
-                  {item.unitsPlaced.toLocaleString()}
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground">
-                  {item.unitsSold.toLocaleString()}
-                </td>
-                <td className={`px-4 py-3 text-right font-semibold ${getStockColor(item.unitsPlaced, item.unitsRemaining)}`}>
+              <TableRow key={item._id}>
+                <TableCell className="px-4 py-3 font-medium">{item.productName}</TableCell>
+                <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground">{item.sku}</TableCell>
+                <TableCell className="px-4 py-3 text-right text-muted-foreground">{item.unitsPlaced.toLocaleString()}</TableCell>
+                <TableCell className="px-4 py-3 text-right text-muted-foreground">{item.unitsSold.toLocaleString()}</TableCell>
+                <TableCell className={`px-4 py-3 text-right font-semibold ${getStockColor(item.unitsPlaced, item.unitsRemaining)}`}>
                   {item.unitsRemaining.toLocaleString()}
-                </td>
-                <td className="px-4 py-3 text-right text-muted-foreground">
-                  ${item.wholesalePrice.toFixed(2)}
-                </td>
-              </tr>
+                </TableCell>
+                <TableCell className="px-4 py-3 text-right text-muted-foreground">${item.wholesalePrice.toFixed(2)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <GlobalPagination
         currentPage={page}

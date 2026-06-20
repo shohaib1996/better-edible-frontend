@@ -2,16 +2,30 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   useGetAllPartnershipStoresQuery,
   useApprovePartnershipMutation,
   useRejectPartnershipMutation,
+  useRemovePartnershipMutation,
 } from "@/redux/api/Partnership/partnershipApi";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import type { IPartnershipEnrollment } from "@/types/partnership/partnership";
 
 const STATUS_BADGE: Record<IPartnershipEnrollment["status"], string> = {
@@ -34,6 +48,7 @@ export default function AdminPartnershipPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [removingStore, setRemovingStore] = useState<{ storeId: string; name: string } | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
@@ -46,6 +61,7 @@ export default function AdminPartnershipPage() {
 
   const [approvePartnership, { isLoading: isApproving }] = useApprovePartnershipMutation();
   const [rejectPartnership, { isLoading: isRejecting }] = useRejectPartnershipMutation();
+  const [removePartnership, { isLoading: isRemoving }] = useRemovePartnershipMutation();
 
   const pendingStores = pendingData?.stores ?? [];
   const allStores = allData?.stores ?? [];
@@ -70,6 +86,18 @@ export default function AdminPartnershipPage() {
       toast.error(err?.data?.message ?? "Failed to reject");
     } finally {
       setRejectingId(null);
+    }
+  }
+
+  async function handleRemove() {
+    if (!removingStore) return;
+    try {
+      await removePartnership({ storeId: removingStore.storeId }).unwrap();
+      toast.success("Partnership removed");
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to remove partnership");
+    } finally {
+      setRemovingStore(null);
     }
   }
 
@@ -201,18 +229,19 @@ export default function AdminPartnershipPage() {
           <p className="text-sm text-muted-foreground py-4">No stores found.</p>
         ) : (
           <>
-            <div className="rounded-xs border border-border bg-card shadow-sm overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Store</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">City</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">POS</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Requested</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+            <div className="rounded-xs border border-border bg-card shadow-sm">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-muted/50">
+                    <TableHead className="px-4 py-3 font-medium text-muted-foreground">Store</TableHead>
+                    <TableHead className="px-4 py-3 font-medium text-muted-foreground">City</TableHead>
+                    <TableHead className="px-4 py-3 font-medium text-muted-foreground">Status</TableHead>
+                    <TableHead className="px-4 py-3 font-medium text-muted-foreground">POS</TableHead>
+                    <TableHead className="px-4 py-3 font-medium text-muted-foreground">Requested</TableHead>
+                    <TableHead className="px-4 py-3 w-12" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {allStores.map((s) => {
                     const store = (s.storeId as any);
                     const storeName = store?.name ?? "Unknown Store";
@@ -220,37 +249,49 @@ export default function AdminPartnershipPage() {
                     const storeIdStr = store?._id ?? s.storeId;
 
                     return (
-                      <tr
+                      <TableRow
                         key={s._id}
-                        className="bg-card hover:bg-muted/30 transition-colors cursor-pointer"
+                        className="cursor-pointer"
                         onClick={() => router.push(`/admin/partnership/${storeIdStr}`)}
                       >
-                        <td className="px-4 py-3 font-medium">{storeName}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{city}</td>
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3 font-medium">{storeName}</TableCell>
+                        <TableCell className="px-4 py-3 text-muted-foreground">{city}</TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge className={`rounded-xs text-xs ${STATUS_BADGE[s.status]}`}>
                             {STATUS_LABEL[s.status]}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           {s.posApiConnected ? (
                             <span className="text-green-700 text-xs font-medium">Connected</span>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-muted-foreground">
                           {new Date(s.requestedAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
+                            month: "short", day: "numeric", year: "numeric",
                           })}
-                        </td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="px-2 py-3 text-right">
+                          {s.status === "active" && (
+                            <button
+                              className="p-1.5 rounded-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Remove partnership"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRemovingStore({ storeId: storeIdStr, name: storeName });
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
             <GlobalPagination
               currentPage={page}
@@ -264,6 +305,27 @@ export default function AdminPartnershipPage() {
           </>
         )}
       </div>
+      <AlertDialog open={!!removingStore} onOpenChange={(open) => { if (!open) setRemovingStore(null); }}>
+        <AlertDialogContent className="rounded-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Partnership</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <span className="font-semibold text-foreground">{removingStore?.name}</span> from the partnership program and delete their POS API key. Sales from this store will no longer be monitored. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xs" disabled={isRemoving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xs bg-destructive hover:bg-destructive/90 text-white"
+              onClick={handleRemove}
+              disabled={isRemoving}
+            >
+              {isRemoving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+              Remove Partnership
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
