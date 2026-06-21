@@ -17,6 +17,7 @@ interface Props {
 }
 // Returns a color class based on stock levels: green for healthy, amber for low, red for critical. 
 // If no stock placed, returns muted color.
+// placed = total units ever placed in inventory, remaining = current units available.
 function getStockColor(placed: number, remaining: number): string {
   if (placed === 0) return "text-muted-foreground";
   const pct = remaining / placed;
