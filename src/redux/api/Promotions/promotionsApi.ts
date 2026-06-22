@@ -1,257 +1,119 @@
 import { baseApi } from "../baseApi";
 import { tagTypes } from "../../tagTypes/tagTypes";
-import type {
-  IPromotionEnrollment,
-  IPromotion,
-  IStorePromotion,
-  IPromotionCredit,
-  IPromotionPaginationMeta,
-} from "@/types/promotions/promotions";
+import type { IPromotion, IPromotionUsage, IValidatePromoResult } from "@/types/promotions/promotions";
 
-type WithPagination<T> = { success: boolean } & T & IPromotionPaginationMeta;
+interface Paginated { totalCount: number; totalPages: number; currentPage: number; }
 
 export const promotionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // ── Store: Enrollment ──────────────────────────────────────────────────────
 
-    getPromotionStatus: builder.query<
-      { success: boolean; enrollment: IPromotionEnrollment | null; status?: string },
-      string
-    >({
-      query: (storeId) => ({ url: "/promotions/status", params: { storeId } }),
-      providesTags: [tagTypes.promotionStatus],
-    }),
-
-    enrollInPromotions: builder.mutation<
-      { success: boolean; enrollment: IPromotionEnrollment },
-      { storeId: string }
-    >({
-      query: (body) => ({ url: "/promotions/enroll", method: "POST", body }),
-      invalidatesTags: [tagTypes.promotionStatus],
-    }),
-
-    // ── Store: Available company promotions ────────────────────────────────────
-
-    getAvailablePromotions: builder.query<
-      WithPagination<{ promotions: IPromotion[] }>,
-      { page?: number; limit?: number }
-    >({
-      query: ({ page = 1, limit = 20 }) => ({
-        url: "/promotions/available",
-        params: { page, limit },
-      }),
-      providesTags: [tagTypes.promotions],
-    }),
-
-    // ── Store: My promotions ───────────────────────────────────────────────────
-
-    getMyPromotions: builder.query<
-      WithPagination<{ storePromotions: IStorePromotion[] }>,
-      { storeId: string; page?: number; limit?: number }
-    >({
-      query: ({ storeId, page = 1, limit = 20 }) => ({
-        url: "/promotions/my",
-        params: { storeId, page, limit },
-      }),
-      providesTags: [tagTypes.storePromotions],
-    }),
-
-    joinPromotion: builder.mutation<
-      { success: boolean; storePromotion: IStorePromotion },
-      { promotionId: string; storeId: string }
-    >({
-      query: ({ promotionId, storeId }) => ({
-        url: `/promotions/join/${promotionId}`,
-        method: "POST",
-        body: { storeId },
-      }),
-      invalidatesTags: [tagTypes.storePromotions],
-    }),
-
-    createCustomPromotion: builder.mutation<
-      { success: boolean; storePromotion: IStorePromotion },
-      {
-        storeId: string;
-        name: string;
-        productId: string;
-        productName: string;
-        creditRatePerUnit: number;
-        startDate: string;
-        endDate: string;
-      }
-    >({
-      query: (body) => ({ url: "/promotions/custom", method: "POST", body }),
-      invalidatesTags: [tagTypes.storePromotions],
-    }),
-
-    // ── Store: Sales log ───────────────────────────────────────────────────────
-
-    logPromotionSales: builder.mutation<
-      { success: boolean; storePromotion: IStorePromotion; creditsEarned: number },
-      { storePromotionId: string; storeId: string; unitsSold: number; date: string }
-    >({
-      query: ({ storePromotionId, ...body }) => ({
-        url: `/promotions/sales/${storePromotionId}`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.storePromotions, tagTypes.promotionCredits, tagTypes.promotionStatus],
-    }),
-
-    // ── Store: Credits ─────────────────────────────────────────────────────────
-
-    getPromotionCredits: builder.query<
-      WithPagination<{ credits: IPromotionCredit[]; creditBalance: number }>,
-      { storeId: string; page?: number; limit?: number }
-    >({
-      query: ({ storeId, page = 1, limit = 20 }) => ({
-        url: "/promotions/credits",
-        params: { storeId, page, limit },
-      }),
-      providesTags: [tagTypes.promotionCredits],
-    }),
-
-    // ── Admin: Enrollments ─────────────────────────────────────────────────────
-
-    getAllPromotionEnrollments: builder.query<
-      WithPagination<{ enrollments: IPromotionEnrollment[] }>,
-      { status?: string; page?: number; limit?: number } | void
-    >({
-      query: (params) => ({ url: "/admin/promotions/enrollments", params: params || {} }),
-      providesTags: [tagTypes.promotionEnrollments],
-    }),
-
-    approvePromotionEnrollment: builder.mutation<
-      { success: boolean; enrollment: IPromotionEnrollment },
-      { storeId: string; notes?: string; approvedBy?: string }
-    >({
-      query: ({ storeId, ...body }) => ({
-        url: `/admin/promotions/enrollments/${storeId}/approve`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.promotionEnrollments, tagTypes.promotionStatus],
-    }),
-
-    rejectPromotionEnrollment: builder.mutation<
-      { success: boolean; enrollment: IPromotionEnrollment },
-      { storeId: string; notes?: string }
-    >({
-      query: ({ storeId, ...body }) => ({
-        url: `/admin/promotions/enrollments/${storeId}/reject`,
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: [tagTypes.promotionEnrollments, tagTypes.promotionStatus],
-    }),
-
-    // ── Admin: Company promotions ──────────────────────────────────────────────
-
+    // ── Admin: list all promotions ──────────────────────────────────────────
     getAdminPromotions: builder.query<
-      WithPagination<{ promotions: IPromotion[] }>,
-      { status?: string; page?: number; limit?: number } | void
+      { success: boolean; promotions: IPromotion[] } & Paginated,
+      { page?: number; limit?: number; status?: string }
     >({
-      query: (params) => ({ url: "/admin/promotions", params: params || {} }),
-      providesTags: [tagTypes.promotions],
+      query: ({ page = 1, limit = 20, status } = {}) => ({
+        url: "/admin/promotions",
+        params: { page, limit, ...(status ? { status } : {}) },
+      }),
+      providesTags: [{ type: tagTypes.promotions as never, id: "ADMIN_LIST" }],
     }),
 
-    createPromotion: builder.mutation<
-      { success: boolean; promotion: IPromotion },
-      {
-        name: string;
-        description: string;
-        productId: string;
-        productName: string;
-        sku: string;
-        creditRatePerUnit: number;
-        startDate: string;
-        endDate: string;
-        status?: "draft" | "active" | "expired";
-        isPublic?: boolean;
-      }
-    >({
+    // ── Admin: single promotion ─────────────────────────────────────────────
+    getAdminPromotion: builder.query<{ success: boolean; promotion: IPromotion }, string>({
+      query: (id) => `/admin/promotions/${id}`,
+      providesTags: (_r, _e, id) => [{ type: tagTypes.promotions as never, id }],
+    }),
+
+    // ── Admin: create ───────────────────────────────────────────────────────
+    createPromotion: builder.mutation<{ success: boolean; promotion: IPromotion }, Partial<IPromotion>>({
       query: (body) => ({ url: "/admin/promotions", method: "POST", body }),
-      invalidatesTags: [tagTypes.promotions],
+      invalidatesTags: [{ type: tagTypes.promotions as never, id: "ADMIN_LIST" }],
     }),
 
+    // ── Admin: update ───────────────────────────────────────────────────────
     updatePromotion: builder.mutation<
       { success: boolean; promotion: IPromotion },
-      { id: string } & Partial<{
-        name: string;
-        description: string;
-        productId: string;
-        productName: string;
-        sku: string;
-        creditRatePerUnit: number;
-        startDate: string;
-        endDate: string;
-        status: "draft" | "active" | "expired";
-        isPublic: boolean;
-      }>
+      { id: string } & Partial<IPromotion>
     >({
       query: ({ id, ...body }) => ({ url: `/admin/promotions/${id}`, method: "PUT", body }),
-      invalidatesTags: [tagTypes.promotions],
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: tagTypes.promotions as never, id: "ADMIN_LIST" },
+        { type: tagTypes.promotions as never, id },
+      ],
     }),
 
-    deletePromotion: builder.mutation<
-      { success: boolean; message: string },
-      { id: string }
-    >({
+    // ── Admin: delete ───────────────────────────────────────────────────────
+    deletePromotion: builder.mutation<{ success: boolean }, { id: string }>({
       query: ({ id }) => ({ url: `/admin/promotions/${id}`, method: "DELETE" }),
-      invalidatesTags: [tagTypes.promotions],
+      invalidatesTags: [{ type: tagTypes.promotions as never, id: "ADMIN_LIST" }],
     }),
 
-    // ── Admin: Per-store promotions ────────────────────────────────────────────
+    // ── Admin: usage stats for a promotion ─────────────────────────────────
+    getPromotionUsage: builder.query<
+      { success: boolean; promotion: Pick<IPromotion, "_id" | "name" | "usedCount">; usages: IPromotionUsage[]; totalCount: number; totalPages: number; currentPage: number; totalDiscount: number },
+      { id: string; page?: number; limit?: number }
+    >({
+      query: ({ id, page = 1, limit = 20 }) => `/admin/promotions/${id}/usage?page=${page}&limit=${limit}`,
+      providesTags: (_r, _e, { id }) => [{ type: tagTypes.promotionUsage as never, id }],
+    }),
 
-    getAdminStorePromotions: builder.query<
-      WithPagination<{ storePromotions: IStorePromotion[]; enrollment: IPromotionEnrollment | null }>,
+    // ── Admin: apply promo to existing order ────────────────────────────────
+    applyPromoToOrder: builder.mutation<
+      { success: boolean; discount: number; order: unknown },
+      { promotionId?: string; code?: string; storeId: string; orderId: string }
+    >({
+      query: (body) => ({ url: "/admin/promotions/apply", method: "POST", body }),
+      invalidatesTags: [{ type: tagTypes.orders as never, id: "LIST" }],
+    }),
+
+    // ── Store / public: available promotions ────────────────────────────────
+    getPublicPromotions: builder.query<{ success: boolean; promotions: IPromotion[] }, { storeId?: string }>({
+      query: ({ storeId } = {}) => ({
+        url: "/promotions/public",
+        params: storeId ? { storeId } : {},
+      }),
+      providesTags: [{ type: tagTypes.promotions as never, id: "PUBLIC" }],
+    }),
+
+    // ── Store: validate promo code ──────────────────────────────────────────
+    validatePromoCode: builder.mutation<
+      { success: boolean } & IValidatePromoResult,
+      { code: string; storeId: string; orderTotal: number }
+    >({
+      query: (body) => ({ url: "/promotions/validate", method: "POST", body }),
+    }),
+
+    // ── Store: auto-apply check ─────────────────────────────────────────────
+    getAutoApplyPromotion: builder.query<
+      { success: boolean; promotion: IPromotion | null; discount: number },
+      { storeId: string; orderTotal: number }
+    >({
+      query: ({ storeId, orderTotal }) => `/promotions/auto-apply?storeId=${storeId}&orderTotal=${orderTotal}`,
+    }),
+
+    // ── Store: usage history ────────────────────────────────────────────────
+    getStorePromoUsage: builder.query<
+      { success: boolean; usages: IPromotionUsage[] } & Paginated,
       { storeId: string; page?: number; limit?: number }
     >({
-      query: ({ storeId, page = 1, limit = 20 }) => ({
-        url: `/admin/promotions/stores/${storeId}`,
-        params: { page, limit },
-      }),
-      providesTags: [tagTypes.storePromotions, tagTypes.promotionEnrollments],
-    }),
-
-    // ── Admin: Apply credit ────────────────────────────────────────────────────
-
-    applyPromotionCredit: builder.mutation<
-      { success: boolean; credit: IPromotionCredit; creditBalance: number },
-      {
-        storeId: string;
-        amount: number;
-        orderId?: string;
-        partnershipBillId?: string;
-        description?: string;
-      }
-    >({
-      query: (body) => ({ url: "/admin/promotions/credits/apply", method: "POST", body }),
-      invalidatesTags: [
-        tagTypes.promotionCredits,
-        tagTypes.promotionEnrollments,
-        tagTypes.promotionStatus,
-      ],
+      query: ({ storeId, page = 1, limit = 20 }) =>
+        `/promotions/usage?storeId=${storeId}&page=${page}&limit=${limit}`,
+      providesTags: (_r, _e, { storeId }) => [{ type: tagTypes.promotionUsage as never, id: storeId }],
     }),
   }),
 });
 
 export const {
-  useGetPromotionStatusQuery,
-  useEnrollInPromotionsMutation,
-  useGetAvailablePromotionsQuery,
-  useGetMyPromotionsQuery,
-  useJoinPromotionMutation,
-  useCreateCustomPromotionMutation,
-  useLogPromotionSalesMutation,
-  useGetPromotionCreditsQuery,
-  useGetAllPromotionEnrollmentsQuery,
-  useApprovePromotionEnrollmentMutation,
-  useRejectPromotionEnrollmentMutation,
   useGetAdminPromotionsQuery,
+  useGetAdminPromotionQuery,
   useCreatePromotionMutation,
   useUpdatePromotionMutation,
   useDeletePromotionMutation,
-  useGetAdminStorePromotionsQuery,
-  useApplyPromotionCreditMutation,
+  useGetPromotionUsageQuery,
+  useApplyPromoToOrderMutation,
+  useGetPublicPromotionsQuery,
+  useValidatePromoCodeMutation,
+  useGetAutoApplyPromotionQuery,
+  useGetStorePromoUsageQuery,
 } = promotionsApi;

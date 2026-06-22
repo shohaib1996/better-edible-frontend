@@ -44,6 +44,10 @@ export interface IOrder {
   subtotal: number;          // sum of lineTotal
   discount?: number;         // order-level discount (optional if not used)
   total: number;             // subtotal - discount (if any)
+  discountType?: "flat" | "percent";
+  discountValue?: number;
+  promotionId?: string;
+  promotionCode?: string;
 
   status: OrderStatus;
 

@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   FlaskConical,
   Handshake,
+  Zap,
   LogOut,
   KeyRound,
   ChevronDown,
@@ -46,6 +47,7 @@ const NAV_ITEMS = [
   { href: "/store/assets", label: "Digital Assets", icon: LayoutGrid },
   { href: "/store/private-label", label: "Private Label", icon: FlaskConical },
   { href: "/store/partnership", label: "Partnership", icon: Handshake },
+  { href: "/store/promotions", label: "Promotions", icon: Zap },
 ];
 
 export default function StoreLayout({

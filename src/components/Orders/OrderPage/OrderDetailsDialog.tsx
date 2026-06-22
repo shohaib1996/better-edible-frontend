@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import type { IOrder } from "@/types/order/order";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Store, Calendar, Package, FileText, X } from "lucide-react";
+import { Store, Calendar, Package, FileText, X, Tag, Loader2, Check } from "lucide-react";
 import { sortCannaCrispyItems } from "@/utils/productOrdering";
+import { toast } from "sonner";
+import { useApplyPromoToOrderMutation } from "@/redux/api/Promotions/promotionsApi";
 
 interface OrderDetailsDialogProps {
   order: IOrder | null;
@@ -23,7 +26,25 @@ export const OrderDetailsDialog = ({
   order,
   onClose,
 }: OrderDetailsDialogProps) => {
+  const [promoCode, setPromoCode] = useState("");
+  const [applyPromo, { isLoading: isApplying }] = useApplyPromoToOrderMutation();
+
   if (!order) return null;
+
+  async function handleApplyPromo() {
+    if (!promoCode.trim() || !order) return;
+    try {
+      const result = await applyPromo({
+        code: promoCode.trim().toUpperCase(),
+        storeId: order.store._id,
+        orderId: order._id,
+      }).unwrap();
+      toast.success(`Promo applied — $${result.discount.toFixed(2)} discount`);
+      setPromoCode("");
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to apply promo code");
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const colorMap: Record<string, string> = {
@@ -195,6 +216,39 @@ export const OrderDetailsDialog = ({
               <Separator className="dark:bg-gray-700" />
             </>
           )}
+
+          {/* Promo code section */}
+          <div className="rounded-xs border border-border bg-secondary/20 p-3 flex flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" /> Promo Code
+            </p>
+            {order.promotionCode ? (
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-600 shrink-0" />
+                <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono">{order.promotionCode}</code>
+                <span className="text-xs text-green-700 font-medium">Applied — -{fmt(discount)}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleApplyPromo(); }}
+                  placeholder="Enter promo code…"
+                  className="flex-1 rounded-xs border border-input bg-background px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <Button
+                  size="sm"
+                  className="rounded-xs h-8 px-3"
+                  disabled={!promoCode.trim() || isApplying}
+                  onClick={handleApplyPromo}
+                >
+                  {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Apply"}
+                </Button>
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-end">
             <div className="w-full sm:w-1/2 md:w-1/3 space-y-2 bg-secondary/30 dark:bg-secondary/10 p-3 rounded-xs border border-border dark:border-gray-700">

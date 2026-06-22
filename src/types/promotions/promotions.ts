@@ -1,87 +1,42 @@
-export interface IPromotionEnrollment {
-  _id: string;
-  storeId: string | { _id: string; name?: string; city?: string; state?: string };
-  status: "pending_approval" | "active" | "rejected";
-  creditBalance: number;
-  requestedAt: string;
-  approvedAt?: string;
-  approvedBy?: string;
-  notes?: string;
-  posKey?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export type PromotionType = "flat" | "percentage";
+export type PromotionStatus = "active" | "inactive";
 
 export interface IPromotion {
   _id: string;
   name: string;
-  description: string;
-  productId: string;
-  productName: string;
-  sku: string;
-  creditRatePerUnit: number;
-  startDate: string;
-  endDate: string;
-  status: "draft" | "active" | "expired";
-  isPublic: boolean;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface IStorePromotion {
-  _id: string;
-  storeId: string;
-  promotionId?: string;
-  type: "company" | "custom";
-  // Custom-only fields
-  name?: string;
-  productId?: string;
-  productName?: string;
-  creditRatePerUnit?: number;
+  code?: string;
+  description?: string;
+  type: PromotionType;
+  value: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  usedCount: number;
+  maxUsesPerStore?: number;
+  storeIds: string[];
   startDate?: string;
   endDate?: string;
-  // Shared fields
-  status: "active" | "pending_sales_log" | "sales_logged" | "completed" | "cancelled";
-  unitsSold: number;
-  creditsEarned: number;
-  salesLogEmailSentAt?: string;
-  salesLoggedAt?: string;
+  status: PromotionStatus;
+  isPublic: boolean;
+  autoApply: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface IPromotionSale {
+export interface IPromotionUsage {
   _id: string;
+  promotionId: string | IPromotion;
   storeId: string;
-  storePromotionId: string;
-  promotionId?: string;
-  productId: string;
-  date: string;
-  unitsSold: number;
-  source: "manual" | "pos_api";
-  receivedAt: string;
-  createdAt: string;
-  updatedAt: string;
+  orderId?: string;
+  discountAmount: number;
+  appliedAt: string;
+  appliedBy: "store" | "admin";
 }
 
-export interface IPromotionCredit {
-  _id: string;
-  storeId: string;
-  storePromotionId: string;
-  amount: number;
-  description: string;
-  type: "earned" | "applied";
-  appliedToOrderId?: string;
-  appliedToPartnershipBillId?: string;
-  status: "available" | "applied";
-  appliedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface IPromotionPaginationMeta {
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
+export interface IValidatePromoResult {
+  promotionId: string;
+  code?: string;
+  name: string;
+  type: PromotionType;
+  value: number;
+  discount: number;
 }
