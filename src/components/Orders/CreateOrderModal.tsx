@@ -10,17 +10,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Zap, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useCreateOrderMutation } from "@/redux/api/orders/orders";
+import { useGetAdminStorePromotionsQuery, useApplyPromotionCreditMutation } from "@/redux/api/Promotions/promotionsApi";
 import { RepSelect } from "@/components/Shared/RepSelect";
 import { OrderForm } from "@/components/Orders/OrderForm";
 import { IStore } from "@/types";
@@ -38,6 +40,17 @@ export const CreateOrderModal = ({
 }: CreateOrderModalProps) => {
   const router = useRouter();
   const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
+  const [applyPromoCredit, { isLoading: isApplyingPromo }] = useApplyPromotionCreditMutation();
+
+  const { data: promoData } = useGetAdminStorePromotionsQuery(
+    { storeId: store?._id ?? "" },
+    { skip: !store?._id }
+  );
+  const promoBalance = promoData?.enrollment?.creditBalance ?? 0;
+
+  // Post-creation credit step
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [promoCreditAmount, setPromoCreditAmount] = useState("");
 
   // Form state
   const [repId, setRepId] = useState<string>("");
@@ -95,13 +108,17 @@ export const CreateOrderModal = ({
         note: orderTotals.note,
       };
 
-      await createOrder(orderData).unwrap();
+      const result = await createOrder(orderData).unwrap();
       toast.success("Order created successfully!");
 
-      // Close modal
-      onClose();
+      // If store has promo credits, show apply step before redirecting
+      const orderId = result?.order?._id ?? result?._id;
+      if (orderId && promoBalance > 0) {
+        setCreatedOrderId(orderId);
+        return;
+      }
 
-      // Redirect to orders page
+      onClose();
       router.push("/admin/orders");
     } catch (error) {
       console.error("Error creating order:", error);
@@ -109,11 +126,34 @@ export const CreateOrderModal = ({
     }
   };
 
+  async function handleApplyPromoAndClose() {
+    if (!createdOrderId || !store?._id) return;
+    const amount = parseFloat(promoCreditAmount);
+    if (isNaN(amount) || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    try {
+      await applyPromoCredit({ storeId: store._id, amount, orderId: createdOrderId }).unwrap();
+      toast.success(`$${amount.toFixed(2)} promo credit applied to order`);
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to apply credit");
+      return;
+    }
+    setCreatedOrderId(null);
+    onClose();
+    router.push("/admin/orders");
+  }
+
+  function handleSkipCredit() {
+    setCreatedOrderId(null);
+    onClose();
+    router.push("/admin/orders");
+  }
+
   const handleClose = () => {
-    // Reset form
     setRepId("");
     setDeliveryDate("");
     setOrderItems([]);
+    setCreatedOrderId(null);
+    setPromoCreditAmount("");
     setOrderTotals({
       totalCases: 0,
       totalPrice: 0,
@@ -138,7 +178,49 @@ export const CreateOrderModal = ({
           )}
         </DialogHeader>
 
-        <div className="space-y-4 py-3">
+        {/* Promo credit step — shown after order is created */}
+        {createdOrderId && (
+          <div className="flex flex-col gap-5 py-4">
+            <div className="rounded-xs border border-green-200 bg-green-50 p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-green-800 font-semibold text-sm">
+                <Zap className="w-4 h-4" />
+                This store has ${promoBalance.toFixed(2)} in promotion credits
+              </div>
+              <p className="text-xs text-green-700">
+                Apply promotion credits to this order to reduce the total owed.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Amount to apply ($)</label>
+              <Input
+                type="number"
+                min={0.01}
+                max={promoBalance}
+                step={0.01}
+                value={promoCreditAmount}
+                onChange={(e) => setPromoCreditAmount(e.target.value)}
+                placeholder={`Max $${promoBalance.toFixed(2)}`}
+                className="rounded-xs max-w-xs"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 pt-1 border-t">
+              <Button variant="outline" className="rounded-xs" onClick={handleSkipCredit}>
+                Skip
+              </Button>
+              <Button
+                className="rounded-xs bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleApplyPromoAndClose}
+                disabled={isApplyingPromo || !promoCreditAmount}
+              >
+                {isApplyingPromo && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                Apply & Close
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!createdOrderId && <div className="space-y-4 py-3">
           {/* Rep Selection */}
           <div className="space-y-1">
             <Label htmlFor="repId">Assigned Rep</Label>
@@ -188,26 +270,28 @@ export const CreateOrderModal = ({
             initialNote=""
             onChange={onOrderFormChange}
           />
-        </div>
+        </div>}
 
-        {/* Footer Buttons */}
-        <div className="flex justify-end gap-2 pt-2 border-t">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={creating}
-            className="rounded-xs bg-accent text-accent-foreground hover:bg-accent/90 border-transparent"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={creating}
-            className="rounded-xs bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {creating ? "Creating..." : "Create Order"}
-          </Button>
-        </div>
+        {/* Footer Buttons — hidden during promo credit step */}
+        {!createdOrderId && (
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={creating}
+              className="rounded-xs bg-accent text-accent-foreground hover:bg-accent/90 border-transparent"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={creating}
+              className="rounded-xs bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {creating ? "Creating..." : "Create Order"}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

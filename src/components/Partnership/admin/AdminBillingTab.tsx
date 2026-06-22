@@ -12,6 +12,7 @@ import {
   useApplyCreditMutation,
   useUpdateBillStatusMutation,
 } from "@/redux/api/Partnership/partnershipApi";
+import { useGetAdminStorePromotionsQuery, useApplyPromotionCreditMutation } from "@/redux/api/Promotions/promotionsApi";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { IPartnershipBill } from "@/types/partnership/partnership";
@@ -31,14 +32,34 @@ const STATUS_BADGE: Record<IPartnershipBill["status"], string> = {
   paid: "bg-green-100 text-green-800 border-green-300",
 };
 
-function BillCard({ bill }: { bill: IPartnershipBill }) {
+function BillCard({ bill, storeId }: { bill: IPartnershipBill; storeId: string }) {
   const [expanded, setExpanded] = useState(false);
   const [showCreditForm, setShowCreditForm] = useState(false);
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
+  const [showPromoCreditForm, setShowPromoCreditForm] = useState(false);
+  const [promoCreditAmount, setPromoCreditAmount] = useState("");
 
   const [applyCredit, { isLoading: isApplying }] = useApplyCreditMutation();
   const [updateBillStatus, { isLoading: isUpdating }] = useUpdateBillStatusMutation();
+  const [applyPromoCredit, { isLoading: isApplyingPromo }] = useApplyPromotionCreditMutation();
+  const { data: promoData } = useGetAdminStorePromotionsQuery({ storeId }, { skip: !expanded });
+
+  const promoBalance = promoData?.enrollment?.creditBalance ?? 0;
+
+  async function handleApplyPromoCredit() {
+    const amount = parseFloat(promoCreditAmount);
+    if (isNaN(amount) || amount <= 0) { toast.error("Enter a valid amount"); return; }
+    if (amount > promoBalance) { toast.error(`Max available: $${promoBalance.toFixed(2)}`); return; }
+    try {
+      await applyPromoCredit({ storeId, amount, partnershipBillId: bill._id }).unwrap();
+      toast.success(`$${amount.toFixed(2)} promo credit applied to bill`);
+      setPromoCreditAmount("");
+      setShowPromoCreditForm(false);
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to apply promo credit");
+    }
+  }
 
   async function handleAddCredit() {
     if (!creditAmount || !creditReason) {
@@ -166,7 +187,7 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
                 ) : (
                   <Plus className="w-3.5 h-3.5" />
                 )}
-                {showCreditForm ? "Cancel" : "Add Credit"}
+                {showCreditForm ? "Cancel" : "Add Manual Credit"}
               </button>
 
               {showCreditForm && (
@@ -200,6 +221,57 @@ function BillCard({ bill }: { bill: IPartnershipBill }) {
                       )}
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {/* Promo credit application */}
+              {promoBalance > 0 && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowPromoCreditForm((v) => !v)}
+                    className="flex items-center gap-1.5 text-sm text-green-700 hover:text-green-800 w-fit"
+                  >
+                    {showPromoCreditForm ? (
+                      <X className="w-3.5 h-3.5" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5" />
+                    )}
+                    {showPromoCreditForm
+                      ? "Cancel"
+                      : `Apply Promo Credits ($${promoBalance.toFixed(2)} available)`}
+                  </button>
+
+                  {showPromoCreditForm && (
+                    <div className="rounded-xs border border-green-200 bg-green-50/50 p-3 flex flex-col gap-2">
+                      <p className="text-xs text-green-800 font-medium">
+                        Store has ${promoBalance.toFixed(2)} in promotion credits
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          max={promoBalance}
+                          placeholder={`Max $${promoBalance.toFixed(2)}`}
+                          value={promoCreditAmount}
+                          onChange={(e) => setPromoCreditAmount(e.target.value)}
+                          className="rounded-xs text-sm w-36"
+                        />
+                        <Button
+                          size="sm"
+                          className="rounded-xs shrink-0 bg-green-600 hover:bg-green-700 text-white"
+                          onClick={handleApplyPromoCredit}
+                          disabled={isApplyingPromo}
+                        >
+                          {isApplyingPromo ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            "Apply"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -347,7 +419,7 @@ export default function AdminBillingTab({ storeId }: Props) {
         <>
           <div className="flex flex-col gap-2">
             {bills.map((bill) => (
-              <BillCard key={bill._id} bill={bill} />
+              <BillCard key={bill._id} bill={bill} storeId={storeId} />
             ))}
           </div>
           <GlobalPagination
