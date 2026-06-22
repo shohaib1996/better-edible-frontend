@@ -7,6 +7,7 @@ export interface IPromotionEnrollment {
   approvedAt?: string;
   approvedBy?: string;
   notes?: string;
+  posKey?: string;
   createdAt: string;
   updatedAt: string;
 }

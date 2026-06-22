@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ export default function AdminStorePromotionDetail({ storeId }: Props) {
   const [creditPage, setCreditPage] = useState(1);
   const [applyAmount, setApplyAmount] = useState("");
   const [applyOrderId, setApplyOrderId] = useState("");
+  const [keyCopied, setKeyCopied] = useState(false);
 
   const { data: promoData, isLoading: promoLoading } = useGetAdminStorePromotionsQuery({ storeId, page: promoPage });
   const { data: creditData, isLoading: creditLoading } = useGetPromotionCreditsQuery({ storeId, page: creditPage });
@@ -109,6 +110,35 @@ export default function AdminStorePromotionDetail({ storeId }: Props) {
           </form>
         )}
       </div>
+
+      {/* POS integration key */}
+      {enrollment?.posKey && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold">POS Integration Key</h3>
+          <p className="text-xs text-muted-foreground">
+            Share this key with the POS operator. Send it in the{" "}
+            <code className="text-xs bg-muted px-1 rounded">X-Promotion-Key</code> header to{" "}
+            <code className="text-xs bg-muted px-1 rounded">POST /api/promotions/pos/sales</code>.
+          </p>
+          <div className="flex items-center gap-2 max-w-md">
+            <code className="flex-1 rounded-xs border border-border bg-muted px-3 py-2 text-xs font-mono truncate">
+              {enrollment.posKey}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xs shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(enrollment.posKey ?? "");
+                setKeyCopied(true);
+                setTimeout(() => setKeyCopied(false), 2000);
+              }}
+            >
+              {keyCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Store promotions table */}
       <div className="flex flex-col gap-3">
