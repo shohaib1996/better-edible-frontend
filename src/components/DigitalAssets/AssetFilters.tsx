@@ -9,7 +9,7 @@ const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: "file", label: "File (Download)" },
   { value: "text", label: "Text (Copy)" },
 ];
-
+// The AssetFilters component provides filtering options for digital assets based on product lines and asset types. It accepts selected filters and change handlers as props, allowing parent components to manage the filter state.
 interface AssetFiltersProps {
   selectedProductLines: ProductLine[];
   selectedAssetTypes: AssetType[];
