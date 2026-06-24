@@ -1,4 +1,4 @@
-import { SingleClientPage } from "@/components/ClientManagement/SingleClientPage";
+import { SingleClientPage } from "@/components/ClientManagement/Clients/SingleClientPage";
 
 export default async function RepManageClientDetailPage({
   params,

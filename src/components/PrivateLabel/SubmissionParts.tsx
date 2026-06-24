@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { GummyVisual } from "@/components/PrivateLabel/GummyVisual";
 import { hexToHueRotation } from "@/lib/useGummyBuilder";
-import { AddLabelModal } from "@/components/ClientManagement/AddLabelModal";
+import { AddLabelModal } from "@/components/ClientManagement/Labels/AddLabelModal";
 import type { IStoreSubmission } from "@/redux/api/PrivateLabel/storeSubmissionsApi";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
 import type { LabelStage } from "@/types/privateLabel/label";

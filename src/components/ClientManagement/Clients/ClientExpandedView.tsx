@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { IPrivateLabelClient } from "@/types";
 import { useGetAllLabelsQuery } from "@/redux/api/PrivateLabel/labelApi";
-import { LabelCard } from "./LabelCard";
-import { AddLabelModal } from "./AddLabelModal";
-import { BulkStageUpdateSection } from "./BulkStageUpdateSection";
-import { RecurringScheduleSection } from "./RecurringScheduleSection";
+import { LabelCard } from "../Labels/LabelCard";
+import { AddLabelModal } from "../Labels/AddLabelModal";
+import { BulkStageUpdateSection } from "../OrderControls/BulkStageUpdateSection";
+import { RecurringScheduleSection } from "../OrderControls/RecurringScheduleSection";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";

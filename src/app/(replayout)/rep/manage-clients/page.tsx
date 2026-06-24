@@ -1,6 +1,6 @@
 "use client";
 
-import { ManageClientsPage } from "@/components/ClientManagement/ManageClientsPage";
+import { ManageClientsPage } from "@/components/ClientManagement/Clients/ManageClientsPage";
 import { useUser } from "@/redux/hooks/useAuth";
 
 const RepManageClients = () => {
