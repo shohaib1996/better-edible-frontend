@@ -84,7 +84,7 @@ export function FollowUpFilters({
                 variant="outline"
                 size="lg"
                 className={cn(
-                  "flex-1 justify-between bg-primary text-white rounded-xs border-border dark:border-gray-600 min-w-[160px] text-sm",
+                  "flex-1 justify-between bg-primary text-white rounded-xs border-border dark:border-gray-600 min-w-40 text-sm",
                   !selectedDate && "text-muted-foreground",
                   showAll && "opacity-50",
                 )}
