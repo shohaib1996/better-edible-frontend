@@ -28,7 +28,10 @@ export const promotionsApi = baseApi.injectEndpoints({
     // ── Admin: create ───────────────────────────────────────────────────────
     createPromotion: builder.mutation<{ success: boolean; promotion: IPromotion }, Partial<IPromotion>>({
       query: (body) => ({ url: "/admin/promotions", method: "POST", body }),
-      invalidatesTags: [{ type: tagTypes.promotions as never, id: "ADMIN_LIST" }],
+      invalidatesTags: [
+        { type: tagTypes.promotions as never, id: "ADMIN_LIST" },
+        { type: tagTypes.promotions as never, id: "PUBLIC" },
+      ],
     }),
 
     // ── Admin: update ───────────────────────────────────────────────────────
@@ -40,6 +43,7 @@ export const promotionsApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [
         { type: tagTypes.promotions as never, id: "ADMIN_LIST" },
         { type: tagTypes.promotions as never, id },
+        { type: tagTypes.promotions as never, id: "PUBLIC" },
       ],
     }),
 
@@ -74,6 +78,12 @@ export const promotionsApi = baseApi.injectEndpoints({
         params: storeId ? { storeId } : {},
       }),
       providesTags: [{ type: tagTypes.promotions as never, id: "PUBLIC" }],
+    }),
+
+    // ── Store: all promos visible to a specific store (public + personal) ───
+    getStorePromotions: builder.query<{ success: boolean; promotions: IPromotion[] }, { storeId: string }>({
+      query: ({ storeId }) => ({ url: "/promotions/for-store", params: { storeId } }),
+      providesTags: (_r, _e, { storeId }) => [{ type: tagTypes.promotions as never, id: `STORE_${storeId}` }],
     }),
 
     // ── Store: validate promo code ──────────────────────────────────────────
@@ -113,6 +123,7 @@ export const {
   useGetPromotionUsageQuery,
   useApplyPromoToOrderMutation,
   useGetPublicPromotionsQuery,
+  useGetStorePromotionsQuery,
   useValidatePromoCodeMutation,
   useGetAutoApplyPromotionQuery,
   useGetStorePromoUsageQuery,

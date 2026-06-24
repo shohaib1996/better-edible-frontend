@@ -28,13 +28,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Loader2, CalendarIcon, CheckCircle2, FlaskConical, ShoppingCart, Minus, Plus, AlertTriangle } from "lucide-react";
+import { Loader2, CalendarIcon, CheckCircle2, FlaskConical, ShoppingCart, Minus, Plus, AlertTriangle, Tag, Percent, Zap, X, Gift } from "lucide-react";
 import { format, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useGetMyLabelsQuery } from "@/redux/api/PrivateLabel/storeLabelApi";
 import { usePlaceOrderMutation } from "@/redux/api/PrivateLabel/storeOrderApi";
 import { useGetPrivateLabelProductsQuery } from "@/redux/api/PrivateLabel/privateLabelApi";
+import { useGetStorePromotionsQuery, useValidatePromoCodeMutation } from "@/redux/api/Promotions/promotionsApi";
 import type { IStoreDraftLabel } from "@/types/privateLabel/gummyBuilder";
+import type { IPromotion, IValidatePromoResult } from "@/types/promotions/promotions";
 
 interface StoreCreateOrderModalProps {
   open: boolean;
@@ -54,6 +56,9 @@ export function StoreCreateOrderModal({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(defaultDate);
   const [showEarlyWarning, setShowEarlyWarning] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<IValidatePromoResult | null>(null);
+  const [promoError, setPromoError] = useState("");
 
   const { data, isLoading } = useGetMyLabelsQuery(
     { storeId, stageGroup: "approved", limit: 50 },
@@ -63,10 +68,16 @@ export function StoreCreateOrderModal({
     { activeOnly: true },
     { skip: !open }
   );
+  const { data: promosData } = useGetStorePromotionsQuery(
+    { storeId },
+    { skip: !open || !storeId }
+  );
+  const [validateCode, { isLoading: isValidating }] = useValidatePromoCodeMutation();
   const [placeOrder, { isLoading: isSubmitting }] = usePlaceOrderMutation();
 
   const approvedLabels = data?.labels ?? [];
   const products = productsData?.products ?? [];
+  const publicPromos = promosData?.promotions ?? [];
 
   function isMissingRecipeData(label: IStoreDraftLabel) {
     return !label.gummyColorHex || !(label.selectedFlavors ?? []).length;
@@ -85,6 +96,12 @@ export function StoreCreateOrderModal({
     (sum, l) => sum + getUnitPrice(l) * (quantities[l._id] ?? 0),
     0
   );
+  const discountAmount = appliedPromo
+    ? appliedPromo.type === "flat"
+      ? Math.min(appliedPromo.value, subtotal)
+      : parseFloat(((subtotal * appliedPromo.value) / 100).toFixed(2))
+    : 0;
+  const orderTotal = parseFloat((subtotal - discountAmount).toFixed(2));
 
   function toggleLabel(label: IStoreDraftLabel) {
     setQuantities((prev) => {
@@ -106,6 +123,47 @@ export function StoreCreateOrderModal({
     setQuantities({});
     setDeliveryDate(defaultDate);
     setShowEarlyWarning(false);
+    setCodeInput("");
+    setAppliedPromo(null);
+    setPromoError("");
+  }
+
+  async function applyPromoDirectly(promo: IPromotion) {
+    if (promo.minOrderAmount && subtotal < promo.minOrderAmount) {
+      setPromoError(
+        `"${promo.name}" requires a minimum order of $${promo.minOrderAmount.toFixed(2)} (current subtotal: $${subtotal.toFixed(2)})`
+      );
+      return;
+    }
+    // If the promo has a code, validate server-side to catch usage-limit issues
+    if (promo.code) {
+      await handleApplyCode(promo.code);
+      return;
+    }
+    // Codeless (auto-apply / ID-only) promos — apply directly
+    setAppliedPromo({
+      promotionId: promo._id,
+      code: promo.code,
+      name: promo.name,
+      type: promo.type,
+      value: promo.value,
+      discount: 0,
+    });
+    setPromoError("");
+  }
+
+  async function handleApplyCode(code: string) {
+    const c = code.trim();
+    if (!c) return;
+    setPromoError("");
+    try {
+      const result = await validateCode({ code: c, storeId, orderTotal: subtotal }).unwrap();
+      setAppliedPromo(result);
+      setCodeInput("");
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      setPromoError(e.data?.message ?? "Invalid promo code");
+    }
   }
 
   function handleClose() {
@@ -123,6 +181,11 @@ export function StoreCreateOrderModal({
         storeId,
         items,
         deliveryDate: (deliveryDate ?? defaultDate).toISOString(),
+        ...(appliedPromo?.code
+          ? { promoCode: appliedPromo.code }
+          : appliedPromo?.promotionId
+          ? { promotionId: appliedPromo.promotionId }
+          : {}),
       }).unwrap();
       toast.success("Order placed successfully!");
       handleReset();
@@ -329,6 +392,109 @@ export function StoreCreateOrderModal({
             </Popover>
           </div>
 
+          {/* ── Promotions ── */}
+          <>
+            <Separator />
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">Promotions</p>
+
+                {/* Applied promo banner */}
+                {appliedPromo && (
+                  <div className="flex items-center justify-between gap-3 rounded-xs bg-green-50 dark:bg-green-950/30 border border-green-300 dark:border-green-700 px-3 py-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-green-800 dark:text-green-300 truncate">
+                          {appliedPromo.name}
+                          {appliedPromo.code && (
+                            <span className="ml-1.5 font-mono font-bold">{appliedPromo.code}</span>
+                          )}
+                        </p>
+                        {subtotal > 0 && (
+                          <p className="text-xs text-green-700 dark:text-green-400">
+                            Saves ${discountAmount.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setAppliedPromo(null)}
+                      className="shrink-0 p-1 rounded-xs text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Available public promos */}
+                {!appliedPromo && publicPromos.length > 0 && (
+                  <div className="space-y-1.5">
+                    {publicPromos.map((promo) => (
+                      <button
+                        key={promo._id}
+                        type="button"
+                        onClick={() => applyPromoDirectly(promo)}
+                        className="w-full text-left flex items-center gap-3 rounded-xs border border-border bg-background/40 hover:border-primary/50 hover:bg-primary/5 active:bg-primary/10 transition-colors px-3 py-2.5 cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-medium truncate">{promo.name}</span>
+                            <span className="inline-flex items-center gap-1 rounded-xs bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700 px-1.5 py-0.5 text-[10px] font-semibold shrink-0">
+                              {promo.type === "flat" ? <Tag className="w-2.5 h-2.5" /> : <Percent className="w-2.5 h-2.5" />}
+                              {promo.type === "flat" ? `$${promo.value} off` : `${promo.value}% off`}
+                            </span>
+                            {promo.storeIds.length > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-violet-600 dark:text-violet-400 shrink-0">
+                                <Gift className="w-2.5 h-2.5" /> Personal
+                              </span>
+                            )}
+                            {promo.autoApply && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 dark:text-purple-400 shrink-0">
+                                <Zap className="w-2.5 h-2.5" /> Auto-applied
+                              </span>
+                            )}
+                          </div>
+                          {promo.description && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{promo.description}</p>
+                          )}
+                          {promo.minOrderAmount && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Min. order ${promo.minOrderAmount.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-xs text-primary font-medium shrink-0">Apply →</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Manual code input */}
+                {!appliedPromo && (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Promo code"
+                      value={codeInput}
+                      onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setPromoError(""); }}
+                      onKeyDown={(e) => e.key === "Enter" && handleApplyCode(codeInput)}
+                      className="rounded-xs h-9 text-sm font-mono tracking-wide"
+                    />
+                    <Button
+                      variant="outline"
+                      className="rounded-xs h-9 px-4 shrink-0"
+                      onClick={() => handleApplyCode(codeInput)}
+                      disabled={!codeInput.trim() || isValidating}
+                    >
+                      {isValidating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Apply"}
+                    </Button>
+                  </div>
+                )}
+                {promoError && (
+                  <p className="text-xs text-destructive">{promoError}</p>
+                )}
+              </div>
+          </>
+
           {/* ── Order summary ── */}
           {selectedLabels.length > 0 && (
             <>
@@ -352,10 +518,21 @@ export function StoreCreateOrderModal({
                       </div>
                     </div>
                   ))}
+                  {appliedPromo && discountAmount > 0 && (
+                    <div className="flex items-center justify-between px-3 py-2 text-xs text-green-700 dark:text-green-400">
+                      <span>
+                        Discount
+                        {appliedPromo.code && (
+                          <span className="ml-1 font-mono font-semibold">({appliedPromo.code})</span>
+                        )}
+                      </span>
+                      <span className="font-semibold tabular-nums">−${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between px-3 py-2.5 bg-muted/60 dark:bg-muted/40">
                     <span className="text-sm font-bold">Total</span>
                     <span className="text-sm font-bold text-primary tabular-nums">
-                      ${subtotal.toFixed(2)}
+                      ${orderTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>

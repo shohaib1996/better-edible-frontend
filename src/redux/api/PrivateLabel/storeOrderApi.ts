@@ -7,6 +7,8 @@ interface IPlaceOrderPayload {
   storeId: string;
   items: { labelId: string; quantity: number }[];
   deliveryDate?: string;
+  promoCode?: string;
+  promotionId?: string;
 }
 
 interface IGetMyOrdersParams {

@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, Search, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useCreatePromotionMutation, useUpdatePromotionMutation } from "@/redux/api/Promotions/promotionsApi";
+import { useGetAllPrivateLabelClientsQuery } from "@/redux/api/PrivateLabel/privateLabelClientApi";
 import type { IPromotion } from "@/types/promotions/promotions";
 import { emptyForm } from "@/utils/promotionHelpers";
 
@@ -35,12 +40,37 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
       : emptyForm
   );
 
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    editing?.startDate ? parseISO(editing.startDate) : undefined
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    editing?.endDate ? parseISO(editing.endDate) : undefined
+  );
+  const [targetStoreIds, setTargetStoreIds] = useState<string[]>(editing?.storeIds ?? []);
+  const [storeSearch, setStoreSearch] = useState("");
+
+  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({ limit: 500 });
+  const allStores: { _id: string; name: string }[] = (clientsData?.clients ?? []).map((c) => ({
+    _id: c.store._id,
+    name: c.store.name,
+  }));
+
+  const filteredStores = allStores.filter((s) =>
+    (s.name ?? "").toLowerCase().includes(storeSearch.toLowerCase())
+  );
+
   const [create, { isLoading: creating }] = useCreatePromotionMutation();
   const [update, { isLoading: updating }] = useUpdatePromotionMutation();
   const saving = creating || updating;
 
   function set(key: keyof typeof emptyForm, value: any) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleStore(storeId: string) {
+    setTargetStoreIds((prev) =>
+      prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId]
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,12 +88,12 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
       minOrderAmount: form.minOrderAmount ? parseFloat(form.minOrderAmount) : undefined,
       maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
       maxUsesPerStore: form.maxUsesPerStore ? parseInt(form.maxUsesPerStore) : undefined,
-      startDate: form.startDate || undefined,
-      endDate: form.endDate || undefined,
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
       status: form.status,
       isPublic: form.isPublic,
       autoApply: form.autoApply,
-      storeIds: [],
+      storeIds: targetStoreIds,
     };
 
     try {
@@ -157,12 +187,54 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium">Start Date</label>
-          <input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} className={inputCls} />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn("w-full justify-start font-normal rounded-xs", !startDate && "text-muted-foreground")}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {startDate ? format(startDate, "PPP") : "Pick a start date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-xs" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={(d) => {
+                  setStartDate(d);
+                  if (endDate && d && d > endDate) setEndDate(undefined);
+                }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium">End Date</label>
-          <input type="date" value={form.endDate} min={form.startDate} onChange={(e) => set("endDate", e.target.value)} className={inputCls} />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn("w-full justify-start font-normal rounded-xs", !endDate && "text-muted-foreground")}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {endDate ? format(endDate, "PPP") : "Pick an end date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 rounded-xs" align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={setEndDate}
+                disabled={(d) => !!startDate && d < startDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -170,6 +242,83 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
           <textarea value={form.description} onChange={(e) => set("description", e.target.value)}
             placeholder="Optional description shown to stores"
             rows={2} className={`${inputCls} resize-none`} />
+        </div>
+
+        {/* ── Target stores ── */}
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium">Target Stores</label>
+            {targetStoreIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTargetStoreIds([])}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+
+          {/* Selected store chips */}
+          {targetStoreIds.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {targetStoreIds.map((id) => {
+                const store = allStores.find((s) => s._id === id);
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 rounded-xs bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-700 px-2 py-0.5 text-xs font-medium"
+                  >
+                    {store?.name ?? id}
+                    <button type="button" onClick={() => toggleStore(id)} className="hover:text-destructive transition-colors">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Store search + list */}
+          <div className="rounded-xs border border-input bg-background">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-input">
+              <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <input
+                value={storeSearch}
+                onChange={(e) => setStoreSearch(e.target.value)}
+                placeholder="Search stores…"
+                className="flex-1 text-xs bg-transparent focus:outline-none"
+              />
+            </div>
+            <div className="max-h-36 overflow-y-auto divide-y divide-border">
+              {filteredStores.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-3 py-2">No stores found</p>
+              ) : (
+                filteredStores.map((store) => {
+                  const checked = targetStoreIds.includes(store._id);
+                  return (
+                    <label
+                      key={store._id}
+                      className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleStore(store._id)}
+                        className="rounded-xs shrink-0"
+                      />
+                      <span className="text-xs truncate">{store.name}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {targetStoreIds.length === 0
+              ? "Leave empty to make this promotion available to all stores."
+              : `Only ${targetStoreIds.length} selected store${targetStoreIds.length > 1 ? "s" : ""} will see and can use this promotion.`}
+          </p>
         </div>
 
         <div className="flex items-center gap-6 sm:col-span-2">

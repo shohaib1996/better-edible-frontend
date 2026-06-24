@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Tag, Percent, Zap, Clock } from "lucide-react";
+import { Copy, Check, Tag, Percent, Zap, Clock, Gift } from "lucide-react";
 import type { IPromotion } from "@/types/promotions/promotions";
 import { fmtDate, discountLabel } from "@/utils/promotionHelpers";
 
-export function PromoCard({ promo }: { promo: IPromotion }) {
+export function PromoCard({ promo, isPersonal }: { promo: IPromotion; isPersonal?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   function copyCode() {
@@ -16,10 +16,17 @@ export function PromoCard({ promo }: { promo: IPromotion }) {
   }
 
   return (
-    <div className="rounded-xs border bg-card p-5 flex flex-col gap-3">
+    <div className={`rounded-xs border bg-card p-5 flex flex-col gap-3 ${isPersonal ? "border-violet-300 dark:border-violet-700" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-semibold text-sm">{promo.name}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-sm">{promo.name}</p>
+            {isPersonal && (
+              <span className="inline-flex items-center gap-1 rounded-xs bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-300 dark:border-violet-700 px-1.5 py-0.5 text-[10px] font-semibold">
+                <Gift className="w-2.5 h-2.5" /> Personal offer
+              </span>
+            )}
+          </div>
           {promo.description && (
             <p className="text-xs text-muted-foreground mt-0.5">{promo.description}</p>
           )}

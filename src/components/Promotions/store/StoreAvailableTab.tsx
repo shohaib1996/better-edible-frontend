@@ -1,12 +1,15 @@
 "use client";
 
 import { Loader2, Zap } from "lucide-react";
-import { useGetPublicPromotionsQuery } from "@/redux/api/Promotions/promotionsApi";
+import { useGetStorePromotionsQuery } from "@/redux/api/Promotions/promotionsApi";
 import { PromoCard } from "./PromoCard";
 
 export function StoreAvailableTab({ storeId }: { storeId: string }) {
-  const { data, isLoading } = useGetPublicPromotionsQuery({ storeId });
+  const { data, isLoading } = useGetStorePromotionsQuery({ storeId });
   const promotions = data?.promotions ?? [];
+
+  const personal = promotions.filter((p) => p.storeIds.length > 0);
+  const general  = promotions.filter((p) => p.storeIds.length === 0);
 
   if (isLoading) return (
     <div className="flex items-center gap-2 text-muted-foreground py-8">
@@ -23,8 +26,29 @@ export function StoreAvailableTab({ storeId }: { storeId: string }) {
   );
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {promotions.map((promo) => <PromoCard key={promo._id} promo={promo} />)}
+    <div className="space-y-6">
+      {personal.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wide">
+            Personal offers just for you
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {personal.map((promo) => <PromoCard key={promo._id} promo={promo} isPersonal />)}
+          </div>
+        </div>
+      )}
+      {general.length > 0 && (
+        <div className="space-y-3">
+          {personal.length > 0 && (
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Available to all stores
+            </p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {general.map((promo) => <PromoCard key={promo._id} promo={promo} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
