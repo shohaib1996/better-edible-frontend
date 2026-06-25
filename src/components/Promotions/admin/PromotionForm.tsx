@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, X, Search, CalendarIcon } from "lucide-react";
+import { useDebounced } from "@/redux/hooks/hooks";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -48,16 +49,25 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
   );
   const [targetStoreIds, setTargetStoreIds] = useState<string[]>(editing?.storeIds ?? []);
   const [storeSearch, setStoreSearch] = useState("");
+  const debouncedSearch = useDebounced({ searchQuery: storeSearch, delay: 400 });
 
-  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({ limit: 500 });
-  const allStores: { _id: string; name: string }[] = (clientsData?.clients ?? []).map((c) => ({
+  const { data: clientsData } = useGetAllPrivateLabelClientsQuery({ search: debouncedSearch, limit: 10 });
+  const filteredStores: { _id: string; name: string }[] = (clientsData?.clients ?? []).map((c) => ({
     _id: c.store._id,
     name: c.store.name,
   }));
 
-  const filteredStores = allStores.filter((s) =>
-    (s.name ?? "").toLowerCase().includes(storeSearch.toLowerCase())
-  );
+  // Cache store names so chips still show names when a store scrolls out of search results
+  const [storeNamesMap, setStoreNamesMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (filteredStores.length > 0) {
+      setStoreNamesMap((prev) => {
+        const next = { ...prev };
+        filteredStores.forEach((s) => { next[s._id] = s.name; });
+        return next;
+      });
+    }
+  }, [filteredStores]);
 
   const [create, { isLoading: creating }] = useCreatePromotionMutation();
   const [update, { isLoading: updating }] = useUpdatePromotionMutation();
@@ -206,7 +216,7 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
                   setStartDate(d);
                   if (endDate && d && d > endDate) setEndDate(undefined);
                 }}
-                initialFocus
+                autoFocus
               />
             </PopoverContent>
           </Popover>
@@ -231,7 +241,7 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
                 selected={endDate}
                 onSelect={setEndDate}
                 disabled={(d) => !!startDate && d < startDate}
-                initialFocus
+                autoFocus
               />
             </PopoverContent>
           </Popover>
@@ -262,20 +272,17 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
           {/* Selected store chips */}
           {targetStoreIds.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {targetStoreIds.map((id) => {
-                const store = allStores.find((s) => s._id === id);
-                return (
+              {targetStoreIds.map((id) => (
                   <span
                     key={id}
                     className="inline-flex items-center gap-1 rounded-xs bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-700 px-2 py-0.5 text-xs font-medium"
                   >
-                    {store?.name ?? id}
+                    {storeNamesMap[id] ?? id}
                     <button type="button" onClick={() => toggleStore(id)} className="hover:text-destructive transition-colors">
                       <X className="w-3 h-3" />
                     </button>
                   </span>
-                );
-              })}
+              ))}
             </div>
           )}
 

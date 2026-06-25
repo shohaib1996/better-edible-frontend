@@ -69,7 +69,7 @@ export function PromotionUsagePanel({ promotionId, onBack }: Props) {
               </TableHeader>
               <TableBody>
                 {data.usages.map((u) => {
-                  const store = typeof u.storeId === "object" ? (u.storeId as any).storeName : u.storeId;
+                  const store = typeof u.storeId === "object" ? (u.storeId as any).name : u.storeId;
                   const order = u.orderId
                     ? typeof u.orderId === "object" ? `#${(u.orderId as any).orderNumber}` : u.orderId
                     : "—";
