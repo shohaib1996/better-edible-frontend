@@ -1,54 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  CalendarIcon,
-  Loader2,
-  Truck,
-  MapPin,
-  User,
-  DollarSign,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { format, addDays } from "date-fns";
+import { Loader2, Truck } from "lucide-react";
 import { useGetAllRepsQuery } from "@/redux/api/Rep/repApi";
 import { useCreateDeliveryMutation } from "@/redux/api/Deliveries/deliveryApi";
 import { toast } from "sonner";
 import { IRep } from "@/types";
+import { DeliveryStoreInfo } from "./DeliveryStoreInfo";
+import { DeliveryRepField } from "./DeliveryRepField";
+import { DeliveryDispositionField } from "./DeliveryDispositionField";
+import { DeliveryAmountFields } from "./DeliveryAmountFields";
+import { DeliveryScheduleField } from "./DeliveryScheduleField";
 
 interface DeliveryModalProps {
   open: boolean;
   onClose: () => void;
-  store: {
-    _id: string;
-    name: string;
-    address?: string;
-  } | null;
+  store: { _id: string; name: string; address?: string } | null;
   rep?: Partial<IRep> | null;
   sampleId?: string | null;
   orderId?: string | null;
@@ -57,6 +29,16 @@ interface DeliveryModalProps {
   orderAmount?: number | null;
   onSuccess?: () => void;
 }
+
+const defaultForm = {
+  assignedTo: "",
+  disposition: ["delivery"] as string[],
+  paymentAction: "",
+  amount: "",
+  moneyPickupAmount: "",
+  scheduledAt: new Date(),
+  notes: "",
+};
 
 export const DeliveryModal = ({
   open,
@@ -72,38 +54,21 @@ export const DeliveryModal = ({
 }: DeliveryModalProps) => {
   const { data: repsData, isLoading: repsLoading } = useGetAllRepsQuery({});
   const reps = repsData?.data || [];
-
   const [createDelivery, { isLoading: creating }] = useCreateDeliveryMutation();
 
   const [formData, setFormData] = useState({
-    assignedTo: "",
+    ...defaultForm,
     disposition: sampleId ? ["sample_drop"] : ["delivery"],
-    paymentAction: "",
     amount: orderAmount ? String(orderAmount) : "",
-    moneyPickupAmount: "",
-    scheduledAt: new Date(),
-    notes: "",
   });
 
   useEffect(() => {
-    if (repProp) {
-      setFormData((prev) => ({
-        ...prev,
-        assignedTo: repProp._id ?? "",
-      }));
-    }
-    if (sampleId) {
-      setFormData((prev) => ({
-        ...prev,
-        disposition: ["sample_drop"],
-      }));
-    }
-    if (orderAmount) {
-      setFormData((prev) => ({
-        ...prev,
-        amount: String(orderAmount),
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      ...(repProp?._id && { assignedTo: repProp._id }),
+      ...(sampleId && { disposition: ["sample_drop"] }),
+      ...(orderAmount && { amount: String(orderAmount) }),
+    }));
   }, [repProp, sampleId, orderAmount]);
 
   const handleChange = (key: string, value: string | Date) => {
@@ -112,28 +77,20 @@ export const DeliveryModal = ({
 
   const handleDispositionToggle = (value: string) => {
     setFormData((prev) => {
-      const current = prev.disposition;
-      const updated = current.includes(value)
-        ? current.filter((d) => d !== value)
-        : [...current, value];
+      const updated = prev.disposition.includes(value)
+        ? prev.disposition.filter((d) => d !== value)
+        : [...prev.disposition, value];
       return { ...prev, disposition: updated };
     });
   };
 
-  const showDeliveryAmount = formData.disposition.includes("delivery");
-  const showMoneyPickupAmount = formData.disposition.includes("money_pickup");
-
   const handleSubmit = async () => {
     if (!store?._id) return toast.error("Store not found");
-    if (!formData.assignedTo)
-      return toast.error("Please fill all required fields");
+    if (!formData.assignedTo) return toast.error("Please fill all required fields");
 
     try {
-      // Build UTC midnight version of selected date so it lands on the correct day
       const d = new Date(formData.scheduledAt);
-      const utcMidnight = new Date(
-        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
-      );
+      const utcMidnight = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 
       await createDelivery({
         storeId: store._id,
@@ -146,23 +103,16 @@ export const DeliveryModal = ({
         notes: formData.notes,
         ...(sampleId && { sampleId }),
         ...(orderId && { orderId }),
-        ...((clientOrderId || privateLabelOrderId) && { clientOrderId: clientOrderId || privateLabelOrderId }),
+        ...((clientOrderId || privateLabelOrderId) && {
+          clientOrderId: clientOrderId || privateLabelOrderId,
+        }),
       }).unwrap();
 
       toast.success("✅ Delivery created successfully");
-      setFormData({
-        assignedTo: "",
-        disposition: ["delivery"],
-        paymentAction: "",
-        amount: "",
-        moneyPickupAmount: "",
-        scheduledAt: new Date(),
-        notes: "",
-      });
+      setFormData({ ...defaultForm });
       onSuccess?.();
       onClose();
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to create delivery");
     }
   };
@@ -177,224 +127,53 @@ export const DeliveryModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Store Info */}
-        {store && (
-          <div className="bg-linear-to-r from-primary/10 to-secondary/10 border border-primary/30 rounded-xs p-3 shadow-sm shrink-0">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <div>
-                <h2 className="text-base font-bold text-foreground">
-                  {store.name}
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {store.address || "Address not available"}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {store && <DeliveryStoreInfo store={store} />}
 
         <div className="space-y-3 overflow-y-auto scrollbar-hidden p-0.5 flex-1 min-h-0">
-          {/* Delivery Rep */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-primary" />
-              Delivery Rep
-            </Label>
-            {repProp ? (
-              <div className="p-2 border border-border rounded-xs bg-muted/30">
-                <p className="font-semibold text-sm text-foreground">
-                  {repProp.name}
-                </p>
-              </div>
-            ) : (
-              <Select
-                value={formData.assignedTo}
-                onValueChange={(val) => handleChange("assignedTo", val)}
-              >
-                <SelectTrigger className="w-full border-border rounded-xs bg-input text-foreground focus:ring-0 focus:border-primary">
-                  <SelectValue placeholder="Select Rep" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xs">
-                  {repsLoading ? (
-                    <div className="p-2 text-muted-foreground text-center text-xs">
-                      <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                    </div>
-                  ) : (
-                    reps.map((rep: any) => (
-                      <SelectItem
-                        key={rep._id}
-                        value={rep._id}
-                        className="rounded-xs"
-                      >
-                        {rep.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          <DeliveryRepField
+            repProp={repProp}
+            assignedTo={formData.assignedTo}
+            reps={reps}
+            repsLoading={repsLoading}
+            onChange={(val) => handleChange("assignedTo", val)}
+          />
 
-          {/* Disposition */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Truck className="h-3.5 w-3.5 text-primary" />
-              Disposition
-            </Label>
-            <div className="border border-border rounded-xs bg-input p-3 grid grid-cols-2 gap-2">
-              {[
-                { value: "delivery", label: "Delivery" },
-                { value: "sample_drop", label: "Sample Drop" },
-                { value: "money_pickup", label: "Money Pickup" },
-                { value: "sales_call", label: "Sales Call" },
-                { value: "other", label: "Other" },
-              ].map((item) => (
-                <div key={item.value} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`disposition-${item.value}`}
-                    checked={formData.disposition.includes(item.value)}
-                    onCheckedChange={() => handleDispositionToggle(item.value)}
-                    className="rounded-xs"
-                  />
-                  <label
-                    htmlFor={`disposition-${item.value}`}
-                    className="text-sm text-foreground cursor-pointer select-none"
-                  >
-                    {item.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
+          <DeliveryDispositionField
+            disposition={formData.disposition}
+            onToggle={handleDispositionToggle}
+          />
 
-          {/* Delivery Invoiced Amount — only for Delivery */}
-          <AnimatePresence>
-            {showDeliveryAmount && (
-              <motion.div
-                key="delivery-amount"
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden space-y-1.5"
-              >
-                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
-                  Delivery Invoiced Amount
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleChange("amount", e.target.value)}
-                  className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Money Pickup Amount — only for Money Pickup */}
-          <AnimatePresence>
-            {showMoneyPickupAmount && (
-              <motion.div
-                key="money-pickup-amount"
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 0 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden space-y-1.5"
-              >
-                <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
-                  Money Pickup Amount
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.moneyPickupAmount}
-                  onChange={(e) => handleChange("moneyPickupAmount", e.target.value)}
-                  className="border border-border rounded-xs bg-input text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:border-primary"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <DeliveryAmountFields
+            showDelivery={formData.disposition.includes("delivery")}
+            showMoneyPickup={formData.disposition.includes("money_pickup")}
+            amount={formData.amount}
+            moneyPickupAmount={formData.moneyPickupAmount}
+            onChange={handleChange}
+          />
 
           {/* Payment Action */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground">
-              Payment Action
-            </Label>
-            <Select
-              value={formData.paymentAction}
-              onValueChange={(val) => handleChange("paymentAction", val)}
-            >
+            <Label className="text-xs font-semibold text-foreground">Payment Action</Label>
+            <Select value={formData.paymentAction} onValueChange={(val) => handleChange("paymentAction", val)}>
               <SelectTrigger className="w-full border-border rounded-xs bg-input text-foreground focus:ring-0 focus:border-primary">
                 <SelectValue placeholder="Select Action" />
               </SelectTrigger>
               <SelectContent className="rounded-xs">
-                <SelectItem value="collect_payment" className="rounded-xs">
-                  Collect Payment
-                </SelectItem>
-                <SelectItem value="no_payment" className="rounded-xs">
-                  No Payment
-                </SelectItem>
-                <SelectItem value="may_not_collect" className="rounded-xs">
-                  May Not Collect
-                </SelectItem>
+                <SelectItem value="collect_payment" className="rounded-xs">Collect Payment</SelectItem>
+                <SelectItem value="no_payment" className="rounded-xs">No Payment</SelectItem>
+                <SelectItem value="may_not_collect" className="rounded-xs">May Not Collect</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Date Picker */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-              Scheduled Date
-            </Label>
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "flex-1 justify-start text-left font-normal border-border rounded-xs bg-input text-foreground hover:bg-muted/50 hover:text-foreground focus:ring-0 focus:border-primary",
-                      !formData.scheduledAt && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.scheduledAt
-                      ? format(formData.scheduledAt, "PPP")
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-xs">
-                  <Calendar
-                    mode="single"
-                    selected={formData.scheduledAt}
-                    onSelect={(date) => handleChange("scheduledAt", date!)}
-                    autoFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xs bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold whitespace-nowrap px-3 dark:bg-primary dark:text-white"
-                onClick={() =>
-                  handleChange("scheduledAt", addDays(new Date(), 1))
-                }
-              >
-                Tomorrow
-              </Button>
-            </div>
-          </div>
+          <DeliveryScheduleField
+            scheduledAt={formData.scheduledAt}
+            onChange={(date) => handleChange("scheduledAt", date)}
+          />
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-foreground">
-              Notes
-            </Label>
+            <Label className="text-xs font-semibold text-foreground">Notes</Label>
             <Textarea
               placeholder="Add any notes or special instructions..."
               value={formData.notes}
@@ -405,7 +184,6 @@ export const DeliveryModal = ({
           </div>
         </div>
 
-        {/* Submit Button */}
         <div className="border-t border-border pt-3 shrink-0">
           <Button
             onClick={handleSubmit}
@@ -413,9 +191,7 @@ export const DeliveryModal = ({
             className="w-full rounded-xs bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
           >
             {creating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...
-              </>
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</>
             ) : (
               "CREATE DELIVERY"
             )}

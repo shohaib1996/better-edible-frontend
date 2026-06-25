@@ -11,7 +11,7 @@ export const emptyForm = {
   value: "", minOrderAmount: "", maxUses: "", maxUsesPerStore: "",
   startDate: "", endDate: "",
   status: "active" as IPromotion["status"],
-  isPublic: false, autoApply: false,
+  isPublic: true, autoApply: true,
 };
 
 export function fmtDate(dateStr?: string) {

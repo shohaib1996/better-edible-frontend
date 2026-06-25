@@ -78,9 +78,13 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
   }
 
   function toggleStore(storeId: string) {
-    setTargetStoreIds((prev) =>
-      prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId]
-    );
+    setTargetStoreIds((prev) => {
+      const next = prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId];
+      // Auto-manage isPublic: uncheck when stores are targeted, restore when cleared
+      if (next.length > 0) set("isPublic", false);
+      else set("isPublic", true);
+      return next;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -261,7 +265,7 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
             {targetStoreIds.length > 0 && (
               <button
                 type="button"
-                onClick={() => setTargetStoreIds([])}
+                onClick={() => { setTargetStoreIds([]); set("isPublic", true); }}
                 className="text-xs text-muted-foreground hover:text-destructive transition-colors"
               >
                 Clear all
@@ -328,15 +332,22 @@ export function PromotionForm({ editing, onCancel, onSaved }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-6 sm:col-span-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" checked={form.isPublic} onChange={(e) => set("isPublic", e.target.checked)} className="rounded-xs" />
-            Visible to stores
-          </label>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" checked={form.autoApply} onChange={(e) => set("autoApply", e.target.checked)} className="rounded-xs" />
-            Auto-apply when threshold met (no code needed)
-          </label>
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={form.isPublic} onChange={(e) => set("isPublic", e.target.checked)} className="rounded-xs" />
+              Visible to stores
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={form.autoApply} onChange={(e) => set("autoApply", e.target.checked)} className="rounded-xs" />
+              Auto-apply when threshold met (no code needed)
+            </label>
+          </div>
+          {targetStoreIds.length > 0 && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xs px-3 py-1.5">
+              ⚠ "Visible to stores" is automatically unchecked — this promotion will only be visible to the {targetStoreIds.length} targeted store{targetStoreIds.length > 1 ? "s" : ""}.
+            </p>
+          )}
         </div>
 
         <div className="flex gap-2 sm:col-span-2 pt-1">
