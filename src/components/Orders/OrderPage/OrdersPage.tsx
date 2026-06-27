@@ -52,7 +52,7 @@ const OrdersPage = ({
   const [startDate, setStartDate] = useState<string | undefined>();
   const [endDate, setEndDate] = useState<string | undefined>();
 
-  // Pagination state for shipped orders
+  // Pagination state for shipped orders (Admin view only)
   const [shippedPage, setShippedPage] = useState(1);
   const [shippedLimit, setShippedLimit] = useState(10);
 
