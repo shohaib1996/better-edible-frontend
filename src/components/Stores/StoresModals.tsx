@@ -160,8 +160,16 @@ export const StoresModals = ({
           storeId={selectedStoreForSample._id}
           storeName={selectedStoreForSample.name}
           storeAddress={selectedStoreForSample.address || ""}
-          repId={user.id}
-          repName={user.name || ""}
+          repId={
+            isAdmin
+              ? (selectedStoreForSample.rep as any)?._id || ""
+              : user.id
+          }
+          repName={
+            isAdmin
+              ? (selectedStoreForSample.rep as any)?.name || "Unassigned"
+              : user.name || ""
+          }
         />
       )}
 

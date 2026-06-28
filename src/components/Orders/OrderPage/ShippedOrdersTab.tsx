@@ -2,44 +2,21 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, Loader2, Pencil, Package } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { format, subMonths } from "date-fns";
+import { Loader2 } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { format, subMonths } from "date-fns";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
+import { ShippedOrderFilters } from "./ShippedOrderFilters";
+import { ShippedOrderCard } from "./ShippedOrderCard";
 import type { IRep } from "@/types";
 
 interface ShippedOrdersTabProps {
   orders: any[];
   handleChangeStatus: (id: string, status: string) => void;
   updateOrder: any;
-  onFilter: (args: {
-    startDate?: string;
-    endDate?: string;
-    repName?: string;
-  }) => void;
+  onFilter: (args: { startDate?: string; endDate?: string; repName?: string }) => void;
   onEdit: (order: any) => void;
   isLoading: boolean;
   reps: any[];
@@ -72,28 +49,15 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>(sixMonthsAgo);
   const [endDate, setEndDate] = useState<Date | undefined>(today);
   const [selectedRepName, setSelectedRepName] = useState<string | undefined>();
-  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"both" | "orders" | "samples">("both");
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-  // Set default date range and trigger initial filter
   useEffect(() => {
     onFilter({
       startDate: format(sixMonthsAgo, "yyyy-MM-dd"),
       endDate: format(today, "yyyy-MM-dd"),
     });
-  }, []); // Empty dependency array - run only once on mount
-
-  const handleOpenDialog = (order: any) => {
-    setSelectedOrder(order);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedOrder(null);
-  };
-
-  const handleUnauthorizedAction = () => {
-    toast.error("You are not authorized to change it. This is not your order.");
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFilter = () => {
     onFilter({
@@ -126,405 +90,67 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
 
   const totalPages = Math.ceil(totalOrders / itemsPerPage);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "shipped":
-        return "border-l-4 border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20";
-      case "cancelled":
-        return "border-l-4 border-l-red-500 bg-red-50/50 dark:bg-red-950/20";
-      default:
-        return "border-l-4 border-l-gray-300 dark:border-l-gray-600";
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colorMap: Record<string, string> = {
-      shipped: "bg-emerald-500 text-white",
-      cancelled: "bg-red-500 text-white",
-    };
-    return (
-      <span
-        className={cn(
-          "px-2 py-0.5 rounded-xs text-xs font-semibold capitalize",
-          colorMap[status] || "bg-gray-500 text-white"
-        )}
-      >
-        {status}
-      </span>
-    );
-  };
-
-  const getDropdownStyle = (status: string, isOwn: boolean) => {
-    if (!isOwn) {
-      return "bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white";
-    }
-    switch (status) {
-      case "shipped":
-        return "bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700";
-      case "cancelled":
-        return "bg-red-600 hover:bg-red-700 text-white dark:bg-red-600 dark:hover:bg-red-700";
-      case "manifested":
-        return "bg-teal-600 hover:bg-teal-700 text-white dark:bg-teal-600 dark:hover:bg-teal-700";
-      case "accepted":
-        return "bg-yellow-500 hover:bg-yellow-600 text-white dark:bg-yellow-500 dark:hover:bg-yellow-600";
-      case "submitted":
-        return "bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-700";
-      default:
-        return "bg-gray-700 hover:bg-gray-800 text-white dark:bg-gray-600 dark:hover:bg-gray-700";
-    }
-  };
+  let orderIndex = 0;
+  let sampleIndex = 0;
 
   return (
     <TooltipProvider>
       <div className="space-y-3">
-        <div className="grid grid-cols-2 md:flex md:justify-end items-center gap-2 my-4">
-          <Select
-            value={viewMode}
-            onValueChange={(v) => setViewMode(v as "both" | "orders" | "samples")}
-          >
-            <SelectTrigger className="w-44 rounded-xs border border-border col-span-2">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xs">
-              <SelectItem value="both" className="rounded-xs">Orders &amp; Samples</SelectItem>
-              <SelectItem value="orders" className="rounded-xs">Orders</SelectItem>
-              <SelectItem value="samples" className="rounded-xs">Samples</SelectItem>
-            </SelectContent>
-          </Select>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full md:w-[200px] justify-start text-left font-normal rounded-xs dark:hover:bg-secondary dark:hover:text-white",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                {startDate ? format(startDate, "PPP") : <span>Start date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xs">
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={setStartDate}
-                autoFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full md:w-[200px] justify-start text-left font-normal rounded-xs dark:hover:bg-secondary dark:hover:text-white",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                {endDate ? format(endDate, "PPP") : <span>End date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-xs">
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={setEndDate}
-                autoFocus
-              />
-            </PopoverContent>
-          </Popover>
-          <Button
-            onClick={handleFilter}
-            className="w-full md:w-auto rounded-xs bg-primary hover:bg-primary/90"
-          >
-            Filter
-          </Button>
-          <Button
-            onClick={handleClear}
-            className="w-full bg-accent hover:bg-red-500/90 md:w-auto rounded-xs"
-          >
-            Clear
-          </Button>
-        </div>
+        <ShippedOrderFilters
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          startDate={startDate}
+          onStartDateChange={setStartDate}
+          endDate={endDate}
+          onEndDateChange={setEndDate}
+          onFilter={handleFilter}
+          onClear={handleClear}
+        />
 
         {isLoading ? (
           <div className="flex justify-center items-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
           </div>
         ) : !orders.length ? (
-          <p className="text-muted-foreground mt-4 text-center">
-            No shipped orders found.
-          </p>
+          <p className="text-muted-foreground mt-4 text-center">No shipped orders found.</p>
         ) : (
           <>
             <div className="flex items-center justify-between pr-1">
               <div className="flex gap-3 text-sm font-semibold">
                 <span className="text-primary">
-                  {filteredOrders.filter((o) => !(o as any).isSample).length} Orders
+                  {filteredOrders.filter((o) => !o.isSample).length} Orders
                 </span>
                 <span className="text-purple-600 dark:text-purple-400">
-                  {filteredOrders.filter((o) => (o as any).isSample).length} Samples
+                  {filteredOrders.filter((o) => o.isSample).length} Samples
                 </span>
               </div>
               <div className="font-semibold text-emerald-600 dark:text-emerald-400">
-                Shipped Value: $
-                {shippedTotal.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                Shipped Value: ${shippedTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
 
-            {(() => {
-              let orderIndex = 0;
-              let sampleIndex = 0;
-              return filteredOrders.map((order) => {
-              const isSample = (order as any).isSample === true;
+            {filteredOrders.map((order) => {
+              const isSample = order.isSample === true;
               const displayNumber = isSample ? ++sampleIndex : ++orderIndex;
-              const isOwnOrder = isRepView
-                ? order.rep?._id === currentRep?._id
-                : true;
+              const isOwnOrder = isRepView ? order.rep?._id === currentRep?._id : true;
 
               return (
-                <Card
+                <ShippedOrderCard
                   key={order._id}
-                  className={cn(
-                    "rounded-xs overflow-hidden shadow-sm hover:shadow-md transition-shadow bg-card dark:bg-card py-3 gap-0",
-                    !isOwnOrder && "opacity-75",
-                    isSample
-                      ? "border-l-4 border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20"
-                      : getStatusStyle(order.status)
-                  )}
-                >
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 px-3 py-0 border-b border-border/50">
-                    {/* Store Info */}
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={cn(
-                          "text-xs font-bold rounded-xs px-1.5 py-0.5 min-w-[24px] text-center",
-                          isSample ? "bg-purple-600 text-white" : "bg-primary text-white"
-                        )}>
-                          {displayNumber}
-                        </span>
-                        {!isSample ? (
-                          <button
-                            onClick={() => handleOpenDialog(order)}
-                            className="group text-sm font-bold text-foreground uppercase tracking-wide flex items-center gap-2 text-left cursor-pointer relative"
-                          >
-                            <span className="relative after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 group-hover:after:w-full">
-                              {order.store?.name || "N/A"}
-                            </span>
-                          </button>
-                        ) : (
-                          <span className="text-sm font-bold text-foreground uppercase tracking-wide">
-                            {order.store?.name || "N/A"}
-                          </span>
-                        )}
-                        {getStatusBadge(order.status)}
-                        {isSample && (
-                          <span className="px-2 py-0.5 rounded-xs text-xs font-bold bg-purple-600 text-white flex items-center gap-1">
-                            <Package className="w-3 h-3" /> SAMPLE
-                          </span>
-                        )}
-                        {!isOwnOrder && (
-                          <span className="px-2 py-0.5 rounded-xs text-xs font-semibold bg-muted text-muted-foreground">
-                            Other Rep
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {order.store?.address}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {!isSample && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 rounded-xs border border-border dark:border-gray-500 bg-primary text-white hover:bg-primary hover:text-white dark:hover:bg-primary"
-                              onClick={() => {
-                                if (isOwnOrder) {
-                                  onEdit(order);
-                                } else {
-                                  handleUnauthorizedAction();
-                                }
-                              }}
-                              disabled={!isOwnOrder}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Edit Order</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-
-                      <Select
-                        value={order.status}
-                        onValueChange={(value) => {
-                          if (isOwnOrder) {
-                            handleChangeStatus(order._id, value);
-                          } else {
-                            handleUnauthorizedAction();
-                          }
-                        }}
-                        disabled={!isOwnOrder}
-                      >
-                        <SelectTrigger
-                          className={cn(
-                            "w-24 h-8! text-xs font-semibold border-none focus:ring-0 rounded-xs px-2 gap-1 [&>svg]:ml-0",
-                            getDropdownStyle(order.status, isOwnOrder)
-                          )}
-                        >
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent className="text-sm rounded-xs">
-                          {[
-                            "shipped",
-                            "cancelled",
-                            "manifested",
-                            "submitted",
-                          ].map((s) => (
-                            <SelectItem
-                              key={s}
-                              value={s}
-                              className="capitalize font-medium rounded-xs"
-                            >
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="px-3 pt-2 text-xs bg-muted/50 dark:bg-muted/20">
-                    {isSample ? (
-                      <div className="flex justify-between flex-wrap gap-3">
-                        <div className="space-y-0.5">
-                          <p className="flex items-center gap-1.5">
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                              Type:
-                            </span>
-                            <span className="text-foreground font-medium">
-                              Sample Request
-                            </span>
-                          </p>
-                          <p className="flex items-center gap-1.5">
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                              Request Date:
-                            </span>
-                            <span className="text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </span>
-                          </p>
-                          {(order as any).deliveryDate && (
-                            <p className="flex items-center gap-1.5">
-                              <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                                Shipped:
-                              </span>
-                              <span className="text-muted-foreground">
-                                {new Date(
-                                  (order as any).deliveryDate
-                                ).toLocaleDateString()}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-0.5 text-right">
-                          {(order as any).description && (
-                            <p className="text-muted-foreground">
-                              <span className="font-semibold text-purple-600 dark:text-purple-400">
-                                Note:
-                              </span>{" "}
-                              {(order as any).description}
-                            </p>
-                          )}
-                          <p>
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                              Rep:
-                            </span>{" "}
-                            <span className="text-primary font-medium">
-                              {order.rep?.name || "N/A"}
-                            </span>
-                          </p>
-                          <p>
-                            <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                              Created by:
-                            </span>{" "}
-                            <span className="text-foreground">
-                              {order.createdBy?.user?.name || "N/A"}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex justify-between flex-wrap gap-2 bg-accent/10 p-2 rounded-xs">
-                        <div className="space-y-0.5">
-                          <p>
-                            <span className="text-primary font-semibold">
-                              Order#:
-                            </span>{" "}
-                            <span className="text-foreground">
-                              {order.orderNumber}
-                            </span>
-                          </p>
-                          {order.deliveryDate && (
-                            <p>
-                              <span className="text-primary font-semibold">
-                                Shipped:
-                              </span>{" "}
-                              <span className="text-muted-foreground">
-                                {new Date(
-                                  order.deliveryDate
-                                ).toLocaleDateString()}
-                              </span>
-                            </p>
-                          )}
-                          <p>
-                            <span className="text-primary font-semibold">
-                              Rep:
-                            </span>{" "}
-                            <span className="text-primary font-medium">
-                              {order.rep?.name || "N/A"}
-                            </span>
-                          </p>
-                        </div>
-                        <div className="text-right space-y-0.5">
-                          <p className="text-emerald-600 dark:text-emerald-400 font-bold">
-                            Amount: $
-                            {(Number(order.total) || 0).toLocaleString(
-                              "en-US",
-                              {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              }
-                            )}
-                          </p>
-                          <p>
-                            <span className="text-primary font-semibold">
-                              Created by:
-                            </span>{" "}
-                            <span className="text-foreground">
-                              {order.createdBy?.user?.name || "N/A"}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </Card>
+                  order={order}
+                  displayNumber={displayNumber}
+                  isSample={isSample}
+                  isOwnOrder={isOwnOrder}
+                  onOpenDialog={setSelectedOrder}
+                  onEdit={onEdit}
+                  onUnauthorized={() =>
+                    toast.error("You are not authorized to change it. This is not your order.")
+                  }
+                  onChangeStatus={handleChangeStatus}
+                />
               );
-            });
-            })()}
+            })}
 
-            {/* Pagination */}
             {totalOrders > itemsPerPage && onPageChange && onLimitChange && (
               <GlobalPagination
                 currentPage={currentPage}
@@ -542,7 +168,7 @@ export const ShippedOrdersTab: React.FC<ShippedOrdersTabProps> = ({
           </>
         )}
 
-        <OrderDetailsDialog order={selectedOrder} onClose={handleCloseDialog} />
+        <OrderDetailsDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       </div>
     </TooltipProvider>
   );
