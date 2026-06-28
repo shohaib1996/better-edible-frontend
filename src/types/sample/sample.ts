@@ -1,7 +1,10 @@
 export interface ISample {
   _id: string;
   store: {
+    _id?: string;
     name: string;
+    address?: string;
+    city?: string;
   };
   rep: {
     name: string;

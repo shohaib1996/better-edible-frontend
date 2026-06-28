@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { AllOrdersTab } from "./AllOrdersTab";
 import { NewOrdersTab } from "./NewOrdersTab";
 import { ShippedOrdersTab } from "./ShippedOrdersTab";
+import { RoutePlannerView } from "@/components/Orders/RoutePlanner/RoutePlannerView";
 import { IRep } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -67,12 +68,13 @@ export const OrdersTabs = ({
         <TabsList
           className={cn(
             "w-full grid",
-            isRepView ? "grid-cols-3" : "grid-cols-2"
+            isRepView ? "grid-cols-3" : "grid-cols-3"
           )}
         >
           {isRepView && <TabsTrigger value="all">All Orders</TabsTrigger>}
           <TabsTrigger value="new">New Orders</TabsTrigger>
           <TabsTrigger value="shipped">Shipped Orders</TabsTrigger>
+          {!isRepView && <TabsTrigger value="route">Route Planner</TabsTrigger>}
         </TabsList>
 
         <div className="grid">
@@ -131,6 +133,16 @@ export const OrdersTabs = ({
               isRepView={isRepView}
             />
           </TabsContent>
+
+          {/* ROUTE PLANNER — admin only */}
+          {!isRepView && (
+            <TabsContent
+              value="route"
+              className="[grid-area:1/1] data-[state=inactive]:invisible data-[state=inactive]:h-0 data-[state=inactive]:overflow-hidden"
+            >
+              <RoutePlannerView />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>
