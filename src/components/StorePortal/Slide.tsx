@@ -1,6 +1,6 @@
 "use client";
 
-import type { BgEntry } from "./backgrounds";
+import type { BgEntry } from "@/utils/backgrounds";
 
 export type LayoutName =
   | "classic" | "claims-hero" | "stacked-wide" | "whisper"

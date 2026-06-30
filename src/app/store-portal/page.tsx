@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ALL_BACKGROUNDS } from "@/components/StorePortal/backgrounds";
+import { ALL_BACKGROUNDS } from "@/utils/backgrounds";
 import { AgeGate } from "@/components/StorePortal/AgeGate";
 import { Slide, shuffle, buildSlides, LAYOUTS, INITIAL_COUNT, LOAD_MORE } from "@/components/StorePortal/Slide";
 
@@ -66,7 +66,7 @@ export default function StorePortalHome() {
               bg={s.bg}
               layout={s.layout}
               isFirst={i === 0}
-              onRetailer={() => router.push("/store2/login")}
+              onRetailer={() => router.push("/store-portal/login")}
               onCalculator={() => router.push("/store-portal/calculator")}
             />
           ))}

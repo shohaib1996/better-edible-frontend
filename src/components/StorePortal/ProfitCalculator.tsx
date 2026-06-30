@@ -127,7 +127,7 @@ export function ProfitCalculator() {
             ← Better Edibles
           </button>
           <button
-            onClick={() => router.push("/store2/login")}
+            onClick={() => router.push("/store-portal/login")}
             style={{ background: "none", border: `1px solid rgba(200,151,90,0.4)`, color: GOLD, fontFamily: DM_SANS, fontSize: "0.7rem", letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: "0.4rem 1rem", borderRadius: 4 }}
           >
             Retailer Login
