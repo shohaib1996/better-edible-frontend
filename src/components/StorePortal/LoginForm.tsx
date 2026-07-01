@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLoginStoreMutation } from "@/redux/api/StoreAuth/storeAuthApi";
 
 const GUMMY_HERO =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663721104112/hFK3bZtNMbaPzAzvvjdqbb/portal-gummy-hero-mmXrNC6FgC4VxwvwuQyQ6d.webp";
@@ -16,14 +18,19 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loginStore, { isLoading: loading }] = useLoginStoreMutation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-    // TODO: wire up login API
-    setLoading(false);
+    try {
+      const result = await loginStore({ email: email.toLowerCase().trim(), password }).unwrap();
+      localStorage.setItem("better-store-user", JSON.stringify(result.user));
+      toast.success(`Welcome back, ${result.user.name}!`);
+      router.push("/store-portal/dashboard");
+    } catch (err: any) {
+      setError(err?.data?.message || "Invalid email or password");
+    }
   };
 
   return (
