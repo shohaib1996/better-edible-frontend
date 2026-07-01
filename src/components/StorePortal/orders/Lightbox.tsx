@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import type { ProductImage } from "@/types/storePortal/orders";
 
 export function Lightbox({
@@ -25,65 +24,82 @@ export function Lightbox({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [images.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
-      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/88"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "rgba(0,0,0,0.88)",
+        display: "flex", alignItems: "center", justifyContent: "center",
       }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <Button
-        size="icon"
-        variant="ghost"
+      <button
         onClick={onClose}
-        className="absolute top-4 right-4 rounded-full text-white hover:bg-white/20 hover:text-white"
-        aria-label="Close"
+        style={{
+          position: "absolute", top: 16, right: 16,
+          background: "rgba(255,255,255,0.15)", border: "none",
+          color: "#fff", width: 36, height: 36, borderRadius: "50%",
+          fontSize: 20, cursor: "pointer", display: "flex",
+          alignItems: "center", justifyContent: "center",
+        }}
       >
         ×
-      </Button>
+      </button>
 
       {images.length > 1 && (
-        <Button
-          size="icon"
-          variant="ghost"
+        <button
           onClick={prev}
-          className="absolute left-3 rounded-full text-white text-xl hover:bg-white/20 hover:text-white"
-          aria-label="Previous"
+          style={{
+            position: "absolute", left: 12,
+            background: "rgba(255,255,255,0.15)", border: "none",
+            color: "#fff", width: 40, height: 40, borderRadius: "50%",
+            fontSize: 22, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+          }}
         >
           ‹
-        </Button>
+        </button>
       )}
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[idx].url}
         alt=""
-        className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+        style={{
+          maxWidth: "90vw", maxHeight: "85vh",
+          objectFit: "contain", borderRadius: 8,
+          boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+        }}
       />
 
       {images.length > 1 && (
-        <Button
-          size="icon"
-          variant="ghost"
+        <button
           onClick={next}
-          className="absolute right-3 rounded-full text-white text-xl hover:bg-white/20 hover:text-white"
-          aria-label="Next"
+          style={{
+            position: "absolute", right: 12,
+            background: "rgba(255,255,255,0.15)", border: "none",
+            color: "#fff", width: 40, height: 40, borderRadius: "50%",
+            fontSize: 22, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center",
+          }}
         >
           ›
-        </Button>
+        </button>
       )}
 
       {images.length > 1 && (
-        <div className="absolute bottom-5 flex gap-1.5">
+        <div style={{ position: "absolute", bottom: 20, display: "flex", gap: 6 }}>
           {images.map((_, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
-              className="w-2 h-2 rounded-full border-none p-0 cursor-pointer transition-colors"
-              style={{ background: i === idx ? "#fff" : "rgba(255,255,255,0.4)" }}
-              aria-label={`Image ${i + 1}`}
+              style={{
+                width: 8, height: 8, borderRadius: "50%", border: "none",
+                background: i === idx ? "#fff" : "rgba(255,255,255,0.4)",
+                cursor: "pointer", padding: 0,
+              }}
             />
           ))}
         </div>

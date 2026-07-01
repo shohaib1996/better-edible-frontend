@@ -1,10 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { lineColor, ep } from "@/lib/orderHelpers";
 import type { CartEntry } from "@/types/storePortal/orders";
 
@@ -40,51 +35,53 @@ export function CartPanel({
   setRowQty,
 }: CartPanelProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-[#9a8f6e]">
+    <>
+      <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "#9a8f6e" }}>
         Your Order ({cart.length} item{cart.length !== 1 ? "s" : ""})
-      </p>
+      </h3>
 
       {cart.length === 0 ? (
-        <p className="text-sm py-4 text-center text-[#9a8f6e]">No items added yet</p>
+        <div className="text-sm py-6 text-center" style={{ color: "#9a8f6e" }}>
+          No items added yet
+        </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="space-y-3 mb-4">
           {cart.map((item) => {
             const itemEp = ep(item.price, item.discountPrice, item.onSale);
             return (
               <div key={item.rowKey} className="flex items-start gap-2">
                 <div className="flex-1 min-w-0">
-                  <p
+                  <div
                     className="text-xs font-semibold uppercase tracking-wider mb-0.5"
                     style={{ color: lineColor(item.productLineName).accent }}
                   >
                     {item.productLineName}
-                  </p>
-                  <p className="text-xs font-medium leading-snug text-[#2a2518]">
+                  </div>
+                  <div className="text-xs font-medium leading-snug" style={{ color: "#2a2518" }}>
                     {item.rowLabel ? `${item.name} — ${item.rowLabel}` : item.name}
-                  </p>
-                  <p className="text-xs text-[#9a8f6e]">
+                  </div>
+                  <div className="text-xs" style={{ color: "#9a8f6e" }}>
                     ${itemEp.toFixed(2)} × {item.qty} = ${(itemEp * item.qty).toFixed(2)}
-                  </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="icon-sm"
-                    variant="secondary"
+                  <button
                     onClick={() => setRowQty(item, item.qty - 1)}
-                    className="h-6 w-6 text-xs rounded"
+                    className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
+                    style={{ background: "#f5f2e8", color: "#6b6045" }}
                   >
                     −
-                  </Button>
-                  <span className="text-xs w-6 text-center text-[#2a2518]">{item.qty}</span>
-                  <Button
-                    size="icon-sm"
-                    variant="secondary"
+                  </button>
+                  <span className="text-xs w-6 text-center" style={{ color: "#2a2518" }}>
+                    {item.qty}
+                  </span>
+                  <button
                     onClick={() => setRowQty(item, item.qty + 1)}
-                    className="h-6 w-6 text-xs rounded"
+                    className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
+                    style={{ background: "#f5f2e8", color: "#6b6045" }}
                   >
                     +
-                  </Button>
+                  </button>
                 </div>
               </div>
             );
@@ -93,111 +90,133 @@ export function CartPanel({
       )}
 
       {cart.length > 0 && (
-        <>
-          <Separator />
-          <div className="flex flex-col gap-1.5">
-            {creditApplied > 0 ? (
-              <>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#6b6045]">Subtotal</span>
-                  <span className="text-[#2a2518]">
-                    ${cartTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#2a7a4e]">Store credit applied</span>
-                  <span className="text-[#2a7a4e] font-semibold">
-                    −${creditApplied.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <Separator className="border-dashed" />
-                <div className="flex justify-between text-sm font-semibold">
-                  <span className="text-[#2a2518]">Estimated Total</span>
-                  <span className="text-[#c45a1a]">
-                    ${finalTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <p className="text-xs text-[#9a8f6e]">
-                  ${creditBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} credit available
-                  {" · "}
-                  ${Math.max(0, creditBalance - creditApplied).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} will remain
-                </p>
-              </>
-            ) : (
-              <div className="flex justify-between text-sm font-semibold">
-                <span className="text-[#2a2518]">Estimated Total</span>
-                <span className="text-[#c45a1a]">
+        <div className="py-3 mb-4" style={{ borderTop: "1px solid #e5e0c8" }}>
+          {creditApplied > 0 ? (
+            <>
+              <div className="flex justify-between text-sm mb-1.5">
+                <span style={{ color: "#6b6045" }}>Subtotal</span>
+                <span style={{ color: "#2a2518" }}>
                   ${cartTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-            )}
-          </div>
-        </>
+              <div className="flex justify-between text-sm mb-1.5">
+                <span style={{ color: "#2a7a4e" }}>Store credit applied</span>
+                <span style={{ color: "#2a7a4e", fontWeight: 600 }}>
+                  −${creditApplied.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div
+                className="flex justify-between text-sm font-semibold pt-2"
+                style={{ borderTop: "1px dashed #e5e0c8" }}
+              >
+                <span style={{ color: "#2a2518" }}>Estimated Total</span>
+                <span style={{ color: "#c45a1a" }}>
+                  ${finalTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="text-xs mt-1.5" style={{ color: "#9a8f6e" }}>
+                ${creditBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} credit available
+                {" · "}
+                ${Math.max(0, creditBalance - creditApplied).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} will remain
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between text-sm font-semibold">
+              <span style={{ color: "#2a2518" }}>Estimated Total</span>
+              <span style={{ color: "#c45a1a" }}>
+                ${cartTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
+        </div>
       )}
 
-      <Separator />
-
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs font-medium uppercase tracking-wider text-[#6b6045]">
+      <div className="mb-3">
+        <label
+          className="text-xs font-medium uppercase tracking-wider mb-1.5 block"
+          style={{ color: "#6b6045" }}
+        >
           Desired Delivery Date
-        </Label>
-        <div className="flex gap-2">
-          <Button
-            variant={deliveryDate === "asap" ? "default" : "outline"}
-            size="sm"
+        </label>
+        <div className="flex gap-2 mb-2">
+          <button
             onClick={() => setDeliveryDate("asap")}
-            className={deliveryDate === "asap" ? "bg-[#c45a1a] hover:bg-[#b04d15] border-[#c45a1a]" : "border-[#d6d0b4] text-[#4a4535]"}
+            className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
+            style={{
+              background: deliveryDate === "asap" ? "#c45a1a" : "#fff",
+              color: deliveryDate === "asap" ? "#fff" : "#4a4535",
+              border: "1px solid",
+              borderColor: deliveryDate === "asap" ? "#c45a1a" : "#d6d0b4",
+            }}
           >
             ASAP
-          </Button>
-          <Button
-            variant={deliveryDate !== "asap" ? "default" : "outline"}
-            size="sm"
+          </button>
+          <button
             onClick={() => setDeliveryDate("")}
-            className={deliveryDate !== "asap" ? "bg-[#c45a1a] hover:bg-[#b04d15] border-[#c45a1a]" : "border-[#d6d0b4] text-[#4a4535]"}
+            className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
+            style={{
+              background: deliveryDate !== "asap" ? "#c45a1a" : "#fff",
+              color: deliveryDate !== "asap" ? "#fff" : "#4a4535",
+              border: "1px solid",
+              borderColor: deliveryDate !== "asap" ? "#c45a1a" : "#d6d0b4",
+            }}
           >
             Pick a date
-          </Button>
+          </button>
         </div>
         {deliveryDate !== "asap" && (
-          <Input
+          <input
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
             min={new Date().toISOString().split("T")[0]}
-            className="text-sm border-[#d6d0b4] bg-[#fafaf7] text-[#2a2518]"
+            className="w-full text-sm px-3 py-2 rounded"
+            style={{ background: "#fafaf7", border: "1px solid #d6d0b4", color: "#2a2518", outline: "none" }}
           />
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs font-medium uppercase tracking-wider text-[#6b6045]">
+      <div className="mb-4">
+        <label
+          className="text-xs font-medium uppercase tracking-wider mb-1.5 block"
+          style={{ color: "#6b6045" }}
+        >
           Order Notes (optional)
-        </Label>
-        <Textarea
+        </label>
+        <textarea
           placeholder="Delivery instructions, special requests…"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          className="text-sm resize-none border-[#d6d0b4] bg-[#fafaf7] text-[#2a2518]"
+          className="w-full text-sm px-3 py-2 rounded resize-none"
+          style={{ background: "#fafaf7", border: "1px solid #d6d0b4", color: "#2a2518", outline: "none" }}
         />
       </div>
 
       {submitError && (
-        <p className="text-xs px-3 py-2 rounded bg-[#fdf3ec] text-[#c45a1a] border border-[#f0c8a8]">
+        <div
+          className="text-xs mb-3 px-3 py-2 rounded"
+          style={{ background: "#fdf3ec", color: "#c45a1a", border: "1px solid #f0c8a8" }}
+        >
           {submitError}
-        </p>
+        </div>
       )}
 
-      <Button
+      <button
         onClick={handleSubmit}
         disabled={submitting || cart.length === 0}
-        className="w-full bg-[#c45a1a] hover:bg-[#b04d15] text-white disabled:bg-[#e5e0c8] disabled:text-[#9a8f6e]"
+        className="w-full py-2.5 rounded text-sm font-semibold transition-colors"
+        style={{
+          background: submitting || cart.length === 0 ? "#e5e0c8" : "#c45a1a",
+          color: submitting || cart.length === 0 ? "#9a8f6e" : "#fff",
+        }}
       >
         {submitting ? "Submitting…" : "Submit Order"}
-      </Button>
+      </button>
 
-      <p className="text-xs text-center text-[#9a8f6e]">Rep confirms within 24 hours.</p>
-    </div>
+      <p className="text-xs text-center mt-2" style={{ color: "#9a8f6e" }}>
+        Rep confirms within 24 hours.
+      </p>
+    </>
   );
 }
