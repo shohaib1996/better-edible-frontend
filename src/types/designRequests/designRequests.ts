@@ -36,6 +36,7 @@ export interface ICompletedFile {
 
 export interface IDesignRequest {
   _id: string;
+  requestId?: string;
   requestType: DesignRequestType;
   source: DesignRequestSource;
   storeId?: string;
