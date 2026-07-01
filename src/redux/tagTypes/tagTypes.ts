@@ -39,4 +39,5 @@ export const tagTypes = {
   partnershipStores: "partnershipStores",
   promotions: "promotions",
   promotionUsage: "promotionUsage",
+  storeCredit: "storeCredit",
 };
