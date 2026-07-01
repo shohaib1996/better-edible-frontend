@@ -25,7 +25,28 @@ export function LoginForm() {
     setError("");
     try {
       const result = await loginStore({ email: email.toLowerCase().trim(), password }).unwrap();
-      localStorage.setItem("better-store-user", JSON.stringify(result.user));
+      const enriched = { ...result.user };
+
+      // Fetch store details to get assigned rep info (same as storeportal-public)
+      try {
+        const storeRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/stores/${result.user.storeId}`,
+          { credentials: "include" }
+        );
+        if (storeRes.ok) {
+          const store = await storeRes.json();
+          if (store.rep && typeof store.rep === "object") {
+            const repNameVal = store.rep.name || store.rep.fullName || "";
+            enriched.repName = repNameVal;
+            enriched.repEmail = store.rep.email || "";
+            enriched.repInitials = repNameVal
+              ? repNameVal.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+              : "BE";
+          }
+        }
+      } catch {}
+
+      localStorage.setItem("better-store-user", JSON.stringify(enriched));
       toast.success(`Welcome back, ${result.user.name}!`);
       router.push("/store-portal/dashboard");
     } catch (err: any) {

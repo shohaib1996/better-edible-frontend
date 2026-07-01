@@ -5,6 +5,9 @@ export interface IStoreUser {
   storeId: string;
   storeName: string;
   role: "store";
+  repName?: string;
+  repEmail?: string;
+  repInitials?: string;
 }
 
 export interface ILoginResponse {
