@@ -112,6 +112,29 @@ export const storeLabelApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.storeLabels],
     }),
+
+    // POST /api/store/labels/gummy-color — AI step 1: color + rationale
+    generateGummyColor: builder.mutation<
+      { success: boolean; hex: string; color_name: string; rationale?: string },
+      { flavor: string; notes?: string }
+    >({
+      query: (body) => ({ url: "/store/labels/gummy-color", method: "POST", body }),
+    }),
+
+    // POST /api/store/labels/gummy-details — AI step 2: LorAnn components + flavor note
+    generateGummyDetails: builder.mutation<
+      {
+        success: boolean;
+        recipe: unknown;
+        flavorRecipe: {
+          flavor_note?: string;
+          lorann?: { components?: { name: string; ratio_pct: number }[] };
+        } | null;
+      },
+      { hex: string; flavor: string }
+    >({
+      query: (body) => ({ url: "/store/labels/gummy-details", method: "POST", body }),
+    }),
   }),
 });
 
@@ -124,4 +147,6 @@ export const {
   useSubmitLineMutation,
   useUploadLogoMutation,
   useUpdateLabelRecipeDataMutation,
+  useGenerateGummyColorMutation,
+  useGenerateGummyDetailsMutation,
 } = storeLabelApi;

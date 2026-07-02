@@ -176,6 +176,26 @@ export default function StorePortalLayout({
                   <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
               </button>
+              {(() => {
+                const titles: Record<string, string> = {
+                  "/store-portal/dashboard": "Dashboard",
+                  "/store-portal/private-label": "Private Label",
+                  "/store-portal/orders": "Orders",
+                  "/store-portal/assets": "Digital Assets",
+                  "/store-portal/partnership": "Partnership Program",
+                  "/store-portal/promotions": "Promotions",
+                  "/store-portal/identity": "Identity Package",
+                };
+                const t = titles[pathname];
+                return t ? (
+                  <h1
+                    className="text-lg font-semibold"
+                    style={{ color: "#2a2518", fontFamily: "Georgia, 'Times New Roman', serif" }}
+                  >
+                    {t}
+                  </h1>
+                ) : null;
+              })()}
             </div>
 
             <div className="flex items-center gap-3">
@@ -205,6 +225,35 @@ export default function StorePortalLayout({
               </div>
             </div>
           </header>
+
+          {/* Private Label sub-bar */}
+          {pathname === "/store-portal/private-label" && (
+            <div
+              className="flex items-stretch shrink-0"
+              style={{ background: "#2a2518", borderBottom: "2px solid #c45a1a" }}
+            >
+              <button
+                className="flex-1 flex items-center justify-start gap-2 px-4 py-2.5 text-sm font-semibold"
+                style={{ color: "#f5f0e8", background: "transparent", border: "none", borderRight: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(196,90,26,0.18)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                onClick={() => window.dispatchEvent(new CustomEvent("open-profit-calculator"))}
+              >
+                <span style={{ fontSize: "1rem" }}>💰</span>
+                <span>Profit Calculator</span>
+              </button>
+              <button
+                className="flex-1 flex items-center justify-end gap-2 px-4 py-2.5 text-sm font-semibold"
+                style={{ color: "#f5f0e8", background: "transparent", border: "none", cursor: "pointer" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(196,90,26,0.18)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                onClick={() => router.push("/store-portal/identity")}
+              >
+                <span>Identity Package</span>
+                <span style={{ fontSize: "1rem" }}>🎨</span>
+              </button>
+            </div>
+          )}
 
           <main className="flex-1 overflow-y-auto scrollbar-hidden p-4 lg:p-6">
             {children}
