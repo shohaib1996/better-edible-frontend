@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:community.cloudinary.com)",
-      "Read(//d/Web Development/Upwork/better-edibles-backend/src/**)"
+      "Read(//d/Web Development/Upwork/better-edibles-backend/src/**)",
+      "Bash(ls \"D:\\\\Web Development\\\\Upwork\\\\storeportal-public\")",
+      "Read(//d/Web Development/Upwork/storeportal-public/**)"
     ],
     "additionalDirectories": [
       "D:\\Web Development\\Upwork\\better-edibles-print-bridge",
