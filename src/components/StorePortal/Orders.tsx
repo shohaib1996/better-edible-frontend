@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { IStoreUser } from "@/types/storeAuth/storeAuth";
 import { useGetAllProductsQuery } from "@/redux/api/Products/productsApi";
@@ -364,7 +364,7 @@ export function OrdersPage() {
                             ) : (
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
-                                  onClick={() => setRowQty(cartEntryBase, qty - 1)}
+                                  onClick={() => setRowQty(cartEntryBase, qty + 1)}
                                   className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
                                   style={{ background: "#f5f2e8", color: "#6b6045" }}
                                 >
