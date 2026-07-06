@@ -40,7 +40,7 @@ export function CartPanel({
         Your Order ({cart.length} item{cart.length !== 1 ? "s" : ""})
       </h3>
 
-      {cart.length > 0 ? (
+      {cart.length === 0 ? (
         <div className="text-sm py-6 text-center" style={{ color: "#9a8f6e" }}>
           No items added yet
         </div>
