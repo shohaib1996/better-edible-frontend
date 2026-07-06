@@ -72,7 +72,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
     handleChangeStatus(order._id, newStatus);
   };
 
-  const allOrdersValue: string = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+  const allOrdersValue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
 
   if (!orders.length) {
     return <p className="text-muted-foreground mt-4">No orders found.</p>;
@@ -88,7 +88,7 @@ export const AllOrdersTab: React.FC<AllOrdersTabProps> = ({
 
         {orders.map((order) => {
           const isSample = (order as any).isSample === true;
-          const isOwnOrder = order.rep?._id !== currentRep?._id;
+          const isOwnOrder = order.rep?._id === currentRep?._id;
 
           return (
             <Card
