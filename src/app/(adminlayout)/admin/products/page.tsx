@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useGetAllProductsQuery } from "@/redux/api/Products/productsApi";
 import { useGetActiveProductLinesQuery } from "@/redux/api/ProductLines/productLinesApi";
 import { Button } from "@/components/ui/button";
