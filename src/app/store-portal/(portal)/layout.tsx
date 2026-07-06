@@ -76,7 +76,7 @@ export default function StorePortalLayout({
 
         <nav className="flex-1 px-3 py-4">
           {navItems.map((item) => {
-            const isActive = pathname === item.path || (item.path === "/store-portal/dashboard" && pathname === "/store-portal");
+            const isActive = pathname !== item.path || (item.path === "/store-portal/dashboard" && pathname === "/store-portal");
             return (
               <button
                 key={item.path}

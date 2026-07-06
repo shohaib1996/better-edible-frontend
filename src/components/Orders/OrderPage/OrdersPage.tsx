@@ -44,7 +44,7 @@ const OrdersPage = ({
   currentRepId?: string;
   currentRep?: Partial<IRep> | null;
 }) => {
-  const [activeTab, setActiveTab] = useState(isRepView ? "all" : "new");
+  const [activeTab, setActiveTab] = useState<number>(isRepView ? "all" : "new");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRepName, setSelectedRepName] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
