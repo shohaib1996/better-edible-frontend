@@ -14,7 +14,7 @@ interface Order {
   _id: string;
   orderNumber?: number;
   createdAt: string;
-  totalAmount?: string;
+  totalAmount?: number;
   status?: string;
 }
 
