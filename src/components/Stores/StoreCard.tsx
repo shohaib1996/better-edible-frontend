@@ -245,7 +245,7 @@ export const StoreCard = ({
             {ledgerOpen && (
               <button
                 className="text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                onClick={openForm}
+                onClick={formOpen ? (e) => { e.stopPropagation(); setFormOpen(false); } : openForm}
               >
                 {formOpen ? "Cancel" : "+ Add / Adjust"}
               </button>
