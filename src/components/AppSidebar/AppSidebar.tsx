@@ -18,6 +18,7 @@ import {
   ImageIcon,
   PenTool,
   Gift,
+  Building2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,6 +58,7 @@ import { useUser } from "@/redux/hooks/useAuth";
 const adminItems = [
   { title: "Reps List", url: "/admin/reps", icon: Home },
   { title: "Stores", url: "/admin/stores", icon: Inbox },
+  { title: "Chains", url: "/admin/chains", icon: Building2 },
   { title: "Products", url: "/admin/products", icon: Calendar },
   { title: "Orders", url: "/admin/orders", icon: Search },
   { title: "Private Label", url: "/admin/client-orders", icon: Users },

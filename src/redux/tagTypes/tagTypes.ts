@@ -40,4 +40,5 @@ export const tagTypes = {
   promotions: "promotions",
   promotionUsage: "promotionUsage",
   storeCredit: "storeCredit",
+  chains: "chains",
 };
