@@ -76,7 +76,7 @@ export function OrderCard({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={cn(
-                "text-xs font-bold rounded-xs px-1.5 py-0.5 min-w-[24px] text-center",
+                "text-xs font-bold rounded-xs px-1.5 py-0.5 min-w-6 text-center",
                 isSample ? "bg-purple-600 text-white" : "bg-primary text-white"
               )}
             >
