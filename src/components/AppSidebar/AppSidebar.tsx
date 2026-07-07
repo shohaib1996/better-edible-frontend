@@ -17,8 +17,6 @@ import {
   Factory,
   ImageIcon,
   PenTool,
-  FlaskConical,
-  Handshake,
   Gift,
 } from "lucide-react";
 import Image from "next/image";
