@@ -11,7 +11,7 @@ export const flavorsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getFlavors: builder.query<
       { success: boolean; total: number; flavors: IFlavor[]; page?: number; limit?: number; totalPages?: number },
-      { isActive?: boolean; isBlend?: boolean; page?: number; limit?: number } | void
+      { isActive?: boolean; isBlend?: boolean; search?: string; page?: number; limit?: number } | void
     >({
       query: (params) => ({
         url: "/flavors",
@@ -19,6 +19,7 @@ export const flavorsApi = baseApi.injectEndpoints({
           ? {
               ...(params.isActive !== undefined && { isActive: String(params.isActive) }),
               ...(params.isBlend !== undefined && { isBlend: String(params.isBlend) }),
+              ...(params.search ? { search: params.search } : {}),
               ...(params.page !== undefined && { page: String(params.page) }),
               ...(params.limit !== undefined && { limit: String(params.limit) }),
             }

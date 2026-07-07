@@ -19,6 +19,7 @@ import {
   PenTool,
   Gift,
   Building2,
+  FlaskConical,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -70,6 +71,7 @@ const adminItems = [
   { title: "Design Requests", url: "/admin/design-requests", icon: PenTool },
   // { title: "Partnership", url: "/admin/partnership", icon: Handshake },
   { title: "Promotions", url: "/admin/promotions", icon: Gift },
+  { title: "Flavor Catalog", url: "/admin/flavor-catalog", icon: FlaskConical },
 ];
 
 const repItems = [

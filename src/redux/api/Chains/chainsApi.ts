@@ -16,6 +16,7 @@ export interface IChain {
   hasLogin: boolean;
   active: boolean;
   memberCount: number;
+  storeIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -91,6 +92,11 @@ export const chainsApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/chains/${id}`, method: "DELETE" }),
       invalidatesTags: [tagTypes.chains as never],
     }),
+
+    assignStoreToChain: builder.mutation<{ success: boolean; message: string }, { storeId: string; chainId?: string }>({
+      query: (body) => ({ url: "/chains/assign-store", method: "PUT", body }),
+      invalidatesTags: [tagTypes.chains as never],
+    }),
   }),
 });
 
@@ -102,4 +108,5 @@ export const {
   useUpdateChainStoresMutation,
   useUpdateChainCredentialsMutation,
   useDeleteChainMutation,
+  useAssignStoreToChainMutation,
 } = chainsApi;

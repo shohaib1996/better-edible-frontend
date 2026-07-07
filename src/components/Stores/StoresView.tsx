@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Loader2, Plus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlobalPagination } from "@/components/ReUsableComponents/GlobalPagination";
@@ -11,6 +12,7 @@ import { RepStoreCard } from "@/components/Stores/RepStoreCard";
 import { RepStoreFilters } from "@/components/Stores/RepStoreFilters";
 import { StoresModals } from "@/components/Stores/StoresModals";
 import { useStoresData } from "@/components/Stores/useStoresData";
+import { useGetAllChainsQuery } from "@/redux/api/Chains/chainsApi";
 
 interface StoresViewProps {
   isAdmin: boolean;
@@ -18,6 +20,19 @@ interface StoresViewProps {
 
 export const StoresView = ({ isAdmin }: StoresViewProps) => {
   const s = useStoresData(isAdmin);
+
+  const { data: chainsData } = useGetAllChainsQuery();
+  const chains = useMemo(
+    () => (chainsData?.chains ?? []).map((c) => ({ id: c.id, name: c.name })),
+    [chainsData]
+  );
+  const storeToChainId = useMemo(() => {
+    const map: Record<string, string> = {};
+    (chainsData?.chains ?? []).forEach((c) =>
+      c.storeIds.forEach((sid) => { map[sid] = c.id; })
+    );
+    return map;
+  }, [chainsData]);
 
   if (s.isLoading)
     return (
@@ -175,6 +190,8 @@ export const StoresView = ({ isAdmin }: StoresViewProps) => {
                   s.setSampleModalOpen(true);
                 }}
                 onAddNote={openAddNote}
+                chains={chains}
+                currentChainId={storeToChainId[store._id]}
               />
             ))}
           </div>

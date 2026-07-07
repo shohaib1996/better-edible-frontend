@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +18,16 @@ import {
   Calendar,
   FilePlus,
   Package,
+  Building2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { IStore } from "@/types";
 import {
@@ -26,6 +35,7 @@ import {
   useAddStoreCreditMutation,
   type ICreditTransaction,
 } from "@/redux/api/StoreCredit/storeCreditApi";
+import { useAssignStoreToChainMutation } from "@/redux/api/Chains/chainsApi";
 
 function getAdminName(): string {
   try {
@@ -49,6 +59,8 @@ interface StoreCardProps {
   onOpenCreateOrder: (store: IStore) => void;
   onOpenSample: (store: IStore) => void;
   onAddNote: (store: IStore) => void;
+  chains?: { id: string; name: string }[];
+  currentChainId?: string;
 }
 
 export const StoreCard = ({
@@ -64,6 +76,8 @@ export const StoreCard = ({
   onOpenCreateOrder,
   onOpenSample,
   onAddNote,
+  chains = [],
+  currentChainId,
 }: StoreCardProps) => {
   const hasDue = store.dueAmount > 0;
   const paymentColor =
@@ -74,6 +88,24 @@ export const StoreCard = ({
       : store.paymentStatus === "green"
       ? "text-green-600 dark:text-green-500"
       : "text-muted-foreground";
+
+  const [assignChain, { isLoading: assigningChain }] = useAssignStoreToChainMutation();
+  const NONE = "__none__";
+  const [chainValue, setChainValue] = useState(currentChainId ?? NONE);
+  useEffect(() => { setChainValue(currentChainId ?? NONE); }, [currentChainId]);
+
+  async function handleChainChange(newId: string) {
+    setChainValue(newId);
+    const chainId = newId === NONE ? undefined : newId;
+    const result = await assignChain({ storeId: store._id, chainId });
+    if ("error" in result) {
+      toast.error("Failed to update chain");
+      setChainValue(currentChainId ?? NONE);
+    } else {
+      const label = chainId ? (chains.find((c) => c.id === chainId)?.name ?? "chain") : "No chain";
+      toast.success(`${store.name} → ${label}`);
+    }
+  }
 
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -147,6 +179,25 @@ export const StoreCard = ({
               )}
             </div>
             <p className="text-sm text-muted-foreground">{store.address || "No address"}</p>
+            {chains.length > 0 && (
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <Select value={chainValue} onValueChange={handleChainChange} disabled={assigningChain}>
+                  <SelectTrigger className="h-7 text-xs rounded-xs border-border bg-white dark:bg-card w-auto min-w-[120px] max-w-[200px] px-2 gap-1">
+                    <SelectValue placeholder="No chain" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xs">
+                    <SelectItem value="__none__" className="text-xs">No chain</SelectItem>
+                    {chains.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs">{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {assigningChain && (
+                  <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent shrink-0" />
+                )}
+              </div>
+            )}
           </div>
         </div>
 
