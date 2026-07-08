@@ -224,11 +224,17 @@ const TodayContact = () => {
 
     prevDeliveriesRef.current = deliveriesStr;
 
-    // Filter out completed and cancelled deliveries
-    const activeDeliveries = deliveries.filter(
-      (delivery: Delivery) =>
-        delivery.status !== "completed" && delivery.status !== "cancelled"
-    );
+    // Filter out completed and cancelled deliveries, default to creation order
+    const activeDeliveries = deliveries
+      .filter(
+        (delivery: Delivery) =>
+          delivery.status !== "completed" && delivery.status !== "cancelled"
+      )
+      .sort(
+        (a: Delivery, b: Delivery) =>
+          new Date(a.createdAt ?? 0).getTime() -
+          new Date(b.createdAt ?? 0).getTime()
+      );
 
     const savedOrder = savedOrderData?.order;
     if (savedOrder?.length) {

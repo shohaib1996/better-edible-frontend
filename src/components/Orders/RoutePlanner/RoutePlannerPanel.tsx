@@ -2,7 +2,7 @@
 
 import { MapStop, RouteLeg } from "@/types/routePlannerTypes";
 import { Button } from "@/components/ui/button";
-import { Loader2, Navigation, Route } from "lucide-react";
+import { Loader2, Navigation, Route, Truck } from "lucide-react";
 
 interface Props {
   stops: MapStop[];
@@ -15,6 +15,7 @@ interface Props {
   warehouseName: string;
   onOptimize: () => void;
   onClear: () => void;
+  onCreateDelivery: (stop: MapStop) => void;
 }
 
 export function RoutePlannerPanel({
@@ -28,6 +29,7 @@ export function RoutePlannerPanel({
   warehouseName,
   onOptimize,
   onClear,
+  onCreateDelivery,
 }: Props) {
   const hasRoute = routeLegs.length > 0;
 
@@ -92,6 +94,13 @@ export function RoutePlannerPanel({
                       {stop.label}
                     </p>
                   </div>
+                  <button
+                    onClick={() => onCreateDelivery(stop)}
+                    title="Create delivery"
+                    className="shrink-0 p-1 rounded-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Truck className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               );
             })}

@@ -26,7 +26,7 @@ export function DeliveryRepField({ repProp, assignedTo, reps, repsLoading, onCha
         <User className="h-3.5 w-3.5 text-primary" />
         Delivery Rep
       </Label>
-      {repProp ? (
+      {repProp?.name ? (
         <div className="p-2 border border-border rounded-xs bg-muted/30">
           <p className="font-semibold text-sm text-foreground">{repProp.name}</p>
         </div>

@@ -19,6 +19,9 @@ export interface MapStop {
   geocoding: boolean;
   geocodeError?: boolean;
   label: string;
+  storeId: string;
+  repId?: string;
+  amount?: number;
 }
 
 export interface RouteLeg {

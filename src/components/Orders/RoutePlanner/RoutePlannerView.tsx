@@ -9,6 +9,7 @@ import { useGeocoder } from "@/lib/useGeocoder";
 import { useRouteOptimizer } from "@/lib/useRouteOptimizer";
 import { RoutePlannerMap } from "./RoutePlannerMap";
 import { RoutePlannerPanel } from "./RoutePlannerPanel";
+import { DeliveryModal } from "@/components/Delivery/DeliveryModal";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ export function RoutePlannerView() {
 
   const [stops, setStops] = useState<MapStop[]>([]);
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
+  const [deliveryStop, setDeliveryStop] = useState<MapStop | null>(null);
 
   const { geocodeStops } = useGeocoder(isLoaded);
   const { optimizeRoute, isOptimizing } = useRouteOptimizer(isLoaded);
@@ -63,6 +65,9 @@ export function RoutePlannerView() {
         city: order.store.city ?? undefined,
         geocoding: true,
         label: isSample ? "Sample" : order.orderNumber ? `Order #${order.orderNumber}` : "Order",
+        storeId: order.store._id,
+        repId: order.rep?._id ?? undefined,
+        amount: order.total ?? undefined,
       });
     }
 
@@ -77,6 +82,8 @@ export function RoutePlannerView() {
         city: sample.store.city ?? undefined,
         geocoding: true,
         label: "Sample",
+        storeId: sample.store._id ?? "",
+        amount: undefined,
       });
     }
 
@@ -162,8 +169,22 @@ export function RoutePlannerView() {
           warehouseName={WAREHOUSE_NAME}
           onOptimize={handleOptimize}
           onClear={handleClear}
+          onCreateDelivery={setDeliveryStop}
         />
       </div>
+
+      {deliveryStop && (
+        <DeliveryModal
+          open={!!deliveryStop}
+          onClose={() => setDeliveryStop(null)}
+          store={{ _id: deliveryStop.storeId, name: deliveryStop.storeName, address: deliveryStop.address }}
+          rep={deliveryStop.repId ? { _id: deliveryStop.repId } : null}
+          orderId={deliveryStop.kind === "order" ? deliveryStop.id : null}
+          sampleId={deliveryStop.kind === "sample" ? deliveryStop.id : null}
+          orderAmount={deliveryStop.amount ?? null}
+          onSuccess={() => setDeliveryStop(null)}
+        />
+      )}
     </div>
   );
 }
