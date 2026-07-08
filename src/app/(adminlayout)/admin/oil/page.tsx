@@ -13,7 +13,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "containers", label: "Containers" },
   { id: "waste-log", label: "Waste Log" },
 ];
-
+// The OilPage component is a page for managing cannabis oil inventory. It has two main tabs: "Containers" and "Waste Log". The user can switch between these tabs to view and manage different aspects of the inventory.
 export default function OilPage() {
   const [active, setActive] = useState<Tab>("containers");
   const router = useRouter();
