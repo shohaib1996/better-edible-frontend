@@ -4,6 +4,9 @@ import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUploadProductImagesMutation,
+  useDeleteProductImageMutation,
+  useBatchUpdateProductOrderMutation,
 } from "@/redux/api/Products/productsApi";
 import {
   useCreateProductLineMutation,
@@ -18,6 +21,9 @@ export const useProductHandlers = (
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
+  const [uploadProductImages] = useUploadProductImagesMutation();
+  const [deleteProductImage] = useDeleteProductImageMutation();
+  const [batchUpdateProductOrder] = useBatchUpdateProductOrderMutation();
   const [createProductLine, { isLoading: isCreatingProductLine }] =
     useCreateProductLineMutation();
   const [updateProductLine, { isLoading: isUpdatingProductLine }] =
@@ -30,6 +36,7 @@ export const useProductHandlers = (
   const [productLineModalOpen, setProductLineModalOpen] = useState(false);
   const [editingProductLine, setEditingProductLine] =
     useState<IProductLine | null>(null);
+  const [uploadingIds, setUploadingIds] = useState<Set<string>>(new Set());
 
   const handleDelete = async (id: string) => {
     try {
@@ -145,7 +152,6 @@ export const useProductHandlers = (
         const discountKey = `${type}Discount`;
         const normalizedUnitKey = `${type.toLowerCase()}Units`;
         const normalizedDiscountKey = `${type.toLowerCase()}Discount`;
-        // Check both cased and lowercased versions of the key
         const unitVal = values[unitKey] ?? values[normalizedUnitKey];
         const discountVal = values[discountKey] ?? values[normalizedDiscountKey];
         if (unitVal !== undefined && unitVal !== "") {
@@ -186,7 +192,6 @@ export const useProductHandlers = (
           price: Number.parseFloat(values[priceKey]),
         };
 
-        // Only include discountPrice if it has a value
         if (values[discountKey] && values[discountKey] !== "") {
           variantData.discountPrice = Number.parseFloat(values[discountKey]);
         }
@@ -216,6 +221,58 @@ export const useProductHandlers = (
     }
   };
 
+  // 🖼️ Upload images for a product
+  const handleImageUpload = async (productId: string, files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingIds((prev) => new Set(prev).add(productId));
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((file) => formData.append("images", file));
+      await uploadProductImages({ id: productId, formData }).unwrap();
+      toast.success(`${files.length > 1 ? `${files.length} images` : "Image"} uploaded`);
+    } catch {
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(productId);
+        return next;
+      });
+    }
+  };
+
+  // 🗑️ Delete a single product image
+  const handleImageDelete = async (productId: string, publicId: string) => {
+    try {
+      await deleteProductImage({ id: productId, publicId }).unwrap();
+      toast.success("Image deleted");
+    } catch {
+      toast.error("Failed to delete image");
+    }
+  };
+
+  // 🔢 Reorder items within a product line
+  const handleReorder = async (items: any[], fromIdx: number, direction: "up" | "down") => {
+    const toIdx = direction === "up" ? fromIdx - 1 : fromIdx + 1;
+    if (toIdx < 0 || toIdx >= items.length) return;
+
+    // Build new order array with the two items swapped
+    const newItems = [...items];
+    [newItems[fromIdx], newItems[toIdx]] = [newItems[toIdx], newItems[fromIdx]];
+
+    // Assign (idx + 1) * 10 so 0 remains the sentinel for "never manually ordered"
+    const updates = newItems.map((item, idx) => ({
+      id: item._id,
+      displayOrder: (idx + 1) * 10,
+    }));
+
+    try {
+      await batchUpdateProductOrder(updates).unwrap();
+    } catch {
+      toast.error("Failed to reorder");
+    }
+  };
+
   return {
     open,
     setOpen,
@@ -229,11 +286,15 @@ export const useProductHandlers = (
     isUpdating,
     isCreatingProductLine,
     isUpdatingProductLine,
+    uploadingIds,
     handleDelete,
     handleOpenAdd,
     handleOpenEdit,
     handleOpenAddProductLine,
     handleProductLineSubmit,
     handleSubmit,
+    handleImageUpload,
+    handleImageDelete,
+    handleReorder,
   };
 };

@@ -31,6 +31,7 @@ export interface RawProduct {
   images?: ProductImage[];
   subProductLine?: string;
   prices?: Record<string, { price: number; discountPrice?: number | null }>;
+  hybridBreakdown?: Record<string, number>;
   variants?: { label: string; price: number; discountPrice?: number }[];
 }
 

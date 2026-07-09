@@ -36,12 +36,16 @@ const ProductsPage = () => {
     isUpdating,
     isCreatingProductLine,
     isUpdatingProductLine,
+    uploadingIds,
     handleDelete,
     handleOpenAdd,
     handleOpenEdit,
     handleOpenAddProductLine,
     handleProductLineSubmit,
     handleSubmit,
+    handleImageUpload,
+    handleImageDelete,
+    handleReorder,
   } = useProductHandlers(refetch, refetchProductLines);
 
   // Group & order product lines dynamically
@@ -91,6 +95,10 @@ const ProductsPage = () => {
               onAddItem={handleOpenAdd}
               onEdit={(item) => handleOpenEdit(item, productLines)}
               onDelete={handleDelete}
+              onImageUpload={handleImageUpload}
+              onImageDelete={handleImageDelete}
+              onReorder={handleReorder}
+              uploadingIds={uploadingIds}
             />
           );
         })}

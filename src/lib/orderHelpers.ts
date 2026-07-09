@@ -45,8 +45,16 @@ export function buildCards(products: RawProduct[]): ProductCard[] {
     const plOrder = plDisplayOrder(p);
     const pOrder = p.displayOrder ?? 999;
 
-    if (pt === "multi-type" && p.prices) {
-      const labels = typeLabels(p).length > 0 ? typeLabels(p) : Object.keys(p.prices);
+    if (pt === "multi-type" && (p.prices || p.hybridBreakdown)) {
+      const priceSource = p.prices || {};
+      const breakdownSource = p.hybridBreakdown || {};
+      const definedLabels = typeLabels(p);
+      const fallbackKeys =
+        Object.keys(priceSource).length > 0
+          ? Object.keys(priceSource)
+          : Object.keys(breakdownSource);
+      const labels = definedLabels.length > 0 ? definedLabels : fallbackKeys;
+
       const cardKey = `mt::${pl}::${p.subProductLine || p._id}`;
       if (!cardMap.has(cardKey)) {
         cardMap.set(cardKey, {
@@ -64,14 +72,16 @@ export function buildCards(products: RawProduct[]): ProductCard[] {
       }
       const card = cardMap.get(cardKey)!;
       for (const tl of labels) {
-        const entry = p.prices[tl];
-        if (!entry) continue;
+        const entry = priceSource[tl];
+        const fallbackPrice = breakdownSource[tl];
+        const price = entry?.price ?? fallbackPrice ?? 0;
+        if (!price) continue;
         const dp =
-          entry.discountPrice && entry.discountPrice > 0 ? entry.discountPrice : undefined;
+          entry?.discountPrice && entry.discountPrice > 0 ? entry.discountPrice : undefined;
         card.rows.push({
           rowKey: `${p._id}::${tl}`,
           label: tl,
-          price: entry.price,
+          price,
           discountPrice: dp,
           onSale: !!dp,
           productId: p._id,

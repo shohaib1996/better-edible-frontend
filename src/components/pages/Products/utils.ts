@@ -2,7 +2,10 @@ import type { IProductLine } from "@/redux/api/ProductLines/productLinesApi";
 import { sortCannaCrispyProducts } from "@/utils/productOrdering";
 
 /**
- * Groups products by product line and applies custom sorting
+ * Groups products by product line and applies sorting:
+ * - If any item in the group has been manually ordered (displayOrder > 0), sort by displayOrder asc.
+ * - For Cannacrispy with no manual ordering, fall back to the hardcoded SKU order.
+ * - Otherwise keep the backend-returned order (createdAt desc).
  */
 export const groupProductsByLine = (
   products: any[],
@@ -16,18 +19,27 @@ export const groupProductsByLine = (
     groups[productLineName].push(p);
   });
 
-  // Custom sort for Cannacrispy using shared utility
-  if (groups["Cannacrispy"]) {
-    groups["Cannacrispy"] = sortCannaCrispyProducts(groups["Cannacrispy"]);
-  }
+  // Sort items within each group
+  Object.keys(groups).forEach((lineName) => {
+    const items = groups[lineName];
+    const hasManualOrder = items.some((p: any) => p.displayOrder && p.displayOrder > 0);
 
-  // Return groups ordered by productLines displayOrder
-  // ✅ Show ALL active product lines, even if they have no products
+    if (hasManualOrder) {
+      groups[lineName] = [...items].sort(
+        (a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
+      );
+    } else if (lineName === "Cannacrispy") {
+      groups[lineName] = sortCannaCrispyProducts(items);
+    }
+    // else: keep backend order as-is
+  });
+
+  // Return groups ordered by productLines displayOrder.
+  // Show ALL active product lines, even if they have no products.
   const orderedGroups: Record<string, any[]> = {};
   [...productLines]
     .sort((a, b) => a.displayOrder - b.displayOrder)
     .forEach((pl) => {
-      // Initialize with empty array if no products exist for this line
       orderedGroups[pl.name] = groups[pl.name] || [];
     });
 
