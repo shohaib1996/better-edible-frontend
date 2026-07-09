@@ -147,8 +147,8 @@ export function RoutePlannerView() {
   }
 
   return (
-    <div className="flex gap-3 mt-4" style={{ height: 580 }}>
-      <div className="flex-1 rounded-xs overflow-hidden border border-border">
+    <div className="flex flex-col md:flex-row gap-3 mt-4 md:h-[580px]">
+      <div className="rounded-xs overflow-hidden border border-border h-[420px] md:flex-1 md:h-full">
         <RoutePlannerMap
           stops={stops}
           routeOrderMap={routeOrderMap}
@@ -157,7 +157,7 @@ export function RoutePlannerView() {
         />
       </div>
 
-      <div className="w-64 shrink-0 border border-border rounded-xs bg-background overflow-hidden">
+      <div className="w-full md:w-64 shrink-0 border border-border rounded-xs bg-white dark:bg-zinc-900 shadow-md overflow-hidden h-[380px] md:h-full">
         <RoutePlannerPanel
           stops={displayStops}
           routeOrderMap={routeOrderMap}
