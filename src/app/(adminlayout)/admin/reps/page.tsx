@@ -16,12 +16,11 @@ import {
 import { EntityModal } from "@/components/ReUsableComponents/EntityModal";
 import { ConfirmDialog } from "@/components/ReUsableComponents/ConfirmDialog";
 import { useRegisterRepMutation } from "@/redux/api/RepLogin/repAuthApi";
-import { Clock, FileText, LogIn, Pen, Trash2, Timer, Users } from "lucide-react";
+import { Clock, FileText, LogIn, Pen, Trash2, Timer } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 
 export default function RepsPage() {
-  const router = useRouter();
   const { data, isLoading, refetch } = useGetAllRepsQuery({});
   const [addRep, { isLoading: adding }] = useRegisterRepMutation();
   const [editRep, { isLoading: updating }] = useUpdateRepMutation();
@@ -259,7 +258,111 @@ export default function RepsPage() {
         </div>
       </div>
 
-      <DataTable<IRep> columns={columns} data={reps} isLoading={isLoading} />
+      {/* ── Mobile cards (< md) ──────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground text-sm">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Loading…
+          </div>
+        ) : reps.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No representatives found.
+          </div>
+        ) : (
+          reps.map((rep) => (
+            <div
+              key={rep._id}
+              className="bg-card border border-border rounded-md p-4 space-y-3"
+            >
+              {/* Name + Clock-in badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground leading-tight">{rep.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 capitalize">{rep.repType}</p>
+                </div>
+                <span
+                  className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-xs text-xs font-medium ${
+                    rep.checkin
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-muted text-muted-foreground border border-border"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 mr-1 rounded-full ${
+                      rep.checkin ? "bg-emerald-500" : "bg-gray-400 dark:bg-gray-600"
+                    }`}
+                  />
+                  {rep.checkin ? "Clocked In" : "Clocked Out"}
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 pt-1 border-t border-border">
+                <Link href={`/admin/reps/${rep._id}`}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 w-9 p-0 rounded-xs bg-transparent"
+                    title="Clock In/Out History"
+                  >
+                    <Clock className="size-4" />
+                  </Button>
+                </Link>
+                <Link href={`/admin/reps/notes/${rep._id}`}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 w-9 p-0 rounded-xs bg-transparent"
+                    title="View Notes"
+                  >
+                    <FileText className="size-4" />
+                  </Button>
+                </Link>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-9 w-9 p-0 rounded-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={() => handleLoginAsRep(rep)}
+                  title="Login As Rep"
+                >
+                  <LogIn className="size-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 w-9 p-0 rounded-xs bg-transparent"
+                  onClick={() => { setEditingRep(rep); setOpen(true); }}
+                  title="Edit"
+                >
+                  <Pen className="size-4" />
+                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 p-0 rounded-xs hover:bg-destructive/10 hover:border-destructive bg-transparent"
+                      title="Delete"
+                    >
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  }
+                  title="Delete Representative"
+                  description={`Are you sure you want to delete ${rep.name}? This action cannot be undone.`}
+                  confirmText="Yes, Delete"
+                  onConfirm={() => deleteRep(rep._id)}
+                />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ── Desktop table (≥ md) ─────────────────────────────────────────────── */}
+      <div className="hidden md:block">
+        <DataTable<IRep> columns={columns} data={reps} isLoading={isLoading} />
+      </div>
 
       <EntityModal<IRep>
         open={open}
