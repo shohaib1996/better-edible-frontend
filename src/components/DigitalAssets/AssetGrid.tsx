@@ -43,7 +43,7 @@ function SkeletonCards() {
     </div>
   );
 }
-
+// a simple component to show when there are no assets found, with an optional button to clear filters if any are active
 function EmptyState({
   hasActiveFilters,
   onClearAll,
