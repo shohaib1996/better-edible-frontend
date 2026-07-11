@@ -1,3 +1,4 @@
+// gummy queue component
 import { X } from "lucide-react";
 import type { QueuedGummy } from "@/lib/gummyBuilderConfig";
 
@@ -5,7 +6,6 @@ interface Props {
   queue: QueuedGummy[];
   onRemove: (id: string) => void;
 }
-
 export function GummyQueue({ queue, onRemove }: Props) {
   if (queue.length === 0) return null;
 
