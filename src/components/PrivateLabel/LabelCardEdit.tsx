@@ -33,7 +33,7 @@ interface Props {
   units: number;
   setUnits: (v: number) => void;
   selectedFlavors: string[];
-  allFlavors: { name: string }[];
+  allFlavors: { flavorId: string; name: string }[];
   isLoadingFlavors: boolean;
   colorHex: string | undefined;
   colorName: string | undefined;
