@@ -23,7 +23,7 @@ interface Props {
   onAdd: () => void;
   onRemove: (name: CannabinoidName) => void;
 }
-
+// cannabinoid editor is used in the gummy builder to add/remove cannabinoids from the gummy recipe. It shows a list of currently selected cannabinoids and allows the user to select from available cannabinoids to add.
 export function CannabinoidEditor({ cannabinoids, effectiveKey, selectedKey, onSelectKey, onAdd, onRemove }: Props) {
   const usedNames = new Set(cannabinoids.map((c) => c.name));
   const availableGroups = ALL_CANNABINOIDS.filter((n) => !usedNames.has(n));
