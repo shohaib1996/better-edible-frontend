@@ -29,7 +29,7 @@ export const DISPOSITION_OPTIONS = [
   { value: "sales_call", label: "Sales Call" },
   { value: "other", label: "Other" },
 ];
-
+// DeliveryFilters component with props for filtering deliveries
 export interface DeliveryFiltersProps {
   storeName: string;
   status: string;
