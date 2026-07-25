@@ -16,7 +16,7 @@ interface Props {
   disposition: string[];
   onToggle: (value: string) => void;
 }
-
+// Delivery deposition field component that allows users to select multiple disposition options using checkboxes. It takes in the current disposition values and a callback function to handle toggling the selected options. The component is styled with Tailwind CSS classes for layout and appearance.
 export function DeliveryDispositionField({ disposition, onToggle }: Props) {
   return (
     <div className="space-y-1.5">
