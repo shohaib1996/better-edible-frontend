@@ -33,7 +33,6 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
 
 # vercel
 .vercel
@@ -73,3 +72,5 @@ temp_interactive_push.bat
 better-edibles-api-reference.txt
 ai-recipe-implementation.txt
 PROMOTIONS_MODULE.txt
+branch_structure.json
+config.bat
